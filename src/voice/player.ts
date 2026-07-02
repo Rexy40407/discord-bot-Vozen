@@ -159,8 +159,11 @@ export class GuildVoicePlayer {
     this.playing = true;
 
     let audioPath: string;
+    const synthStart = process.hrtime.bigint();
     try {
       audioPath = await this.engine.synth(next.req);
+      // Latencia de sintese efetiva (inclui cache hit rapido e miss/spawn lento).
+      metrics.recordSynthMs(Number(process.hrtime.bigint() - synthStart) / 1e6);
     } catch (err) {
       log.error('[player] erro na sintese, item saltado:', err);
       metrics.inc('synthErrors');

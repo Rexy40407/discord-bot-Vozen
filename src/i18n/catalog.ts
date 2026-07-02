@@ -515,6 +515,10 @@ export const catalog: Record<string, Entry> = {
     en: 'Synthesis errors: {value}',
     pt: 'Erros de sintese: {value}',
   },
+  'stats.synthLatency': {
+    en: 'Synthesis latency: p50 {p50}ms / p95 {p95}ms ({count} samples)',
+    pt: 'Latencia de sintese: p50 {p50}ms / p95 {p95}ms ({count} amostras)',
+  },
   'stats.voiceDrops': {
     en: 'Voice drops: {value}',
     pt: 'Quedas de voz: {value}',

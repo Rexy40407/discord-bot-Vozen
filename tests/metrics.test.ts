@@ -127,7 +127,28 @@ describe('metrics — API básica', () => {
       voiceDrops: 0,
       voiceReconnects: 0,
       votes: 0,
+      synthCount: 0,
+      synthP50Ms: 0,
+      synthP95Ms: 0,
     });
+  });
+
+  it('recordSynthMs alimenta synthCount + p50/p95; reset limpa', () => {
+    // Amostras 10..100 (10 valores). p50 -> idx floor(0.5*10)=5 -> 60; p95 -> idx 9 -> 100.
+    for (let v = 10; v <= 100; v += 10) metrics.recordSynthMs(v);
+    const snap = metrics.snapshot();
+    expect(snap.synthCount).toBe(10);
+    expect(snap.synthP50Ms).toBe(60);
+    expect(snap.synthP95Ms).toBe(100);
+    // Valores invalidos sao ignorados (nao contam).
+    metrics.recordSynthMs(-5);
+    metrics.recordSynthMs(NaN);
+    expect(metrics.snapshot().synthCount).toBe(10);
+    metrics.reset();
+    const z = metrics.snapshot();
+    expect(z.synthCount).toBe(0);
+    expect(z.synthP50Ms).toBe(0);
+    expect(z.synthP95Ms).toBe(0);
   });
 
   it('inc("cacheHits") incrementa só cacheHits', () => {
@@ -175,6 +196,7 @@ describe('metrics — API básica', () => {
     metrics.inc('synthErrors');
     metrics.inc('voiceDrops');
     metrics.inc('voiceReconnects');
+    metrics.recordSynthMs(42);
     metrics.reset();
     expect(metrics.snapshot()).toEqual({
       messagesSpoken: 0,
@@ -184,6 +206,9 @@ describe('metrics — API básica', () => {
       voiceDrops: 0,
       voiceReconnects: 0,
       votes: 0,
+      synthCount: 0,
+      synthP50Ms: 0,
+      synthP95Ms: 0,
     });
   });
 

@@ -1263,6 +1263,11 @@ async function handleStats(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     t('stats.cacheHits', locale, { value: snap.cacheHits }),
     t('stats.cacheMisses', locale, { value: snap.cacheMisses }),
     t('stats.synthErrors', locale, { value: snap.synthErrors }),
+    t('stats.synthLatency', locale, {
+      p50: snap.synthP50Ms,
+      p95: snap.synthP95Ms,
+      count: snap.synthCount,
+    }),
     t('stats.voiceDrops', locale, { value: snap.voiceDrops }),
     t('stats.voiceReconnects', locale, { value: snap.voiceReconnects }),
     t('stats.votes', locale, { value: snap.votes }),
