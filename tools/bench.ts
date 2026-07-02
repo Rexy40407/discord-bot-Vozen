@@ -21,7 +21,7 @@ import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { loadConfig } from '../src/config/index';
 import { AudioCache } from '../src/tts/cache';
-import { PiperEngine, resolvePiperConcurrency } from '../src/tts/piper';
+import { PiperEngine, resolvePiperConcurrency, shutdownPiperPool } from '../src/tts/piper';
 import type { SynthRequest } from '../src/tts/engine';
 
 function discoverModels(modelsDir: string): string[] {
@@ -199,6 +199,9 @@ async function main(): Promise<void> {
     writeFileSync(join(process.cwd(), 'BENCHMARKS.md'), lines.join('\n') + '\n');
     console.log(`\n✅ BENCHMARKS.md escrito (${models.length} modelos, cap ${cap}).`);
   } finally {
+    // Fecha os processos piper quentes (se PIPER_PERSISTENT esteve ON) — senao o
+    // event loop fica vivo pelos filhos e o processo nao termina.
+    shutdownPiperPool();
     rmSync(cacheDir, { recursive: true, force: true });
   }
 }

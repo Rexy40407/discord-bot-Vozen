@@ -19,13 +19,17 @@ import {
 const PIPER_TIMEOUT_MS = 15000;
 
 /**
- * Pool PERSISTENTE de processos piper (spec T2.1) — EXPERIMENTAL, default OFF.
- * Le a env por-chamada (nao congela ao carregar o modulo) para ser facil de
- * raciocinar/testar. Só ON quando PIPER_PERSISTENT for exatamente '1' ou 'true'.
+ * Pool PERSISTENTE de processos piper (spec T2.1). Default **ON** — validado: a voz
+ * quente reutiliza o processo (~4× mais rapido: 478ms→~110ms) e o audio e
+ * BYTE-IDENTICO ao caminho one-shot (mesmo piper/params, so o processo e reutilizado);
+ * qualquer falha do pool cai no one-shot sem perder sintese. Desliga-se com
+ * PIPER_PERSISTENT=0 (ou 'false'/'off'). Lido por-chamada (nao congela ao carregar).
+ * NOTA: a suite de testes forca '0' (ver tests/setup.ts) para exercitar o one-shot; o
+ * pool e testado em isolamento em piperPool.test.ts.
  */
 export function isPiperPersistentOn(): boolean {
   const raw = process.env.PIPER_PERSISTENT?.trim().toLowerCase();
-  return raw === '1' || raw === 'true';
+  return raw !== '0' && raw !== 'false' && raw !== 'off';
 }
 
 /** maxWarm do pool (nº de vozes quentes). Default 3; override por PIPER_WARM_VOICES. */

@@ -44,11 +44,20 @@ Smart App Control → Desligado). ⚠️ É porta de sentido único — depois d
 volta a ligar reinstalando o Windows. Como o bot funciona com o SAC ligado (via
 pré-aquecimento), **não é recomendado**.
 
-## Concorrência de síntese
+## Síntese: pool persistente + concorrência
 
-Cada síntese (cache miss) arranca um `piper.exe`. O nº máximo em simultâneo é limitado
-(default `max(1, núcleos-1)`); ajusta com a env **`PIPER_MAX_CONCURRENCY`** (inteiro
-positivo) se precisares de o baixar (máquina fraca) ou subir.
+**Pool persistente (ON por defeito).** Em vez de arrancar um `piper.exe` novo por
+síntese (~372ms de overhead de arranque+carregamento de modelo), o Voxi mantém
+processos piper QUENTES e reutiliza-os — a 2.ª síntese de uma voz passa de ~410ms para
+~110ms (~4× mais rápido), com áudio idêntico. Qualquer falha do pool cai
+automaticamente no arranque one-shot (nunca se perde uma síntese).
+- Desligar: **`PIPER_PERSISTENT=0`**.
+- Nº de vozes mantidas quentes (RAM): **`PIPER_WARM_VOICES`** (default 3). Mantém-no
+  ≥ nº de vozes que costumam falar ao mesmo tempo, para evitar reciclagem de processos.
+
+**Concorrência.** O nº de sínteses em simultâneo é limitado (default `max(1,
+núcleos-1)`); ajusta com **`PIPER_MAX_CONCURRENCY`** (inteiro positivo) para baixar
+(máquina fraca) ou subir.
 
 ## Medir performance
 
