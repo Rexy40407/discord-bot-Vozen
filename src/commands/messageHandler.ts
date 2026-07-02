@@ -12,6 +12,7 @@ import { isOptedOut } from '../store/optout';
 import { isDetectionOn } from '../store/langDetect';
 import { applyUserAbbrev } from '../textCleaning/userAbbrev';
 import { prepareSpeech } from './prepareSpeech';
+import { recallLang, rememberLang } from '../language/langMemory';
 import { log } from '../logging/logger';
 
 export async function handleMessage(message: Message, deps: BotDeps): Promise<void> {
@@ -94,7 +95,10 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // segmento separado). O `spoken` (falado) e usado para a blocklist.
     const userVoice = getUserVoice(deps.db, message.guildId, message.author.id);
     const auto = isDetectionOn(deps.db, message.guildId, message.author.id);
-    const { spoken, req } = prepareSpeech({
+    // Memoria de lingua (T3.2): recorda a lingua recente do user para desambiguar
+    // fragmentos curtos; memoriza a deteccao confiante desta mensagem.
+    const recentLang = recallLang(message.guildId, message.author.id);
+    const { spoken, req, learnedLang } = prepareSpeech({
       personal,
       pronunciations: getPronunciations(deps.db, message.guildId),
       userVoice,
@@ -103,7 +107,9 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       defaultVoice: deps.config.defaultVoice,
       defaultSpeed: deps.config.defaultSpeed,
       autoDetect: auto,
+      recentLang,
     });
+    if (learnedLang) rememberLang(message.guildId, message.author.id, learnedLang);
 
     // blocklist antes de sintetizar (sobre o texto REALMENTE falado)
     const blocklist = getBlocklist(deps.db, message.guildId);

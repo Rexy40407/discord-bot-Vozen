@@ -35,6 +35,7 @@ import { cleanText } from '../textCleaning/clean';
 import { applyUserAbbrev } from '../textCleaning/userAbbrev';
 import { isBlocked } from '../moderation/filter';
 import { prepareSpeech } from './prepareSpeech';
+import { recallLang, rememberLang } from '../language/langMemory';
 import type { SynthRequest } from '../tts/engine';
 import { modelDisplayName, voiceDisplayName, formatVoiceList } from '../language/voiceMap';
 import { laughterFor } from '../content/laughter';
@@ -588,7 +589,10 @@ async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): Promise
   const userVoice = getUserVoice(deps.db, i.guildId!, i.user.id);
   // Toggle por-user: deteccao OFF => usa sempre a voz fixa do user (singleVoice).
   const auto = isDetectionOn(deps.db, i.guildId!, i.user.id);
-  const { spoken, req } = prepareSpeech({
+  // Memoria de lingua (T3.2): recorda a lingua recente do user para desambiguar
+  // fragmentos curtos; memoriza a deteccao confiante desta mensagem.
+  const recentLang = recallLang(i.guildId!, i.user.id);
+  const { spoken, req, learnedLang } = prepareSpeech({
     personal,
     pronunciations: getPronunciations(deps.db, i.guildId!),
     userVoice,
@@ -597,7 +601,9 @@ async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): Promise
     defaultVoice: deps.config.defaultVoice,
     defaultSpeed: deps.config.defaultSpeed,
     autoDetect: auto,
+    recentLang,
   });
+  if (learnedLang) rememberLang(i.guildId!, i.user.id, learnedLang);
 
   // blocklist antes de sintetizar
   const blocklist = getBlocklist(deps.db, i.guildId!);

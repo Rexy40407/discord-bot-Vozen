@@ -1,4 +1,4 @@
-import { detectLang } from '../language/detect';
+import { detectLangDetailed } from '../language/detect';
 import { pickVoiceForLang } from '../language/voiceMap';
 import { expandAbbreviations, splitEnglishSlang } from '../textCleaning/abbreviations';
 import { applyPronunciation, type PronunciationEntry } from '../textCleaning/pronunciation';
@@ -18,6 +18,12 @@ export interface PrepareSpeechInput {
   defaultSpeed: number;
   /** Toggle da DETECAO AUTOMATICA de lingua por-user (ON => deteta; OFF => voz fixa). */
   autoDetect: boolean;
+  /**
+   * Memoria de lingua do user (T3.2): a ultima lingua detetada COM CONFIANCA. Quando
+   * a deteccao da mensagem atual e AMBIGUA (fragmento curto), usa-se esta em vez do
+   * palpite incerto do franc. Vazio/undefined = sem memoria (comportamento de hoje).
+   */
+  recentLang?: string;
 }
 
 export interface PreparedSpeech {
@@ -25,6 +31,12 @@ export interface PreparedSpeech {
   spoken: string;
   /** Pedido de sintese ja com a(s) voz(es) resolvida(s). */
   req: SynthRequest;
+  /**
+   * Lingua detetada COM CONFIANCA nesta mensagem (ISO 639-3), ou '' se ambigua/sem
+   * texto-base. O chamador memoriza-a (rememberLang) para desambiguar as proximas
+   * mensagens curtas do mesmo user.
+   */
+  learnedLang: string;
 }
 
 /**
@@ -50,7 +62,7 @@ export function prepareSpeech(input: PrepareSpeechInput): PreparedSpeech {
   // lingua nem partir por segmento. Identico ao resolveSynth (autoDetect:false).
   if (input.autoDetect === false) {
     const spoken = applyPronunciation(expandAbbreviations(input.personal), input.pronunciations);
-    return { spoken, req: { text: spoken, model: preferred, speed, singleVoice: true } };
+    return { spoken, req: { text: spoken, model: preferred, speed, singleVoice: true }, learnedLang: '' };
   }
 
   // Deteccao LIGADA: parte por girias EN e processa cada parte (expansao + pronuncia).
@@ -63,7 +75,12 @@ export function prepareSpeech(input: PrepareSpeechInput): PreparedSpeech {
 
   // Lingua-base = deteccao SO da parte non-slang (as girias EN nao poluem).
   const baseText = procSegs.filter((s) => !s.isEnglish).map((s) => s.text).join(' ');
-  const baseLang = detectLang(baseText);
+  const { lang: detectedBase, confident } = detectLangDetailed(baseText);
+  // Memoria adaptativa (T3.2): se a deteccao e AMBIGUA e ha uma lingua recente do user,
+  // usa a recente (resolve "isto ta a funcionar" -> por depois de um "olá" confiante).
+  // Se e confiante, e ELA que memorizamos (learnedLang) para as proximas curtas.
+  const baseLang = !confident && input.recentLang ? input.recentLang : detectedBase;
+  const learnedLang = confident ? detectedBase : '';
 
   const hasEng = procSegs.some((s) => s.isEnglish);
   const hasOther = procSegs.some((s) => !s.isEnglish);
@@ -73,13 +90,13 @@ export function prepareSpeech(input: PrepareSpeechInput): PreparedSpeech {
   // sem girias): devolve um req single-voice sao com a voz preferida, sem crashar.
   if (!hasEng) {
     const model = pickVoiceForLang(baseLang, input.available, preferred);
-    return { spoken, req: { text: spoken, model, speed } };
+    return { spoken, req: { text: spoken, model, speed }, learnedLang };
   }
 
   // So girias EN: voz unica inglesa.
   if (!hasOther) {
     const model = pickVoiceForLang('eng', input.available, preferred);
-    return { spoken, req: { text: spoken, model, speed } };
+    return { spoken, req: { text: spoken, model, speed }, learnedLang };
   }
 
   // MISTURADO: cada segmento com a sua voz (giria -> EN, resto -> lingua-base). O
@@ -89,5 +106,5 @@ export function prepareSpeech(input: PrepareSpeechInput): PreparedSpeech {
     model: pickVoiceForLang(s.isEnglish ? 'eng' : baseLang, input.available, preferred),
   }));
   const baseModel = pickVoiceForLang(baseLang, input.available, preferred);
-  return { spoken, req: { text: spoken, model: baseModel, speed, segments } };
+  return { spoken, req: { text: spoken, model: baseModel, speed, segments }, learnedLang };
 }
