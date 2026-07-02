@@ -190,14 +190,22 @@ export class PiperEngine implements TTSEngine {
             '--sentence_silence',
             String(params.sentenceSilence),
           ];
+          let poolOk = false;
           try {
             await getPiperPool().synth(key, poolArgs, req.text, outPath, PIPER_TIMEOUT_MS);
+            // Valida o resultado do POOL AQUI: se (por qualquer anomalia do protocolo
+            // de stdout) o WAV ficou vazio/ausente, tratamo-lo como falha do pool e
+            // caimos no one-shot. Assim o check final (mais abaixo) so dispara se ATE
+            // o one-shot falhar — fecha o unico caminho do pool que nao tinha fallback.
+            poolOk = existsSync(outPath) && statSync(outPath).size > 0;
           } catch (err) {
-            // Fallback: NUNCA perder uma sintese. Se o pool falha (processo encravado,
-            // spawn falhou, etc.), cai no spawn one-shot de sempre.
             log.warn(
               `[piper] pool persistente falhou (${(err as Error).message}) — fallback one-shot`,
             );
+          }
+          if (!poolOk) {
+            // Fallback: NUNCA perder uma sintese (pool encravou, spawn falhou, ou
+            // produziu WAV vazio/ausente) → spawn one-shot de sempre.
             await this.runPiper(modelPath, outPath, lengthScale, params, req.text);
           }
         } else {
