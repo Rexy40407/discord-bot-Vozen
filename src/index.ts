@@ -27,7 +27,11 @@ async function main(): Promise<void> {
   const db = initDb(config.dbPath);
   const cache = new AudioCache(path.join(path.dirname(config.dbPath), 'audio-cache'));
 
-  const availableModels = discoverModels(config.modelsDir);
+  // Modelos DELIBERADAMENTE excluidos das opcoes/deteccao. Pedido do Diogo: uma so
+  // voz portuguesa — a do Brasil (rotulada "Português"). O .onnx fica no disco, por
+  // isso e REVERSIVEL: basta remover a entrada daqui para o europeu (tugao) voltar.
+  const EXCLUDED_MODELS = new Set(['pt_PT-tugao-medium']);
+  const availableModels = discoverModels(config.modelsDir).filter((m) => !EXCLUDED_MODELS.has(m));
   if (availableModels.length === 0) {
     log.warn(`[index] nenhum modelo .onnx em ${config.modelsDir} — /voice list ficara vazio.`);
   }
