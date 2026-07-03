@@ -166,7 +166,18 @@ export const catalog: Record<string, Entry> = {
   // Frase-amostra falada pela voz escolhida no /voice preview. Curta e neutra.
   'preview.sample': {
     en: "Hi, I'm Voxi. type it, hear it.",
-    pt: 'Ola, eu sou o Voxi. type it, hear it.',
+    // FIX (auditoria i18n/locale — docs/I18N-LOCALE-AUDIT.md §2): a versao anterior
+    // tinha "Ola, eu sou o Voxi. type it, hear it." — a 2.a frase ficava por
+    // traduzir. Esta chave e FALADA pelo TTS (a unica excecao "falada" do
+    // catalogo, ver comentario no topo do ficheiro), por isso uma frase
+    // bilingue soa a erro de sintetizador, nao a escolha de marca — ao contrario
+    // de 'help.title'/'welcome.footer', que TEM um comentario explicito "tagline
+    // fica em ingles em qualquer idioma" (aqui nao havia esse comentario, logo
+    // nao ha evidencia de que a mistura fosse intencional). Os 32 locales Fase B
+    // ja traduziram esta frase por inteiro (ex. es: "escríbelo, escúchalo"; ca:
+    // "Escriu-ho i escolta'l") — pt (curado a mao na Fase A) era a UNICA excecao.
+    // Alinhado ao mesmo padrao curto/imperativo.
+    pt: 'Ola, eu sou o Voxi. escreve, ouve.',
   },
 
   // ── /laugh · /joke (diversao por-utilizador; tocam audio via player.say) ────

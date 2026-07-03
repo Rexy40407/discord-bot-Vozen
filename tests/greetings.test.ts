@@ -65,6 +65,55 @@ describe('lookupShortLang — lexico de saudacoes/palavras curtas', () => {
     // Texto comprido decide-se pelo franc, nao pela 1.ª palavra.
     expect(lookupShortLang('hi everyone i need some help with the server config please')).toBe('');
   });
+
+  // FIX (auditoria TTS — fecha G1, docs/SPEECH-DATA-AUDIT.md §3): saudacoes curtas
+  // para linguas que so tinham modelo/prefixo mas nenhum token de lexico. NOTA: estes
+  // casos foram ESCRITOS mas NAO EXECUTADOS (sem ferramenta de corrida de testes
+  // disponivel nesta sessao) — mirror direto do padrao acima, a confirmar com
+  // `npm test` antes de dar como fechado.
+  it('G1 — script proprio, mapeamento 1:1 (grego/georgiano/nepali/chines)', () => {
+    expect(lookupShortLang('γεια')).toBe('ell');
+    expect(lookupShortLang('καλημέρα')).toBe('ell');
+    expect(lookupShortLang('გამარჯობა')).toBe('kat');
+    expect(lookupShortLang('नमस्ते')).toBe('nep');
+    expect(lookupShortLang('你好')).toBe('cmn');
+    expect(lookupShortLang('谢谢')).toBe('cmn');
+  });
+
+  it('G1 — cirilico partilhado (russo/ucraniano/cazaque/servio) sem colisao', () => {
+    expect(lookupShortLang('привет')).toBe('rus');
+    expect(lookupShortLang('спасибо')).toBe('rus');
+    expect(lookupShortLang('привіт')).toBe('ukr');
+    expect(lookupShortLang('дякую')).toBe('ukr');
+    expect(lookupShortLang('сәлем')).toBe('kaz');
+    expect(lookupShortLang('здраво')).toBe('srp');
+  });
+
+  it('G1 — perso-arabico prunado (arabe/persa) so tokens inequivocos', () => {
+    expect(lookupShortLang('مرحبا')).toBe('ara');
+    expect(lookupShortLang('شكرا')).toBe('ara');
+    expect(lookupShortLang('درود')).toBe('fas');
+    expect(lookupShortLang('خداحافظ')).toBe('fas');
+  });
+
+  it('G1 — latino curado (checo/hungaro/gales/islandes/luxemburgues/letao/eslovaco/esloveno/suaili/vietnamita)', () => {
+    expect(lookupShortLang('nazdar')).toBe('ces');
+    expect(lookupShortLang('szia')).toBe('hun');
+    expect(lookupShortLang('shwmae')).toBe('cym');
+    expect(lookupShortLang('sæl')).toBe('isl');
+    expect(lookupShortLang('moien')).toBe('ltz');
+    expect(lookupShortLang('sveiki')).toBe('lav');
+    expect(lookupShortLang('ďakujem')).toBe('slk');
+    expect(lookupShortLang('živjo')).toBe('slv');
+    expect(lookupShortLang('habari')).toBe('swh');
+    expect(lookupShortLang('xin chào')).toBe('vie');
+  });
+
+  it('G1 — frase curta iniciada por saudacao nova (regra 3)', () => {
+    expect(lookupShortLang('γεια σου φιλε')).toBe('ell');
+    expect(lookupShortLang('szia hogy vagy')).toBe('hun');
+    expect(lookupShortLang('привет как дела')).toBe('rus');
+  });
 });
 
 describe('detectLang — integra o lexico antes do franc', () => {

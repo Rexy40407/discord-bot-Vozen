@@ -58,6 +58,20 @@ const LANG_TO_PREFIX: Record<string, string> = {
   vie: 'vi_',
   cmn: 'zh_',
   zho: 'zh_',
+  // FIX (auditoria TTS — bug de alinhamento G3): 'no_NO' ja tinha autonimo em
+  // LOCALE_NAMES ("Norsk") mas NENHUM codigo de deteccao apontava para o prefixo
+  // 'no_' — texto noruegues nunca conseguia rotar para um modelo noruegues
+  // instalado, caindo sempre no fallback (tipicamente a voz inglesa, i.e. garble
+  // C1 do docs/VOICE-QUALITY.md). 'nob' (bokmal) e 'nno' (nynorsk) sao os codigos
+  // ISO 639-3 dos dois padroes escritos noruegueses; 'nor' e o codigo do
+  // macro-idioma. Mapeamos os tres pelo MESMO motivo do bloco cym/isl/ltz acima:
+  // o franc v5 pode nao emitir nenhum deles hoje (sem modelo de trigramas para
+  // noruegues), mas pickVoice/pickVoiceForLang sao independentes do franc — a
+  // rota fica correta e forward-compatible assim que a deteccao (ou outra fonte,
+  // ex. deteccao futura por locale do Discord) emitir um destes codigos.
+  nob: 'no_',
+  nno: 'no_',
+  nor: 'no_',
 };
 
 /**

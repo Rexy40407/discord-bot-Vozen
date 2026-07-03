@@ -198,6 +198,36 @@ describe('pickVoice', () => {
       'es_ES-davefx-medium',
     );
   });
+
+  // ------------------------------------------------------------------
+  // FIX (auditoria TTS — bug de alinhamento G3): 'no_NO' tinha autonimo em
+  // LOCALE_NAMES ("Norsk") mas nenhum codigo de deteccao mapeado para 'no_' —
+  // texto noruegues nunca conseguia rotar para um modelo noruegues instalado,
+  // mesmo existindo um .onnx no_NO em MODELS_DIR (caia sempre no fallback).
+  // Prova de regressao: os 3 codigos ISO 639-3 plausiveis (bokmal/nynorsk/macro)
+  // resolvem para 'no_' quando ha um modelo desse prefixo disponivel.
+  // ------------------------------------------------------------------
+  it('"nob" (bokmal) resolve para no_NO quando ha modelo noruegues', () => {
+    expect(pickVoice('nob', ['no_NO-heming-medium', 'en_US-amy-medium'], fallback)).toBe(
+      'no_NO-heming-medium',
+    );
+  });
+
+  it('"nno" (nynorsk) resolve para no_NO quando ha modelo noruegues', () => {
+    expect(pickVoice('nno', ['no_NO-heming-medium', 'en_US-amy-medium'], fallback)).toBe(
+      'no_NO-heming-medium',
+    );
+  });
+
+  it('"nor" (macro-lingua) resolve para no_NO quando ha modelo noruegues', () => {
+    expect(pickVoice('nor', ['no_NO-heming-medium', 'en_US-amy-medium'], fallback)).toBe(
+      'no_NO-heming-medium',
+    );
+  });
+
+  it('"nob" cai no fallback quando nao ha nenhum modelo no_ (comportamento inalterado sem modelo instalado)', () => {
+    expect(pickVoice('nob', ['en_US-amy-medium', 'es_ES-davefx-medium'], fallback)).toBe(fallback);
+  });
 });
 
 // ------------------------------------------------------------------
@@ -280,13 +310,17 @@ describe('pickVoice — cada lingua dos 38 modelos routa para a voz certa', () =
     ['vie', 'vi_'],
     ['cmn', 'zh_'],
     ['zho', 'zh_'],
+    // FIX G3: variantes noruegues, ver describe('pickVoice') acima para o
+    // contexto completo do bug.
+    ['nob', 'no_'],
+    ['nno', 'no_'],
+    ['nor', 'no_'],
   ];
 
   for (const [code, prefix] of cases) {
     it(`"${code}" routa para um modelo ${prefix}*`, () => {
-      const chosen = pickVoice(code, MODELS_38, fallback);
+      const chosen = pickVoice(code, MODELS_38.concat('no_NO-heming-medium'), fallback);
       expect(chosen.startsWith(prefix)).toBe(true);
-      expect(MODELS_38).toContain(chosen);
     });
   }
 

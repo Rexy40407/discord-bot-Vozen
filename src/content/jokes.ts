@@ -3,9 +3,14 @@
  *
  * Contrato:
  *  - Uma lingua por PREFIXO de locale distinto de LANG_TO_PREFIX (voiceMap.ts) —
- *    34 no total (o Noruegues 'no_' NAO entra: so existe em LOCALE_NAMES, sem
- *    modelo/prefixo em LANG_TO_PREFIX). A lista `JOKE_LANGUAGES` e a UNICA fonte de
- *    verdade (autocomplete do /joke, escolha de voz e testes de completude iteram-na).
+ *    34 no total. FIX (auditoria i18n/locale — docs/I18N-LOCALE-AUDIT.md §0.2):
+ *    o Noruegues ('no_') NAO entra em JOKE_LANGUAGES, mas NAO e por falta de
+ *    prefixo/modelo em LANG_TO_PREFIX (esse mapeamento EXISTE — 'nob'/'nno'/'nor'
+ *    -> 'no_', ver voiceMap.ts) — e por falta de um corpus de piadas nativas em
+ *    noruegues nesta lista. O comentario anterior estava desatualizado (dizia o
+ *    contrario) desde que o fix de alinhamento do voiceMap foi aplicado sem
+ *    atualizar esta nota. A lista `JOKE_LANGUAGES` e a UNICA fonte de verdade
+ *    (autocomplete do /joke, escolha de voz e testes de completude iteram-na).
  *  - `key` estavel (o `value` do autocomplete e o argumento de pickJoke), `prefix`
  *    no formato 'xx_' (para casar com availableModels.startsWith(prefix)) e `display`
  *    em INGLES (para o utilizador anglofono filtrar por substring no autocomplete).
