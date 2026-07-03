@@ -566,6 +566,9 @@ async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): Promise
     await i.editReply(t('tts.blocked', locale));
     return;
   }
+  // Silêncio de arranque: o bot só começa a falar `messageLeadMs` depois (silêncio
+  // PREPENDido ao WAV). Configurável (MESSAGE_LEAD_MS); 0 = sem espera.
+  if (deps.config.messageLeadMs > 0) req.leadSilenceMs = deps.config.messageLeadMs;
   // say() devolve false quando a fila esta no cap (nada foi enfileirado): nesse caso
   // NAO mentir "queued" — responder que estamos ocupados. So o sinal SINCRONO de
   // fila-cheia; nao esperamos pela reproducao real (fora de escopo).

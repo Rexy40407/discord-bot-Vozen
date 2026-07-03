@@ -13,7 +13,7 @@ import { createHash } from 'node:crypto';
 import type { TTSEngine, SynthRequest } from './engine';
 import { AudioCache, cacheKey } from './cache';
 import { detectSegments } from './segments';
-import { concatWavs } from './wavConcat';
+import { concatWavs, silenceWav } from './wavConcat';
 import { pickVoice } from '../language/voiceMap';
 import { log } from '../logging/logger';
 
@@ -82,7 +82,7 @@ export class MultiSegmentEngine implements TTSEngine {
         wavs.push(readFileSync(path));
       }
 
-      const combined = concatWavs(wavs, { silenceMs: SEGMENT_SILENCE_MS });
+      const combined = this.withLead(req, concatWavs(wavs, { silenceMs: SEGMENT_SILENCE_MS }));
       return this.persist(key, combined);
     } catch (err) {
       // Politica de erro: se QUALQUER segmento (ou a concatenacao) falha, NAO
@@ -118,7 +118,10 @@ export class MultiSegmentEngine implements TTSEngine {
     const SEP_FIELD = '␟';
     const SEP_SEG = '␦';
     const payload = segs.map((s) => `${s.text}${SEP_FIELD}${s.model}`).join(SEP_SEG);
-    const key = createHash('sha1').update(`${payload} ${req.speed}`, 'utf8').digest('hex');
+    // leadSilenceMs entra na chave: com/sem silêncio de arranque não podem colidir.
+    const key = createHash('sha1')
+      .update(`${payload} ${req.speed} lead${req.leadSilenceMs ?? 0}`, 'utf8')
+      .digest('hex');
     const cached = this.cache.get(key);
     if (cached) return cached;
 
@@ -128,7 +131,7 @@ export class MultiSegmentEngine implements TTSEngine {
         const path = await this.base.synth({ text: seg.text, model: seg.model, speed: req.speed });
         wavs.push(readFileSync(path));
       }
-      const combined = concatWavs(wavs, { silenceMs: SEGMENT_SILENCE_MS });
+      const combined = this.withLead(req, concatWavs(wavs, { silenceMs: SEGMENT_SILENCE_MS }));
       return this.persist(key, combined);
     } catch (err) {
       // Mesma resiliencia do caminho por-script: se qualquer parte (ou a
@@ -146,6 +149,14 @@ export class MultiSegmentEngine implements TTSEngine {
    * (que copia para o seu diretorio e devolve o caminho definitivo). Mesmo padrao
    * do PiperEngine (temp -> cache.put -> cleanup).
    */
+  /** Prepend `req.leadSilenceMs` de silêncio ao WAV combinado (no-op se 0/ausente). */
+  private withLead(req: SynthRequest, wav: Buffer): Buffer {
+    if (req.leadSilenceMs && req.leadSilenceMs > 0) {
+      return concatWavs([silenceWav(req.leadSilenceMs), wav], { silenceMs: 0 });
+    }
+    return wav;
+  }
+
   private persist(key: string, wav: Buffer): string {
     const workDir = mkdtempSync(join(tmpdir(), 'multiseg-'));
     const outPath = join(workDir, 'out.wav');

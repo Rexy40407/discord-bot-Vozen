@@ -23,7 +23,7 @@ function makeDeps(db: Database.Database, say: ReturnType<typeof vi.fn>): BotDeps
     players,
     limiters: new Map(),
     availableModels: AVAILABLE,
-    config: { defaultVoice: 'de_DE-thorsten-medium', defaultSpeed: 1.0 },
+    config: { defaultVoice: 'de_DE-thorsten-medium', defaultSpeed: 1.0, messageLeadMs: 1500 },
   } as unknown as BotDeps;
 }
 
@@ -81,6 +81,14 @@ describe('handleMessage — toggle de deteccao de lingua por-utilizador', () => 
     expect(req.model).toBe('pt_PT-tugao-medium');
     expect(req.singleVoice).toBe(true);
     expect(req.segments).toBeUndefined(); // sem segmentos mistos
+  });
+
+  it('mensagem lida leva o silêncio de arranque (req.leadSilenceMs = config.messageLeadMs)', async () => {
+    setUserVoice(db, GUILD, USER, 'pt_PT-tugao-medium', 1.0);
+    const say = vi.fn().mockResolvedValue(undefined);
+    await handleMessage(makePtMessage(), makeDeps(db, say));
+    const req = say.mock.calls[0][0];
+    expect(req.leadSilenceMs).toBe(1500);
   });
 
   it('deteccao ON (opt-in): texto PT com voz fixa inglesa => troca para voz pt_ nativa', async () => {

@@ -13,6 +13,8 @@ export interface AppConfig {
   defaultVoice: string;
   defaultSpeed: number;
   inactivityMs: number;
+  /** Silêncio (ms) PREPENDido a cada mensagem lida — o bot só começa a falar depois. */
+  messageLeadMs: number;
   queueCap: number;
   maxChars: number;
   ratePerMin: number;
@@ -115,6 +117,7 @@ export function loadConfig(): AppConfig {
     defaultVoice: strEnv('DEFAULT_VOICE', 'en_US-amy-medium'),
     defaultSpeed: numEnv('DEFAULT_SPEED', 1),
     inactivityMs: numEnv('INACTIVITY_MS', 1_500_000), // 25 min sem atividade -> sai do canal
+    messageLeadMs: numEnv('MESSAGE_LEAD_MS', 1500), // 1.5s de silêncio antes de falar a mensagem
     queueCap: numEnv('QUEUE_CAP', 20),
     maxChars: numEnv('MAX_CHARS', 300),
     ratePerMin: numEnv('RATE_PER_MIN', 5),

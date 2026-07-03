@@ -112,6 +112,10 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     const blocklist = getBlocklist(deps.db, message.guildId);
     if (isBlocked(spoken, blocklist)) return;
 
+    // Silêncio de arranque: o bot só começa a falar `messageLeadMs` depois da mensagem
+    // (silêncio PREPENDido ao WAV). Configurável (MESSAGE_LEAD_MS); 0 = sem espera.
+    if (deps.config.messageLeadMs > 0) req.leadSilenceMs = deps.config.messageLeadMs;
+
     await player.say(req);
   } catch (err) {
     log.error('[messageHandler] erro', err);
