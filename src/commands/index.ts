@@ -25,14 +25,7 @@ import {
   addPronunciation,
   removePronunciation,
 } from '../store/pronunciation';
-import {
-  getUserAbbrev,
-  addUserAbbrev,
-  removeUserAbbrev,
-  USER_ABBREV_CAP,
-} from '../store/userAbbrev';
 import { cleanText } from '../textCleaning/clean';
-import { applyUserAbbrev } from '../textCleaning/userAbbrev';
 import { isBlocked } from '../moderation/filter';
 import { prepareSpeech } from './prepareSpeech';
 import { recallLang, rememberLang } from '../language/langMemory';
@@ -223,43 +216,6 @@ export const commandDefs: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
             .setDescription('On = native voice per language; Off (default) = your one fixed voice for everything')
             .setRequired(true),
         ),
-    )
-    .addSubcommandGroup((g) =>
-      g
-        .setName('abbrev')
-        .setDescription('Manage your personal abbreviations')
-        .addSubcommand((s) =>
-          s
-            .setName('add')
-            .setDescription('Create a personal abbreviation')
-            .addStringOption((o) =>
-              o
-                .setName('term')
-                .setNameLocalizations({ 'pt-BR': 'termo' })
-                .setDescription('Short word to replace')
-                .setRequired(true),
-            )
-            .addStringOption((o) =>
-              o
-                .setName('reading')
-                .setNameLocalizations({ 'pt-BR': 'leitura' })
-                .setDescription('How it should be read out')
-                .setRequired(true),
-            ),
-        )
-        .addSubcommand((s) =>
-          s
-            .setName('remove')
-            .setDescription('Remove a personal abbreviation')
-            .addStringOption((o) =>
-              o
-                .setName('term')
-                .setNameLocalizations({ 'pt-BR': 'termo' })
-                .setDescription('Short word to remove')
-                .setRequired(true),
-            ),
-        )
-        .addSubcommand((s) => s.setName('list').setDescription('List your personal abbreviations')),
     )
     .toJSON(),
   new SlashCommandBuilder()
@@ -576,10 +532,9 @@ async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): Promise
     return;
   }
 
-  // Abreviaturas PESSOAIS do utilizador (globais, chave = i.user.id): aplicadas
-  // PRIMEIRO — precedencia pessoal > embutido. Em qualquer lingua; no-op se o user
-  // nao tiver nenhuma.
-  const personal = applyUserAbbrev(cleaned, getUserAbbrev(deps.db, i.user.id));
+  // Personalizacao de palavras e agora so via /config pronunciation (aplicada dentro
+  // do prepareSpeech). O texto limpo segue tal e qual como base.
+  const personal = cleaned;
 
   // Expansao de girias EN, pronuncia da guild e escolha de voz(es) — incl. a sintese
   // MISTURADA quando a mensagem junta lingua-base + girias EN conhecidas (a parte
@@ -772,70 +727,6 @@ async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps): Promis
 }
 
 /**
- * /voice abbrev add|remove|list — abreviaturas PESSOAIS do utilizador, GLOBAIS
- * (chave = i.user.id, sem guild). Espelha a ESTRUTURA do /config pronunciation, mas
- * SEM gate de admin (e por-utilizador, sob o /voice que nao tem gate). As respostas
- * sao i18n (default ingles). Mapeia os reason-codes do store a mensagens amigaveis.
- */
-async function handleVoiceAbbrev(
-  i: ChatInputCommandInteraction,
-  deps: BotDeps,
-  locale: string,
-): Promise<void> {
-  const sub = i.options.getSubcommand();
-  const userId = i.user.id;
-
-  // `list` nao tem opcoes: tratar ANTES de exigir o termo (getString(..., true) lancaria).
-  if (sub === 'list') {
-    const entries = getUserAbbrev(deps.db, userId);
-    const body = entries.length
-      ? entries.map((e) => `- ${e.term} -> ${e.replacement}`).join('\n')
-      : t('voice.abbrev.listEmpty', locale);
-    const header = t('voice.abbrev.listHeader', locale, {
-      count: entries.length,
-      cap: USER_ABBREV_CAP,
-    });
-    await reply(i, `${header}\n${body}`);
-    return;
-  }
-
-  const term = i.options.getString('term', true).trim();
-  if (!term) {
-    await reply(i, t('voice.abbrev.invalidTerm', locale));
-    return;
-  }
-
-  if (sub === 'add') {
-    const replacement = i.options.getString('reading', true).trim();
-    const res = addUserAbbrev(deps.db, userId, term, replacement);
-    if (res.ok) {
-      await reply(i, t('voice.abbrev.added', locale, { term: term.toLowerCase(), replacement }));
-      return;
-    }
-    // Mapa reason-code -> chave i18n (mensagens distintas e amigaveis).
-    switch (res.reason) {
-      case 'cap':
-        await reply(i, t('voice.abbrev.capReached', locale, { cap: USER_ABBREV_CAP }));
-        return;
-      case 'empty-replacement':
-        await reply(i, t('voice.abbrev.emptyReplacement', locale));
-        return;
-      case 'too-long-replacement':
-        await reply(i, t('voice.abbrev.tooLong', locale));
-        return;
-      case 'invalid-term':
-      default:
-        await reply(i, t('voice.abbrev.invalidTerm', locale));
-        return;
-    }
-  }
-
-  // remove
-  removeUserAbbrev(deps.db, userId, term);
-  await reply(i, t('voice.abbrev.removed', locale, { term: term.toLowerCase() }));
-}
-
-/**
  * /voice detection active:<bool> — liga/desliga a DETECAO AUTOMATICA de lingua para
  * o proprio utilizador (por-guild). Por-utilizador (sem gate de admin), sob o /voice.
  * ON (default): o Voxi deteta a lingua da mensagem e le nessa lingua, misturando
@@ -854,15 +745,6 @@ async function handleVoiceDetection(
 
 async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
-  // Grupo `abbrev` PRIMEIRO (mesmo padrao do handleConfig): sem isto, o subcomando
-  // `/voice abbrev list` daria getSubcommand()==='list' e cairia no ramo da lista de
-  // modelos. As abreviaturas pessoais sao POR-UTILIZADOR e GLOBAIS (sem gate de
-  // admin, sem guild) — usamos i.user.id como chave.
-  const group = i.options.getSubcommandGroup(false);
-  if (group === 'abbrev') {
-    await handleVoiceAbbrev(i, deps, locale);
-    return;
-  }
   const sub = i.options.getSubcommand();
   if (sub === 'detection') {
     await handleVoiceDetection(i, deps, locale);

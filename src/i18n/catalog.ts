@@ -624,16 +624,14 @@ export const catalog: Record<string, Entry> = {
       '• /voice preview — hear a sample of your voice\n' +
       '• /voice reset — go back to the default voice\n' +
       '• /voice detection <on/off> — native voice per language, speaker may change (off by default: one fixed voice)\n' +
-      '• /voice optout · /voice optin — turn auto-read off / on for you\n' +
-      '• /voice abbrev add|remove|list — personal slang, read your way (up to 10)',
+      '• /voice optout · /voice optin — turn auto-read off / on for you',
     pt:
       '• /voice set <model> — escolhe a tua voz · ex. /voice set pt_PT-tugao-medium\n' +
       '• /voice list — ve as vozes disponiveis\n' +
       '• /voice preview — ouve uma amostra da tua voz\n' +
       '• /voice reset — volta a voz por defeito\n' +
       '• /voice detection <on/off> — voz nativa por lingua, o locutor pode mudar (desligado por defeito: uma voz fixa)\n' +
-      '• /voice optout · /voice optin — desliga / liga a leitura automatica para ti\n' +
-      '• /voice abbrev add|remove|list — girias pessoais, lidas a tua maneira (ate 10)',
+      '• /voice optout · /voice optin — desliga / liga a leitura automatica para ti',
   },
   'help.groupFun': {
     en: 'Fun',

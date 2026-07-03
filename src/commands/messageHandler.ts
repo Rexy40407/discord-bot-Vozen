@@ -6,11 +6,9 @@ import { cleanText } from '../textCleaning/clean';
 import { getGuildConfig } from '../store/guildConfig';
 import { getBlocklist } from '../store/blocklist';
 import { getPronunciations } from '../store/pronunciation';
-import { getUserAbbrev } from '../store/userAbbrev';
 import { getUserVoice } from '../store/userVoice';
 import { isOptedOut } from '../store/optout';
 import { isDetectionOn } from '../store/langDetect';
-import { applyUserAbbrev } from '../textCleaning/userAbbrev';
 import { prepareSpeech } from './prepareSpeech';
 import { recallLang, rememberLang } from '../language/langMemory';
 import { log } from '../logging/logger';
@@ -84,10 +82,9 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // vazio/inutil). Nota: isto passa a ignorar tambem "!!!" (so-pontuacao).
     if (!/[\p{L}\p{N}]/u.test(cleaned)) return;
 
-    // Abreviaturas PESSOAIS do utilizador (globais, chave = author.id): aplicadas
-    // PRIMEIRO — precedencia pessoal > embutido. Em qualquer lingua; no-op se o user
-    // nao tiver nenhuma.
-    const personal = applyUserAbbrev(cleaned, getUserAbbrev(deps.db, message.author.id));
+    // Personalizacao de palavras e agora so via /config pronunciation (aplicada
+    // dentro do prepareSpeech). O texto limpo segue tal e qual como base.
+    const personal = cleaned;
 
     // Expansao de girias EN, pronuncia da guild e escolha de voz(es) — incl. a
     // sintese MISTURADA quando a mensagem junta lingua-base + girias EN conhecidas

@@ -217,15 +217,12 @@ describe('/help — discovery de comandos em-app', () => {
     expect(text).toMatch(/\/join/);
   });
 
-  it('refere os comandos novos antes undiscoverable: /joke, /laugh, /voice abbrev', async () => {
+  it('refere os comandos novos antes undiscoverable: /joke, /laugh', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
     expect(text).toContain('/joke');
     expect(text).toContain('/laugh');
-    // /voice abbrev e um grupo de subcomandos (type 2); helpSubcommands filtra
-    // type 1, por isso NAO aparecia antes — o /help beginner-friendly tem de o citar.
-    expect(text).toContain('/voice abbrev');
   });
 
   it('da pelo menos um exemplo concreto por seccao', async () => {
