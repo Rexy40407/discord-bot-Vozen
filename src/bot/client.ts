@@ -1,4 +1,13 @@
-import { Client, GatewayIntentBits, Partials, Events, Interaction, Message, Guild } from 'discord.js';
+import {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  Events,
+  Interaction,
+  Message,
+  Guild,
+  VoiceState,
+} from 'discord.js';
 import type { BotDeps } from './deps';
 import { handleGuildDelete } from './deps';
 import { handleInteraction, handleAutocomplete } from '../commands/index';
@@ -46,6 +55,16 @@ export function bindEvents(deps: BotDeps): void {
 
   client.on(Events.MessageCreate, (message: Message) => {
     void handleMessage(message, deps);
+  });
+
+  // VoiceStateUpdate — alguém entrou/saiu/mudou de canal de voz. Serve para a regra
+  // "o bot só sai se ficar sozinho na call 5 min" (AloneWatcher re-avalia a guild).
+  // ALTA-FREQUÊNCIA (dispara em cada mute/deafen do servidor inteiro), por isso o
+  // bail cedo: só agir onde o bot TEM player (está numa call desta guild).
+  client.on(Events.VoiceStateUpdate, (oldState: VoiceState, newState: VoiceState) => {
+    const guildId = newState.guild?.id ?? oldState.guild?.id;
+    if (!guildId || !deps.players.has(guildId)) return;
+    deps.aloneWatcher?.evaluate(guildId);
   });
 
   // guildCreate — o Voxi entrou num servidor novo. Enviamos UMA vez um welcome

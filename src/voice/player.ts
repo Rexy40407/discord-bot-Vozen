@@ -226,14 +226,12 @@ export class GuildVoicePlayer {
   }
 
   private armIdleTimer(): void {
-    this.clearIdleTimer();
-    if (this.destroyed) return;
-    this.idleTimer = setTimeout(() => {
-      if (this.destroyed) return;
-      if (!this.playing && this.queue.size() === 0) {
-        this.onIdle();
-      }
-    }, this.inactivityMs);
+    // SAÍDA-POR-INATIVIDADE REMOVIDA: o Voxi já NÃO sai só porque não há TTS. A única
+    // saída discricionária é "sozinho na call 5 min" (ver AloneWatcher, fora do
+    // player). Este método é agora um NO-OP — mantido (com os call-sites) para não
+    // remexer no lifecycle; `onIdle` continua a ser usado no caminho de
+    // desistência-de-reconexão (handleDisconnect), que NÃO é discricionário.
+    // `inactivityMs`/`idleTimer` ficam sem uso funcional (inofensivos).
   }
 
   private clearIdleTimer(): void {

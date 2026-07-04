@@ -1,12 +1,15 @@
 import { readdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
+import { getVoiceConnection } from '@discordjs/voice';
 import { loadConfig } from './config/index';
 import { log } from './logging/logger';
 import { initDb } from './store/db';
 import { AudioCache } from './tts/cache';
 import { createEngine, selectEngine } from './tts/factory';
 import { GuildVoicePlayer } from './voice/player';
+import { AloneWatcher } from './voice/aloneWatcher';
 import type { BotDeps } from './bot/deps';
+import { removePlayer } from './bot/deps';
 import { createClient, bindEvents } from './bot/client';
 import { registerCommands } from './bot/registerCommands';
 import { installSignalHandlers } from './bot/shutdown';
@@ -78,6 +81,26 @@ async function main(): Promise<void> {
     players: new Map<string, GuildVoicePlayer>(),
     limiters: new Map(),
   };
+
+  // Regra de saída: o Voxi só sai da call quando fica SOZINHO (zero humanos no seu
+  // canal) por 5 min — NÃO por inatividade de TTS. O AloneWatcher é reavaliado no
+  // handler de VoiceStateUpdate (client.ts). `humansInBotChannel` conta os não-bots
+  // do canal atual do bot (null = o bot não está em voz); `leave` é o mesmo caminho
+  // do onIdle (removePlayer -> destroy da ligação).
+  deps.aloneWatcher = new AloneWatcher({
+    humansInBotChannel: (guildId) => {
+      const guild = client.guilds.cache.get(guildId);
+      const chanId = guild?.members?.me?.voice?.channelId;
+      if (!guild || !chanId) return null;
+      const chan = guild.channels.cache.get(chanId);
+      if (!chan || !chan.isVoiceBased()) return null;
+      return chan.members.filter((m) => !m.user.bot).size;
+    },
+    leave: (guildId) => {
+      removePlayer(deps, guildId);
+      getVoiceConnection(guildId)?.destroy();
+    },
+  });
 
   bindEvents(deps);
   installSignalHandlers(deps);

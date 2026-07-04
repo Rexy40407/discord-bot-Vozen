@@ -4,6 +4,7 @@ import type { AppConfig } from '../config/index';
 import type { TTSEngine } from '../tts/engine';
 import { GuildVoicePlayer } from '../voice/player';
 import { RateLimiter } from '../moderation/rateLimiter';
+import type { AloneWatcher } from '../voice/aloneWatcher';
 import { log } from '../logging/logger';
 
 export interface BotDeps {
@@ -14,13 +15,23 @@ export interface BotDeps {
   availableModels: string[];
   players: Map<string, GuildVoicePlayer>;
   limiters: Map<string, { limiter: RateLimiter; perMin: number }>;
+  /** Vigia "sozinho na call 5 min" -> sai. Injetado no bootstrap; opcional p/ testes. */
+  aloneWatcher?: AloneWatcher;
 }
 
 export function getPlayer(deps: BotDeps, guildId: string): GuildVoicePlayer | undefined {
   return deps.players.get(guildId);
 }
 
-export function removePlayer(deps: Pick<BotDeps, 'players'>, guildId: string): void {
+export function removePlayer(
+  deps: Pick<BotDeps, 'players' | 'aloneWatcher'>,
+  guildId: string,
+): void {
+  // Cancela o timer de "sozinho" ANTES de tudo. Este e o FUNIL de todas as saidas
+  // (/leave, guildDelete, desistencia-de-reconexao, saida-por-sozinho), por isso
+  // limpar aqui garante que um timer armado nunca sobrevive para derrubar uma sessao
+  // NOVA instalada entretanto (o bug classico de timer-fantasma).
+  deps.aloneWatcher?.clear(guildId);
   const p = deps.players.get(guildId);
   if (p) {
     p.destroy();
@@ -39,7 +50,10 @@ export function removePlayer(deps: Pick<BotDeps, 'players'>, guildId: string): v
  * a chama. try/catch para NUNCA crashar o gateway. Idempotente: se a guild ja
  * nao existir, `.delete` e removePlayer sao no-ops.
  */
-export function handleGuildDelete(deps: Pick<BotDeps, 'players' | 'limiters'>, guildId: string): void {
+export function handleGuildDelete(
+  deps: Pick<BotDeps, 'players' | 'limiters' | 'aloneWatcher'>,
+  guildId: string,
+): void {
   try {
     deps.limiters.delete(guildId);
     removePlayer(deps, guildId);
