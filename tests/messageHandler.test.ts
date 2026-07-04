@@ -79,12 +79,13 @@ function makeMessage(opts: {
   mention?: boolean;
   replyToBot?: boolean;
   attachments?: Array<{ contentType?: string | null; name?: string | null }>;
+  displayName?: string;
 } = {}): any {
   const mention = opts.mention ?? false;
   const replyToBot = opts.replyToBot ?? false;
 
   return {
-    author: { bot: opts.bot ?? false, id: USER },
+    author: { bot: opts.bot ?? false, id: USER, username: opts.displayName },
     // attachments: Collection real tem .some(); um array serve para o mock.
     attachments: opts.attachments,
     guild:
@@ -97,8 +98,9 @@ function makeMessage(opts: {
     guildId: opts.guildId !== undefined ? opts.guildId : GUILD,
     channelId: opts.channelId ?? CHAN,
     content: opts.content !== undefined ? opts.content : 'ola mundo',
-    // sem role gating nos testes desta suite (ttsRoleId = null por defeito)
-    member: { roles: { cache: { has: () => true } } },
+    // sem role gating nos testes desta suite (ttsRoleId = null por defeito).
+    // displayName (nick no servidor) alimenta o xsaid; omitido -> sem nome -> sem anúncio.
+    member: { displayName: opts.displayName, roles: { cache: { has: () => true } } },
     mentions: {
       has: () => mention,
       repliedUser: replyToBot ? { id: BOT_ID } : null,
@@ -332,5 +334,49 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     await handleMessage(makeMessage({ content: 'https://exemplo.com' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].text).toBe('a link');
+  });
+
+  // ── xsaid (LIGADO por defeito): "{nome} said {mensagem}" ──────────────────
+  it('xsaid ON (default) + nome → "{nome} said {corpo}"', async () => {
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá mundo', displayName: 'Alex' }), deps);
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].text).toBe('Alex said olá mundo');
+  });
+
+  it('xsaid ON + media → "{nome} said {corpo} {media}"', async () => {
+    const deps = makeDeps(db, say);
+    await handleMessage(
+      makeMessage({
+        content: 'olha',
+        displayName: 'Alex',
+        attachments: [{ contentType: 'image/gif', name: 'x.gif' }],
+      }),
+      deps,
+    );
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].text).toBe('Alex said olha a gif');
+  });
+
+  it('xsaid ON + só um gif (sem corpo) → "{nome} said a gif"', async () => {
+    const deps = makeDeps(db, say);
+    await handleMessage(
+      makeMessage({
+        content: '',
+        displayName: 'Alex',
+        attachments: [{ contentType: 'image/gif', name: 'x.gif' }],
+      }),
+      deps,
+    );
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].text).toBe('Alex said a gif');
+  });
+
+  it('xsaid OFF → sem prefixo de nome (lê só a mensagem)', async () => {
+    setGuildConfig(db, GUILD, { xsaid: false });
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá mundo', displayName: 'Alex' }), deps);
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].text).toBe('olá mundo');
   });
 });

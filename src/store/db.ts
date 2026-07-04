@@ -27,7 +27,8 @@ export function initDb(path: string): Database.Database {
         rate_per_min   INTEGER NOT NULL DEFAULT 5,
         enabled        INTEGER NOT NULL DEFAULT 1,
         tts_role_id    TEXT,
-        locale         TEXT NOT NULL DEFAULT 'en'
+        locale         TEXT NOT NULL DEFAULT 'en',
+        xsaid          INTEGER NOT NULL DEFAULT 1
       );
 
       CREATE TABLE IF NOT EXISTS blocklist (
@@ -89,6 +90,13 @@ export function initDb(path: string): Database.Database {
     // DBs novas (o CREATE TABLE ja inclui a coluna).
     if (!cols.some((c) => c.name === 'locale')) {
       db.exec("ALTER TABLE guild_config ADD COLUMN locale TEXT NOT NULL DEFAULT 'en'");
+    }
+    // Migracao idempotente do `xsaid` (Vaga 1): anuncia "{nome} disse" antes de cada
+    // mensagem. DEFAULT 1 (LIGADO) — e o ADD COLUMN com default CONSTANTE faz o SQLite
+    // preencher TODAS as linhas existentes com 1 (backfill), por isso as guilds atuais
+    // ficam com xsaid ON, nao NULL. No-op em DBs novas (o CREATE TABLE ja tem a coluna).
+    if (!cols.some((c) => c.name === 'xsaid')) {
+      db.exec('ALTER TABLE guild_config ADD COLUMN xsaid INTEGER NOT NULL DEFAULT 1');
     }
 
     return db;

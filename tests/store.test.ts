@@ -68,6 +68,7 @@ describe('store', () => {
         enabled: true,
         ttsRoleId: null,
         locale: 'en', // default: ingles como idioma da interface
+        xsaid: true, // anunciar quem falou LIGADO por defeito
       });
     });
 
@@ -106,6 +107,7 @@ describe('store', () => {
         enabled: true,
         ttsRoleId: null,
         locale: 'en', // default: ingles como idioma da interface
+        xsaid: true, // anunciar quem falou LIGADO por defeito
       });
     });
 

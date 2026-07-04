@@ -13,6 +13,10 @@ export interface GuildConfig {
   // idioma da VOZ/TTS. Ver src/i18n. P16.1: coluna + storage; o comando de troca
   // e P16.3.
   locale: string;
+  // xsaid: anunciar "{nome} disse" antes de cada mensagem lida (quem falou). LIGADO
+  // por defeito (decisão do Diogo); desligável com /config xsaid. O anúncio é
+  // localizado na língua da voz (spokenPhrases.said).
+  xsaid: boolean;
 }
 
 const DEFAULTS: GuildConfig = {
@@ -26,6 +30,7 @@ const DEFAULTS: GuildConfig = {
   enabled: true,
   ttsRoleId: null,
   locale: DEFAULT_LOCALE, // 'en' — ingles como idioma da interface por defeito
+  xsaid: true, // anunciar "{nome} disse" LIGADO por defeito
 };
 
 interface GuildConfigRow {
@@ -38,6 +43,7 @@ interface GuildConfigRow {
   enabled: number;
   tts_role_id: string | null;
   locale: string | null;
+  xsaid: number | null;
 }
 
 export function getGuildConfig(db: Database.Database, guildId: string): GuildConfig {
@@ -56,6 +62,8 @@ export function getGuildConfig(db: Database.Database, guildId: string): GuildCon
     // Belt-and-suspenders: a coluna e NOT NULL DEFAULT 'en', mas se por algum
     // motivo vier null (ex. migracao antiga) caimos no default.
     locale: row.locale ?? DEFAULT_LOCALE,
+    // NOT NULL DEFAULT 1; null defensivo (DB antiga) => default ON.
+    xsaid: row.xsaid == null ? DEFAULTS.xsaid : row.xsaid === 1,
   };
 }
 
@@ -72,8 +80,8 @@ export function setGuildConfig(
   const next: GuildConfig = { ...current, ...patch };
   db.prepare(
     `INSERT INTO guild_config
-       (guild_id, tts_channel_id, autoread, default_voice, max_chars, rate_per_min, enabled, tts_role_id, locale)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (guild_id, tts_channel_id, autoread, default_voice, max_chars, rate_per_min, enabled, tts_role_id, locale, xsaid)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(guild_id) DO UPDATE SET
        tts_channel_id = excluded.tts_channel_id,
        autoread       = excluded.autoread,
@@ -82,7 +90,8 @@ export function setGuildConfig(
        rate_per_min   = excluded.rate_per_min,
        enabled        = excluded.enabled,
        tts_role_id    = excluded.tts_role_id,
-       locale         = excluded.locale`,
+       locale         = excluded.locale,
+       xsaid          = excluded.xsaid`,
   ).run(
     guildId,
     next.ttsChannelId,
@@ -93,5 +102,6 @@ export function setGuildConfig(
     next.enabled ? 1 : 0,
     next.ttsRoleId,
     next.locale,
+    next.xsaid ? 1 : 0,
   );
 }

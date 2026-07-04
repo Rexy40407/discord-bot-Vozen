@@ -327,6 +327,14 @@ export const catalog: Record<string, Entry> = {
     en: 'TTS is now **off** for this server.',
     pt: 'TTS **desativado** neste servidor.',
   },
+  'config.xsaidOn': {
+    en: 'Voxi will now announce **who spoke** before each message (e.g. "Alex said hi"). Turn off with `/config xsaid active:false`.',
+    pt: 'O Voxi vai anunciar **quem falou** antes de cada mensagem (ex.: "Alex disse olá"). Desliga com `/config xsaid active:false`.',
+  },
+  'config.xsaidOff': {
+    en: 'Voxi will **no longer** announce who spoke — it reads only the message.',
+    pt: 'O Voxi **deixou de** anunciar quem falou — lê só a mensagem.',
+  },
   // Sucesso do /config default-voice: lidera com o NOME AMIGAVEL ({name}) e mantem o
   // id cru ({model}) subtil/copy-pasteavel. Usada quando o utilizador nao tem voz
   // propria, por isso e a voz que os membros vao ouvir por defeito.
@@ -358,6 +366,10 @@ export const catalog: Record<string, Entry> = {
   'config.showEnabled': {
     en: 'Enabled: {value}',
     pt: 'Ativo: {value}',
+  },
+  'config.showXsaid': {
+    en: 'Announce speaker (xsaid): {value}',
+    pt: 'Anunciar quem falou (xsaid): {value}',
   },
   'config.showVoice': {
     en: 'Default voice: {value}',

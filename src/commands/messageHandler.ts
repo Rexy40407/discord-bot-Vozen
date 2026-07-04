@@ -125,6 +125,11 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       autoDetect: auto,
       recentLang,
       media,
+      // xsaid: anuncia "{nome} disse …" antes da mensagem (localizado na voz). O nome
+      // é o displayName do autor no servidor (apelido/nick), com fallback ao username.
+      announceSpeaker: cfg.xsaid
+        ? (message.member?.displayName ?? message.author.username)
+        : undefined,
     });
     if (learnedLang) rememberLang(message.guildId, message.author.id, learnedLang);
 

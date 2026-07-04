@@ -38,6 +38,12 @@ export interface PrepareSpeechInput {
    * já corretas) e NÃO entra na deteção de língua (esta corre só sobre `personal`).
    */
   media?: MediaItem[];
+  /**
+   * Nome do autor a anunciar ANTES da mensagem — o "xsaid": "{nome} disse …". Vazio/
+   * undefined = sem anúncio (xsaid OFF ou não aplicável, ex. /tts). O "disse" é
+   * localizado na língua da voz (spokenPhrases.said); o nome sai tal e qual.
+   */
+  announceSpeaker?: string;
 }
 
 export interface PreparedSpeech {
@@ -65,27 +71,36 @@ export interface PreparedSpeech {
  * PURA: sem efeitos secundarios.
  */
 export function prepareSpeech(input: PrepareSpeechInput): PreparedSpeech {
-  return decorateWithMedia(prepareSpeechCore(input), input.media);
+  return decorateAnnouncements(prepareSpeechCore(input), input);
 }
 
 /**
- * Acrescenta o anúncio de media ao fim da fala já resolvida, localizado na língua da
- * VOZ-BASE (`req.model`) — a mesma voz que fala a mensagem diz o anúncio. No caminho
- * MISTURADO (com `segments`) acrescenta um segmento extra na voz-base, senão o anúncio
- * não seria falado (o motor usa `segments`, não `text`). `text` leva sempre o anúncio
- * (fallback single-voice + base da cache). Corpo vazio (só media) -> fala só o anúncio.
- * PURA. Sem media -> devolve o resultado intacto.
+ * Envolve a fala já resolvida com os ANÚNCIOS, ambos localizados na língua da VOZ-BASE
+ * (`req.model`) — a mesma voz que fala a mensagem di-los:
+ *   - PREFIXO xsaid: "{nome} {said}" (quem falou), quando `announceSpeaker` presente.
+ *   - SUFIXO media:  "…um gif" no fim, quando há `media`.
+ * Resultado: "{nome} disse {corpo} {media}". No caminho MISTURADO (com `segments`) os
+ * anúncios entram como segmentos extra na voz-base — senão não seriam falados (o motor
+ * usa `segments`, não `text`). `text` leva sempre tudo (fallback single-voice + base da
+ * cache). Corpo vazio (ex. só um gif) -> "{nome} disse um gif". PURA. Sem anúncios ->
+ * devolve o resultado intacto.
  */
-function decorateWithMedia(result: PreparedSpeech, media: MediaItem[] | undefined): PreparedSpeech {
-  if (!media || media.length === 0) return result;
+function decorateAnnouncements(result: PreparedSpeech, input: PrepareSpeechInput): PreparedSpeech {
   const phrases = spokenPhrasesFor(langKeyOfModel(result.req.model));
-  const suffix = buildMediaSuffix(media, phrases);
-  if (!suffix) return result;
+  const name = input.announceSpeaker?.trim();
+  const prefix = name ? `${name} ${phrases.said}` : '';
+  const suffix = input.media && input.media.length > 0 ? buildMediaSuffix(input.media, phrases) : '';
+  if (!prefix && !suffix) return result;
 
-  const spoken = result.spoken ? `${result.spoken} ${suffix}` : suffix;
+  const spoken = [prefix, result.spoken, suffix].filter((s) => s && s.length > 0).join(' ');
   const req: SynthRequest = { ...result.req, text: spoken };
   if (req.segments && req.segments.length > 0) {
-    req.segments = [...req.segments, { text: suffix, model: result.req.model }];
+    const model = result.req.model;
+    req.segments = [
+      ...(prefix ? [{ text: prefix, model }] : []),
+      ...req.segments,
+      ...(suffix ? [{ text: suffix, model }] : []),
+    ];
   }
   return { ...result, spoken, req };
 }

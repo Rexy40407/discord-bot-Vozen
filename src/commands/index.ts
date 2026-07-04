@@ -297,6 +297,18 @@ export const commandDefs: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
     )
     .addSubcommand((s) =>
       s
+        .setName('xsaid')
+        .setDescription('Announce who spoke before each message ("{name} said …")')
+        .addBooleanOption((o) =>
+          o
+            .setName('active')
+            .setNameLocalizations({ 'pt-BR': 'ativo' })
+            .setDescription('on/off')
+            .setRequired(true),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
         .setName('default-voice')
         .setDescription("Set the server's default voice (used when the user has no voice of their own)")
         .addStringOption((o) => o.setName('model').setDescription('Piper model').setRequired(true).setAutocomplete(true)),
@@ -948,6 +960,11 @@ async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps): Prom
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { enabled: on });
     await reply(i, on ? t('config.enabledOn', locale) : t('config.enabledOff', locale));
+  } else if (sub === 'xsaid') {
+    // Anuncio "{nome} disse" antes de cada mensagem (quem falou). LIGADO por defeito.
+    const on = i.options.getBoolean('active', true);
+    setGuildConfig(deps.db, i.guildId!, { xsaid: on });
+    await reply(i, on ? t('config.xsaidOn', locale) : t('config.xsaidOff', locale));
   } else if (sub === 'default-voice') {
     // Valida contra os modelos disponiveis, tal como /voice set.
     const model = i.options.getString('model', true);
@@ -992,6 +1009,7 @@ async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps): Prom
       t('config.showAutoread', locale, { value: cfg.autoread ? on : off }),
       t('config.showRole', locale, { value: roleStr }),
       t('config.showEnabled', locale, { value: cfg.enabled ? on : off }),
+      t('config.showXsaid', locale, { value: cfg.xsaid ? on : off }),
       t('config.showVoice', locale, { value: voiceStr }),
       t('config.showMaxChars', locale, { value: cfg.maxChars }),
       t('config.showRateLimit', locale, { value: cfg.ratePerMin }),

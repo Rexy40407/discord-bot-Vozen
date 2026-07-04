@@ -56,6 +56,55 @@ describe('prepareSpeech — MISTURADO (voz por-segmento)', () => {
   });
 });
 
+describe('prepareSpeech — anúncios (xsaid + media) localizados na voz', () => {
+  it('xsaid: prefixo "{nome} said" na língua da voz (single voice EN)', () => {
+    const { req, spoken } = prepareSpeech({
+      ...BASE,
+      autoDetect: false, // voz fixa EN (amy)
+      personal: 'hello there',
+      announceSpeaker: 'Alex',
+    });
+    expect(spoken).toBe('Alex said hello there');
+    expect(req.text).toBe('Alex said hello there');
+  });
+
+  it('xsaid localizado: voz PT -> "disse"', () => {
+    const { spoken } = prepareSpeech({
+      ...BASE,
+      personal: 'isto e uma frase longa em portugues para detetar a lingua de forma fiavel',
+      announceSpeaker: 'Alex',
+    });
+    expect(spoken.startsWith('Alex disse ')).toBe(true);
+  });
+
+  it('media: sufixo no fim, corpo vazio -> "{nome} said a gif"', () => {
+    const { spoken } = prepareSpeech({
+      ...BASE,
+      autoDetect: false,
+      personal: '',
+      announceSpeaker: 'Alex',
+      media: [{ kind: 'gif' }],
+    });
+    expect(spoken).toBe('Alex said a gif');
+  });
+
+  it('MISTURADO: xsaid e media entram como segmentos extra na voz-base', () => {
+    const { req } = prepareSpeech({
+      ...BASE,
+      personal: 'isto esta a funcionar muito bem hoje btw',
+      announceSpeaker: 'Alex',
+      media: [{ kind: 'link' }],
+    });
+    expect(req.segments).toHaveLength(4); // [xsaid, base pt, giria en, media]
+    expect(req.segments![0].text).toBe('Alex disse'); // voz-base é pt_ -> "disse"
+    expect(req.segments![0].model.startsWith('pt_')).toBe(true);
+    expect(req.segments![3].text).toBe('um link'); // pt_ -> "um link"
+    expect(req.segments![3].model.startsWith('pt_')).toBe(true);
+    // req.text carrega tudo (fallback single-voice + base da cache).
+    expect(req.text).toBe('Alex disse isto esta a funcionar muito bem hoje by the way um link');
+  });
+});
+
 describe('prepareSpeech — /pronunciation sobrepoe a lista de girias embutida', () => {
   it('OFF: pronuncia btw->batata GANHA a giria (nao "by the way")', () => {
     const { spoken, req } = prepareSpeech({
