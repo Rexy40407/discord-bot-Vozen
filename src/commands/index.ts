@@ -457,6 +457,14 @@ export const commandDefs: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
     .setDescription('Bot statistics (admin)')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .toJSON(),
+  new SlashCommandBuilder()
+    .setName('uptime')
+    .setDescription('How long Voxi has been online')
+    .toJSON(),
+  new SlashCommandBuilder()
+    .setName('botstats')
+    .setDescription('Public Voxi stats: servers, voice sessions, uptime')
+    .toJSON(),
 ];
 
 async function reply(i: ChatInputCommandInteraction, content: string): Promise<void> {
@@ -1246,6 +1254,42 @@ async function handleStats(i: ChatInputCommandInteraction, deps: BotDeps): Promi
 }
 
 /**
+ * Formata uma duração em segundos como "2d 3h 15m" (omite unidades a zero à cabeça;
+ * < 1 min -> "<1m"). Universal (letras d/h/m), a frase à volta é que é localizada. PURA.
+ */
+export function formatDuration(totalSec: number): string {
+  const s = Math.max(0, Math.floor(totalSec));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const parts: string[] = [];
+  if (d) parts.push(`${d}d`);
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  return parts.length ? parts.join(' ') : '<1m';
+}
+
+/** /uptime — PÚBLICO: há quanto tempo o Voxi está online. */
+async function handleUptime(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+  const locale = localeForUser(deps, i);
+  await reply(i, t('uptime.text', locale, { uptime: formatDuration(process.uptime()) }));
+}
+
+/** /botstats — PÚBLICO: números de confiança (servidores, sessões de voz, uptime). */
+async function handleBotstats(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+  const locale = localeForUser(deps, i);
+  const snap = metrics.snapshot();
+  const lines = [
+    t('botstats.title', locale),
+    t('botstats.servers', locale, { value: deps.client.guilds.cache.size }),
+    t('botstats.voiceSessions', locale, { value: deps.players.size }),
+    t('botstats.messagesSpoken', locale, { value: snap.messagesSpoken }),
+    t('botstats.uptime', locale, { value: formatDuration(process.uptime()) }),
+  ];
+  await reply(i, lines.join('\n'));
+}
+
+/**
  * /invite — devolve o URL de convite OAuth2 do bot, construido a partir do
  * CLIENT_ID da config. Gatilho do "loop viral".
  *
@@ -1469,6 +1513,10 @@ export async function handleInteraction(i: ChatInputCommandInteraction, deps: Bo
         return await handleSetup(i, deps);
       case 'stats':
         return await handleStats(i, deps);
+      case 'uptime':
+        return await handleUptime(i, deps);
+      case 'botstats':
+        return await handleBotstats(i, deps);
       case 'invite':
         return await handleInvite(i, deps);
       case 'vote':

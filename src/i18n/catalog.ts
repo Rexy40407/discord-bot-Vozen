@@ -604,6 +604,32 @@ export const catalog: Record<string, Entry> = {
     pt: 'Uptime: {value}s',
   },
 
+  // ── /uptime · /botstats (públicos) ────────────────────────────────────────
+  'uptime.text': {
+    en: '🟢 Voxi has been online for **{uptime}**.',
+    pt: '🟢 O Voxi está online há **{uptime}**.',
+  },
+  'botstats.title': {
+    en: '📊 **Voxi — stats**',
+    pt: '📊 **Voxi — estatísticas**',
+  },
+  'botstats.servers': {
+    en: 'Servers: **{value}**',
+    pt: 'Servidores: **{value}**',
+  },
+  'botstats.voiceSessions': {
+    en: 'Voice sessions now: **{value}**',
+    pt: 'Sessões de voz agora: **{value}**',
+  },
+  'botstats.messagesSpoken': {
+    en: 'Messages spoken: **{value}**',
+    pt: 'Mensagens lidas: **{value}**',
+  },
+  'botstats.uptime': {
+    en: 'Uptime: **{value}**',
+    pt: 'Online há: **{value}**',
+  },
+
   // ── /invite · /vote ───────────────────────────────────────────────────────
   'invite.noClientId': {
     en: "Voxi's invite link isn't set up yet (CLIENT_ID is missing). Let the bot admin know.",
