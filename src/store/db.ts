@@ -75,6 +75,16 @@ export function initDb(path: string): Database.Database {
         user_id  TEXT NOT NULL,
         PRIMARY KEY (guild_id, user_id)
       );
+
+      -- Apelido FONETICO por-(guild,user) para o xsaid: como a pessoa quer ser CHAMADA
+      -- em voz alta (nomes com emojis/simbolos sao ilegiveis). Sem linha => usa o
+      -- displayName sanitizado. Ver /voice nickname.
+      CREATE TABLE IF NOT EXISTS user_nickname (
+        guild_id TEXT NOT NULL,
+        user_id  TEXT NOT NULL,
+        nickname TEXT NOT NULL,
+        PRIMARY KEY (guild_id, user_id)
+      );
     `);
 
     // Migracao idempotente para DBs criadas antes da coluna tts_role_id existir.

@@ -143,6 +143,18 @@ export const catalog: Record<string, Entry> = {
     en: "You'll be read automatically again.",
     pt: 'Voltas a ser lido automaticamente.',
   },
+  'voice.nickname.set': {
+    en: '✅ Voxi will now call you **{name}** out loud.',
+    pt: '✅ O Voxi vai chamar-te **{name}** em voz alta.',
+  },
+  'voice.nickname.cleared': {
+    en: '✅ Spoken nickname cleared — Voxi will use your server name.',
+    pt: '✅ Apelido falado removido — o Voxi vai usar o teu nome do servidor.',
+  },
+  'voice.nickname.invalid': {
+    en: "That name has nothing readable to say out loud. Try letters or numbers.",
+    pt: 'Esse nome não tem nada legível para dizer em voz alta. Usa letras ou números.',
+  },
   // /voice detection — liga/desliga a deteccao AUTOMATICA de lingua para o proprio.
   // DEFAULT = OFF (voz UNICA fixa p/ todas as linguas — parece a mesma pessoa). ON e
   // opt-in: voz nativa por lingua, MAS pode trocar de locutor. A mensagem OFF aponta

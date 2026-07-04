@@ -5,6 +5,8 @@ import { isBlocked } from '../moderation/filter';
 import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../textCleaning/clean';
 import { mediaFromAttachments, mediaFromStickers } from '../language/attachmentMedia';
 import type { MediaItem } from '../language/spokenPhrases';
+import { sanitizeSpeakerName } from '../language/speakerName';
+import { getNickname } from '../store/nickname';
 import { getGuildConfig } from '../store/guildConfig';
 import { getBlocklist } from '../store/blocklist';
 import { getPronunciations } from '../store/pronunciation';
@@ -122,6 +124,15 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // (sem await entre elas), por isso não há corrida (evita o bug #99 do concorrente).
     const lastSpeaker = deps.lastSpeaker?.get(message.guildId);
     const announce = cfg.xsaid && lastSpeaker !== message.author.id;
+    // Nome a anunciar: apelido fonético (/voice nickname), senão o displayName do
+    // servidor, senão o username — sempre SANITIZADO p/ TTS (tira emojis/símbolos).
+    // Se nada sobra legível, `speakerName` fica '' e o xsaid não anuncia (sem nome).
+    const rawName =
+      getNickname(deps.db, message.guildId, message.author.id) ??
+      message.member?.displayName ??
+      message.author.username ??
+      '';
+    const speakerName = sanitizeSpeakerName(rawName);
     const { spoken, req, learnedLang } = prepareSpeech({
       personal,
       pronunciations: getPronunciations(deps.db, message.guildId),
@@ -133,10 +144,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       autoDetect: auto,
       recentLang,
       media,
-      // O nome é o displayName do autor no servidor (apelido/nick), fallback ao username.
-      announceSpeaker: announce
-        ? (message.member?.displayName ?? message.author.username)
-        : undefined,
+      announceSpeaker: announce ? speakerName : undefined,
     });
     if (learnedLang) rememberLang(message.guildId, message.author.id, learnedLang);
 

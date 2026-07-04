@@ -19,6 +19,8 @@ import { getUserVoice, setUserVoice, resetUserVoice } from '../store/userVoice';
 import { getGuildConfig, setGuildConfig, resetGuildConfig } from '../store/guildConfig';
 import { addBlockword, removeBlockword, getBlocklist } from '../store/blocklist';
 import { setOptOut, setOptIn } from '../store/optout';
+import { setNickname, clearNickname } from '../store/nickname';
+import { sanitizeSpeakerName } from '../language/speakerName';
 import { isDetectionOn, setDetection } from '../store/langDetect';
 import {
   getPronunciations,
@@ -215,6 +217,19 @@ export const commandDefs: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
             .setNameLocalizations({ 'pt-BR': 'ativo' })
             .setDescription('On = native voice per language; Off (default) = your one fixed voice for everything')
             .setRequired(true),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName('nickname')
+        .setDescription('How Voxi should call you out loud (xsaid). Leave empty to clear.')
+        .addStringOption((o) =>
+          o
+            .setName('name')
+            .setNameLocalizations({ 'pt-BR': 'nome' })
+            .setDescription('Spoken name (empty = use your server name)')
+            .setRequired(false)
+            .setMaxLength(40),
         ),
     )
     .toJSON(),
@@ -812,6 +827,22 @@ async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   } else if (sub === 'optin') {
     setOptIn(deps.db, i.guildId!, i.user.id);
     await reply(i, t('voice.optin', locale));
+  } else if (sub === 'nickname') {
+    // Apelido FONETICO para o xsaid. Vazio/omitido -> limpa (volta ao nome do servidor).
+    const raw = i.options.getString('name');
+    if (raw === null || raw.trim() === '') {
+      clearNickname(deps.db, i.guildId!, i.user.id);
+      await reply(i, t('voice.nickname.cleared', locale));
+    } else {
+      // Guarda JA sanitizado (tira emojis/simbolos); se nada legivel sobra, recusa.
+      const clean = sanitizeSpeakerName(raw);
+      if (!clean) {
+        await reply(i, t('voice.nickname.invalid', locale));
+        return;
+      }
+      setNickname(deps.db, i.guildId!, i.user.id, clean);
+      await reply(i, t('voice.nickname.set', locale, { name: clean }));
+    }
   } else if (sub === 'preview') {
     const SAMPLE = t('preview.sample', locale);
     const explicitModel = i.options.getString('model');

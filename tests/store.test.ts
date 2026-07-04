@@ -14,6 +14,7 @@ import {
   removePronunciation,
 } from '../src/store/pronunciation';
 import { isOptedOut, setOptOut, setOptIn } from '../src/store/optout';
+import { getNickname, setNickname, clearNickname } from '../src/store/nickname';
 
 const G = 'guild-1';
 const U = 'user-1';
@@ -300,6 +301,27 @@ describe('store', () => {
       expect(cfg.autoread).toBe(true);
       expect(cfg.maxChars).toBe(400);
       expect(cfg.defaultVoice).toBe('pt_PT-tugão-medium');
+    });
+  });
+
+  describe('nickname (xsaid)', () => {
+    it('sem apelido -> null', () => {
+      expect(getNickname(db, G, 'u1')).toBeNull();
+    });
+
+    it('persiste, sobrescreve e limpa', () => {
+      setNickname(db, G, 'u1', 'Zé');
+      expect(getNickname(db, G, 'u1')).toBe('Zé');
+      setNickname(db, G, 'u1', 'Zezinho');
+      expect(getNickname(db, G, 'u1')).toBe('Zezinho');
+      clearNickname(db, G, 'u1');
+      expect(getNickname(db, G, 'u1')).toBeNull();
+    });
+
+    it('é por-(guild,user)', () => {
+      setNickname(db, G, 'u1', 'A');
+      expect(getNickname(db, 'outra-guild', 'u1')).toBeNull();
+      expect(getNickname(db, G, 'u2')).toBeNull();
     });
   });
 });

@@ -25,6 +25,7 @@ import type { BotDeps } from '../src/bot/deps';
 import { initDb } from '../src/store/db';
 import { setGuildConfig } from '../src/store/guildConfig';
 import { addBlockword } from '../src/store/blocklist';
+import { setNickname } from '../src/store/nickname';
 
 const GUILD = 'g-main';
 const CHAN = 'chan-autoread';
@@ -410,5 +411,25 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('Alex said um');
     expect(say.mock.calls[1][0].text).toBe('Bea said dois');
     expect(say.mock.calls[2][0].text).toBe('Alex said tres'); // A voltou depois de B
+  });
+
+  // ── xsaid: nome sanitizado + apelido (/voice nickname) ────────────────────
+  it('nome com emojis/símbolos é sanitizado no anúncio', async () => {
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá', displayName: '🔥xX_Alex_Xx🔥' }), deps);
+    expect(say.mock.calls[0][0].text).toBe('xX Alex Xx said olá');
+  });
+
+  it('apelido (/voice nickname) tem prioridade sobre o displayName', async () => {
+    setNickname(db, GUILD, USER, 'Zé');
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá', displayName: 'ComplicatedName123' }), deps);
+    expect(say.mock.calls[0][0].text).toBe('Zé said olá');
+  });
+
+  it('nome 100% emojis (sem apelido) → sem prefixo (nada legível)', async () => {
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá', displayName: '🔥💯✨' }), deps);
+    expect(say.mock.calls[0][0].text).toBe('olá');
   });
 });
