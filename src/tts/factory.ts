@@ -4,6 +4,7 @@ import type { TTSEngine } from './engine';
 import { AudioCache } from './cache';
 import { PiperEngine } from './piper';
 import { NeuralEngine } from './neural';
+import { GTTSEngine } from './gtts';
 import { MultiSegmentEngine } from './multiSegment';
 
 /**
@@ -21,6 +22,11 @@ export function createEngine(config: AppConfig, cache: AudioCache): TTSEngine {
       throw new Error('TTS_ENGINE=neural requer OPENAI_API_KEY');
     }
     return new NeuralEngine(config.openaiApiKey, cache.withNamespace('neural'));
+  }
+  if (config.ttsEngine === 'gtts') {
+    // Google Translate TTS (grátis, sem API key, multilingue). Opt-in via
+    // TTS_ENGINE=gtts. Endpoint não-oficial — pode ser limitado pela Google.
+    return new GTTSEngine(cache.withNamespace('gtts'));
   }
   return new PiperEngine(config.piperPath, config.modelsDir, cache.withNamespace('piper'), {
     // Params de qualidade globais vindos da config (envs NOISE_*/SENTENCE_SILENCE).
