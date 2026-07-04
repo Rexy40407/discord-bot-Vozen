@@ -17,6 +17,13 @@ export interface BotDeps {
   limiters: Map<string, { limiter: RateLimiter; perMin: number }>;
   /** Vigia "sozinho na call 5 min" -> sai. Injetado no bootstrap; opcional p/ testes. */
   aloneWatcher?: AloneWatcher;
+  /**
+   * Último autor que o Voxi leu em VOZ ALTA, por guild (guildId -> userId). Serve ao
+   * xsaid para NÃO repetir "{nome} disse" em mensagens SEGUIDAS do mesmo autor. Limpo
+   * quando o bot sai (removePlayer) para que ao voltar volte a anunciar. Opcional: sem
+   * o mapa (ex. testes antigos) não há supressão (anuncia sempre).
+   */
+  lastSpeaker?: Map<string, string>;
 }
 
 export function getPlayer(deps: BotDeps, guildId: string): GuildVoicePlayer | undefined {
@@ -24,7 +31,7 @@ export function getPlayer(deps: BotDeps, guildId: string): GuildVoicePlayer | un
 }
 
 export function removePlayer(
-  deps: Pick<BotDeps, 'players' | 'aloneWatcher'>,
+  deps: Pick<BotDeps, 'players' | 'aloneWatcher' | 'lastSpeaker'>,
   guildId: string,
 ): void {
   // Cancela o timer de "sozinho" ANTES de tudo. Este e o FUNIL de todas as saidas
@@ -32,6 +39,8 @@ export function removePlayer(
   // limpar aqui garante que um timer armado nunca sobrevive para derrubar uma sessao
   // NOVA instalada entretanto (o bug classico de timer-fantasma).
   deps.aloneWatcher?.clear(guildId);
+  // Esquece o último locutor: ao voltar à call, o xsaid volta a anunciar quem falou.
+  deps.lastSpeaker?.delete(guildId);
   const p = deps.players.get(guildId);
   if (p) {
     p.destroy();

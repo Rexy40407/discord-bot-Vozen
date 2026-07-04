@@ -80,6 +80,8 @@ async function main(): Promise<void> {
     availableModels,
     players: new Map<string, GuildVoicePlayer>(),
     limiters: new Map(),
+    // xsaid: último autor lido por guild, para não repetir "{nome} disse" em seguidas.
+    lastSpeaker: new Map<string, string>(),
   };
 
   // Regra de saída: o Voxi só sai da call quando fica SOZINHO (zero humanos no seu

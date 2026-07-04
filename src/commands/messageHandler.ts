@@ -116,6 +116,12 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // Memoria de lingua (T3.2): recorda a lingua recente do user para desambiguar
     // fragmentos curtos; memoriza a deteccao confiante desta mensagem.
     const recentLang = recallLang(message.guildId, message.author.id);
+    // xsaid: anuncia "{nome} disse …" antes da mensagem — MAS não repete o nome quando o
+    // MESMO autor manda mensagens SEGUIDAS (compara com o último locutor lido nesta guild).
+    // A leitura de `lastSpeaker` e a escrita (mais abaixo) ficam no mesmo bloco síncrono
+    // (sem await entre elas), por isso não há corrida (evita o bug #99 do concorrente).
+    const lastSpeaker = deps.lastSpeaker?.get(message.guildId);
+    const announce = cfg.xsaid && lastSpeaker !== message.author.id;
     const { spoken, req, learnedLang } = prepareSpeech({
       personal,
       pronunciations: getPronunciations(deps.db, message.guildId),
@@ -127,9 +133,8 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       autoDetect: auto,
       recentLang,
       media,
-      // xsaid: anuncia "{nome} disse …" antes da mensagem (localizado na voz). O nome
-      // é o displayName do autor no servidor (apelido/nick), com fallback ao username.
-      announceSpeaker: cfg.xsaid
+      // O nome é o displayName do autor no servidor (apelido/nick), fallback ao username.
+      announceSpeaker: announce
         ? (message.member?.displayName ?? message.author.username)
         : undefined,
     });
@@ -138,6 +143,10 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // blocklist antes de sintetizar (sobre o texto REALMENTE falado)
     const blocklist = getBlocklist(deps.db, message.guildId);
     if (isBlocked(spoken, blocklist)) return;
+
+    // Passou tudo: esta mensagem VAI ser lida. Regista o autor como último locutor
+    // (só agora — uma mensagem bloqueada/ignorada não conta para a supressão do xsaid).
+    deps.lastSpeaker?.set(message.guildId, message.author.id);
 
     // Silêncio de arranque: o bot só começa a falar `messageLeadMs` depois da mensagem
     // (silêncio PREPENDido ao WAV). Configurável (MESSAGE_LEAD_MS); 0 = sem espera.

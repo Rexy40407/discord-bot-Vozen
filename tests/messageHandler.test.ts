@@ -46,6 +46,9 @@ function makeDeps(db: Database.Database, say: ReturnType<typeof vi.fn>): BotDeps
     db,
     players,
     limiters: new Map(),
+    // xsaid: mapa do último locutor (partilhado entre chamadas do mesmo deps) — sem ele
+    // não há supressão de consecutivos.
+    lastSpeaker: new Map<string, string>(),
     availableModels: ['en_US-amy-medium'],
     config: { defaultVoice: 'en_US-amy-medium', defaultSpeed: 1.0 },
   } as unknown as BotDeps;
@@ -80,12 +83,13 @@ function makeMessage(opts: {
   replyToBot?: boolean;
   attachments?: Array<{ contentType?: string | null; name?: string | null }>;
   displayName?: string;
+  authorId?: string;
 } = {}): any {
   const mention = opts.mention ?? false;
   const replyToBot = opts.replyToBot ?? false;
 
   return {
-    author: { bot: opts.bot ?? false, id: USER, username: opts.displayName },
+    author: { bot: opts.bot ?? false, id: opts.authorId ?? USER, username: opts.displayName },
     // attachments: Collection real tem .some(); um array serve para o mock.
     attachments: opts.attachments,
     guild:
@@ -386,5 +390,25 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     await handleMessage(makeMessage({ content: 'olha ||o segredo|| aqui' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].text).toBe('olha aqui spoiler');
+  });
+
+  // ── xsaid: não repetir o nome em mensagens seguidas do mesmo autor ────────
+  it('mesmo autor 2x seguidas → só a 1.ª leva "{nome} said"', async () => {
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'primeira', displayName: 'Alex' }), deps);
+    await handleMessage(makeMessage({ content: 'segunda', displayName: 'Alex' }), deps);
+    expect(say).toHaveBeenCalledTimes(2);
+    expect(say.mock.calls[0][0].text).toBe('Alex said primeira');
+    expect(say.mock.calls[1][0].text).toBe('segunda'); // sem prefixo
+  });
+
+  it('autores alternados (A, B, A) → todos anunciam', async () => {
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'um', displayName: 'Alex', authorId: 'A' }), deps);
+    await handleMessage(makeMessage({ content: 'dois', displayName: 'Bea', authorId: 'B' }), deps);
+    await handleMessage(makeMessage({ content: 'tres', displayName: 'Alex', authorId: 'A' }), deps);
+    expect(say.mock.calls[0][0].text).toBe('Alex said um');
+    expect(say.mock.calls[1][0].text).toBe('Bea said dois');
+    expect(say.mock.calls[2][0].text).toBe('Alex said tres'); // A voltou depois de B
   });
 });
