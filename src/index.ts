@@ -61,6 +61,7 @@ async function main(): Promise<void> {
   // byte-a-byte o de hoje.
   const baseEngine = createEngine(config, cache);
   const engine = selectEngine(baseEngine, config, availableModels, cache);
+  log.info(`[index] motor TTS ativo: ${config.ttsEngine}`);
   if (config.multilingualSegments) {
     log.warn(
       '[index] MULTILINGUAL_SEGMENTS ON — sintese multi-lingua por-segmento EXPERIMENTAL ativa.',
