@@ -604,6 +604,12 @@ export const catalog: Record<string, Entry> = {
     pt: 'Uptime: {value}s',
   },
 
+  // ── context-menu "Speak" ──────────────────────────────────────────────────
+  'speak.emptyMessage': {
+    en: "That message has no text to read out loud.",
+    pt: 'Essa mensagem não tem texto para ler em voz alta.',
+  },
+
   // ── /uptime · /botstats (públicos) ────────────────────────────────────────
   'uptime.text': {
     en: '🟢 Voxi has been online for **{uptime}**.',

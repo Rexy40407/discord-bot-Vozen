@@ -10,7 +10,7 @@ import {
 } from 'discord.js';
 import type { BotDeps } from './deps';
 import { handleGuildDelete } from './deps';
-import { handleInteraction, handleAutocomplete } from '../commands/index';
+import { handleInteraction, handleAutocomplete, handleMessageContextMenu } from '../commands/index';
 import { handleMessage } from '../commands/messageHandler';
 import { buildPresence } from './presence';
 import { pickWelcomeChannel, buildWelcomeEmbed } from './welcome';
@@ -47,6 +47,11 @@ export function bindEvents(deps: BotDeps): void {
   client.on(Events.InteractionCreate, (interaction: Interaction) => {
     if (interaction.isAutocomplete()) {
       void handleAutocomplete(interaction, deps);
+      return;
+    }
+    // Context-menu de mensagem (botão direito -> Apps -> Speak).
+    if (interaction.isMessageContextMenuCommand()) {
+      void handleMessageContextMenu(interaction, deps);
       return;
     }
     if (!interaction.isChatInputCommand()) return;

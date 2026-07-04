@@ -1,14 +1,18 @@
 import {
   SlashCommandBuilder,
+  ContextMenuCommandBuilder,
+  ApplicationCommandType,
   ChatInputCommandInteraction,
+  MessageContextMenuCommandInteraction,
   AutocompleteInteraction,
   EmbedBuilder,
   PermissionFlagsBits,
   PermissionsBitField,
   GuildMember,
+  Guild,
   ChannelType,
   MessageFlags,
-  type RESTPostAPIChatInputApplicationCommandsJSONBody,
+  type RESTPostAPIApplicationCommandsJSONBody,
 } from 'discord.js';
 import { metrics } from '../metrics';
 import { joinVoiceChannel, getVoiceConnection } from '@discordjs/voice';
@@ -112,7 +116,7 @@ export const INVITE_PERMISSIONS: string = new PermissionsBitField([
 ])
   .bitfield.toString();
 
-export const commandDefs: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
+export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
   // /invite — gatilho do loop viral: qualquer utilizador pode pedir o link de
   // convite OAuth2 do bot. Top-level e SEM setDefaultMemberPermissions (nao
   // admin-only), para que quem ouve o Voxi numa call o possa adicionar.
@@ -465,6 +469,13 @@ export const commandDefs: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [
     .setName('botstats')
     .setDescription('Public Voxi stats: servers, voice sessions, uptime')
     .toJSON(),
+  // Context-menu (botão direito numa mensagem -> Apps -> Speak): lê essa mensagem em
+  // voz alta com a voz de quem clicou. Complementa o /tts sem escrever nada.
+  new ContextMenuCommandBuilder()
+    .setName('Speak')
+    .setNameLocalizations({ 'pt-BR': 'Ler em voz alta' })
+    .setType(ApplicationCommandType.Message)
+    .toJSON(),
 ];
 
 async function reply(i: ChatInputCommandInteraction, content: string): Promise<void> {
@@ -533,72 +544,55 @@ async function handleLeave(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   await reply(i, t('leave.left', localeForUser(deps, i)));
 }
 
-async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
-  // A sintese pode demorar ate ~15s; defer imediato para nao perder o token (3s).
-  await i.deferReply({ flags: MessageFlags.Ephemeral });
+/** Resultado (discriminado) de tentar LER um texto em voz alta com a voz do user. */
+type SpeakOutcome =
+  | { status: 'no-player' }
+  | { status: 'rate-limited' }
+  | { status: 'empty' }
+  | { status: 'blocked' }
+  | { status: 'queued' }
+  | { status: 'busy' };
 
-  const locale = localeForUser(deps, i);
-  const player = getPlayer(deps, i.guildId!);
-  if (!player) {
-    await i.editReply(t('tts.notInVoice', locale));
-    return;
-  }
-  const raw = i.options.getString('text', true).trim();
-  if (!raw) {
-    await i.editReply(t('tts.nothingToRead', locale));
-    return;
-  }
-  const cfg = getGuildConfig(deps.db, i.guildId!);
+/**
+ * Pipeline PARTILHADO "ler `raw` em voz alta com a voz do user", extraído do /tts para
+ * ser reutilizado pelo context-menu "Speak". Faz TUDO (gating de player, rate-limit,
+ * limpeza, media, gírias/pronúncia, escolha de voz, blocklist, say) MENOS responder à
+ * interação — devolve um SpeakOutcome que o chamador traduz. Assim /tts e "Speak"
+ * partilham o comportamento sem divergir.
+ */
+async function speakRawText(
+  deps: BotDeps,
+  guildId: string,
+  userId: string,
+  guild: Guild,
+  raw: string,
+): Promise<SpeakOutcome> {
+  const player = getPlayer(deps, guildId);
+  if (!player) return { status: 'no-player' };
+  const cfg = getGuildConfig(deps.db, guildId);
+  const rl = getLimiter(deps, guildId, cfg.ratePerMin);
+  if (!rl.allow(userId, Date.now())) return { status: 'rate-limited' };
 
-  // rate-limit por user (mesmo pipeline do messageHandler)
-  const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
-  if (!rl.allow(i.user.id, Date.now())) {
-    await i.editReply(t('tts.tooFast', locale));
-    return;
-  }
-
-  // limpeza de texto
   const cleaned = cleanText(raw, {
     maxChars: cfg.maxChars,
     resolveUser: (id: string) =>
-      i.guild!.members.cache.get(id)?.displayName ??
+      guild.members.cache.get(id)?.displayName ??
       deps.client.users.cache.get(id)?.username ??
       'alguem',
     resolveChannel: (id: string) => {
-      const ch = i.guild!.channels.cache.get(id);
+      const ch = guild.channels.cache.get(id);
       return ch && 'name' in ch ? (ch.name as string) : 'canal';
     },
   });
-  // Media do texto do /tts: URLs -> "um link"/"um gif" e spoiler/código -> "spoiler"/
-  // "código" (anúncios localizados a jusante). O /tts é texto (sem anexos/stickers).
   const media = [...collectUrlMedia(raw), ...collectMarkdownMedia(raw)];
-  // Guard de vazio endurecido (mesma regra do messageHandler): exige >=1 letra ou
-  // numero (\p{L}\p{N}) no corpo — OU media (um /tts só com um link fala "um link").
-  // Cobre '' e texto so com pontuacao/simbolos/residuo zero-width (rede de seguranca
-  // do strip de emoji). "!!!" (so-pontuacao) sem media -> nothingAfterClean.
-  if (!/[\p{L}\p{N}]/u.test(cleaned) && media.length === 0) {
-    await i.editReply(t('tts.nothingAfterClean', locale));
-    return;
-  }
+  if (!/[\p{L}\p{N}]/u.test(cleaned) && media.length === 0) return { status: 'empty' };
 
-  // Personalizacao de palavras e agora so via /config pronunciation (aplicada dentro
-  // do prepareSpeech). O texto limpo segue tal e qual como base.
-  const personal = cleaned;
-
-  // Expansao de girias EN, pronuncia da guild e escolha de voz(es) — incl. a sintese
-  // MISTURADA quando a mensagem junta lingua-base + girias EN conhecidas (a parte
-  // non-slang e detetada por si; as girias EN saem em voz inglesa como segmento
-  // separado). O `spoken` (falado) e o que a blocklist guarda — a pronuncia acontece
-  // ANTES da blocklist, por isso uma pronuncia que produza palavra bloqueada e apanhada.
-  const userVoice = getUserVoice(deps.db, i.guildId!, i.user.id);
-  // Toggle por-user: deteccao OFF => usa sempre a voz fixa do user (singleVoice).
-  const auto = isDetectionOn(deps.db, i.guildId!, i.user.id);
-  // Memoria de lingua (T3.2): recorda a lingua recente do user para desambiguar
-  // fragmentos curtos; memoriza a deteccao confiante desta mensagem.
-  const recentLang = recallLang(i.guildId!, i.user.id);
+  const userVoice = getUserVoice(deps.db, guildId, userId);
+  const auto = isDetectionOn(deps.db, guildId, userId);
+  const recentLang = recallLang(guildId, userId);
   const { spoken, req, learnedLang } = prepareSpeech({
-    personal,
-    pronunciations: getPronunciations(deps.db, i.guildId!),
+    personal: cleaned,
+    pronunciations: getPronunciations(deps.db, guildId),
     userVoice,
     available: deps.availableModels,
     guildDefaultVoice: cfg.defaultVoice,
@@ -608,22 +602,69 @@ async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): Promise
     recentLang,
     media: media.map((kind) => ({ kind })),
   });
-  if (learnedLang) rememberLang(i.guildId!, i.user.id, learnedLang);
+  if (learnedLang) rememberLang(guildId, userId, learnedLang);
 
-  // blocklist antes de sintetizar
-  const blocklist = getBlocklist(deps.db, i.guildId!);
-  if (isBlocked(spoken, blocklist)) {
-    await i.editReply(t('tts.blocked', locale));
+  const blocklist = getBlocklist(deps.db, guildId);
+  if (isBlocked(spoken, blocklist)) return { status: 'blocked' };
+  if (deps.config.messageLeadMs > 0) req.leadSilenceMs = deps.config.messageLeadMs;
+  const queued = await player.say(req);
+  return { status: queued ? 'queued' : 'busy' };
+}
+
+/** Traduz um SpeakOutcome na mensagem (ephemeral) a mostrar ao user. */
+function speakOutcomeMessage(outcome: SpeakOutcome, locale: string): string {
+  switch (outcome.status) {
+    case 'no-player':
+      return t('tts.notInVoice', locale);
+    case 'rate-limited':
+      return t('tts.tooFast', locale);
+    case 'empty':
+      return t('tts.nothingAfterClean', locale);
+    case 'blocked':
+      return t('tts.blocked', locale);
+    case 'busy':
+      return t('tts.busy', locale);
+    case 'queued':
+      return t('tts.queued', locale);
+  }
+}
+
+async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+  // A sintese pode demorar ate ~15s; defer imediato para nao perder o token (3s).
+  await i.deferReply({ flags: MessageFlags.Ephemeral });
+  const locale = localeForUser(deps, i);
+  const raw = i.options.getString('text', true).trim();
+  if (!raw) {
+    await i.editReply(t('tts.nothingToRead', locale));
     return;
   }
-  // Silêncio de arranque: o bot só começa a falar `messageLeadMs` depois (silêncio
-  // PREPENDido ao WAV). Configurável (MESSAGE_LEAD_MS); 0 = sem espera.
-  if (deps.config.messageLeadMs > 0) req.leadSilenceMs = deps.config.messageLeadMs;
-  // say() devolve false quando a fila esta no cap (nada foi enfileirado): nesse caso
-  // NAO mentir "queued" — responder que estamos ocupados. So o sinal SINCRONO de
-  // fila-cheia; nao esperamos pela reproducao real (fora de escopo).
-  const queued = await player.say(req);
-  await i.editReply(queued ? t('tts.queued', locale) : t('tts.busy', locale));
+  const outcome = await speakRawText(deps, i.guildId!, i.user.id, i.guild!, raw);
+  await i.editReply(speakOutcomeMessage(outcome, locale));
+}
+
+/**
+ * Context-menu "Speak" (botão direito numa mensagem -> Apps -> Speak): lê essa mensagem
+ * em voz alta com a voz de quem clicou. Mesmo pipeline do /tts (speakRawText), mas o
+ * texto vem da mensagem-alvo em vez de um argumento.
+ */
+export async function handleMessageContextMenu(
+  i: MessageContextMenuCommandInteraction,
+  deps: BotDeps,
+): Promise<void> {
+  if (i.commandName !== 'Speak') return;
+  await i.deferReply({ flags: MessageFlags.Ephemeral });
+  const locale = localeForUser(deps, i);
+  if (!i.guildId || !i.guild) {
+    await i.editReply(t('error.generic', locale));
+    return;
+  }
+  const raw = (i.targetMessage.content ?? '').trim();
+  if (!raw) {
+    await i.editReply(t('speak.emptyMessage', locale));
+    return;
+  }
+  const outcome = await speakRawText(deps, i.guildId, i.user.id, i.guild, raw);
+  await i.editReply(speakOutcomeMessage(outcome, locale));
 }
 
 async function handleSkip(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
