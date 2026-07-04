@@ -1,17 +1,23 @@
 // src/voice/aloneWatcher.ts
 //
 // Regra de saída do Voxi: SÓ sai do canal de voz quando fica SOZINHO — zero membros
-// humanos (não-bots) no seu canal — durante `ALONE_LEAVE_MS` (5 min). Já NÃO sai por
-// inatividade de TTS (essa saída foi removida do player). Reage a VoiceStateUpdate.
+// humanos (não-bots) no seu canal. Por DEFEITO sai IMEDIATAMENTE (ALONE_LEAVE_MS=0).
+// Já NÃO sai por inatividade de TTS (essa saída foi removida do player): por mais tempo
+// que passe sem falar, fica na call enquanto houver pelo menos 1 humano. Reage a
+// VoiceStateUpdate.
 //
-// Defesa contra o bug "timer-fantasma mata a sessão NOVA": o timer é limpo em
-// `removePlayer` (o funil de TODAS as saídas — /leave, guildDelete, desistência de
-// reconexão, e a própria saída-por-sozinho) E, ao DISPARAR, re-verifica se ainda está
-// sozinho antes de sair. PURO/testável: injeta-se a contagem de humanos, a saída e os
-// timers (default = setTimeout/clearTimeout globais).
+// Tolerância opcional: com um `leaveMs` > 0 (injetável), espera essa janela antes de
+// sair e RE-VERIFICA no disparo se ainda está sozinho (defesa contra sair quando alguém
+// reentra no último instante). Com leaveMs <= 0 (default) sai já — não há janela onde
+// alguém possa reentrar, por isso não é preciso timer nem re-check.
+//
+// Defesa contra o bug "timer-fantasma mata a sessão NOVA": o timer (quando existe) é
+// limpo em `removePlayer` (o funil de TODAS as saídas — /leave, guildDelete, desistência
+// de reconexão, e a própria saída-por-sozinho). PURO/testável: injeta-se a contagem de
+// humanos, a saída e os timers (default = setTimeout/clearTimeout globais).
 
-/** 5 minutos sozinho na call -> sai. */
-export const ALONE_LEAVE_MS = 5 * 60 * 1000;
+/** Sozinho na call -> sai. 0 = imediato (default); > 0 = tolerância antes de sair. */
+export const ALONE_LEAVE_MS = 0;
 
 export interface AloneWatcherDeps {
   /** ms sozinho até sair (default ALONE_LEAVE_MS). */
@@ -56,6 +62,14 @@ export class AloneWatcher {
       return;
     }
     // n === 0 -> sozinho.
+    // Saída IMEDIATA (leaveMs <= 0, o default): acabámos de LER 0 humanos agora mesmo,
+    // por isso saímos já — sem timer nem re-check (não há janela onde alguém reentre).
+    if (this.leaveMs <= 0) {
+      this.clear(guildId); // cancela um timer pendente de uma config anterior (defensivo)
+      this.doLeave(guildId);
+      return;
+    }
+    // leaveMs > 0: janela de tolerância com re-check no disparo.
     if (this.timers.has(guildId)) return;
     const t = this.set(() => {
       this.timers.delete(guildId);

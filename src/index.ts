@@ -88,7 +88,9 @@ async function main(): Promise<void> {
   };
 
   // Regra de saída: o Voxi só sai da call quando fica SOZINHO (zero humanos no seu
-  // canal) por 5 min — NÃO por inatividade de TTS. O AloneWatcher é reavaliado no
+  // canal) — e por defeito sai IMEDIATAMENTE (ALONE_LEAVE_MS=0). NUNCA sai por
+  // inatividade de TTS: com pelo menos 1 humano, fica na call para sempre. O
+  // AloneWatcher é reavaliado no
   // handler de VoiceStateUpdate (client.ts). `humansInBotChannel` conta os não-bots
   // do canal atual do bot (null = o bot não está em voz); `leave` é o mesmo caminho
   // do onIdle (removePlayer -> destroy da ligação).

@@ -22,8 +22,32 @@ describe('AloneWatcher — sai só quando sozinho por leaveMs', () => {
     vi.useRealTimers();
   });
 
-  it('default de 5 minutos', () => {
-    expect(ALONE_LEAVE_MS).toBe(5 * 60 * 1000);
+  it('default é 0 (saída IMEDIATA quando fica sozinho)', () => {
+    expect(ALONE_LEAVE_MS).toBe(0);
+  });
+
+  it('leaveMs<=0 (default) -> sai JÁ, síncrono, sem armar timer', () => {
+    const leave = vi.fn();
+    const state = { humans: 0 as number | null };
+    // Sem leaveMs -> usa o default (ALONE_LEAVE_MS = 0 = imediato).
+    const watcher = new AloneWatcher({ humansInBotChannel: () => state.humans, leave });
+    watcher.evaluate(G);
+    // Saiu imediatamente (não há timer pendente e leave foi chamado já).
+    expect(leave).toHaveBeenCalledTimes(1);
+    expect(leave).toHaveBeenCalledWith(G);
+    expect(watcher.pendingCount()).toBe(0);
+  });
+
+  it('com humanos presentes NUNCA sai (fica para sempre, sem inatividade)', () => {
+    const leave = vi.fn();
+    const state = { humans: 3 as number | null };
+    const watcher = new AloneWatcher({ humansInBotChannel: () => state.humans, leave });
+    // Várias reavaliações (mutes/deafens/etc.) com gente na call -> nunca sai.
+    watcher.evaluate(G);
+    watcher.evaluate(G);
+    watcher.evaluate(G);
+    expect(leave).not.toHaveBeenCalled();
+    expect(watcher.pendingCount()).toBe(0);
   });
 
   it('sozinho (0 humanos) -> após leaveMs sai (leave 1x)', () => {

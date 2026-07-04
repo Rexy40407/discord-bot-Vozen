@@ -64,7 +64,7 @@ export function bindEvents(deps: BotDeps): void {
   });
 
   // VoiceStateUpdate — alguém entrou/saiu/mudou de canal de voz. Serve para a regra
-  // "o bot só sai se ficar sozinho na call 5 min" (AloneWatcher re-avalia a guild).
+  // "o bot só sai quando fica sozinho na call" (AloneWatcher re-avalia a guild).
   // ALTA-FREQUÊNCIA (dispara em cada mute/deafen do servidor inteiro), por isso o
   // bail cedo: só agir onde o bot TEM player (está numa call desta guild).
   client.on(Events.VoiceStateUpdate, (oldState: VoiceState, newState: VoiceState) => {
