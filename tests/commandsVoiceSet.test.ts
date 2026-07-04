@@ -31,6 +31,7 @@ function makeVoiceInteraction(opts: {
   sub: string;
   model?: string;
   speed?: number | null;
+  engine?: 'google' | 'piper';
 }) {
   const replies: string[] = [];
   return {
@@ -47,7 +48,9 @@ function makeVoiceInteraction(opts: {
     options: {
       getSubcommandGroup: (_required = false) => null,
       getSubcommand: () => opts.sub,
-      getString: (_name: string, _required = false) => opts.model ?? null,
+      // name-aware: 'engine' devolve a opção do motor; qualquer outra ('model') o modelo.
+      getString: (name: string, _required = false) =>
+        name === 'engine' ? (opts.engine ?? null) : (opts.model ?? null),
       getNumber: (_name: string) => (opts.speed === undefined ? null : opts.speed),
     },
   };
@@ -83,6 +86,35 @@ describe('/voice set — copy beginner-friendly', () => {
     const out = i.replies[0];
     // Aponta para /tts (sempre funciona, sem depender de auto-read configurado).
     expect(out).toContain('/tts');
+  });
+
+  it('sem engine -> default Google', async () => {
+    const i = makeVoiceInteraction({ sub: 'set', model: 'en_US-amy-medium' });
+    await handleInteraction(i as any, makeDeps(db));
+    expect(getUserVoice(db, GUILD, USER)?.engine).toBe('google');
+    expect(i.replies[0]).toContain('Google');
+  });
+
+  it('engine:piper -> grava piper e confirma', async () => {
+    const i = makeVoiceInteraction({ sub: 'set', model: 'en_US-amy-medium', engine: 'piper' });
+    await handleInteraction(i as any, makeDeps(db));
+    expect(getUserVoice(db, GUILD, USER)?.engine).toBe('piper');
+    expect(i.replies[0]).toContain('Piper');
+  });
+
+  it('mudar só a voz PRESERVA o motor escolhido antes (não repõe google)', async () => {
+    // 1) escolhe Piper.
+    await handleInteraction(
+      makeVoiceInteraction({ sub: 'set', model: 'en_US-amy-medium', engine: 'piper' }) as any,
+      makeDeps(db),
+    );
+    // 2) muda só a voz (sem engine) -> continua Piper.
+    await handleInteraction(
+      makeVoiceInteraction({ sub: 'set', model: 'pt_PT-tugao-medium' }) as any,
+      makeDeps(db),
+    );
+    expect(getUserVoice(db, GUILD, USER)?.model).toBe('pt_PT-tugao-medium');
+    expect(getUserVoice(db, GUILD, USER)?.engine).toBe('piper');
   });
 });
 

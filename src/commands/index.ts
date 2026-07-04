@@ -190,7 +190,18 @@ export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setName('set')
         .setDescription('Set your voice')
         .addStringOption((o) => o.setName('model').setDescription('Piper model').setRequired(true).setAutocomplete(true))
-        .addNumberOption((o) => o.setName('speed').setDescription('Speed (0.5-2.0)').setRequired(false)),
+        .addNumberOption((o) => o.setName('speed').setDescription('Speed (0.5-2.0)').setRequired(false))
+        .addStringOption((o) =>
+          o
+            .setName('engine')
+            .setNameLocalizations({ 'pt-BR': 'motor' })
+            .setDescription('Voice engine: Google (default) or Piper')
+            .setRequired(false)
+            .addChoices(
+              { name: 'Google (default)', value: 'google' },
+              { name: 'Piper', value: 'piper' },
+            ),
+        ),
     )
     .addSubcommand((s) => s.setName('list').setDescription('List the available models'))
     .addSubcommand((s) => s.setName('reset').setDescription('Reset your voice to the default'))
@@ -617,6 +628,8 @@ async function speakRawText(
     media: media.map((kind) => ({ kind })),
   });
   if (learnedLang) rememberLang(guildId, userId, learnedLang);
+  // Motor escolhido pelo user (google default | piper) — usado pelo PerUserEngineRouter.
+  req.engine = userVoice?.engine;
 
   const blocklist = getBlocklist(deps.db, guildId);
   if (isBlocked(spoken, blocklist)) return { status: 'blocked' };
@@ -747,7 +760,13 @@ async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   const speed = stored?.speed ?? deps.config.defaultSpeed;
   // singleVoice: a voz e DELIBERADAMENTE escolhida (a voz atual do user); a deteccao
   // nunca deve sobrepor-se nem partir o riso por lingua.
-  const req: SynthRequest = { text: laughterFor(localePrefixOf(model)), model, speed, singleVoice: true };
+  const req: SynthRequest = {
+    text: laughterFor(localePrefixOf(model)),
+    model,
+    speed,
+    singleVoice: true,
+    engine: stored?.engine, // ri no MESMO motor que o user escolheu
+  };
   // say() devolve false quando a fila esta no cap: nesse caso reutilizamos tts.busy.
   const queued = await player.say(req);
   await i.editReply(queued ? t('laugh.playing', locale) : t('tts.busy', locale));
@@ -879,10 +898,23 @@ async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     // Clamp preservado: no-op para valores fornecidos validos (ja em [0.5,2.0]); mantem
     // o comportamento antigo para o caminho omitido->defaultSpeed.
     const clamped = Math.min(2.0, Math.max(0.5, speed));
-    setUserVoice(deps.db, i.guildId!, i.user.id, model, clamped);
+    // Motor por-utilizador: opção nova (google/piper). Se OMITIDA, PRESERVA o motor
+    // atual do user — senão mudar só a voz reporia o motor para Google (read-first).
+    const engineOpt = i.options.getString('engine') as 'google' | 'piper' | null;
+    const currentEngine = getUserVoice(deps.db, i.guildId!, i.user.id)?.engine ?? 'google';
+    const engine = engineOpt ?? currentEngine;
+    setUserVoice(deps.db, i.guildId!, i.user.id, model, clamped, engine);
     // Copy beginner-friendly: lidera com o nome amigavel (voiceDisplayName) e mantem
-    // o id cru copy-pasteavel. Comportamento inalterado (so params de apresentacao).
-    await reply(i, t('voice.set', locale, { name: voiceDisplayName(model), model, speed: clamped }));
+    // o id cru copy-pasteavel. Inclui o motor escolhido.
+    await reply(
+      i,
+      t('voice.set', locale, {
+        name: voiceDisplayName(model),
+        model,
+        speed: clamped,
+        engine: engine === 'piper' ? 'Piper' : 'Google',
+      }),
+    );
   } else if (sub === 'list') {
     // Beginner-friendly: em vez de uma lista plana de ids Piper, agrupa por lingua
     // com nomes humanos (formatVoiceList). O id cru fica entre parenteses para
@@ -948,8 +980,9 @@ async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promi
       'en_US-amy-medium';
     const speed = stored?.speed ?? deps.config.defaultSpeed;
     // singleVoice: o preview e um DEMO de UMA voz especifica; a deteccao nunca deve
-    // sobrepor-se nem partir a frase-amostra por lingua.
-    const req: SynthRequest = { text: SAMPLE, model, speed, singleVoice: true };
+    // sobrepor-se nem partir a frase-amostra por lingua. O motor e o do user (o preview
+    // tem de soar ao que ele vai ouvir de facto).
+    const req: SynthRequest = { text: SAMPLE, model, speed, singleVoice: true, engine: stored?.engine };
     // say() devolve false quando a fila esta no cap: nesse caso NAO mentir "a
     // reproduzir" — reutilizamos a mesma chave tts.busy do /tts (consistencia).
     const queued = await player.say(req);

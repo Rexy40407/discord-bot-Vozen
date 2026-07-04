@@ -35,15 +35,27 @@ describe('store', () => {
       expect(getUserVoice(db, G, U)).toBeNull();
     });
 
-    it('sets and gets a user voice', () => {
+    it('sets and gets a user voice (engine default google)', () => {
       setUserVoice(db, G, U, 'pt_PT-tugão-medium', 1.2);
-      expect(getUserVoice(db, G, U)).toEqual({ model: 'pt_PT-tugão-medium', speed: 1.2 });
+      expect(getUserVoice(db, G, U)).toEqual({
+        model: 'pt_PT-tugão-medium',
+        speed: 1.2,
+        engine: 'google',
+      });
     });
 
     it('overwrites an existing voice (upsert)', () => {
       setUserVoice(db, G, U, 'a', 1);
       setUserVoice(db, G, U, 'b', 1.5);
-      expect(getUserVoice(db, G, U)).toEqual({ model: 'b', speed: 1.5 });
+      expect(getUserVoice(db, G, U)).toEqual({ model: 'b', speed: 1.5, engine: 'google' });
+    });
+
+    it('guarda e lê o motor piper', () => {
+      setUserVoice(db, G, U, 'a', 1, 'piper');
+      expect(getUserVoice(db, G, U)?.engine).toBe('piper');
+      // Voltar a gravar com 'google' troca o motor.
+      setUserVoice(db, G, U, 'a', 1, 'google');
+      expect(getUserVoice(db, G, U)?.engine).toBe('google');
     });
 
     it('isolates voices per guild', () => {

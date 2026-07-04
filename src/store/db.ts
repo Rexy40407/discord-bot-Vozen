@@ -15,6 +15,7 @@ export function initDb(path: string): Database.Database {
         user_id     TEXT NOT NULL,
         voice_model TEXT NOT NULL,
         speed       REAL NOT NULL,
+        engine      TEXT NOT NULL DEFAULT 'google',
         PRIMARY KEY (guild_id, user_id)
       );
 
@@ -126,6 +127,12 @@ export function initDb(path: string): Database.Database {
     // de texto DENTRO do canal de voz onde o Voxi esta. DEFAULT 0 (desligado). No-op novas.
     if (!cols.some((c) => c.name === 'text_in_voice')) {
       db.exec('ALTER TABLE guild_config ADD COLUMN text_in_voice INTEGER NOT NULL DEFAULT 0');
+    }
+    // Migracao idempotente do `engine` no user_voice: motor por-utilizador (google/piper).
+    // DEFAULT 'google' -> as vozes ja gravadas ficam no motor Google (backfill). No-op novas.
+    const uvCols = db.pragma('table_info(user_voice)') as Array<{ name: string }>;
+    if (!uvCols.some((c) => c.name === 'engine')) {
+      db.exec("ALTER TABLE user_voice ADD COLUMN engine TEXT NOT NULL DEFAULT 'google'");
     }
 
     return db;

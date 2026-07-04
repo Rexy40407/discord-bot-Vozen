@@ -26,6 +26,7 @@ import { initDb } from '../src/store/db';
 import { setGuildConfig } from '../src/store/guildConfig';
 import { addBlockword } from '../src/store/blocklist';
 import { setNickname } from '../src/store/nickname';
+import { setUserVoice } from '../src/store/userVoice';
 
 const GUILD = 'g-main';
 const CHAN = 'chan-autoread';
@@ -436,6 +437,21 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     await handleMessage(makeMessage({ content: 'olá mundo', displayName: 'Alex' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].text).toBe('olá mundo');
+  });
+
+  // ── motor por-utilizador: req.engine segue a escolha do autor ─────────────
+  it('user com motor Piper → a mensagem sai com req.engine="piper"', async () => {
+    setUserVoice(db, GUILD, USER, 'en_US-amy-medium', 1, 'piper');
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá' }), deps);
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].engine).toBe('piper');
+  });
+
+  it('user sem voz definida → req.engine indefinido (default Google no router)', async () => {
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá' }), deps);
+    expect(say.mock.calls[0][0].engine).toBeUndefined();
   });
 
   it('spoiler → conteúdo NÃO é lido, anuncia "spoiler" (xsaid OFF)', async () => {

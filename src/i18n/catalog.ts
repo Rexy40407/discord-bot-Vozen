@@ -118,8 +118,8 @@ export const catalog: Record<string, Entry> = {
   // Amy"), mantem o id cru ({model}) subtil e copy-pasteavel, e da o PROXIMO PASSO
   // (ouvir a voz JA via /tts — sempre funciona, sem depender de auto-read).
   'voice.set': {
-    en: '✅ Your voice is now **{name}** at {speed}×. Try `/tts hello` to hear it. (id: `{model}`)',
-    pt: '✅ A tua voz agora é **{name}** a {speed}×. Experimenta `/tts olá` para a ouvir. (id: `{model}`)',
+    en: '✅ Your voice is now **{name}** at {speed}× (engine: **{engine}**). Try `/tts hello` to hear it. (id: `{model}`)',
+    pt: '✅ A tua voz agora é **{name}** a {speed}× (motor: **{engine}**). Experimenta `/tts olá` para a ouvir. (id: `{model}`)',
   },
   'voice.listHeader': {
     en: 'Available voices:',

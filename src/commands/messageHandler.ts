@@ -198,6 +198,8 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       announceSpeaker: announce ? speakerName : undefined,
     });
     if (learnedLang) rememberLang(message.guildId, message.author.id, learnedLang);
+    // Motor escolhido pelo autor (google default | piper). O PerUserEngineRouter usa isto.
+    req.engine = userVoice?.engine;
 
     // blocklist antes de sintetizar (sobre o texto REALMENTE falado)
     const blocklist = getBlocklist(deps.db, message.guildId);
