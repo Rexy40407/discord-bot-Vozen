@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { log } from '../logging/logger';
 import { PIPER_DEFAULT_SYNTH_PARAMS } from '../tts/calibration';
 
-export type TtsEngineKind = 'piper' | 'neural' | 'gtts';
+export type TtsEngineKind = 'piper' | 'neural' | 'gtts' | 'router';
 
 export interface AppConfig {
   token: string;
@@ -100,9 +100,9 @@ function engineEnv(): TtsEngineKind {
   const raw = process.env.TTS_ENGINE;
   if (raw === undefined || raw.trim() === '') return 'piper';
   const value = raw.trim().toLowerCase();
-  if (value === 'piper' || value === 'neural' || value === 'gtts') return value;
+  if (value === 'piper' || value === 'neural' || value === 'gtts' || value === 'router') return value;
   log.warn(
-    `[config] TTS_ENGINE invalido: "${raw}". Valores aceites: piper | neural | gtts. A usar 'piper'.`,
+    `[config] TTS_ENGINE invalido: "${raw}". Valores aceites: piper | neural | gtts | router. A usar 'piper'.`,
   );
   return 'piper';
 }

@@ -6,6 +6,8 @@ import { PiperEngine } from './piper';
 import { NeuralEngine } from './neural';
 import { GTTSEngine } from './gtts';
 import { MultiSegmentEngine } from './multiSegment';
+import { RouterEngine } from './router';
+import { log } from '../logging/logger';
 
 /**
  * Seleciona o motor TTS a partir da config.
@@ -16,6 +18,16 @@ import { MultiSegmentEngine } from './multiSegment';
  * (apanhado pelo main().catch -> exit(1)). A sintese neural real e verificacao
  * ao vivo pendente; o que aqui se testa e a SELECAO.
  */
+function makePiper(config: AppConfig, cache: AudioCache): TTSEngine {
+  return new PiperEngine(config.piperPath, config.modelsDir, cache.withNamespace('piper'), {
+    // Params de qualidade globais vindos da config (envs NOISE_*/SENTENCE_SILENCE).
+    // Defaults = preset ORGANICO (0.75/0.95/0.4) quando as envs nao existirem.
+    noiseScale: config.noiseScale,
+    noiseW: config.noiseW,
+    sentenceSilence: config.sentenceSilence,
+  });
+}
+
 export function createEngine(config: AppConfig, cache: AudioCache): TTSEngine {
   if (config.ttsEngine === 'neural') {
     if (!config.openaiApiKey) {
@@ -28,13 +40,20 @@ export function createEngine(config: AppConfig, cache: AudioCache): TTSEngine {
     // TTS_ENGINE=gtts. Endpoint não-oficial — pode ser limitado pela Google.
     return new GTTSEngine(cache.withNamespace('gtts'));
   }
-  return new PiperEngine(config.piperPath, config.modelsDir, cache.withNamespace('piper'), {
-    // Params de qualidade globais vindos da config (envs NOISE_*/SENTENCE_SILENCE).
-    // Defaults = preset ORGANICO (0.75/0.95/0.4) quando as envs nao existirem.
-    noiseScale: config.noiseScale,
-    noiseW: config.noiseW,
-    sentenceSilence: config.sentenceSilence,
-  });
+  if (config.ttsEngine === 'router') {
+    // MOTOR HÍBRIDO (Vaga 2): combina vários motores por-língua com fallback-por-falha.
+    // Fase 1 — gTTS (Google, boa qualidade, todas as línguas) como PRINCIPAL, e o Piper
+    // (local, todas as 34, sem rate-limits) como REDE DE SEGURANÇA quando a Google
+    // bloqueia/limita. Ambos apanha-tudo, por isso NENHUMA língua fica sem voz. O Kokoro
+    // (Fase 2) entrará ANTES do gTTS para as suas ~8 línguas, sem perder cobertura.
+    const routes = [
+      { engine: new GTTSEngine(cache.withNamespace('gtts')), langs: null, label: 'gtts' },
+      { engine: makePiper(config, cache), langs: null, label: 'piper' },
+    ];
+    log.info(`[factory] motor 'router' ativo: ${routes.map((r) => r.label).join(' -> ')}`);
+    return new RouterEngine(routes);
+  }
+  return makePiper(config, cache);
 }
 
 /**
