@@ -1,7 +1,9 @@
 import { readdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { getVoiceConnection } from '@discordjs/voice';
+import { Events } from 'discord.js';
 import { loadConfig } from './config/index';
+import { startBotListUpdater } from './botLists';
 import { log } from './logging/logger';
 import { initDb } from './store/db';
 import { AudioCache } from './tts/cache';
@@ -125,6 +127,21 @@ async function main(): Promise<void> {
   } catch (err) {
     log.error('[index] falha ao arrancar o webhook top.gg (ignorado)', err);
   }
+
+  // Vaga 3 — auto-post da contagem de servidores para o top.gg. OPT-IN (TOPGG_TOKEN).
+  // Arranca no ClientReady para que guilds.cache.size já esteja preenchido. try/catch
+  // defensivo: nunca impedir/derrubar o arranque. O timer é unref'd (não segura o processo).
+  client.once(Events.ClientReady, () => {
+    try {
+      startBotListUpdater({
+        botId: config.clientId,
+        token: config.topggToken,
+        serverCount: () => client.guilds.cache.size,
+      });
+    } catch (err) {
+      log.error('[index] falha ao arrancar o bot-list updater (ignorado)', err);
+    }
+  });
 
   await registerCommands(config.token, config.clientId);
   await client.login(config.token);

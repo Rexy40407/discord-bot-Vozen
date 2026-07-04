@@ -15,6 +15,7 @@ import { handleMessage } from '../commands/messageHandler';
 import { buildPresence } from './presence';
 import { pickWelcomeChannel, buildWelcomeEmbed } from './welcome';
 import { DEFAULT_LOCALE } from '../i18n/index';
+import { createErrorReporter } from '../errorReporter';
 import { log } from '../logging/logger';
 
 export function createClient(): Client {
@@ -105,14 +106,22 @@ export function bindEvents(deps: BotDeps): void {
     handleGuildDelete(deps, guild.id);
   });
 
+  // Vaga 3 — reporter de erros para um webhook do Discord (OPT-IN via ERROR_WEBHOOK_URL).
+  // Envia os erros INESPERADOS (gateway/rejeições/exceções) para o operador ver problemas
+  // em produção sem ler logs. No-op sem url; dedup por hash; nunca lança.
+  const errorReporter = createErrorReporter(deps.config.errorWebhookUrl);
+
   client.on(Events.Error, (err) => {
     log.error('[client] erro do gateway', err);
+    void errorReporter.report(err, 'gateway');
   });
 
   process.on('unhandledRejection', (reason) => {
     log.error('[process] unhandledRejection', reason);
+    void errorReporter.report(reason, 'unhandledRejection');
   });
   process.on('uncaughtException', (err) => {
     log.error('[process] uncaughtException', err);
+    void errorReporter.report(err, 'uncaughtException');
   });
 }

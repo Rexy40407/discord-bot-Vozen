@@ -27,6 +27,12 @@ export interface AppConfig {
   // Secret ausente => webhook sem auth (inseguro; recomenda-se sempre defini-lo).
   topggWebhookPort?: number;
   topggWebhookSecret?: string;
+  // Vaga 3 — auto-post da contagem de servidores para o top.gg (ranking/descoberta).
+  // Token da API do top.gg (TOPGG_TOKEN). Ausente => o updater NAO arranca (opt-in).
+  topggToken?: string;
+  // Vaga 3 — webhook do Discord para onde enviar erros INESPERADOS (monitorizacao em
+  // escala). URL ausente => sem envio (opt-in). Ver src/errorReporter.ts.
+  errorWebhookUrl?: string;
   // Sintese multi-lingua por-segmento (default ON). Quando ON, textos com mais do
   // que uma lingua sao sintetizados POR-SEGMENTO (voz certa por lingua) e os WAVs
   // concatenados — o Voxi mistura vozes como uma pessoa real. Pode ser FORCADA a
@@ -147,6 +153,8 @@ export function loadConfig(): AppConfig {
     // dedicada, separada do HEALTH_PORT de proposito.
     topggWebhookPort: numEnvOptional('TOPGG_WEBHOOK_PORT'),
     topggWebhookSecret: strEnv('TOPGG_WEBHOOK_SECRET', '') || undefined,
+    topggToken: strEnv('TOPGG_TOKEN', '') || undefined,
+    errorWebhookUrl: strEnv('ERROR_WEBHOOK_URL', '') || undefined,
     // Sintese multi-lingua por-segmento — LIGADA por defeito: sem esta env (ou com
     // qualquer valor != 'false'), o Voxi mistura vozes por lingua. Kill-switch
     // global: MULTILINGUAL_SEGMENTS=false forca voz unica por frase.
