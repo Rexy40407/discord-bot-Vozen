@@ -5,7 +5,7 @@
 > type it, hear it.
 
 [![CI](https://github.com/diogoshk3/discord-bot-Voxi/actions/workflows/ci.yml/badge.svg)](https://github.com/diogoshk3/discord-bot-Voxi/actions/workflows/ci.yml)
-![License](https://img.shields.io/badge/license-MIT-blue)
+![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 ![Docker ready](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![made with Piper](https://img.shields.io/badge/made%20with-Piper-5a4fcf)
@@ -348,8 +348,8 @@ docker compose down            # pára e remove o container (os dados persistem 
 
 ## 6. Privacidade e Termos
 
-- [**Política de Privacidade** (`PRIVACY.md`)](PRIVACY.md) — que dados a instância guarda (apenas IDs do Discord + preferências/config), o que acontece ao conteúdo das mensagens, retenção e apagamento, e terceiros (Discord; OpenAI só se `TTS_ENGINE=neural`).
-- [**Termos de Serviço** (`TERMS.md`)](TERMS.md) — uso aceitável, ausência de garantias, limitação de responsabilidade e licença (MIT).
+- [**Política de Privacidade** (`PRIVACY.md`)](PRIVACY.md) — que dados a instância guarda (apenas IDs do Discord + preferências/config), o que acontece ao conteúdo das mensagens, retenção e apagamento, e terceiros (Discord; **Google Translate TTS** se `TTS_ENGINE=gtts`/`router`; OpenAI se `TTS_ENGINE=neural`).
+- [**Termos de Serviço** (`TERMS.md`)](TERMS.md) — uso aceitável, ausência de garantias, limitação de responsabilidade e licença (AGPL-3.0).
 
 > **Nota para o registo/verificação no Discord.** O Discord Developer Portal pede um **Privacy Policy URL** e um **Terms of Service URL** (ex.: para *Public Bot* / verificação). Quando este repositório for **público**, os URLs a colar nesses campos são os ficheiros aqui no repo:
 >
@@ -367,3 +367,19 @@ Topics a aplicar ao repositório (para descoberta no GitHub), quando for públic
 <!-- topics: discord-tts-bot tts text-to-speech piper piper-tts self-hosted neural-tts -->
 
 `discord-tts-bot` · `tts` · `text-to-speech` · `piper` · `piper-tts` · `self-hosted` · `neural-tts`
+
+---
+
+## Licença
+
+Copyright (C) 2026 Diogo Cabral.
+
+O Voxi é software livre: podes redistribuí-lo e/ou modificá-lo nos termos da **GNU Affero
+General Public License, versão 3** (AGPL-3.0), conforme publicada pela Free Software
+Foundation. Ver o ficheiro [`LICENSE`](LICENSE) para o texto completo.
+
+A AGPL-3.0 acrescenta ao GPL uma condição-chave: **quem correr uma versão modificada do
+Voxi acessível pela rede tem de disponibilizar o código-fonte dessa versão aos
+utilizadores**. Isto mantém o Voxi aberto mesmo quando corrido como serviço.
+
+O Voxi é fornecido SEM QUALQUER GARANTIA; ver a secção 15 da licença.

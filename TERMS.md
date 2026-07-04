@@ -2,7 +2,7 @@
 
 > _type it, hear it._
 
-**Última atualização:** 2026-06-30
+**Última atualização:** 2026-07-04
 
 O Voxi é um bot de Text-to-Speech (TTS) para Discord, **open-source** e **self-host**: cada instância é corrida por um **operador** independente. Ao usar uma instância do Voxi, concordas com estes Termos. Como o software é self-host, o **operador da instância** é o responsável pelo seu funcionamento e pelo cumprimento das regras aplicáveis.
 
@@ -39,14 +39,14 @@ Quem corre uma instância do Voxi (o **operador**) é responsável por:
 
 - Cumprir os Termos de Serviço e a Política de Programador do Discord.
 - Garantir o tratamento adequado dos dados que a instância guarda (ver [PRIVACY.md](PRIVACY.md)).
-- Cumprir os termos de terceiros que ative — em particular os da **OpenAI** se usar `TTS_ENGINE=neural`.
+- Cumprir os termos de terceiros que ative — em particular os da **Google** se usar `TTS_ENGINE=gtts` ou `router` (o texto a ler é enviado ao Google Translate TTS), e os da **OpenAI** se usar `TTS_ENGINE=neural`.
 - Disponibilizar um contacto e responder a pedidos razoáveis dos utilizadores sobre os seus dados.
 
 ---
 
 ## 5. Licença
 
-O Voxi é distribuído sob a licença **MIT** (declarada no campo `license` do `package.json` do projeto). O uso, cópia, modificação e distribuição do código-fonte regem-se por essa licença.
+O Voxi é software livre distribuído sob a licença **GNU AGPL-3.0** (ficheiro [`LICENSE`](LICENSE); declarada no campo `license` do `package.json`). O uso, cópia, modificação e distribuição do código-fonte regem-se por essa licença. Em particular, a AGPL exige que quem **corra uma versão modificada acessível pela rede** disponibilize o respetivo código-fonte aos utilizadores.
 
 ---
 
@@ -58,4 +58,4 @@ Estes Termos podem ser atualizados. A versão em vigor é a presente neste repos
 
 ## Note (EN)
 
-_Voxi is a self-hosted, open-source Discord TTS bot. Each instance is run by an independent operator. Acceptable use: no harassment, spam, or illegal content; respect Discord's Terms and Community Guidelines. The software is provided "as is" with no warranties (no uptime/quality/data guarantees). To the maximum extent permitted by law, the project authors are not liable for any damages or for content processed by any instance. The instance operator is solely responsible for running it lawfully, for the data it stores (see PRIVACY.md), and for complying with third-party terms (Discord, and OpenAI if `TTS_ENGINE=neural`). Licensed under MIT (declared in package.json)._
+_Voxi is a self-hosted, open-source Discord TTS bot. Each instance is run by an independent operator. Acceptable use: no harassment, spam, or illegal content; respect Discord's Terms and Community Guidelines. The software is provided "as is" with no warranties (no uptime/quality/data guarantees). To the maximum extent permitted by law, the project authors are not liable for any damages or for content processed by any instance. The instance operator is solely responsible for running it lawfully, for the data it stores (see PRIVACY.md), and for complying with third-party terms (Discord; Google if `TTS_ENGINE=gtts`/`router`; OpenAI if `TTS_ENGINE=neural`). Licensed under GNU AGPL-3.0 (see LICENSE / package.json)._

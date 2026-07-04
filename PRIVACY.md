@@ -2,7 +2,7 @@
 
 > _type it, hear it._
 
-**Última atualização:** 2026-06-30
+**Última atualização:** 2026-07-04
 
 O Voxi é um bot de Text-to-Speech (TTS) para Discord, **open-source** e **self-host**: cada operador corre a sua própria instância no seu próprio computador ou servidor (VPS). Esta política descreve **fielmente** que dados a instância guarda, onde, e como removê-los.
 
@@ -12,12 +12,14 @@ Como o Voxi é self-host, o **responsável pelo tratamento de dados é o operado
 
 ## 1. Que dados são guardados
 
-O Voxi guarda os dados abaixo numa base de dados local **SQLite** (por defeito `tts.db`, configurável em `DB_PATH`). **Todos** os registos são identificados apenas por **IDs numéricos do Discord** (snowflakes) — `guild_id` (servidor) e `user_id` (utilizador). O Voxi **não** guarda informação pessoal identificável (PII) como email, nome real, número de telefone ou morada. Não guarda o nome de utilizador nem o avatar do Discord.
+O Voxi guarda os dados abaixo numa base de dados local **SQLite** (por defeito `tts.db`, configurável em `DB_PATH`). **Todos** os registos são identificados apenas por **IDs numéricos do Discord** (snowflakes) — `guild_id` (servidor) e `user_id` (utilizador). O Voxi **não recolhe** informação pessoal identificável (PII) como email, número de telefone ou morada, e não guarda o nome de utilizador nem o avatar do Discord. A única exceção é o **apelido falado** (`/voice nickname`): um texto que o próprio utilizador escreve livremente — pode conter o que quiser, incluindo um nome próprio, e é removível a qualquer momento (ver secção 3).
 
 | Dado | Tabela | Colunas guardadas | A que se refere |
 |---|---|---|---|
 | **Preferência de voz por utilizador** | `user_voice` | `guild_id`, `user_id`, `voice_model`, `speed` | A voz (modelo) e a velocidade que um utilizador fixou para si num servidor (`/voice set`). |
-| **Configuração por servidor** | `guild_config` | `guild_id`, `tts_channel_id`, `autoread`, `default_voice`, `max_chars`, `rate_per_min`, `enabled`, `tts_role_id` | Definições do servidor: canal de auto-leitura, on/off da auto-leitura, voz default, limite de caracteres, limite de mensagens/minuto, kill-switch e role autorizado. |
+| **Configuração por servidor** | `guild_config` | `guild_id`, `tts_channel_id`, `autoread`, `default_voice`, `max_chars`, `rate_per_min`, `enabled`, `tts_role_id`, `locale`, `xsaid`, `autojoin`, `read_bots`, `text_in_voice` | Definições do servidor: canal de auto-leitura, on/off da auto-leitura, voz default, limites, kill-switch, role autorizado, idioma da interface, e os interruptores de anunciar quem falou (xsaid), auto-entrada na call, ler outros bots e ler o chat-em-voz. |
+| **Apelido falado** | `user_nickname` | `guild_id`, `user_id`, `nickname` | O nome que um utilizador escolheu para ser **chamado em voz alta** pelo xsaid (`/voice nickname`). É um texto livre definido pelo próprio; pode ou não corresponder ao nome real. |
+| **Deteção de língua por utilizador** | `tts_lang_detect_on` | `guild_id`, `user_id` | Registo de que um utilizador **ligou** a deteção automática de língua (voz nativa por língua). Sem registo = voz fixa (default). |
 | **Blocklist** | `blocklist` | `guild_id`, `word` | Palavras que o servidor bloqueou de serem lidas (`/config blockword`). |
 | **Dicionário de pronúncia** | `pronunciation` | `guild_id`, `term`, `replacement` | Substituições de pronúncia definidas pelo servidor (`/config pronunciation`). |
 | **Opt-out de TTS** | `tts_optout` | `guild_id`, `user_id` | Registo de que um utilizador pediu para **não** ser lido automaticamente (`/voice optout`). |
@@ -57,12 +59,14 @@ Para os utilizadores e administradores de servidor, os comandos do bot permitem 
 | Para remover... | Usa... | Notas |
 |---|---|---|
 | A tua preferência de voz | `/voice reset` | Apaga o teu registo em `user_voice`. |
+| O teu apelido falado | `/voice nickname` (sem nome) | Apaga o teu registo em `user_nickname`. |
 | O teu opt-out (voltar a ser lido) | `/voice optin` | Apaga o teu registo em `tts_optout`. |
+| A tua deteção de língua | `/voice detection active:false` | Apaga o teu registo em `tts_lang_detect_on`. |
 | Configuração do servidor | `/config reset` | Repõe a `guild_config` aos valores por defeito. **Atenção:** o reset **NÃO** apaga a blocklist nem o dicionário de pronúncia. |
 | Uma palavra da blocklist | `/config blockword remove` | Removida individualmente (não pelo `/config reset`). |
 | Um termo de pronúncia | `/config pronunciation remove` | Removido individualmente (não pelo `/config reset`). |
 
-> **Não existe um comando único de "apagar todos os meus dados".** Os dados por utilizador vivem em `user_voice` e `tts_optout`, e removem-se com `/voice reset` e `/voice optin`. Em alternativa, o operador da instância pode apagar registos diretamente na base de dados ou apagar os ficheiros locais.
+> **Não existe um comando único de "apagar todos os meus dados".** Os dados por utilizador vivem em `user_voice`, `user_nickname`, `tts_optout` e `tts_lang_detect_on`, e removem-se com `/voice reset`, `/voice nickname` (vazio), `/voice optin` e `/voice detection active:false`. Em alternativa, o operador da instância pode apagar registos diretamente na base de dados ou apagar os ficheiros locais.
 
 A cache de áudio é regenerável e auto-limitada (ver secção 2.1); apagá-la não perde nenhuma configuração.
 
@@ -70,9 +74,26 @@ A cache de áudio é regenerável e auto-limitada (ver secção 2.1); apagá-la 
 
 ## 4. Terceiros
 
+### 4.1 Motor de síntese de fala (para onde vai o texto)
+
+Para gerar o áudio, o **texto limpo a sintetizar** é entregue a um motor de TTS. Qual, depende da configuração `TTS_ENGINE` da instância:
+
+| `TTS_ENGINE` | Para onde vai o texto | Nota |
+|---|---|---|
+| `piper` | **Fica local** — corre na máquina da instância, **não envia nada para fora**. | Default do código. |
+| `gtts` | **Enviado à Google** (`translate.google.com`) para gerar o áudio. Aplica-se a [Política de Privacidade da Google](https://policies.google.com/privacy). | **É o motor usado na instância pública oficial do Voxi.** |
+| `router` | Por defeito usa o **gTTS (Google)** e cai no **Piper (local)** se a Google falhar — ou seja, o texto **pode** ser enviado à Google. | — |
+| `neural` | **Enviado à OpenAI** (`api.openai.com`). Exige chave de API do operador. | Opt-in. |
+
+> Em qualquer caso, é enviado **apenas o texto a ler** (já limpo), não IDs de utilizador nem histórico. O motor externo devolve áudio; o Voxi não guarda a associação texto↔utilizador.
+
+### 4.2 Outros serviços
+
 - **Discord.** O Voxi liga-se à API/gateway do Discord para funcionar (receber mensagens, entrar em canais de voz, responder). A utilização do Discord rege-se pela [Política de Privacidade do Discord](https://discord.com/privacy).
-- **OpenAI (opcional, desligado por defeito).** O motor de TTS por defeito é o **Piper**, que corre **localmente** na máquina da instância — **não envia nada para fora**. Apenas se o operador definir `TTS_ENGINE=neural` é que o **texto limpo a sintetizar** é enviado para a API de TTS da OpenAI (`api.openai.com`) para gerar o áudio. Isto é **opcional**, exige uma chave de API do operador, e está **desligado por defeito**. Quando usado, aplica-se a política de dados da OpenAI.
-- **Sem venda de dados. Sem analytics de terceiros. Sem trackers.** O Voxi não vende, aluga nem partilha dados com terceiros para fins de marketing, e não integra serviços de analítica externos.
+- **Listas de bots (opt-in, ex.: top.gg).** Se `TOPGG_TOKEN` estiver definido, é publicada periodicamente **apenas a contagem de servidores** — nenhum dado pessoal, nenhum conteúdo de mensagens.
+- **Webhook de erros (opt-in).** Se `ERROR_WEBHOOK_URL` estiver definido, relatórios técnicos de erros (stack traces) são enviados a um canal privado do **operador** para monitorização. Não são desenhados para incluir conteúdo de mensagens.
+
+**Sem venda de dados. Sem analytics de terceiros. Sem trackers.** O Voxi não vende, aluga nem partilha dados com terceiros para fins de marketing, e não integra serviços de analítica externos.
 
 ---
 
@@ -91,4 +112,4 @@ Os autores do projeto Voxi fornecem apenas o software (open-source); não operam
 
 ## Nota / Note (EN)
 
-_Voxi is a self-hosted, open-source Discord TTS bot. The instance operator is the data controller. The bot stores only Discord numeric IDs (`guild_id`, `user_id`) plus per-user voice preferences, per-server config, blocklist, pronunciation dictionary and opt-out records in a local SQLite database — no PII (email, real name). Message text is processed transiently to synthesize speech and is **not** stored in any table; only generated `.wav` audio is cached on disk, named by an SHA-1 hash of (cleaned text + voice + speed). The cache is capped (~500 files/engine, LRU), regenerable and deletable. Logs (console/stderr) contain operational data, **not** message content. Piper runs locally; only if `TTS_ENGINE=neural` (opt-in, off by default) is text sent to OpenAI's TTS API. No data sale, no third-party analytics. Removal: `/voice reset`, `/voice optin`, `/config reset` (note: reset does not clear blocklist/pronunciation — use `/config blockword remove` and `/config pronunciation remove`); the operator can delete the SQLite file and cache folder directly._
+_Voxi is a self-hosted, open-source Discord TTS bot (AGPL-3.0). The instance operator is the data controller. The bot stores only Discord numeric IDs (`guild_id`, `user_id`) plus per-user voice preferences, spoken nickname (free text the user chooses), per-server config, blocklist, pronunciation dictionary, opt-out and language-detection records in a local SQLite database — no PII beyond the optional nickname. Message text is processed transiently to synthesize speech and is **not** stored in any table; only generated `.wav` audio is cached on disk, named by an SHA-1 hash of (cleaned text + voice + speed), capped (~500 files/engine, LRU), regenerable and deletable. Logs contain operational data, **not** message content. Where the text goes depends on `TTS_ENGINE`: **Piper** runs locally (no external send); **gTTS** (the public instance's engine) sends the text to Google; **router** may send to Google (falls back to local Piper); **neural** sends to OpenAI. Opt-in extras: server-count to top.gg (`TOPGG_TOKEN`, no personal data) and error reports to the operator's webhook (`ERROR_WEBHOOK_URL`). No data sale, no third-party analytics. Removal: `/voice reset`, `/voice nickname` (empty), `/voice optin`, `/voice detection active:false`, `/config reset` (does not clear blocklist/pronunciation — use `/config blockword remove` / `/config pronunciation remove`); the operator can delete the SQLite file and cache folder directly._

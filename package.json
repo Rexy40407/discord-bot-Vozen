@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Voxi — type it, hear it. Bot de TTS para Discord com voz neural gratis (Piper self-host) e fiabilidade.",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
