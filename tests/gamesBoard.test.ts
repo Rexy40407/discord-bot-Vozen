@@ -110,11 +110,11 @@ describe('Termo/Wordle', () => {
     const target = normalizeAnswer(words[seededIndex(SEED, words.length)]);
     say(mgr, 'u', target);
     await flush();
-    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.wordle.win'))).toBe(true);
+    expect(send.mock.calls.some((c) => String(c[1]).includes('game.wordle.win'))).toBe(true);
     expect(persistScores.mock.calls[0][1].get('u')).toBe(1);
   });
 
-  it('palpite errado mostra a linha 🟩🟨⬛ e conta uma tentativa', async () => {
+  it('palpite errado mostra as letras coloridas (bloco ansi) e conta uma tentativa', async () => {
     const { env, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('wordle')!.create());
@@ -125,9 +125,11 @@ describe('Termo/Wordle', () => {
     const guess = target === 'zzzzz' ? 'aaaaa' : 'zzzzz';
     say(mgr, 'u', guess);
     await flush();
-    const guessMsg = send.mock.calls.map((c) => String(c[1])).find((s) => s.startsWith('game.wordle.guess'));
+    const guessMsg = send.mock.calls.map((c) => String(c[1])).find((s) => s.includes('game.wordle.guess'));
     expect(guessMsg).toBeDefined();
-    expect(guessMsg).toMatch(/[🟩🟨⬛]/u);
+    // As letras coloridas vêm num bloco ```ansi com as letras do palpite (maiúsculas).
+    expect(guessMsg).toContain('```ansi');
+    expect(guessMsg).toContain(guess.toUpperCase()[0]);
     expect(mgr.active(G)).toBe(true); // ainda a decorrer
   });
 });

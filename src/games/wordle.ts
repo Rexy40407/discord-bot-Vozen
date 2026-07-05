@@ -1,16 +1,22 @@
 import type { Game, GameContext, GameDefinition, GameMessage } from './types';
 import { announceWinner } from './finish';
 import { pickWordleWords } from './content/wordleWords';
-import { fullWidthLetters, normalizeAnswer, seededIndex } from './util';
+import { normalizeAnswer, seededIndex } from './util';
 
 const MAX_GUESSES = 8;
 const IDLE_MS = 180_000;
+// Byte ESC do ANSI (construído, não literal no código-fonte, para não haver bytes de
+// controlo crus no ficheiro). Códigos de FUNDO do Discord: 42=verde, 43=amarelo/gold,
+// 40=cinza-escuro; texto a preto/branco (30/37) e negrito (1). É assim que o palpite
+// vira LETRAS coloridas (como o Wordle real), em vez de quadrados emoji + letras à parte.
+const ESC = String.fromCharCode(27);
+const SGR = { g: '1;30;42', y: '1;30;43', x: '1;37;40' } as const;
 
 /**
  * "Termo/Wordle" — colaborativo: qualquer um escreve uma palavra de 5 letras; o Voxi
- * responde com 🟩 (certa no sitio), 🟨 (existe, sitio errado), ⬛ (nao existe). Quem
- * acertar a palavra ganha o ponto; {MAX} tentativas partilhadas. Jogo de TEXTO. So
- * mensagens com EXATAMENTE 5 letras contam (o chat normal e ignorado).
+ * responde com as LETRAS COLORIDAS (verde=certa no sítio, amarelo=existe/sítio errado,
+ * cinza=não existe) num bloco ```ansi. Quem acertar a palavra ganha o ponto; {MAX}
+ * tentativas partilhadas. Jogo de TEXTO. Só mensagens com EXATAMENTE 5 letras contam.
  */
 class WordleGame implements Game {
   readonly id = 'wordle';
@@ -37,26 +43,34 @@ class WordleGame implements Game {
     });
   }
 
-  /** Linha 🟩🟨⬛ de um palpite, ciente da contagem de letras (regras do Wordle). */
-  private scoreRow(guess: string): string {
-    const res = ['⬛', '⬛', '⬛', '⬛', '⬛'];
+  /**
+   * O palpite como LETRAS COLORIDAS num bloco ```ansi (regras do Wordle, ciente da
+   * contagem de letras repetidas). As letras SÃO os "quadrados" — alinham sempre
+   * (monospace) e mostram a letra. Fallback gracioso: um cliente sem ANSI mostra as
+   * letras em monospace, sem cor. ` X ` (com espaços) faz cada célula parecer um bloco.
+   */
+  private renderRow(guess: string): string {
+    const state: ('g' | 'y' | 'x')[] = ['x', 'x', 'x', 'x', 'x'];
     const counts = new Map<string, number>();
     for (const ch of this.target) counts.set(ch, (counts.get(ch) ?? 0) + 1);
     for (let i = 0; i < 5; i++) {
       if (guess[i] === this.target[i]) {
-        res[i] = '🟩';
+        state[i] = 'g';
         counts.set(guess[i], (counts.get(guess[i]) ?? 0) - 1);
       }
     }
     for (let i = 0; i < 5; i++) {
-      if (res[i] === '🟩') continue;
+      if (state[i] === 'g') continue;
       const left = counts.get(guess[i]) ?? 0;
       if (left > 0) {
-        res[i] = '🟨';
+        state[i] = 'y';
         counts.set(guess[i], left - 1);
       }
     }
-    return res.join('');
+    const cells = [...guess.toUpperCase()]
+      .map((ch, i) => `${ESC}[${SGR[state[i]]}m ${ch} ${ESC}[0m`)
+      .join('');
+    return '```ansi\n' + cells + '\n```';
   }
 
   onMessage(ctx: GameContext, msg: GameMessage): void {
@@ -65,16 +79,12 @@ class WordleGame implements Game {
     if (g.length !== 5) return; // so palpites de 5 letras contam
     this.armIdle(ctx);
     this.guesses++;
-    const row = this.scoreRow(g);
-    // As letras vão na 2ª linha, POR BAIXO dos quadrados (o Discord não deixa pôr texto
-    // dentro dos emojis 🟩🟨⬛). Em LARGURA COMPLETA (fullwidth) para cada letra ter a
-    // largura de um emoji e ficar alinhada sob o seu quadrado.
-    const letters = fullWidthLetters(g);
+    const row = this.renderRow(g);
     if (g === this.target) {
       this.over = true;
       ctx.award(msg.authorId, 1);
       void ctx.send(
-        ctx.t('game.wordle.win', { user: msg.authorName, word: this.target.toUpperCase(), row, letters, n: this.guesses }),
+        `${row}\n${ctx.t('game.wordle.win', { user: msg.authorName, word: this.target.toUpperCase(), n: this.guesses })}`,
       );
       announceWinner(ctx, msg.authorName);
       ctx.end();
@@ -82,18 +92,11 @@ class WordleGame implements Game {
     }
     if (this.guesses >= MAX_GUESSES) {
       this.over = true;
-      void ctx.send(ctx.t('game.wordle.lose', { word: this.target.toUpperCase(), row, letters }));
+      void ctx.send(`${row}\n${ctx.t('game.wordle.lose', { word: this.target.toUpperCase() })}`);
       ctx.end();
       return;
     }
-    void ctx.send(
-      ctx.t('game.wordle.guess', {
-        user: msg.authorName,
-        row,
-        letters,
-        left: MAX_GUESSES - this.guesses,
-      }),
-    );
+    void ctx.send(`${row}\n${ctx.t('game.wordle.guess', { user: msg.authorName, left: MAX_GUESSES - this.guesses })}`);
   }
 }
 
