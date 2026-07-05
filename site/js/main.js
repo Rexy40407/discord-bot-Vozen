@@ -7,7 +7,7 @@
   /* ── config ──────────────────────────────────────────────
      TODO: preenche o CLIENT_ID do Voxi (é público — está em qualquer
      link de convite). SUPPORT_URL: mete o link do teu servidor de suporte. */
-  const CLIENT_ID = "YOUR_CLIENT_ID";
+  const CLIENT_ID = "1521557763220705581";
   const INVITE_PERMISSIONS = "3214336"; // Connect+Speak+ViewChannel+SendMessages+ReadMessageHistory
   const SUPPORT_URL = "https://discord.gg/"; // TODO: link do servidor de suporte
   const INVITE_URL =
