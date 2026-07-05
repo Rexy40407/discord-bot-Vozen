@@ -633,7 +633,11 @@ async function handleJoin(i: ChatInputCommandInteraction, deps: BotDeps): Promis
       await reply(i, t('join.missingPerms', locale, { channel: outcome.channelName }));
       return;
     case 'joined':
-      await reply(i, t('join.joined', locale, { channel: outcome.channelName }));
+      // Anúncio PÚBLICO (todos no canal veem que o Voxi entrou, como um bot de TTS
+      // faz) — NÃO ephemeral. Na língua da GUILD (localeFor), porque é uma mensagem
+      // para toda a gente, não só para quem invocou. Os erros acima ficam ephemeral
+      // (são feedback para o invocador). `i.reply` sem flags = mensagem pública.
+      await i.reply({ content: t('join.joined', localeFor(deps, i.guildId), { channel: outcome.channelName }) });
       return;
   }
 }
