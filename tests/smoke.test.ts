@@ -160,6 +160,14 @@ describe('smoke: boot sem token (monta deps reais sem ligar ao Discord)', () => 
   // invocáveis em DM (lá guildId é null -> SqliteError guild_id NOT NULL / respostas
   // enganadoras). Os comandos só-de-texto (invite/vote/help/uptime/botstats) FICAM
   // disponíveis em DM. InteractionContextType.Guild === 0.
+  // Regressão (duplicados vistos no Discord): nomes de comandos ÚNICOS no conjunto.
+  // NB: o duplicado real era global+por-guild (registo duplo), mas este teste garante
+  // que nunca é o próprio commandDefs a introduzir dois comandos com o mesmo nome.
+  it('não há comandos com nomes repetidos', () => {
+    const names = commandDefs.map((d) => d.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
   it('comandos de guild estão restritos ao contexto Guild; os públicos não', () => {
     const DM_CAPABLE = new Set(['invite', 'vote', 'help', 'uptime', 'botstats']);
     for (const def of commandDefs) {

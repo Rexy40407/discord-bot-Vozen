@@ -2,17 +2,20 @@
  * tools/register-guild.ts — regista os comandos por-SERVIDOR (instantâneo), em vez de
  * globalmente (que leva até ~1h a propagar). Útil para TESTAR comandos novos já.
  *
- * Corre com tsx: usa o token/clientId do .env (loadConfig), lista os servidores onde o
- * bot está (GET /users/@me/guilds) e faz o PUT dos comandos em cada um. Comandos de
- * servidor SOBREPÕEM-SE aos globais nesse servidor, por isso não há duplicados.
+ * ATENÇÃO: comandos de servidor NÃO substituem os globais — o Discord mostra os DOIS
+ * conjuntos no picker (comandos DUPLICADOS). Por isso isto é uma ferramenta temporária
+ * de teste: assim que os globais propagarem, corre `--clear` para remover os de
+ * servidor e voltar a ter cada comando UMA vez.
  *
- *   npx tsx tools/register-guild.ts
+ *   npx tsx tools/register-guild.ts           # regista por-servidor (aparece já, DUPLICA)
+ *   npx tsx tools/register-guild.ts --clear   # limpa os por-servidor (fica só o global)
  */
 import { REST, Routes } from 'discord.js';
 import { commandDefs } from '../src/commands/index';
 import { loadConfig } from '../src/config/index';
 
 async function main(): Promise<void> {
+  const clear = process.argv.includes('--clear');
   const cfg = loadConfig();
   const rest = new REST({ version: '10' }).setToken(cfg.token);
   const guilds = (await rest.get(Routes.userGuilds())) as { id: string; name: string }[];
@@ -21,10 +24,15 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   for (const g of guilds) {
-    await rest.put(Routes.applicationGuildCommands(cfg.clientId, g.id), { body: commandDefs });
-    console.log(`✅ ${commandDefs.length} comandos registados em "${g.name}" (${g.id}) — já aparecem.`);
+    const body = clear ? [] : commandDefs;
+    await rest.put(Routes.applicationGuildCommands(cfg.clientId, g.id), { body });
+    console.log(
+      clear
+        ? `🧹 comandos por-servidor LIMPOS em "${g.name}" (${g.id}) — fica só o conjunto global.`
+        : `✅ ${commandDefs.length} comandos registados em "${g.name}" (${g.id}) — já aparecem (DUPLICADOS com os globais até correres --clear).`,
+    );
   }
-  console.log('\nRecarrega o Discord (Ctrl+R) se não vires os comandos logo.');
+  console.log('\nRecarrega o Discord (Ctrl+R) se não vires a mudança logo.');
 }
 
 main().catch((err) => {
