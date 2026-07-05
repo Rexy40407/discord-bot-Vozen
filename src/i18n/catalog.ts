@@ -825,4 +825,95 @@ export const catalog: Record<string, Entry> = {
     en: 'Natural neural voice — free forever, no paywall.',
     pt: 'Voz neural natural — grátis para sempre, sem paywall.',
   },
+
+  // ── /game — minijogos ─────────────────────────────────────────────────────
+  // Chrome do comando (arranque, paragem, leaderboard, lista) + cada jogo. `en` e a
+  // fonte de verdade; `pt` traduzido. As outras 32 linguas caem em `en` via t().
+  'game.start.needVoice': {
+    en: "This is a **voice game** — hop into a voice channel and run /join first, then start it.",
+    pt: 'Este é um **jogo de voz** — entra num canal de voz e corre /join primeiro, depois começa.',
+  },
+  'game.start.alreadyActive': {
+    en: "A game is already running in <#{channel}>. Finish it (or use `/game stop`) before starting another.",
+    pt: 'Já há um jogo a decorrer em <#{channel}>. Termina-o (ou usa `/game stop`) antes de começar outro.',
+  },
+  'game.start.started': {
+    en: '🎮 Starting **{game}**! Watch the channel — good luck!',
+    pt: '🎮 A começar **{game}**! Atenção ao canal — boa sorte!',
+  },
+  'game.unknownGame': {
+    en: "I don't know that game. Pick one from the list.",
+    pt: 'Não conheço esse jogo. Escolhe um da lista.',
+  },
+  'game.stop.ok': {
+    en: '🛑 Stopped the current game.',
+    pt: '🛑 Parei o jogo atual.',
+  },
+  'game.stop.none': {
+    en: 'There is no game running right now.',
+    pt: 'Não há nenhum jogo a decorrer agora.',
+  },
+  'game.list.title': {
+    en: '🎮 **Games** — start one with `/game play`:',
+    pt: '🎮 **Jogos** — começa um com `/game play`:',
+  },
+  'game.list.line': {
+    en: '• **{name}** — {desc}',
+    pt: '• **{name}** — {desc}',
+  },
+  'game.leaderboard.title': {
+    en: '🏆 **Leaderboard** — top players on this server:',
+    pt: '🏆 **Leaderboard** — os melhores jogadores deste servidor:',
+  },
+  'game.leaderboard.empty': {
+    en: 'No games have been played yet. Be the first — `/game play`!',
+    pt: 'Ainda não se jogou nada. Sê o primeiro — `/game play`!',
+  },
+  'game.leaderboard.line': {
+    en: '{rank}. <@{user}> — **{points}** pts ({wins} wins)',
+    pt: '{rank}. <@{user}> — **{points}** pts ({wins} vitórias)',
+  },
+  // Resumo final partilhado por qualquer jogo (placar da partida).
+  'game.finish.title': {
+    en: '🏁 **Game over!** Final scores:',
+    pt: '🏁 **Fim de jogo!** Pontuações finais:',
+  },
+  'game.finish.line': {
+    en: '{rank}. **{user}** — {points}',
+    pt: '{rank}. **{user}** — {points}',
+  },
+  'game.finish.noScores': {
+    en: "🏁 Game over — nobody scored this time. Next time!",
+    pt: '🏁 Fim de jogo — ninguém pontuou desta vez. Para a próxima!',
+  },
+
+  // ── Adivinha a Língua ─────────────────────────────────────────────────────
+  'game.guessLanguage.name': {
+    en: 'Guess the Language',
+    pt: 'Adivinha a Língua',
+  },
+  'game.guessLanguage.desc': {
+    en: 'I read a sentence in a random language — first to name it wins the point.',
+    pt: 'Leio uma frase numa língua aleatória — o primeiro a acertar ganha o ponto.',
+  },
+  'game.guessLanguage.intro': {
+    en: "🗣️ **Guess the Language** — I'll read {rounds} sentences. Type which language you hear. Fastest correct answer wins each round!",
+    pt: '🗣️ **Adivinha a Língua** — vou ler {rounds} frases. Escreve que língua ouves. A resposta certa mais rápida ganha cada ronda!',
+  },
+  'game.guessLanguage.round': {
+    en: '🎧 Round {n}/{total} — listen…',
+    pt: '🎧 Ronda {n}/{total} — ouve com atenção…',
+  },
+  'game.guessLanguage.correct': {
+    en: '✅ **{user}** got it — it was **{language}**!',
+    pt: '✅ **{user}** acertou — era **{language}**!',
+  },
+  'game.guessLanguage.timeout': {
+    en: "⏱️ Time! That was **{language}**.",
+    pt: '⏱️ Tempo! Era **{language}**.',
+  },
+  'game.guessLanguage.noLanguages': {
+    en: "I don't have enough voices installed to play this. Ask an admin to add more voices.",
+    pt: 'Não tenho vozes suficientes instaladas para jogar isto. Pede a um admin para adicionar mais vozes.',
+  },
 };

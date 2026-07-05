@@ -89,6 +89,18 @@ export function initDb(path: string): Database.Database {
         nickname TEXT NOT NULL,
         PRIMARY KEY (guild_id, user_id)
       );
+
+      -- Leaderboard dos minijogos (/game) por-(guild,user). A coluna points acumula os
+      -- pontos ganhos em todas as partidas; wins conta quantas PARTIDAS a pessoa venceu
+      -- (foi a que mais pontuou nessa partida). Tabela NOVA: o CREATE IF NOT EXISTS cobre
+      -- tanto DBs novas como antigas (sem coluna a migrar), por isso nao ha ALTER abaixo.
+      CREATE TABLE IF NOT EXISTS game_score (
+        guild_id TEXT NOT NULL,
+        user_id  TEXT NOT NULL,
+        points   INTEGER NOT NULL DEFAULT 0,
+        wins     INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (guild_id, user_id)
+      );
     `);
 
     // Migracao idempotente para DBs criadas antes da coluna tts_role_id existir.

@@ -80,6 +80,25 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // O Voxi NUNCA se lê a si próprio — anti-loop, independentemente do read_bots.
     if (message.author.id === me.id) return;
 
+    // Minijogos (/game): se há um jogo ativo NO CANAL desta mensagem, entrega-a ao
+    // jogo (um potencial palpite) e NÃO a lê em voz alta — as respostas dos jogadores
+    // não são TTS. Colocado ANTES de toda a lógica de auto-leitura/rate-limit: um
+    // palpite não deve gastar rate-limit nem exigir que o canal de auto-leitura esteja
+    // configurado. As próprias mensagens do bot já foram filtradas acima, por isso o
+    // que chega aqui no canal do jogo é sempre input dos jogadores. handleMessage
+    // devolve true = consumida (o jogo trata dela) -> saímos sem sintetizar.
+    if (
+      deps.games?.handleMessage({
+        guildId: message.guildId,
+        channelId: message.channelId,
+        authorId: message.author.id,
+        authorName: message.member?.displayName ?? message.author.username ?? 'alguém',
+        content: message.content ?? '',
+      })
+    ) {
+      return;
+    }
+
     const cfg = getGuildConfig(deps.db, message.guildId);
     if (!cfg.enabled) return;
     // Outros bots/webhooks: só se o servidor optou por read_bots (default: ignora).

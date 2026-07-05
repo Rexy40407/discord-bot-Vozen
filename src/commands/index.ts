@@ -41,6 +41,8 @@ import type { SynthRequest } from '../tts/engine';
 import { voiceDisplayName, formatVoiceList, makeLocalizedNamer } from '../language/voiceMap';
 import { laughterFor } from '../content/laughter';
 import { JOKE_LANGUAGES, jokeLangByKey, pickJoke } from '../content/jokes';
+import { GAME_DEFS, gameById, filterGameChoices } from '../games/index';
+import { getLeaderboard } from '../store/gameScore';
 import { log } from '../logging/logger';
 import {
   t,
@@ -493,6 +495,32 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
   new SlashCommandBuilder()
     .setName('botstats')
     .setDescription('Public Voxi stats: servers, voice sessions, uptime')
+    .toJSON(),
+  // /game — minijogos de grupo. PUBLICO (sem gate de admin): qualquer um começa um
+  // jogo. Guild-only (nao esta em DM_CAPABLE_COMMANDS -> o .map poe contexts:[Guild]).
+  // A opcao `game` usa AUTOCOMPLETE (nomes na lingua do utilizador via t()); os
+  // subcomandos stop/list/leaderboard nao tem opcoes.
+  new SlashCommandBuilder()
+    .setName('game')
+    .setDescription('Play a minigame with the server')
+    .addSubcommand((s) =>
+      s
+        .setName('play')
+        .setDescription('Start a game')
+        .addStringOption((o) =>
+          o
+            .setName('game')
+            .setNameLocalizations({ 'pt-BR': 'jogo' })
+            .setDescription('Which game to play')
+            .setRequired(true)
+            .setAutocomplete(true),
+        ),
+    )
+    .addSubcommand((s) => s.setName('stop').setDescription('Stop the current game'))
+    .addSubcommand((s) => s.setName('list').setDescription('List the available games'))
+    .addSubcommand((s) =>
+      s.setName('leaderboard').setDescription("Show the server's game leaderboard"),
+    )
     .toJSON(),
   // Context-menu (botão direito numa mensagem -> Apps -> Speak): lê essa mensagem em
   // voz alta com a voz de quem clicou. Complementa o /tts sem escrever nada.
@@ -1425,6 +1453,83 @@ async function handleBotstats(i: ChatInputCommandInteraction, deps: BotDeps): Pr
 }
 
 /**
+ * /game — minijogos de grupo. Subcomandos:
+ *  - play <game>   : arranca um jogo (jogos de voz exigem o bot numa call);
+ *  - stop          : para o jogo ativo (pontos da partida abortada nao contam);
+ *  - list          : lista os jogos disponiveis (derivada de GAME_DEFS);
+ *  - leaderboard   : top jogadores do servidor (persistido em game_score).
+ *
+ * O ARRANQUE/PARAGEM respondem EPHEMERAL (ack ao invocador — o jogo em si fala no
+ * canal para todos). `list`/`leaderboard` sao informativos e partilhaveis, por isso
+ * respondem PUBLICO. Toda a UI no locale do invocador (localeForUser). O gating de
+ * "precisa de call" e "ja ha jogo" e feito aqui; o lock por-guild vive no GameManager.
+ */
+async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+  const locale = localeForUser(deps, i);
+  if (!deps.games) {
+    // Sem gestor de jogos (nunca deve acontecer em producao — sempre injetado no
+    // bootstrap; guard defensivo p/ testes que nao o injetam).
+    await reply(i, t('error.generic', locale));
+    return;
+  }
+  const sub = i.options.getSubcommand();
+
+  if (sub === 'play') {
+    const gameId = i.options.getString('game', true);
+    const def = gameById(gameId);
+    if (!def) {
+      await reply(i, t('game.unknownGame', locale));
+      return;
+    }
+    // Jogos de voz exigem o bot numa call (como o /tts): sem player, nada a anunciar.
+    if (def.needsVoice && !getPlayer(deps, i.guildId!)) {
+      await reply(i, t('game.start.needVoice', locale));
+      return;
+    }
+    const res = deps.games.start(i.guildId!, i.channelId, def.create());
+    if (res === 'already-active') {
+      const ch = deps.games.channelOf(i.guildId!) ?? i.channelId;
+      await reply(i, t('game.start.alreadyActive', locale, { channel: ch }));
+      return;
+    }
+    await reply(i, t('game.start.started', locale, { game: t(def.nameKey, locale) }));
+    return;
+  }
+
+  if (sub === 'stop') {
+    const ok = deps.games.stop(i.guildId!);
+    await reply(i, ok ? t('game.stop.ok', locale) : t('game.stop.none', locale));
+    return;
+  }
+
+  if (sub === 'list') {
+    const lines = GAME_DEFS.map((g) =>
+      t('game.list.line', locale, { name: t(g.nameKey, locale), desc: t(g.descKey, locale) }),
+    );
+    await i.reply({ content: `${t('game.list.title', locale)}\n${lines.join('\n')}` });
+    return;
+  }
+
+  if (sub === 'leaderboard') {
+    const rows = getLeaderboard(deps.db, i.guildId!, 10);
+    if (rows.length === 0) {
+      await reply(i, t('game.leaderboard.empty', locale));
+      return;
+    }
+    const lines = rows.map((r, idx) =>
+      t('game.leaderboard.line', locale, {
+        rank: idx + 1,
+        user: r.userId,
+        points: r.points,
+        wins: r.wins,
+      }),
+    );
+    await i.reply({ content: `${t('game.leaderboard.title', locale)}\n${lines.join('\n')}` });
+    return;
+  }
+}
+
+/**
  * /invite — devolve o URL de convite OAuth2 do bot, construido a partir do
  * CLIENT_ID da config. Gatilho do "loop viral".
  *
@@ -1635,6 +1740,13 @@ export async function handleAutocomplete(
       await i.respond(filterLocaleChoices(focused.value));
       return;
     }
+    // /game play: nomes dos jogos na LINGUA do utilizador. filterGameChoices espera o
+    // codigo base ('pt', 'fr'); normalizamos o i.locale do Discord ('pt-BR' -> 'pt').
+    if (focused.name === 'game') {
+      const base = (i.locale || '').split('-')[0].toLowerCase() || 'en';
+      await i.respond(filterGameChoices(focused.value, base));
+      return;
+    }
     await i.respond([]);
   } catch (err) {
     log.error('[autocomplete] erro', err);
@@ -1656,6 +1768,8 @@ export async function handleInteraction(i: ChatInputCommandInteraction, deps: Bo
         return await handleLaugh(i, deps);
       case 'joke':
         return await handleJoke(i, deps);
+      case 'game':
+        return await handleGame(i, deps);
       case 'voice':
         return await handleVoice(i, deps);
       case 'config':

@@ -5,6 +5,7 @@ import type { TTSEngine } from '../tts/engine';
 import { GuildVoicePlayer } from '../voice/player';
 import { RateLimiter } from '../moderation/rateLimiter';
 import type { AloneWatcher } from '../voice/aloneWatcher';
+import type { GameManager } from '../games/manager';
 import { log } from '../logging/logger';
 
 export interface BotDeps {
@@ -24,6 +25,11 @@ export interface BotDeps {
    * o mapa (ex. testes antigos) não há supressão (anuncia sempre).
    */
   lastSpeaker?: Map<string, string>;
+  /**
+   * Gestor dos minijogos (/game). Um jogo ativo por guild. Opcional (testes antigos
+   * nao o injetam; sem ele nao ha jogos, so o TTS normal). Ver src/games.
+   */
+  games?: GameManager;
 }
 
 export function getPlayer(deps: BotDeps, guildId: string): GuildVoicePlayer | undefined {
@@ -31,7 +37,7 @@ export function getPlayer(deps: BotDeps, guildId: string): GuildVoicePlayer | un
 }
 
 export function removePlayer(
-  deps: Pick<BotDeps, 'players' | 'aloneWatcher' | 'lastSpeaker'>,
+  deps: Pick<BotDeps, 'players' | 'aloneWatcher' | 'lastSpeaker' | 'games'>,
   guildId: string,
 ): void {
   // Cancela o timer de "sozinho" ANTES de tudo. Este e o FUNIL de todas as saidas
@@ -39,6 +45,10 @@ export function removePlayer(
   // limpar aqui garante que um timer armado nunca sobrevive para derrubar uma sessao
   // NOVA instalada entretanto (o bug classico de timer-fantasma).
   deps.aloneWatcher?.clear(guildId);
+  // Mesma razao para os JOGOS: se o bot sai da call (ex. AloneWatcher sai imediato
+  // quando o canal esvazia) a meio de uma partida de voz, os timers de ronda tem de
+  // morrer aqui — senao ficavam vivos a chamar player.say num player ja destruido.
+  deps.games?.endGuild(guildId);
   // Esquece o último locutor: ao voltar à call, o xsaid volta a anunciar quem falou.
   deps.lastSpeaker?.delete(guildId);
   const p = deps.players.get(guildId);
@@ -60,7 +70,7 @@ export function removePlayer(
  * nao existir, `.delete` e removePlayer sao no-ops.
  */
 export function handleGuildDelete(
-  deps: Pick<BotDeps, 'players' | 'limiters' | 'aloneWatcher'>,
+  deps: Pick<BotDeps, 'players' | 'limiters' | 'aloneWatcher' | 'games'>,
   guildId: string,
 ): void {
   try {

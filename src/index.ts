@@ -12,6 +12,11 @@ import { GuildVoicePlayer } from './voice/player';
 import { AloneWatcher } from './voice/aloneWatcher';
 import type { BotDeps } from './bot/deps';
 import { removePlayer } from './bot/deps';
+import { GameManager } from './games/manager';
+import { systemClock } from './games/types';
+import { getGuildConfig } from './store/guildConfig';
+import { persistGameScores } from './store/gameScore';
+import { t, DEFAULT_LOCALE } from './i18n/index';
 import { createClient, bindEvents } from './bot/client';
 import { registerCommands } from './bot/registerCommands';
 import { installSignalHandlers } from './bot/shutdown';
@@ -107,6 +112,42 @@ async function main(): Promise<void> {
       removePlayer(deps, guildId);
       getVoiceConnection(guildId)?.destroy();
     },
+  });
+
+  // Minijogos (/game). O GameManager e desacoplado de discord.js/SQLite: recebe um
+  // GameEnv com as capacidades de que precisa (falar, enviar ao canal, locale,
+  // traduzir, persistir pontos), todas backed por `deps`/`db`/`client`. `singleVoice`
+  // e o relogio de sistema vivem no manager. Fica em `deps.games`, lido pelo
+  // handleMessage (palpites) e pelo funil de saida (removePlayer -> endGuild).
+  const defaultVoiceOf = (guildId: string): string => {
+    try {
+      return getGuildConfig(db, guildId).defaultVoice || config.defaultVoice || 'en_US-amy-medium';
+    } catch {
+      return config.defaultVoice || 'en_US-amy-medium';
+    }
+  };
+  deps.games = new GameManager({
+    clock: systemClock,
+    availableModels,
+    defaultSpeed: config.defaultSpeed,
+    defaultVoiceOf,
+    getPlayer: (guildId) => deps.players.get(guildId),
+    sendToChannel: async (channelId, content) => {
+      const ch = client.channels.cache.get(channelId);
+      if (ch && 'send' in ch && typeof (ch as { send?: unknown }).send === 'function') {
+        await (ch as { send: (c: unknown) => Promise<unknown> }).send(content);
+      }
+    },
+    localeOf: (guildId) => {
+      try {
+        return getGuildConfig(db, guildId).locale;
+      } catch {
+        return DEFAULT_LOCALE;
+      }
+    },
+    translate: (key, locale, params) => t(key, locale, params),
+    persistScores: (guildId, points) => persistGameScores(db, guildId, points),
+    logError: (msg, err) => log.error(msg, err),
   });
 
   bindEvents(deps);
