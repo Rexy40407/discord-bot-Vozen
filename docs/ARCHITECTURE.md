@@ -117,8 +117,10 @@ persiste em `game_score` (`store/gameScore.ts`).
 
 Os jogadores respondem no **canal onde o jogo foi aberto**; o `GameManager.handleMessage`
 consome essas mensagens (não são lidas em voz alta). Os timers usam um `Clock` injetável
-e são cancelados no fim; o `removePlayer`/`handleGuildDelete` chamam `endGuild` para não
-orfanar timers quando o bot sai da call/guild. Famílias:
+e são cancelados no fim. Uma saída de **voz** (`removePlayer` → `onVoiceLeft`) só termina
+jogos que **precisam de voz** (um jogo de tabuleiro sobrevive a uma saída de voz não
+relacionada); a guild ser **removida** (`handleGuildDelete` → `endGuild`) termina qualquer
+jogo (sem leak). Famílias:
 - **Voz → 1º a acertar** (base `QuizGame`): Adivinha a Língua, Matemática Falada,
   Contagem Sabotada, Ditado, Soletrado ao Contrário, Velocidade Estúpida, Sotaque Trocado.
 - **Timing / one-shot**: Reflexos, Voxi Diz, Roleta (Verdade ou Consequência).

@@ -45,10 +45,13 @@ export function removePlayer(
   // limpar aqui garante que um timer armado nunca sobrevive para derrubar uma sessao
   // NOVA instalada entretanto (o bug classico de timer-fantasma).
   deps.aloneWatcher?.clear(guildId);
-  // Mesma razao para os JOGOS: se o bot sai da call (ex. AloneWatcher sai imediato
-  // quando o canal esvazia) a meio de uma partida de voz, os timers de ronda tem de
-  // morrer aqui — senao ficavam vivos a chamar player.say num player ja destruido.
-  deps.games?.endGuild(guildId);
+  // Mesma razao para os JOGOS DE VOZ: se o bot sai da call (ex. AloneWatcher sai
+  // imediato quando o canal esvazia) a meio de uma partida de voz, os timers de ronda
+  // tem de morrer aqui — senao ficavam vivos a chamar player.say num player destruido.
+  // `onVoiceLeft` so termina jogos que PRECISAM de voz: um jogo de tabuleiro (texto)
+  // nao deve morrer por uma saida de voz nao relacionada. O teardown total de qualquer
+  // jogo (guild removida) vive no handleGuildDelete.
+  deps.games?.onVoiceLeft(guildId);
   // Esquece o último locutor: ao voltar à call, o xsaid volta a anunciar quem falou.
   deps.lastSpeaker?.delete(guildId);
   const p = deps.players.get(guildId);
@@ -76,6 +79,10 @@ export function handleGuildDelete(
   try {
     deps.limiters.delete(guildId);
     removePlayer(deps, guildId);
+    // A guild desapareceu: termina QUALQUER jogo ativo (incl. tabuleiro), que o
+    // removePlayer/onVoiceLeft deixaria vivo se nao precisasse de voz — senao a sessao
+    // ficava presa no mapa (leak) apos a guild sair.
+    deps.games?.endGuild(guildId);
   } catch (err) {
     log.warn('[client] falha ao libertar recursos da guild em guildDelete (ignorado)', err);
   }

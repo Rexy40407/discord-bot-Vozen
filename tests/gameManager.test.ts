@@ -189,6 +189,23 @@ describe('GameManager', () => {
     expect(mgr.active(GUILD)).toBe(false);
   });
 
+  it('onVoiceLeft termina jogos de VOZ mas poupa os de tabuleiro; endGuild termina qualquer', async () => {
+    // Jogo de VOZ (needsVoice default true): uma saida de voz termina-o.
+    mgr.start(GUILD, CHAN, new SpyGame());
+    await flush();
+    mgr.onVoiceLeft(GUILD);
+    expect(mgr.active(GUILD)).toBe(false);
+
+    // Jogo de TABULEIRO (needsVoice=false): sobrevive a uma saida de voz nao relacionada.
+    mgr.start(GUILD, CHAN, new SpyGame(), false);
+    await flush();
+    mgr.onVoiceLeft(GUILD);
+    expect(mgr.active(GUILD)).toBe(true);
+    // Mas a guild ser removida (endGuild) termina-o na mesma (sem leak).
+    mgr.endGuild(GUILD);
+    expect(mgr.active(GUILD)).toBe(false);
+  });
+
   it('ctx.say usa o player; sem player devolve false', async () => {
     const say = vi.fn(async () => true);
     let hasPlayer = true;

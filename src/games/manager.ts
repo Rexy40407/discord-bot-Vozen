@@ -17,6 +17,8 @@ interface Session {
   points: Map<string, number>;
   ended: boolean;
   seed: number;
+  /** O jogo usa a call (jogos de voz) ? Decide se uma SAÍDA DE VOZ o deve terminar. */
+  needsVoice: boolean;
 }
 
 /** Mensagem crua que chega ao manager a partir do handler de mensagens. */
@@ -68,7 +70,7 @@ export class GameManager {
    * nesta guild (o chamador traduz para uma mensagem amigavel). O `game.start` pode
    * ser async; um erro nele e engolido+logado (nunca crasha o comando).
    */
-  start(guildId: string, channelId: string, game: Game): StartResult {
+  start(guildId: string, channelId: string, game: Game, needsVoice = true): StartResult {
     if (this.sessions.has(guildId)) return 'already-active';
     const session: Session = {
       guildId,
@@ -78,6 +80,7 @@ export class GameManager {
       points: new Map(),
       ended: false,
       seed: this.env.clock.now(),
+      needsVoice,
     };
     this.sessions.set(guildId, session);
     const ctx = this.makeContext(session);
@@ -125,10 +128,20 @@ export class GameManager {
   }
 
   /**
-   * Teardown FORCADO: o bot saiu da call ou da guild. Chamado do funil de saida
-   * (removePlayer / handleGuildDelete) para que um timer de ronda nao sobreviva a uma
-   * saida (o AloneWatcher sai IMEDIATAMENTE quando o canal esvazia). Nao persiste
-   * pontos — a partida foi interrompida, nao terminada.
+   * O bot SAIU DA CALL desta guild (funil de saida `removePlayer`: /leave, sozinho,
+   * desistencia-de-reconexao). So termina o jogo se ELE PRECISAR de voz — um jogo de
+   * tabuleiro (texto) nao deve morrer porque a call esvaziou. Para jogos de voz, mata
+   * os timers de ronda para nao ficarem a chamar `player.say` num player destruido (o
+   * bug timer-fantasma). Nao persiste (partida interrompida).
+   */
+  onVoiceLeft(guildId: string): void {
+    const s = this.sessions.get(guildId);
+    if (s && s.needsVoice) this.teardown(s, false);
+  }
+
+  /**
+   * Teardown FORCADO de QUALQUER jogo ativo: a guild foi removida (kick/leave) ou um
+   * shutdown. Chamado do `handleGuildDelete`. Nao persiste — partida interrompida.
    */
   endGuild(guildId: string): void {
     const s = this.sessions.get(guildId);
