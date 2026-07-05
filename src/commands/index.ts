@@ -26,6 +26,8 @@ import { getGuildConfig, setGuildConfig, resetGuildConfig } from '../store/guild
 import { addBlockword, removeBlockword, getBlocklist } from '../store/blocklist';
 import { setOptOut, setOptIn } from '../store/optout';
 import { setNickname, clearNickname } from '../store/nickname';
+import { getPersona, setPersona } from '../store/persona';
+import { isPersona, PERSONA_CHOICES, type Persona } from '../textCleaning/personas';
 import { sanitizeSpeakerName } from '../language/speakerName';
 import { isDetectionOn, setDetection } from '../store/langDetect';
 import {
@@ -249,6 +251,19 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             .setDescription('Spoken name (empty = use your server name)')
             .setRequired(false)
             .setMaxLength(40),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName('persona')
+        .setDescription('Read your messages in a fun style (pirate, uwu, Yoda...)')
+        .addStringOption((o) =>
+          o
+            .setName('style')
+            .setNameLocalizations({ 'pt-BR': 'estilo' })
+            .setDescription('Speaking style (none = normal)')
+            .setRequired(true)
+            .addChoices(...PERSONA_CHOICES),
         ),
     )
     .toJSON(),
@@ -704,6 +719,7 @@ async function speakRawText(
     autoDetect: auto,
     recentLang,
     media: media.map((kind) => ({ kind })),
+    persona: getPersona(deps.db, guildId, userId),
   });
   if (learnedLang) rememberLang(guildId, userId, learnedLang);
   // Motor escolhido pelo user (google default | piper) — usado pelo PerUserEngineRouter.
@@ -976,6 +992,11 @@ async function handleVoiceDetection(
   await reply(i, active ? t('voice.detection.on', locale) : t('voice.detection.off', locale));
 }
 
+/** Label legível de uma persona (o `name` da choice, ex. '🏴‍☠️ Pirate'); fallback ao id. */
+function personaLabel(persona: Persona): string {
+  return PERSONA_CHOICES.find((c) => c.value === persona)?.name ?? persona;
+}
+
 async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const sub = i.options.getSubcommand();
@@ -1056,6 +1077,18 @@ async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promi
       setNickname(deps.db, i.guildId!, i.user.id, clean);
       await reply(i, t('voice.nickname.set', locale, { name: clean }));
     }
+  } else if (sub === 'persona') {
+    // Persona de fala: estilo com que o Voxi lê as mensagens desta pessoa. As choices
+    // do builder já garantem um valor válido; isPersona é rede de segurança.
+    const style = i.options.getString('style', true);
+    const persona = isPersona(style) ? style : 'none';
+    setPersona(deps.db, i.guildId!, i.user.id, persona);
+    await reply(
+      i,
+      persona === 'none'
+        ? t('voice.persona.cleared', locale)
+        : t('voice.persona.set', locale, { style: personaLabel(persona) }),
+    );
   } else if (sub === 'preview') {
     const SAMPLE = t('preview.sample', locale);
     const explicitModel = i.options.getString('model');

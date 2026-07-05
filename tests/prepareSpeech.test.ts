@@ -173,6 +173,34 @@ describe('prepareSpeech — autoDetect OFF (voz fixa)', () => {
   });
 });
 
+describe('prepareSpeech — persona transforma o texto sintetizado', () => {
+  it('pirate: aplica a persona ao req.text (voz mantém-se pela deteção)', () => {
+    const { req } = prepareSpeech({
+      ...BASE,
+      personal: 'hello my friend how are you today',
+      persona: 'pirate',
+    });
+    expect(req.text).toContain('ahoy');
+    expect(req.text).toContain('ye');
+    expect(req.text).not.toContain('friend');
+  });
+
+  it("'none' não altera o texto", () => {
+    const { req } = prepareSpeech({ ...BASE, personal: 'hello my friend', persona: 'none' });
+    expect(req.text).toBe('hello my friend');
+  });
+
+  it('persona aplica-se ao anúncio xsaid também (segmento incluído)', () => {
+    const { req } = prepareSpeech({
+      ...BASE,
+      autoDetect: false,
+      personal: 'really lovely',
+      persona: 'uwu',
+    });
+    expect(req.text).toBe('weawwy wovewy');
+  });
+});
+
 describe('hasReadableText — ha letra ou numero?', () => {
   it('true quando ha letra/numero', () => {
     expect(hasReadableText('abc')).toBe(true);

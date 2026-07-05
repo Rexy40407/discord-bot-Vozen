@@ -11,6 +11,7 @@ import { getNickname } from '../store/nickname';
 import { getGuildConfig } from '../store/guildConfig';
 import { getBlocklist } from '../store/blocklist';
 import { redactBlocked } from '../moderation/filter';
+import { getPersona } from '../store/persona';
 import { getPronunciations } from '../store/pronunciation';
 import { getUserVoice } from '../store/userVoice';
 import { isOptedOut } from '../store/optout';
@@ -230,6 +231,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       recentLang,
       media,
       announceSpeaker: announce ? speakerName : undefined,
+      persona: getPersona(deps.db, message.guildId, message.author.id),
     });
     if (learnedLang) rememberLang(message.guildId, message.author.id, learnedLang);
     // Motor escolhido pelo autor (google default | piper). O PerUserEngineRouter usa isto.
