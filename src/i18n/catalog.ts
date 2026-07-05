@@ -908,6 +908,7 @@ export const catalog: Record<string, Entry> = {
       '• /voice reset — go back to the default voice\n' +
       '• /voice detection <on/off> — native voice per language, speaker may change (off by default: one fixed voice)\n' +
       '• /voice effect <effect> — voice effect (robot, echo… 💎 more with Premium)\n' +
+      '• /voice clone record — clone YOUR OWN voice (💎 Premium, consent-first)\n' +
       '• /voice optout · /voice optin — turn auto-read off / on for you',
     pt:
       '• /voice set <model> — escolhe a tua voz · ex. /voice set pt_PT-tugao-medium\n' +
@@ -916,6 +917,7 @@ export const catalog: Record<string, Entry> = {
       '• /voice reset — volta a voz por defeito\n' +
       '• /voice detection <on/off> — voz nativa por lingua, o locutor pode mudar (desligado por defeito: uma voz fixa)\n' +
       '• /voice effect <efeito> — efeito de voz (robot, echo… 💎 mais com Premium)\n' +
+      '• /voice clone record — clona a TUA voz (💎 Premium, com consentimento)\n' +
       '• /voice optout · /voice optin — desliga / liga a leitura automatica para ti',
   },
   'help.groupFun': {

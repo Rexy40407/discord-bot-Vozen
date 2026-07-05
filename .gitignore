@@ -6,3 +6,8 @@ cache/
 *.db-*
 models/
 piper/
+
+# Motor de clone de voz (venv Python local, ~6GB) + temporários
+tools/clone-venv/
+tools/_smoke_*
+voice-clones/
