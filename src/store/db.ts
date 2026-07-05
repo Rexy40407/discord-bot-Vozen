@@ -124,6 +124,19 @@ export function initDb(path: string): Database.Database {
         day      INTEGER NOT NULL,
         PRIMARY KEY (guild_id, user_id)
       );
+
+      -- "Tagarelas": quantas mensagens de cada pessoa o Voxi leu (auto-read) + streak de
+      -- dias seguidos. Alimenta o /topspeakers. last_date = chave 'YYYY-MM-DD' do dia local
+      -- da última mensagem. Tabela NOVA (CREATE IF NOT EXISTS cobre DBs novas e antigas).
+      CREATE TABLE IF NOT EXISTS talk_stats (
+        guild_id     TEXT NOT NULL,
+        user_id      TEXT NOT NULL,
+        spoken_count INTEGER NOT NULL DEFAULT 0,
+        streak       INTEGER NOT NULL DEFAULT 0,
+        best_streak  INTEGER NOT NULL DEFAULT 0,
+        last_date    TEXT NOT NULL DEFAULT '',
+        PRIMARY KEY (guild_id, user_id)
+      );
     `);
 
     // Migracao idempotente para DBs criadas antes da coluna tts_role_id existir.

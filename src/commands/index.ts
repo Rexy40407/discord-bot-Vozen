@@ -29,6 +29,7 @@ import { setNickname, clearNickname } from '../store/nickname';
 import { getPersona, setPersona } from '../store/persona';
 import { isPersona, PERSONA_CHOICES, type Persona } from '../textCleaning/personas';
 import { getBirthday, setBirthday, clearBirthday, isValidBirthday } from '../store/birthday';
+import { getTopSpeakers } from '../store/talkStats';
 import { sanitizeSpeakerName } from '../language/speakerName';
 import { isDetectionOn, setDetection } from '../store/langDetect';
 import {
@@ -252,6 +253,11 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .addSubcommand((s) => s.setName('clear').setDescription('Remove your saved birthday'))
     .addSubcommand((s) => s.setName('show').setDescription('Show your saved birthday'))
+    .toJSON(),
+  // /topspeakers — quem teve mais mensagens lidas pelo Voxi + streaks de dias seguidos.
+  new SlashCommandBuilder()
+    .setName('topspeakers')
+    .setDescription('See who Voxi has read the most — and daily streaks')
     .toJSON(),
   new SlashCommandBuilder()
     .setName('voice')
@@ -1039,6 +1045,29 @@ async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps): Promis
 
   // Confirmacao inclui a piada escrita (o user ve o que esta a ser lido).
   await i.editReply(queued ? t('joke.playing', locale, { joke }) : t('tts.busy', locale));
+}
+
+/**
+ * /topspeakers — ranking público de quem teve mais mensagens LIDAS pelo Voxi nesta guild,
+ * com o streak (dias seguidos a falar) de cada um. Mesma renderização do game leaderboard
+ * (<@id> + linhas i18n). Vazio -> mensagem a convidar a falar.
+ */
+async function handleTopSpeakers(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+  const locale = localeForUser(deps, i);
+  const rows = getTopSpeakers(deps.db, i.guildId!, 10);
+  if (rows.length === 0) {
+    await reply(i, t('topspeakers.empty', locale));
+    return;
+  }
+  const lines = rows.map((r, idx) =>
+    t('topspeakers.line', locale, {
+      rank: idx + 1,
+      user: r.userId,
+      count: r.count,
+      streak: r.streak,
+    }),
+  );
+  await i.reply({ content: `${t('topspeakers.title', locale)}\n${lines.join('\n')}` });
 }
 
 type MicroFunKind = '8ball' | 'fortune' | 'fact' | 'wyr';
@@ -2046,6 +2075,8 @@ export async function handleInteraction(i: ChatInputCommandInteraction, deps: Bo
         return await handleMicroFun(i, deps, 'wyr');
       case 'birthday':
         return await handleBirthday(i, deps);
+      case 'topspeakers':
+        return await handleTopSpeakers(i, deps);
       case 'game':
         return await handleGame(i, deps);
       case 'voice':

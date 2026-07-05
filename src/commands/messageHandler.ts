@@ -12,6 +12,7 @@ import { getGuildConfig } from '../store/guildConfig';
 import { getBlocklist } from '../store/blocklist';
 import { redactBlocked } from '../moderation/filter';
 import { getPersona } from '../store/persona';
+import { bumpTalk } from '../store/talkStats';
 import { getPronunciations } from '../store/pronunciation';
 import { getUserVoice } from '../store/userVoice';
 import { isOptedOut } from '../store/optout';
@@ -249,6 +250,14 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // Passou tudo: esta mensagem VAI ser lida. Regista o autor como último locutor
     // (só agora — uma mensagem bloqueada/ignorada não conta para a supressão do xsaid).
     deps.lastSpeaker?.set(message.guildId, message.author.id);
+
+    // "Tagarelas" (/topspeakers): conta esta mensagem lida + atualiza o streak diário do
+    // autor. Só aqui (a mensagem foi mesmo lida). Best-effort — nunca deve impedir a fala.
+    try {
+      bumpTalk(deps.db, message.guildId, message.author.id, new Date());
+    } catch (err) {
+      log.warn('[messageHandler] falha a registar tagarela (ignorado)', err);
+    }
 
     // Silêncio de arranque: o bot só começa a falar `messageLeadMs` depois da mensagem
     // (silêncio PREPENDido ao WAV). Configurável (MESSAGE_LEAD_MS); 0 = sem espera.

@@ -259,6 +259,20 @@ export const catalog: Record<string, Entry> = {
     pt: 'Ainda não definiste um aniversário. Usa `/birthday set`.',
   },
 
+  // ── /topspeakers (tagarelas do servidor) ───────────────────────────────────
+  'topspeakers.title': {
+    en: '🗣️ **Top speakers** — who I read the most on this server:',
+    pt: '🗣️ **Tagarelas** — quem eu mais li neste servidor:',
+  },
+  'topspeakers.empty': {
+    en: "I haven't read anyone's messages yet. Set up a read channel with `/setup`!",
+    pt: 'Ainda não li mensagens de ninguém. Configura um canal de leitura com `/setup`!',
+  },
+  'topspeakers.line': {
+    en: '{rank}. <@{user}> — **{count}** messages · 🔥 {streak}-day streak',
+    pt: '{rank}. <@{user}> — **{count}** mensagens · 🔥 streak de {streak} dias',
+  },
+
   // ── /voice abbrev (abreviaturas pessoais, globais) ─────────────────────────
   'voice.abbrev.added': {
     en: 'Got it — {term} will be read as {replacement}.',
@@ -813,6 +827,7 @@ export const catalog: Record<string, Entry> = {
       '• /laugh — I laugh out loud in your current voice\n' +
       '• /8ball · /fortune · /fact · /wyr — I answer/read out loud (and in chat)\n' +
       '• /birthday set — I wish you a happy birthday when you join on your day\n' +
+      '• /topspeakers — who I read the most + daily streaks\n' +
       '• /game — play a minigame with the server (13 games!) · e.g. /game play, /game leaderboard',
     pt:
       '• /joke — conto uma piada curta (escolhe a lingua + risos opcionais) · ex. /joke Portuguese\n' +
