@@ -1,0 +1,264 @@
+/* ═══════════════════════════════════════════════════════════
+   Voxi site — main.js
+   ═══════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+
+  /* ── config ──────────────────────────────────────────────
+     TODO: preenche o CLIENT_ID do Voxi (é público — está em qualquer
+     link de convite). SUPPORT_URL: mete o link do teu servidor de suporte. */
+  const CLIENT_ID = "YOUR_CLIENT_ID";
+  const INVITE_PERMISSIONS = "3214336"; // Connect+Speak+ViewChannel+SendMessages+ReadMessageHistory
+  const SUPPORT_URL = "https://discord.gg/"; // TODO: link do servidor de suporte
+  const INVITE_URL =
+    CLIENT_ID && CLIENT_ID !== "YOUR_CLIENT_ID"
+      ? `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&scope=bot%20applications.commands&permissions=${INVITE_PERMISSIONS}`
+      : "#";
+  const TOPGG_URL =
+    CLIENT_ID && CLIENT_ID !== "YOUR_CLIENT_ID" ? `https://top.gg/bot/${CLIENT_ID}/vote` : "#";
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  /* ── external links ──────────────────────────────────── */
+  $$(".js-invite").forEach((a) => {
+    a.href = INVITE_URL;
+    if (INVITE_URL !== "#") a.target = "_blank";
+  });
+  $$(".js-support").forEach((a) => {
+    a.href = SUPPORT_URL;
+    a.target = "_blank";
+  });
+  $$(".js-vote").forEach((a) => {
+    a.href = TOPGG_URL;
+    if (TOPGG_URL !== "#") a.target = "_blank";
+  });
+
+  /* ── i18n ────────────────────────────────────────────── */
+  const DICT = window.VOXI_I18N;
+  let lang = localStorage.getItem("voxi-lang");
+  if (!lang) lang = (navigator.language || "en").toLowerCase().startsWith("pt") ? "pt" : "en";
+
+  function applyLang(l) {
+    lang = DICT[l] ? l : "en";
+    localStorage.setItem("voxi-lang", lang);
+    document.documentElement.lang = lang;
+    const d = DICT[lang];
+    $$("[data-i18n]").forEach((el) => {
+      const k = el.getAttribute("data-i18n");
+      if (d[k] != null) el.textContent = d[k];
+    });
+    $$(".lang-toggle button").forEach((b) => b.classList.toggle("is-active", b.dataset.lang === lang));
+    renderCommands();
+    renderFaq();
+  }
+
+  $$(".lang-toggle button").forEach((b) =>
+    b.addEventListener("click", () => applyLang(b.dataset.lang)),
+  );
+
+  /* ── navbar ──────────────────────────────────────────── */
+  const nav = $("#nav");
+  const onScroll = () => nav.classList.toggle("is-stuck", window.scrollY > 12);
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  const burger = $("#burger");
+  const links = $(".nav__links");
+  burger.addEventListener("click", () => {
+    const open = links.classList.toggle("is-open");
+    burger.setAttribute("aria-expanded", String(open));
+  });
+  $$(".nav__links a").forEach((a) =>
+    a.addEventListener("click", () => {
+      links.classList.remove("is-open");
+      burger.setAttribute("aria-expanded", "false");
+    }),
+  );
+
+  /* ── reveal on scroll ────────────────────────────────── */
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add("in-view");
+          io.unobserve(e.target);
+        }
+      });
+    },
+    { threshold: 0.15 },
+  );
+  $$(".reveal:not([data-r])").forEach((el) => io.observe(el));
+
+  /* ── animated counters ───────────────────────────────── */
+  const counters = $$(".count");
+  const cio = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        cio.unobserve(e.target);
+        const el = e.target;
+        const to = +el.dataset.to;
+        if (reduce) {
+          el.textContent = to;
+          return;
+        }
+        const dur = 1100;
+        const start = performance.now();
+        const tick = (now) => {
+          const p = Math.min(1, (now - start) / dur);
+          el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+    },
+    { threshold: 0.5 },
+  );
+  counters.forEach((c) => cio.observe(c));
+
+  /* ── language marquee ────────────────────────────────── */
+  const LANGS = [
+    ["🇵🇹", "Português"], ["🇬🇧", "English"], ["🇪🇸", "Español"], ["🇫🇷", "Français"],
+    ["🇩🇪", "Deutsch"], ["🇮🇹", "Italiano"], ["🇳🇱", "Nederlands"], ["🇵🇱", "Polski"],
+    ["🇷🇺", "Русский"], ["🇺🇦", "Українська"], ["🇹🇷", "Türkçe"], ["🇸🇪", "Svenska"],
+    ["🇯🇵", "日本語"], ["🇨🇳", "中文"], ["🇸🇦", "العربية"], ["🇬🇷", "Ελληνικά"],
+    ["🇨🇿", "Čeština"], ["🇩🇰", "Dansk"], ["🇫🇮", "Suomi"], ["🇷🇴", "Română"],
+    ["🇭🇺", "Magyar"], ["🇻🇳", "Tiếng Việt"], ["🇮🇸", "Íslenska"], ["🇬🇪", "ქართული"],
+  ];
+  const track = $("#marqueeTrack");
+  if (track) {
+    const chip = ([f, n]) => `<span class="chip">${f} ${n}</span>`;
+    // duplicate the set so the -50% loop is seamless
+    track.innerHTML = LANGS.map(chip).join("") + LANGS.map(chip).join("");
+  }
+
+  /* ── wordle mock ─────────────────────────────────────── */
+  const WORD = [
+    [["V", "x"], ["O", "y"], ["I", "x"], ["C", "x"], ["E", "y"]],
+    [["S", "x"], ["O", "g"], ["U", "x"], ["N", "x"], ["D", "x"]],
+    [["V", "g"], ["O", "g"], ["X", "g"], ["E", "g"], ["L", "g"]],
+  ];
+  const wordle = $("#wordle");
+  if (wordle) {
+    wordle.innerHTML = WORD.map(
+      (row) =>
+        `<div class="wrow">${row
+          .map(([ch, s]) => `<span class="wtile ${s}">${ch}</span>`)
+          .join("")}</div>`,
+    ).join("");
+  }
+
+  /* ── commands ────────────────────────────────────────── */
+  const cmdList = $("#cmdList");
+  let activeTab = "general";
+  function renderCommands() {
+    if (!cmdList) return;
+    const rows = window.VOXI_COMMANDS[activeTab] || [];
+    cmdList.innerHTML = rows
+      .map(([cmd, desc]) => `<div class="cmd"><code>${cmd}</code><span>${desc[lang] || desc.en}</span></div>`)
+      .join("");
+  }
+  $$("#cmdTabs button").forEach((b) =>
+    b.addEventListener("click", () => {
+      activeTab = b.dataset.tab;
+      $$("#cmdTabs button").forEach((x) => x.classList.toggle("is-active", x === b));
+      renderCommands();
+    }),
+  );
+
+  /* ── faq ─────────────────────────────────────────────── */
+  const faqList = $("#faq-list");
+  function renderFaq() {
+    if (!faqList) return;
+    faqList.innerHTML = window.VOXI_FAQ.map(
+      ([q, a], i) => `
+      <div class="qa">
+        <button class="qa__q" aria-expanded="false" aria-controls="qa-${i}">
+          <span>${q[lang] || q.en}</span>
+        </button>
+        <div class="qa__a" id="qa-${i}" role="region"><p>${a[lang] || a.en}</p></div>
+      </div>`,
+    ).join("");
+    $$(".qa__q", faqList).forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const qa = btn.parentElement;
+        const panel = qa.querySelector(".qa__a");
+        const open = qa.classList.toggle("is-open");
+        btn.setAttribute("aria-expanded", String(open));
+        panel.style.maxHeight = open ? panel.scrollHeight + "px" : "0";
+      }),
+    );
+  }
+
+  /* ── animated Discord chat mock ──────────────────────── */
+  const chat = $("#chat");
+  const SCRIPT = [
+    { name: "Ana", av: "A", cls: "u", text: "boa noite pessoal 🌙", say: "PT" },
+    { name: "Kai", av: "K", cls: "u", text: "what's the plan tonight?", say: "EN" },
+    { name: "Léa", av: "L", cls: "u", text: "on lance une partie ? 🎮", say: "FR" },
+  ];
+
+  function bubble(m, textHtml, speaking) {
+    const el = document.createElement("div");
+    el.className = "msg";
+    el.innerHTML = `
+      <div class="msg__av msg__av--${m.cls}">${m.av}</div>
+      <div class="msg__b">
+        <div class="msg__name">${m.name}</div>
+        <div class="msg__text">${textHtml}</div>
+        ${speaking ? `<div class="speaking"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span> Voxi is speaking…</div>` : ""}
+      </div>`;
+    return el;
+  }
+
+  function voxiBubble() {
+    const el = document.createElement("div");
+    el.className = "msg";
+    el.innerHTML = `
+      <div class="msg__av msg__av--v"><span class="eq" style="height:16px"><i></i><i></i><i></i><i></i><i></i></span></div>
+      <div class="msg__b">
+        <div class="msg__name"><b>Voxi</b><span class="tag">APP</span></div>
+        <div class="speaking"><span class="eq"><i></i><i></i><i></i><i></i><i></i></span> reading it out loud…</div>
+      </div>`;
+    return el;
+  }
+
+  async function typeInto(node, text) {
+    const t = node.querySelector(".msg__text");
+    for (let i = 0; i <= text.length; i++) {
+      t.innerHTML = text.slice(0, i) + '<span class="cursor"></span>';
+      await sleep(38 + Math.random() * 40);
+    }
+    t.textContent = text;
+  }
+
+  async function runChat() {
+    if (!chat) return;
+    if (reduce) {
+      // static: show one exchange, no loop
+      chat.appendChild(bubble(SCRIPT[0], SCRIPT[0].text, false));
+      chat.appendChild(voxiBubble());
+      return;
+    }
+    let i = 0;
+    for (;;) {
+      const m = SCRIPT[i % SCRIPT.length];
+      chat.innerHTML = "";
+      const b = bubble(m, '<span class="cursor"></span>', false);
+      chat.appendChild(b);
+      await sleep(300);
+      await typeInto(b, m.text);
+      await sleep(450);
+      chat.appendChild(voxiBubble());
+      await sleep(2600);
+      i++;
+    }
+  }
+
+  /* ── boot ────────────────────────────────────────────── */
+  applyLang(lang);
+  runChat();
+})();

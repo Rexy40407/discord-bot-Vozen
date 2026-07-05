@@ -1,0 +1,230 @@
+/* Voxi site — i18n dictionary (EN base + PT). Toggle via .lang-toggle; the
+   choice is stored in localStorage and auto-detected from navigator.language. */
+window.VOXI_I18N = {
+  en: {
+    "nav.features": "Features",
+    "nav.games": "Games",
+    "nav.commands": "Commands",
+    "nav.languages": "Languages",
+    "nav.faq": "FAQ",
+    "cta.add": "Add to Discord",
+    "cta.support": "Join support server",
+
+    "hero.badge": "Free forever · No paywall",
+    "hero.title1": "Type it.",
+    "hero.title2": "Hear it.",
+    "hero.sub": "Voxi reads your Discord chat out loud with natural neural voices — in 34 languages, with games, laughter and zero paywalls.",
+    "hero.mini": "34 languages · 38 voices · 13 minigames · 100% free",
+
+    "stat.langs": "languages",
+    "stat.voices": "neural voices",
+    "stat.games": "minigames",
+    "stat.free": "free forever",
+
+    "feat.eyebrow": "Features",
+    "feat.title": "Everything your server needs",
+    "feat.sub": "One bot. Every voice feature you wished Discord had — and none of the paywalls.",
+    "feat.new": "NEW",
+    "feat.1.t": "Auto-read channel",
+    "feat.1.d": "Pick a channel and Voxi reads every message out loud. Set it up once with /setup.",
+    "feat.2.t": "Your voice, your language",
+    "feat.2.d": "Every member picks their own voice from 34 languages — Google or a local neural engine.",
+    "feat.3.t": "Speaks like a human",
+    "feat.3.d": "Detects the language of each message and even mixes voices inside a single sentence.",
+    "feat.4.t": "13 voice minigames",
+    "feat.4.d": "Guess the language, spelling bees, Wordle, reflex duels — with a server leaderboard.",
+    "feat.5.t": "Personality included",
+    "feat.5.d": "Greets people who join the call, says who's talking, tells jokes and laughs in 34 languages.",
+    "feat.6.t": "Admin peace of mind",
+    "feat.6.d": "Blocklists, rate limits, role gating, opt-out and a kill-switch. You stay in control.",
+
+    "lang.eyebrow": "Languages",
+    "lang.title": "One server, every language.",
+    "lang.sub": "Voxi hears the language of each message and answers in a native voice. Portuguese, English, Japanese, Arabic — even mixed in the same sentence. Everyone sets their own voice, with the names shown in their own language.",
+    "lang.t1": "Automatic language detection",
+    "lang.t2": "A native voice per language",
+    "lang.t3": "Voice names localized to each user",
+
+    "games.eyebrow": "Minigames",
+    "games.title": "Play it out loud.",
+    "games.sub": "13 minigames built for voice: guess the spoken language, decode super-fast speech, spelling bees, reflex duels, Wordle and tic-tac-toe. First to answer wins, and every server keeps a leaderboard.",
+    "games.t1": "Voice + text games, first-to-answer",
+    "games.t2": "Server leaderboard & personal stats",
+    "games.t3": "Voxi announces the winner out loud",
+
+    "setup.eyebrow": "Get started",
+    "setup.title": "Ready in 30 seconds",
+    "setup.1.t": "Invite",
+    "setup.1.d": "Add Voxi to your server with one click.",
+    "setup.2.t": "/join",
+    "setup.2.d": "Voxi hops into your voice channel.",
+    "setup.3.t": "Type",
+    "setup.3.d": "Write a message — and hear it out loud.",
+
+    "cmd.eyebrow": "Commands",
+    "cmd.title": "Simple slash commands",
+    "cmd.general": "General",
+    "cmd.voice": "Voice",
+    "cmd.fun": "Fun",
+    "cmd.admin": "Admin",
+
+    "faq.eyebrow": "FAQ",
+    "faq.title": "Questions, answered",
+
+    "finale.title": "Give your server a voice.",
+    "finale.note": "Free forever · 34 languages · Set up in 30 seconds",
+
+    "foot.tag": "Type it, hear it.",
+    "foot.product": "Product",
+    "foot.community": "Community",
+    "foot.support": "Support server",
+    "foot.vote": "Vote on top.gg",
+    "foot.legal": "Not affiliated with Discord.",
+  },
+
+  pt: {
+    "nav.features": "Funcionalidades",
+    "nav.games": "Jogos",
+    "nav.commands": "Comandos",
+    "nav.languages": "Línguas",
+    "nav.faq": "FAQ",
+    "cta.add": "Adicionar ao Discord",
+    "cta.support": "Servidor de suporte",
+
+    "hero.badge": "Grátis para sempre · Sem paywall",
+    "hero.title1": "Escreve.",
+    "hero.title2": "Ouve.",
+    "hero.sub": "O Voxi lê o teu chat do Discord em voz alta com vozes neurais naturais — em 34 línguas, com jogos, risos e zero paywalls.",
+    "hero.mini": "34 línguas · 38 vozes · 13 minijogos · 100% grátis",
+
+    "stat.langs": "línguas",
+    "stat.voices": "vozes neurais",
+    "stat.games": "minijogos",
+    "stat.free": "grátis para sempre",
+
+    "feat.eyebrow": "Funcionalidades",
+    "feat.title": "Tudo o que o teu servidor precisa",
+    "feat.sub": "Um bot. Todas as funcionalidades de voz que querias no Discord — e nenhum paywall.",
+    "feat.new": "NOVO",
+    "feat.1.t": "Canal de leitura automática",
+    "feat.1.d": "Escolhe um canal e o Voxi lê cada mensagem em voz alta. Configura uma vez com /setup.",
+    "feat.2.t": "A tua voz, a tua língua",
+    "feat.2.d": "Cada membro escolhe a sua voz de 34 línguas — motor Google ou neural local.",
+    "feat.3.t": "Fala como um humano",
+    "feat.3.d": "Deteta a língua de cada mensagem e até mistura vozes na mesma frase.",
+    "feat.4.t": "13 minijogos de voz",
+    "feat.4.d": "Adivinha a língua, ditados, Wordle, duelos de reflexos — com leaderboard do servidor.",
+    "feat.5.t": "Personalidade incluída",
+    "feat.5.d": "Cumprimenta quem entra na call, diz quem está a falar, conta piadas e ri em 34 línguas.",
+    "feat.6.t": "Descanso para os admins",
+    "feat.6.d": "Blocklists, limites de taxa, restrição por role, opt-out e kill-switch. O controlo é teu.",
+
+    "lang.eyebrow": "Línguas",
+    "lang.title": "Um servidor, todas as línguas.",
+    "lang.sub": "O Voxi ouve a língua de cada mensagem e responde numa voz nativa. Português, inglês, japonês, árabe — até misturados na mesma frase. Cada um define a sua voz, com os nomes na sua própria língua.",
+    "lang.t1": "Deteção automática de língua",
+    "lang.t2": "Uma voz nativa por língua",
+    "lang.t3": "Nomes das vozes na língua de cada um",
+
+    "games.eyebrow": "Minijogos",
+    "games.title": "Joga em voz alta.",
+    "games.sub": "13 minijogos feitos para voz: adivinha a língua falada, decifra fala super-rápida, ditados, duelos de reflexos, Wordle e galo. O 1º a acertar ganha, e cada servidor tem leaderboard.",
+    "games.t1": "Jogos de voz + texto, 1º a acertar",
+    "games.t2": "Leaderboard do servidor e stats pessoais",
+    "games.t3": "O Voxi anuncia o vencedor em voz alta",
+
+    "setup.eyebrow": "Começar",
+    "setup.title": "Pronto em 30 segundos",
+    "setup.1.t": "Convidar",
+    "setup.1.d": "Adiciona o Voxi ao teu servidor com um clique.",
+    "setup.2.t": "/join",
+    "setup.2.d": "O Voxi entra no teu canal de voz.",
+    "setup.3.t": "Escrever",
+    "setup.3.d": "Escreve uma mensagem — e ouve-a em voz alta.",
+
+    "cmd.eyebrow": "Comandos",
+    "cmd.title": "Comandos slash simples",
+    "cmd.general": "Geral",
+    "cmd.voice": "Voz",
+    "cmd.fun": "Diversão",
+    "cmd.admin": "Admin",
+
+    "faq.eyebrow": "FAQ",
+    "faq.title": "Perguntas, respondidas",
+
+    "finale.title": "Dá uma voz ao teu servidor.",
+    "finale.note": "Grátis para sempre · 34 línguas · Configura em 30 segundos",
+
+    "foot.tag": "Escreve, ouve.",
+    "foot.product": "Produto",
+    "foot.community": "Comunidade",
+    "foot.support": "Servidor de suporte",
+    "foot.vote": "Votar no top.gg",
+    "foot.legal": "Sem afiliação com o Discord.",
+  },
+};
+
+/* Commands (rendered by main.js). Descriptions are localized. */
+window.VOXI_COMMANDS = {
+  general: [
+    ["/help", { en: "Show Voxi's command list", pt: "Mostra a lista de comandos" }],
+    ["/join", { en: "Join your voice channel", pt: "Entra no teu canal de voz" }],
+    ["/leave", { en: "Leave the voice channel", pt: "Sai do canal de voz" }],
+    ["/tts", { en: "Read a text out loud", pt: "Lê um texto em voz alta" }],
+    ["/skip", { en: "Skip the current audio", pt: "Salta o áudio atual" }],
+    ["/setup", { en: "Guided one-step setup", pt: "Configuração guiada num passo" }],
+    ["/invite", { en: "Get the invite link", pt: "Obtém o link de convite" }],
+    ["/uptime", { en: "How long Voxi's been online", pt: "Há quanto tempo o Voxi está online" }],
+  ],
+  voice: [
+    ["/voice set", { en: "Pick your voice & language", pt: "Escolhe a tua voz e língua" }],
+    ["/voice list", { en: "Browse all voices", pt: "Vê todas as vozes" }],
+    ["/voice preview", { en: "Hear a voice sample", pt: "Ouve uma amostra de voz" }],
+    ["/voice detection", { en: "Native voice per language", pt: "Voz nativa por língua" }],
+    ["/voice nickname", { en: "How Voxi calls you out loud", pt: "Como o Voxi te chama em voz alta" }],
+    ["/voice optout", { en: "Stop being auto-read", pt: "Deixa de ser lido automaticamente" }],
+  ],
+  fun: [
+    ["/game play", { en: "Start one of 13 minigames", pt: "Começa 1 dos 13 minijogos" }],
+    ["/game leaderboard", { en: "Top players on the server", pt: "Melhores jogadores do servidor" }],
+    ["/game stats", { en: "Your points, wins & rank", pt: "Os teus pontos, vitórias e posição" }],
+    ["/joke", { en: "A short joke in any language", pt: "Uma piada curta em qualquer língua" }],
+    ["/laugh", { en: "Voxi laughs in your voice", pt: "O Voxi ri na tua voz" }],
+  ],
+  admin: [
+    ["/config greet", { en: "Greet people who join the call", pt: "Saudar quem entra na call" }],
+    ["/config language", { en: "Set the interface language", pt: "Define a língua da interface" }],
+    ["/config default-voice", { en: "Set the server's default voice", pt: "Define a voz padrão do servidor" }],
+    ["/config autoread", { en: "Turn auto-read on/off", pt: "Liga/desliga a leitura automática" }],
+    ["/config blockword", { en: "Manage the blocklist", pt: "Gere a blocklist" }],
+    ["/config pronunciation", { en: "Custom pronunciations", pt: "Pronúncias personalizadas" }],
+  ],
+};
+
+/* FAQ (rendered by main.js). */
+window.VOXI_FAQ = [
+  [
+    { en: "Is Voxi really free?", pt: "O Voxi é mesmo grátis?" },
+    { en: "Yes. Every feature, every voice and every game — free forever. There is no premium tier and no paywall.", pt: "Sim. Todas as funcionalidades, vozes e jogos — grátis para sempre. Não há tier premium nem paywall." },
+  ],
+  [
+    { en: "How do I add Voxi to my server?", pt: "Como adiciono o Voxi ao meu servidor?" },
+    { en: "Click \"Add to Discord\", pick your server (you need Manage Server), and run /setup. That's it.", pt: "Clica em \"Adicionar ao Discord\", escolhe o servidor (precisas de Gerir Servidor) e corre /setup. É só isso." },
+  ],
+  [
+    { en: "Which languages does it support?", pt: "Que línguas suporta?" },
+    { en: "34 languages with 38 neural voices — Portuguese, English, Spanish, French, German, Japanese, Arabic, Russian and many more, each with a native voice.", pt: "34 línguas com 38 vozes neurais — português, inglês, espanhol, francês, alemão, japonês, árabe, russo e muitas mais, cada uma com voz nativa." },
+  ],
+  [
+    { en: "Do I need to configure anything?", pt: "Preciso de configurar alguma coisa?" },
+    { en: "No. /setup does it in one step. After that, everything works with sensible defaults — you can fine-tune later with /config.", pt: "Não. O /setup faz tudo num passo. Depois funciona com defaults sensatos — podes afinar mais tarde com /config." },
+  ],
+  [
+    { en: "Can everyone have a different voice?", pt: "Cada pessoa pode ter uma voz diferente?" },
+    { en: "Yes. Each member sets their own voice and language with /voice set, and Voxi can even detect the language of each message automatically.", pt: "Sim. Cada membro define a sua voz e língua com /voice set, e o Voxi pode até detetar a língua de cada mensagem automaticamente." },
+  ],
+  [
+    { en: "How do I turn features off?", pt: "Como desligo funcionalidades?" },
+    { en: "Everything is toggleable via /config — the greeting, auto-read, who-said announcements, and more. There's also a full kill-switch.", pt: "Tudo é desligável com /config — a saudação, a leitura automática, os anúncios de quem falou, e mais. Há também um kill-switch completo." },
+  ],
+];
