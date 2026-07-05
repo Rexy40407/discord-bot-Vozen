@@ -164,6 +164,57 @@ export const catalog: Record<string, Entry> = {
     en: '✅ Voice effect removed — clean voice again.',
     pt: '✅ Efeito de voz removido — voz limpa outra vez.',
   },
+  // ── /voice clone (clone da PRÓPRIA voz, consent-first, 💎 Premium) ─────────
+  'clone.locked': {
+    en: '🔒 Voice cloning is a Premium feature (it costs real compute). See `/premium`.',
+    pt: '🔒 O clone de voz é uma funcionalidade Premium (custa computação a sério). Vê `/premium`.',
+  },
+  'clone.notInVoice': {
+    en: 'You need to be in the voice channel **with me** to record. Use `/join` first.',
+    pt: 'Tens de estar no canal de voz **comigo** para gravar. Usa `/join` primeiro.',
+  },
+  'clone.recording': {
+    en: "🎙️ **Recording your voice** — speak normally for ~15 seconds (read anything aloud). Pauses don't count; I only keep YOUR audio and stop automatically.",
+    pt: '🎙️ **A gravar a tua voz** — fala normalmente durante ~15 segundos (lê qualquer coisa em voz alta). As pausas não contam; só guardo o TEU áudio e paro sozinho.',
+  },
+  'clone.tooShort': {
+    en: 'I only caught {seconds}s of speech — I need ~15s to clone well. Try again with `/voice clone record`.',
+    pt: 'Só apanhei {seconds}s de fala — preciso de ~15s para clonar bem. Tenta outra vez com `/voice clone record`.',
+  },
+  'clone.saved': {
+    en: '✅ Voice sample saved ({seconds}s of speech). Turn it on with `/voice clone use active:true`. Only YOU can use your clone; delete it anytime with `/voice clone delete`.',
+    pt: '✅ Amostra de voz guardada ({seconds}s de fala). Liga com `/voice clone use active:true`. Só TU podes usar o teu clone; apaga-o quando quiseres com `/voice clone delete`.',
+  },
+  'clone.failed': {
+    en: 'The recording failed — try again. If it keeps happening, rejoin the voice channel.',
+    pt: 'A gravação falhou — tenta outra vez. Se continuar, volta a entrar no canal de voz.',
+  },
+  'clone.none': {
+    en: "You don't have a voice clone yet. Record one with `/voice clone record` (Premium).",
+    pt: 'Ainda não tens um clone de voz. Grava um com `/voice clone record` (Premium).',
+  },
+  'clone.status': {
+    en: '🧬 Voice clone: sample recorded {date} · currently **{state}**.',
+    pt: '🧬 Clone de voz: amostra gravada {date} · neste momento **{state}**.',
+  },
+  'clone.stateOn': { en: 'ON', pt: 'LIGADO' },
+  'clone.stateOff': { en: 'off', pt: 'desligado' },
+  'clone.noSample': {
+    en: 'You need a sample first — record one with `/voice clone record`.',
+    pt: 'Primeiro precisas de uma amostra — grava com `/voice clone record`.',
+  },
+  'clone.enabled': {
+    en: '✅ Your messages will now be read in **your cloned voice**. Turn off anytime with `/voice clone use active:false`.',
+    pt: '✅ As tuas mensagens passam a ser lidas com a **tua voz clonada**. Desliga quando quiseres com `/voice clone use active:false`.',
+  },
+  'clone.enabledNoEngine': {
+    en: "✅ Saved — but the clone engine isn't installed on this instance yet, so you'll hear the normal voice for now.",
+    pt: '✅ Guardado — mas o motor de clone ainda não está instalado nesta instância, por isso para já ouves a voz normal.',
+  },
+  'clone.disabled': {
+    en: '✅ Cloned voice off — back to your normal voice.',
+    pt: '✅ Voz clonada desligada — de volta à tua voz normal.',
+  },
   'voice.effect.locked': {
     en: '🔒 **{effect}** is a Premium effect. Free effects: 🤖 Robot and 🔊 Echo. Unlock all with Voxi Premium — see `/premium`.',
     pt: '🔒 **{effect}** é um efeito Premium. Efeitos grátis: 🤖 Robot e 🔊 Echo. Desbloqueia todos com o Voxi Premium — vê `/premium`.',

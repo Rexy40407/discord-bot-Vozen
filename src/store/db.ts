@@ -153,6 +153,16 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, user_id)
       );
 
+      -- Clone de voz por-UTILIZADOR (global): a propria pessoa gravou a SUA voz
+      -- (/voice clone record) — consent_at regista o consentimento. So o proprio
+      -- usa/apaga o seu clone. sample_path aponta para o WAV de referencia.
+      CREATE TABLE IF NOT EXISTS user_clone (
+        user_id     TEXT PRIMARY KEY,
+        sample_path TEXT NOT NULL,
+        consent_at  INTEGER NOT NULL,
+        enabled     INTEGER NOT NULL DEFAULT 0
+      );
+
       -- Códigos de resgate (Ko-fi/Patreon): gerados offline, resgatados 1x com /redeem.
       -- kind = 'guild'|'user'; days = duração; used_by/used_at NULL enquanto por usar.
       CREATE TABLE IF NOT EXISTS redeem_code (

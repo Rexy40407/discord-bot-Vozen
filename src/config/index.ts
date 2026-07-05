@@ -52,6 +52,12 @@ export interface AppConfig {
   // síntese bem-sucedida fecha-o. Env: GTTS_BREAKER_THRESHOLD / GTTS_BREAKER_COOLDOWN_MS.
   gttsBreakerThreshold: number;
   gttsBreakerCooldownMs: number;
+  // Clone de voz (/voice clone): comando que lança o sidecar Python do motor de
+  // cloning (ex. "C:\\...\\venv\\Scripts\\python.exe C:\\...\\tools\\clone_server.py").
+  // AUSENTE => a gravação/gestão de amostras funciona, mas a síntese clonada fica
+  // desativada (fallback à voz normal) até o operador instalar o motor (setup na
+  // Vaga 2). Env: CLONE_CMD.
+  cloneCmd?: string;
 }
 
 function requireEnv(name: string): string {
@@ -197,5 +203,8 @@ export function loadConfig(): AppConfig {
     // > 0 (numEnvPositive): um threshold/cooldown 0 desligaria a proteção sem querer.
     gttsBreakerThreshold: numEnvPositive('GTTS_BREAKER_THRESHOLD', 3, { integer: true }),
     gttsBreakerCooldownMs: numEnvPositive('GTTS_BREAKER_COOLDOWN_MS', 60_000, { integer: true }),
+    // Clone de voz: comando do sidecar Python (ausente => síntese clonada desativada;
+    // a gravação/gestão de amostras funciona na mesma).
+    cloneCmd: process.env.CLONE_CMD?.trim() || undefined,
   };
 }

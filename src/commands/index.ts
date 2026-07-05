@@ -69,6 +69,10 @@ import { GAME_DEFS, gameById, filterGameChoices } from '../games/index';
 import { getLeaderboard, getUserScore, getUserRank } from '../store/gameScore';
 import { GREET_LANGUAGE_CHOICES, GREET_LOCALES } from '../voice/greeting';
 import { log } from '../logging/logger';
+import { join, dirname } from 'node:path';
+import { unlinkSync } from 'node:fs';
+import { getClone, saveClone, setCloneEnabled, deleteClone } from '../store/voiceClone';
+import { recordUserSample, pcmToWavFile } from '../voice/recorder';
 import {
   t,
   DEFAULT_LOCALE,
@@ -366,6 +370,34 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             .setDescription('Voice effect (none = clean; 💎 needs Premium)')
             .setRequired(true)
             .addChoices(...EFFECT_CHOICES),
+        ),
+    )
+    // /voice clone — clona a TUA PRÓPRIA voz (consent-first: só gravas a ti, só tu
+    // usas o teu clone, apagável a qualquer momento). 💎 Premium.
+    .addSubcommandGroup((g) =>
+      g
+        .setName('clone')
+        .setDescription('Clone YOUR OWN voice (💎 Premium, consent-first)')
+        .addSubcommand((s) =>
+          s
+            .setName('record')
+            .setDescription('Record ~15s of YOUR voice in the call to build your clone'),
+        )
+        .addSubcommand((s) =>
+          s
+            .setName('use')
+            .setDescription('Speak with your cloned voice on/off')
+            .addBooleanOption((o) =>
+              o
+                .setName('active')
+                .setNameLocalizations({ 'pt-BR': 'ativo' })
+                .setDescription('true = your messages use your cloned voice')
+                .setRequired(true),
+            ),
+        )
+        .addSubcommand((s) => s.setName('status').setDescription('Your voice-clone status'))
+        .addSubcommand((s) =>
+          s.setName('delete').setDescription('Delete your voice sample and clone'),
         ),
     )
     .toJSON(),
@@ -1258,8 +1290,122 @@ async function handleVoiceDetection(
   await reply(i, active ? t('voice.detection.on', locale) : t('voice.detection.off', locale));
 }
 
+/**
+ * /voice clone record|use|status|delete — clone da PRÓPRIA voz, consent-first:
+ *   - record: grava SÓ o áudio do invocador (receiver por-user) durante ~15s de fala;
+ *     o próprio comando é o consentimento (registado com timestamp). O bot vive
+ *     ensurdecido e só "destapa os ouvidos" durante a janela de gravação.
+ *   - use: liga/desliga a leitura das PRÓPRIAS mensagens com o clone (ninguém mais
+ *     pode usar o clone de outra pessoa). Sem motor instalado (config.cloneCmd), o
+ *     toggle fica guardado mas avisa que a síntese ainda não está ativa.
+ *   - delete: apaga amostra + registo, sem rasto.
+ * record/use são 💎 Premium (Plus do próprio OU Premium do servidor).
+ */
+async function handleVoiceClone(
+  i: ChatInputCommandInteraction,
+  deps: BotDeps,
+  locale: string,
+): Promise<void> {
+  const sub = i.options.getSubcommand();
+  const userId = i.user.id;
+
+  if (sub === 'status') {
+    const c = getClone(deps.db, userId);
+    if (!c) {
+      await reply(i, t('clone.none', locale));
+      return;
+    }
+    await reply(
+      i,
+      t('clone.status', locale, {
+        date: `<t:${Math.floor(c.consentAt / 1000)}:D>`,
+        state: c.enabled ? t('clone.stateOn', locale) : t('clone.stateOff', locale),
+      }),
+    );
+    return;
+  }
+
+  if (sub === 'delete') {
+    const samplePath = deleteClone(deps.db, userId);
+    if (samplePath) {
+      try {
+        unlinkSync(samplePath);
+      } catch {
+        // ficheiro já removido — o registo é o que importa
+      }
+    }
+    await reply(i, samplePath ? t('clone.deleted', locale) : t('clone.none', locale));
+    return;
+  }
+
+  // record e use exigem Premium (é o exemplo canónico de "extras que custam computação").
+  const now = Date.now();
+  const premium = isUserPremium(deps.db, userId, now) || isGuildPremium(deps.db, i.guildId!, now);
+  if (!premium) {
+    await reply(i, t('clone.locked', locale));
+    return;
+  }
+
+  if (sub === 'use') {
+    const on = i.options.getBoolean('active', true);
+    const ok = setCloneEnabled(deps.db, userId, on);
+    if (!ok) {
+      await reply(i, t('clone.noSample', locale));
+      return;
+    }
+    if (on && !deps.config.cloneCmd) {
+      await reply(i, t('clone.enabledNoEngine', locale));
+      return;
+    }
+    await reply(i, on ? t('clone.enabled', locale) : t('clone.disabled', locale));
+    return;
+  }
+
+  // ── record ──
+  const connection = getVoiceConnection(i.guildId!);
+  const botChannelId = i.guild?.members.me?.voice?.channelId ?? null;
+  const userChannelId = i.guild?.members.cache.get(userId)?.voice?.channelId ?? null;
+  if (!connection || !botChannelId || userChannelId !== botChannelId) {
+    await reply(i, t('clone.notInVoice', locale));
+    return;
+  }
+
+  await i.deferReply({ flags: MessageFlags.Ephemeral });
+  const { channelId } = connection.joinConfig;
+  try {
+    // Destapa os ouvidos SÓ para esta janela (selfDeaf false), gravando apenas o invocador.
+    connection.rejoin({ channelId, selfDeaf: false, selfMute: false });
+    await i.editReply(t('clone.recording', locale));
+    const { pcm, voicedMs } = await recordUserSample(connection, userId);
+    if (voicedMs < 5_000) {
+      await i.editReply(t('clone.tooShort', locale, { seconds: Math.round(voicedMs / 1000) }));
+      return;
+    }
+    const outPath = join(dirname(deps.config.dbPath), 'voice-clones', `${userId}.wav`);
+    await pcmToWavFile(pcm, outPath);
+    saveClone(deps.db, userId, outPath, Date.now());
+    await i.editReply(t('clone.saved', locale, { seconds: Math.round(voicedMs / 1000) }));
+  } catch (err) {
+    log.error('[clone] gravação falhou:', err);
+    await i.editReply(t('clone.failed', locale));
+  } finally {
+    // Volta SEMPRE a ensurdecer (privacidade por defeito), aconteça o que acontecer.
+    try {
+      connection.rejoin({ channelId, selfDeaf: true, selfMute: false });
+    } catch {
+      // ligação pode ter morrido entretanto — inofensivo
+    }
+  }
+}
+
 async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
+  // Grupo /voice clone despacha para o handler próprio (getSubcommand() devolveria o
+  // sub DENTRO do grupo e colidiria com os nomes de topo).
+  if (i.options.getSubcommandGroup(false) === 'clone') {
+    await handleVoiceClone(i, deps, locale);
+    return;
+  }
   const sub = i.options.getSubcommand();
   if (sub === 'detection') {
     await handleVoiceDetection(i, deps, locale);
