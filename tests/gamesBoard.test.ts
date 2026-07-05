@@ -157,4 +157,42 @@ describe('Galo', () => {
     expect(persistScores.mock.calls[0][1].get('ana')).toBe(1);
     expect(mgr.active(G)).toBe(false);
   });
+
+  it('tabuleiro cheio sem linha -> empate, sem pontos', async () => {
+    const { env, send, persistScores } = harness();
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('tictactoe')!.create());
+    await flush();
+    // Sequência conhecida de "gato" (X começa): X:1 O:3 X:2 O:4 X:6 O:5 X:7 O:8 X:9.
+    // Resultado: X em 1,2,6,7,9 e O em 3,4,5,8 — 9 casas, nenhuma linha.
+    const seq: [string, string][] = [
+      ['ana', '1'], ['rui', '3'], ['ana', '2'], ['rui', '4'], ['ana', '6'],
+      ['rui', '5'], ['ana', '7'], ['rui', '8'], ['ana', '9'],
+    ];
+    for (const [u, n] of seq) {
+      say(mgr, u, n);
+      await flush();
+    }
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.draw'))).toBe(true);
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.win'))).toBe(false);
+    expect(persistScores).not.toHaveBeenCalled();
+    expect(mgr.active(G)).toBe(false);
+  });
+
+  it('um 3º jogador é espetador (não ocupa casa)', async () => {
+    const { env, send } = harness();
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('tictactoe')!.create());
+    await flush();
+    say(mgr, 'ana', '1'); // X
+    await flush();
+    say(mgr, 'rui', '2'); // O
+    await flush();
+    say(mgr, 'carlos', '3'); // espetador -> ignorado
+    await flush();
+    say(mgr, 'ana', '3'); // X consegue jogar a 3 (não foi ocupada pelo carlos)
+    await flush();
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.taken'))).toBe(false);
+    expect(mgr.active(G)).toBe(true); // ainda a decorrer
+  });
 });
