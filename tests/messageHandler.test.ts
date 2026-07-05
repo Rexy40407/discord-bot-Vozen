@@ -302,11 +302,19 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say).toHaveBeenCalledTimes(1);
   });
 
-  // ── 11. Blocklist hit ─────────────────────────────────────────────────────
-  it('texto contém palavra da blocklist → não fala', async () => {
+  // ── 11. Blocklist hit → redação (lê o resto sem a palavra) ────────────────
+  it('palavra da blocklist é REDIGIDA → fala o resto sem essa palavra', async () => {
     addBlockword(db, GUILD, 'spam');
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'isto é spam aqui' }), deps);
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].text).toBe('isto é aqui');
+  });
+
+  it('mensagem que é SÓ a palavra bloqueada → não fala (nada legível resta)', async () => {
+    addBlockword(db, GUILD, 'spam');
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'spam' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
@@ -399,6 +407,21 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
   it('xsaid ON (default) + nome → "{nome} said {corpo}"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá mundo', displayName: 'Alex' }), deps);
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].text).toBe('Alex said olá mundo');
+  });
+
+  it('xsaid ON + corpo é SÓ palavra bloqueada → não anuncia "{nome} said" vazio', async () => {
+    addBlockword(db, GUILD, 'spam');
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'spam', displayName: 'Alex' }), deps);
+    expect(say).not.toHaveBeenCalled();
+  });
+
+  it('xsaid ON + corpo com palavra bloqueada → anuncia só o resto', async () => {
+    addBlockword(db, GUILD, 'spam');
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá spam mundo', displayName: 'Alex' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].text).toBe('Alex said olá mundo');
   });

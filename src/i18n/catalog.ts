@@ -250,8 +250,8 @@ export const catalog: Record<string, Entry> = {
     pt: 'A palavra nao pode ser vazia.',
   },
   'config.blocked': {
-    en: 'Blocked: {word}.',
-    pt: 'Bloqueado: {word}.',
+    en: "Blocked: {word}. I'll skip this word when reading, but still read the rest of the message.",
+    pt: 'Bloqueado: {word}. Vou saltar esta palavra ao ler, mas leio o resto da mensagem na mesma.',
   },
   'config.unblocked': {
     en: 'Unblocked: {word}.',

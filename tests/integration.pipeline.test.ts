@@ -178,13 +178,26 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
   });
 
   // ── 3. BLOCKLIST corta ────────────────────────────────────────────────────
-  it('mensagem que bate na blocklist -> player NAO recebe say()', async () => {
+  it('palavra da blocklist -> REDIGIDA do texto, o resto e falado', async () => {
     addBlockword(db, GUILD, 'spam');
     const deps = makeDeps(db, say);
     const content =
       'isto aqui e claramente spam e nao deve ser lido pelo bot em circunstancia nenhuma hoje';
 
     await handleMessage(makeMessage({ content }), deps);
+
+    // A mensagem e falada, mas SEM a palavra bloqueada.
+    expect(say).toHaveBeenCalledTimes(1);
+    const spokenText = say.mock.calls[0][0].text as string;
+    expect(spokenText).not.toMatch(/\bspam\b/i);
+    expect(spokenText).toContain('isto aqui e claramente e');
+  });
+
+  it('mensagem que e SO a palavra bloqueada -> player NAO recebe say()', async () => {
+    addBlockword(db, GUILD, 'spam');
+    const deps = makeDeps(db, say);
+
+    await handleMessage(makeMessage({ content: 'spam' }), deps);
 
     expect(say).not.toHaveBeenCalled();
   });

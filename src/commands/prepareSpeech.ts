@@ -9,7 +9,29 @@ import {
 import { expandAbbreviations, splitEnglishSlang } from '../textCleaning/abbreviations';
 import { restoreAccents, accentLangOfModel } from '../textCleaning/accents';
 import { applyPronunciation, type PronunciationEntry } from '../textCleaning/pronunciation';
+import { redactBlocked } from '../moderation/filter';
 import type { SynthRequest } from '../tts/engine';
+
+/** Há pelo menos uma letra ou número (algo legível para falar)? */
+export function hasReadableText(s: string): boolean {
+  return /[\p{L}\p{N}]/u.test(s);
+}
+
+/**
+ * Aplica a REDAÇÃO da blocklist a um SynthRequest: remove as palavras bloqueadas do
+ * texto a sintetizar (req.text) e de cada segmento (síntese multi-voz), mantendo o
+ * resto — o Voxi lê a mensagem SEM dizer as palavras banidas. Segmentos que ficam sem
+ * nada legível são retirados. Blocklist vazia -> req inalterado. Se o resultado ficar
+ * sem nada legível, o chamador deteta (hasReadableText) e não fala. PURA.
+ */
+export function redactRequest(req: SynthRequest, blocklist: string[]): SynthRequest {
+  if (blocklist.length === 0) return req;
+  const text = redactBlocked(req.text, blocklist);
+  const segments = req.segments
+    ?.map((s) => ({ ...s, text: redactBlocked(s.text, blocklist) }))
+    .filter((s) => hasReadableText(s.text));
+  return { ...req, text, segments: segments && segments.length > 0 ? segments : undefined };
+}
 
 export interface PrepareSpeechInput {
   /** Texto JA com as abreviaturas PESSOAIS do user aplicadas (antes da expansao EN). */

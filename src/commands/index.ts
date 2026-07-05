@@ -34,8 +34,7 @@ import {
   removePronunciation,
 } from '../store/pronunciation';
 import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../textCleaning/clean';
-import { isBlocked } from '../moderation/filter';
-import { prepareSpeech } from './prepareSpeech';
+import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { recallLang, rememberLang } from '../language/langMemory';
 import type { SynthRequest } from '../tts/engine';
 import { voiceDisplayName, formatVoiceList, makeLocalizedNamer } from '../language/voiceMap';
@@ -694,7 +693,7 @@ async function speakRawText(
   const userVoice = getUserVoice(deps.db, guildId, userId);
   const auto = isDetectionOn(deps.db, guildId, userId);
   const recentLang = recallLang(guildId, userId);
-  const { spoken, req, learnedLang } = prepareSpeech({
+  const { req, learnedLang } = prepareSpeech({
     personal: cleaned,
     pronunciations: getPronunciations(deps.db, guildId),
     userVoice,
@@ -710,10 +709,15 @@ async function speakRawText(
   // Motor escolhido pelo user (google default | piper) — usado pelo PerUserEngineRouter.
   req.engine = userVoice?.engine;
 
+  // Blocklist: REDIGE as palavras bloqueadas (o Voxi lê o resto sem as dizer). Só devolve
+  // 'blocked' se, depois de as remover, não sobrar nada legível (era só palavra bloqueada).
   const blocklist = getBlocklist(deps.db, guildId);
-  if (isBlocked(spoken, blocklist)) return { status: 'blocked' };
-  if (deps.config.messageLeadMs > 0) req.leadSilenceMs = deps.config.messageLeadMs;
-  const queued = await player.say(req);
+  const outReq = redactRequest(req, blocklist);
+  const readable =
+    hasReadableText(outReq.text) || (outReq.segments?.some((s) => hasReadableText(s.text)) ?? false);
+  if (!readable) return { status: 'blocked' };
+  if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
+  const queued = await player.say(outReq);
   return { status: queued ? 'queued' : 'busy' };
 }
 

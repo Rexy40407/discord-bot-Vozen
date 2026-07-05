@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { prepareSpeech } from '../src/commands/prepareSpeech';
+import { prepareSpeech, redactRequest, hasReadableText } from '../src/commands/prepareSpeech';
+import type { SynthRequest } from '../src/tts/engine';
 
 // Catalogo: EN + PT + ES (mesmo dos testes de resolveSynth).
 const AVAILABLE = ['en_US-amy-medium', 'pt_PT-tugao-medium', 'es_ES-davefx-medium'];
@@ -169,5 +170,75 @@ describe('prepareSpeech — autoDetect OFF (voz fixa)', () => {
     expect(req.model).toBe('en_US-amy-medium');
     expect(req.speed).toBe(1.3);
     expect(req.segments).toBeUndefined();
+  });
+});
+
+describe('hasReadableText — ha letra ou numero?', () => {
+  it('true quando ha letra/numero', () => {
+    expect(hasReadableText('abc')).toBe(true);
+    expect(hasReadableText('  1  ')).toBe(true);
+  });
+  it('false quando so ha espacos/pontuacao', () => {
+    expect(hasReadableText('')).toBe(false);
+    expect(hasReadableText('   ')).toBe(false);
+    expect(hasReadableText('!!! ,. ')).toBe(false);
+  });
+});
+
+describe('redactRequest — redige a blocklist no SynthRequest', () => {
+  const base: SynthRequest = { text: 'ola palavrao mundo', model: 'en_US-amy-medium', speed: 1 };
+
+  it('blocklist vazia -> req inalterado (mesma referencia)', () => {
+    expect(redactRequest(base, [])).toBe(base);
+  });
+
+  it('remove a palavra do req.text', () => {
+    const out = redactRequest(base, ['palavrao']);
+    expect(out.text).toBe('ola mundo');
+    expect(out.model).toBe('en_US-amy-medium');
+    expect(out.speed).toBe(1);
+  });
+
+  it('redige cada segmento e mantem os que ficam com texto', () => {
+    const req: SynthRequest = {
+      text: 'ola palavrao hi',
+      model: 'en_US-amy-medium',
+      speed: 1,
+      segments: [
+        { text: 'ola palavrao', model: 'pt_PT-tugao-medium' },
+        { text: 'hi', model: 'en_US-amy-medium' },
+      ],
+    };
+    const out = redactRequest(req, ['palavrao']);
+    expect(out.segments).toEqual([
+      { text: 'ola', model: 'pt_PT-tugao-medium' },
+      { text: 'hi', model: 'en_US-amy-medium' },
+    ]);
+  });
+
+  it('segmento que fica sem nada legivel e retirado', () => {
+    const req: SynthRequest = {
+      text: 'palavrao hi',
+      model: 'en_US-amy-medium',
+      speed: 1,
+      segments: [
+        { text: 'palavrao', model: 'pt_PT-tugao-medium' },
+        { text: 'hi', model: 'en_US-amy-medium' },
+      ],
+    };
+    const out = redactRequest(req, ['palavrao']);
+    expect(out.segments).toEqual([{ text: 'hi', model: 'en_US-amy-medium' }]);
+  });
+
+  it('se todos os segmentos ficam vazios, segments vira undefined', () => {
+    const req: SynthRequest = {
+      text: 'palavrao',
+      model: 'en_US-amy-medium',
+      speed: 1,
+      segments: [{ text: 'palavrao', model: 'pt_PT-tugao-medium' }],
+    };
+    const out = redactRequest(req, ['palavrao']);
+    expect(out.segments).toBeUndefined();
+    expect(hasReadableText(out.text)).toBe(false); // chamador nao fala
   });
 });

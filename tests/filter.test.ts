@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isBlocked } from '../src/moderation/filter';
+import { isBlocked, redactBlocked } from '../src/moderation/filter';
 
 describe('isBlocked', () => {
   it('deteta uma palavra presente na blocklist', () => {
@@ -40,5 +40,54 @@ describe('isBlocked', () => {
   it('faz match de blockword com varias palavras como frase', () => {
     expect(isBlocked('ele disse uma coisa ma agora', ['coisa ma'])).toBe(true);
     expect(isBlocked('isto e uma coisa boa', ['coisa ma'])).toBe(false);
+  });
+});
+
+describe('redactBlocked — remove a palavra, mantem o resto legivel', () => {
+  it('remove a palavra bloqueada e le o resto', () => {
+    expect(redactBlocked('isto e um teste palavrao aqui', ['palavrao'])).toBe('isto e um teste aqui');
+  });
+
+  it('ignora maiusculas/minusculas ao remover', () => {
+    expect(redactBlocked('Isto e PalavrAO no meio', ['palavrao'])).toBe('Isto e no meio');
+  });
+
+  it('so remove palavra completa, nao substring', () => {
+    // "ass" NAO deve ser removido de dentro de "passar"
+    expect(redactBlocked('vou passar por ali', ['ass'])).toBe('vou passar por ali');
+  });
+
+  it('remove palavras bloqueadas consecutivas (replace global)', () => {
+    expect(redactBlocked('palavrao palavrao fim', ['palavrao'])).toBe('fim');
+  });
+
+  it('remove mesmo rodeada de pontuacao, mantendo a pontuacao vizinha', () => {
+    expect(redactBlocked('para, palavrao! continua', ['palavrao'])).toBe('para, ! continua');
+  });
+
+  it('remove qualquer uma de varias palavras da blocklist', () => {
+    expect(redactBlocked('aqui aparece outra e palavrao coisa', ['palavrao', 'outra'])).toBe(
+      'aqui aparece e coisa',
+    );
+  });
+
+  it('mensagem que e SO a palavra bloqueada fica vazia', () => {
+    expect(redactBlocked('palavrao', ['palavrao'])).toBe('');
+    expect(redactBlocked('  palavrao  ', ['palavrao'])).toBe('');
+  });
+
+  it('remove blockword multi-palavra (frase)', () => {
+    expect(redactBlocked('ele disse uma coisa ma agora', ['coisa ma'])).toBe('ele disse uma agora');
+  });
+
+  it('blocklist vazia -> texto inalterado (sem normalizar espacos a toa)', () => {
+    expect(redactBlocked('texto  com   espacos', [])).toBe('texto  com   espacos');
+    expect(redactBlocked('texto normal', ['', '   '])).toBe('texto normal');
+  });
+
+  it('sem palavra bloqueada presente -> texto inalterado byte-a-byte', () => {
+    expect(redactBlocked('texto  perfeitamente  limpo', ['palavrao'])).toBe(
+      'texto  perfeitamente  limpo',
+    );
   });
 });

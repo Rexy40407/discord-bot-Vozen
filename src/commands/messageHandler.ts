@@ -3,7 +3,6 @@ import type { BotDeps } from '../bot/deps';
 import { getPlayer, getLimiter } from '../bot/deps';
 import { createVoiceSession, becomeSpeakerIfStage } from '../voice/session';
 import type { GuildVoicePlayer } from '../voice/player';
-import { isBlocked } from '../moderation/filter';
 import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../textCleaning/clean';
 import { mediaFromAttachments, mediaFromStickers } from '../language/attachmentMedia';
 import type { MediaItem } from '../language/spokenPhrases';
@@ -11,11 +10,12 @@ import { sanitizeSpeakerName } from '../language/speakerName';
 import { getNickname } from '../store/nickname';
 import { getGuildConfig } from '../store/guildConfig';
 import { getBlocklist } from '../store/blocklist';
+import { redactBlocked } from '../moderation/filter';
 import { getPronunciations } from '../store/pronunciation';
 import { getUserVoice } from '../store/userVoice';
 import { isOptedOut } from '../store/optout';
 import { isDetectionOn } from '../store/langDetect';
-import { prepareSpeech } from './prepareSpeech';
+import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { recallLang, rememberLang } from '../language/langMemory';
 import { log } from '../logging/logger';
 
@@ -181,6 +181,15 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // E sem media -> não vale sintetizar.
     if (!/[\p{L}\p{N}]/u.test(cleaned) && media.length === 0) return;
 
+    // Blocklist (buscada uma vez; reutilizada na redação do req mais abaixo).
+    const blocklist = getBlocklist(deps.db, message.guildId);
+    // Guard de corpo-só-bloqueado: se o CORPO do utilizador, depois de tirar as palavras
+    // bloqueadas, fica sem nada legível E não há media, não vale a pena falar — nem sequer
+    // anunciar "{nome} disse" (xsaid) para uma mensagem que era só palavra(s) banida(s).
+    // (A redação real do que é sintetizado — incl. gírias expandidas — faz-se no req.)
+    if (blocklist.length > 0 && media.length === 0 && !hasReadableText(redactBlocked(cleaned, blocklist)))
+      return;
+
     // Personalizacao de palavras e agora so via /config pronunciation (aplicada
     // dentro do prepareSpeech). O texto limpo segue tal e qual como base.
     const personal = cleaned;
@@ -188,7 +197,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // Expansao de girias EN, pronuncia da guild e escolha de voz(es) — incl. a
     // sintese MISTURADA quando a mensagem junta lingua-base + girias EN conhecidas
     // (a parte non-slang e detetada por si; as girias EN saem em voz inglesa como
-    // segmento separado). O `spoken` (falado) e usado para a blocklist.
+    // segmento separado). A blocklist e aplicada depois, por REDACAO do req.
     const userVoice = getUserVoice(deps.db, message.guildId, message.author.id);
     const auto = isDetectionOn(deps.db, message.guildId, message.author.id);
     // Memoria de lingua (T3.2): recorda a lingua recente do user para desambiguar
@@ -209,7 +218,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       message.author.username ??
       '';
     const speakerName = sanitizeSpeakerName(rawName);
-    const { spoken, req, learnedLang } = prepareSpeech({
+    const { req, learnedLang } = prepareSpeech({
       personal,
       pronunciations: getPronunciations(deps.db, message.guildId),
       userVoice,
@@ -226,9 +235,14 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // Motor escolhido pelo autor (google default | piper). O PerUserEngineRouter usa isto.
     req.engine = userVoice?.engine;
 
-    // blocklist antes de sintetizar (sobre o texto REALMENTE falado)
-    const blocklist = getBlocklist(deps.db, message.guildId);
-    if (isBlocked(spoken, blocklist)) return;
+    // Blocklist: em vez de saltar a mensagem inteira, REDIGE as palavras bloqueadas do
+    // texto REALMENTE falado (req.text + segmentos) — o Voxi lê a mensagem SEM dizer
+    // essas palavras. Se depois de redigir não sobra nada legível (a mensagem era só
+    // palavra(s) bloqueada(s)), não fala. (`blocklist` já foi buscada no guard acima.)
+    const outReq = redactRequest(req, blocklist);
+    const readable =
+      hasReadableText(outReq.text) || (outReq.segments?.some((s) => hasReadableText(s.text)) ?? false);
+    if (!readable) return;
 
     // Passou tudo: esta mensagem VAI ser lida. Regista o autor como último locutor
     // (só agora — uma mensagem bloqueada/ignorada não conta para a supressão do xsaid).
@@ -236,9 +250,9 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
 
     // Silêncio de arranque: o bot só começa a falar `messageLeadMs` depois da mensagem
     // (silêncio PREPENDido ao WAV). Configurável (MESSAGE_LEAD_MS); 0 = sem espera.
-    if (deps.config.messageLeadMs > 0) req.leadSilenceMs = deps.config.messageLeadMs;
+    if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
 
-    await player.say(req);
+    await player.say(outReq);
   } catch (err) {
     log.error('[messageHandler] erro', err);
   }
