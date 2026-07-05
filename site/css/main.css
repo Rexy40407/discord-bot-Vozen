@@ -382,8 +382,10 @@ body > *:not(.grain):not(.orbs) { position: relative; z-index: 2; }
   box-shadow: inset 0 1px 0 var(--hi), 0 24px 60px -30px rgba(255, 194, 75, 0.25);
 }
 .price-card--pro .price-card__price b { background: linear-gradient(115deg, #ffc24b, #ff9d5c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* Chip ESTÁTICO acima do nome do plano (era absolute top-right e sobrepunha o
+   título "Voxi Premium" em larguras intermédias — tablet/mobile). */
 .price-card__badge {
-  position: absolute; top: 24px; right: 24px; display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: 5px; margin-bottom: 14px;
   font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
   color: #1a1500; background: var(--amber); padding: 5px 11px; border-radius: 999px;
   box-shadow: 0 4px 16px -4px rgba(255, 194, 75, 0.6);
@@ -443,23 +445,38 @@ body > *:not(.grain):not(.orbs) { position: relative; z-index: 2; }
   .show, .show--rev .show__visual { grid-template-columns: 1fr; order: 0; }
   .show { gap: 38px; }
 }
-@media (max-width: 720px) {
-  body { font-size: 16px; }
+/* Navbar colapsa para burger cedo (900px): com 6 links + ícone GitHub + toggle + CTA,
+   a barra transbordava a ~768px (tablet) e criava scroll horizontal na página toda. */
+@media (max-width: 900px) {
   .nav__links { display: none; }
   .nav__links.is-open {
     display: flex; flex-direction: column; position: absolute; top: var(--nav-h); left: 0; right: 0;
-    background: rgba(5, 6, 15, 0.97); backdrop-filter: blur(20px); padding: 20px 24px; gap: 18px; border-bottom: 1px solid var(--line);
+    background: rgba(5, 6, 15, 0.97); backdrop-filter: blur(20px); padding: 14px 24px; gap: 0; border-bottom: 1px solid var(--line);
   }
-  .nav__burger { display: flex; flex-direction: column; gap: 5px; background: none; border: 0; cursor: pointer; padding: 6px; }
+  /* alvos de toque generosos no menu aberto (~44px por link) */
+  .nav__links.is-open a { padding: 12px 0; font-size: 16.5px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+  .nav__links.is-open a:last-child { border-bottom: 0; }
+  .nav__burger { display: flex; flex-direction: column; gap: 5px; background: none; border: 0; cursor: pointer; padding: 10px 6px; }
   .nav__burger span { width: 22px; height: 2px; background: var(--text-0); border-radius: 2px; transition: 0.25s; }
   .nav__burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
   .nav__burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
   .nav__burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+}
+
+@media (max-width: 720px) {
+  body { font-size: 16px; }
+  /* safe-area: iPhones com notch em landscape não cortam o conteúdo */
+  .wrap { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
   .nav .btn--sm { display: none; }
   .stats__grid { grid-template-columns: repeat(2, 1fr); gap: 26px 12px; }
   .stat:not(:last-child)::after { display: none; }
   .cards, .steps { grid-template-columns: 1fr; }
   .pricing { grid-template-columns: 1fr; }
+  /* CTAs do hero em coluna, largura total — mais "app-like" no polegar */
+  .hero__cta .btn { width: 100%; justify-content: center; }
+  .hero__demo { margin: 0 auto; }
+  .price-card { padding: 30px 24px; }
+  .card__badge { top: 18px; right: 18px; }
   .foot__grid { grid-template-columns: 1fr 1fr; }
   .foot__base { flex-direction: column; gap: 8px; text-align: center; }
   .cmd { flex-direction: column; gap: 4px; }
