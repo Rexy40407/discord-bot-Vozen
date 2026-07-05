@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  prepareSpeech,
-  redactRequest,
-  hasReadableText,
-  applyPersonaToRequest,
-} from '../src/commands/prepareSpeech';
+import { prepareSpeech, redactRequest, hasReadableText } from '../src/commands/prepareSpeech';
 import type { SynthRequest } from '../src/tts/engine';
 
 // Catalogo: EN + PT + ES (mesmo dos testes de resolveSynth).
@@ -175,40 +170,6 @@ describe('prepareSpeech — autoDetect OFF (voz fixa)', () => {
     expect(req.model).toBe('en_US-amy-medium');
     expect(req.speed).toBe(1.3);
     expect(req.segments).toBeUndefined();
-  });
-});
-
-describe('applyPersonaToRequest — persona no SynthRequest (corre após a redação)', () => {
-  it('pirate: transforma req.text', () => {
-    const req: SynthRequest = { text: 'hello my friend how are you', model: 'en_US-amy-medium', speed: 1 };
-    const out = applyPersonaToRequest(req, 'pirate');
-    expect(out.text).toContain('ahoy');
-    expect(out.text).toContain('ye');
-    expect(out.text).not.toContain('friend');
-  });
-
-  it("'none'/undefined devolvem o req intacto (mesma referência)", () => {
-    const req: SynthRequest = { text: 'hello my friend', model: 'en_US-amy-medium', speed: 1 };
-    expect(applyPersonaToRequest(req, 'none')).toBe(req);
-    expect(applyPersonaToRequest(req, undefined)).toBe(req);
-  });
-
-  it('transforma cada segmento (síntese multi-voz)', () => {
-    const req: SynthRequest = {
-      text: 'really lovely',
-      model: 'en_US-amy-medium',
-      speed: 1,
-      segments: [
-        { text: 'really', model: 'en_US-amy-medium' },
-        { text: 'lovely', model: 'pt_PT-tugao-medium' },
-      ],
-    };
-    const out = applyPersonaToRequest(req, 'uwu');
-    expect(out.text).toBe('weawwy wovewy');
-    expect(out.segments).toEqual([
-      { text: 'weawwy', model: 'en_US-amy-medium' },
-      { text: 'wovewy', model: 'pt_PT-tugao-medium' },
-    ]);
   });
 });
 

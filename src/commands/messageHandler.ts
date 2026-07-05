@@ -11,14 +11,13 @@ import { getNickname } from '../store/nickname';
 import { getGuildConfig } from '../store/guildConfig';
 import { getBlocklist } from '../store/blocklist';
 import { redactBlocked } from '../moderation/filter';
-import { getPersona } from '../store/persona';
 import { getVoiceEffect } from '../store/voiceEffect';
 import { bumpTalk } from '../store/talkStats';
 import { getPronunciations } from '../store/pronunciation';
 import { getUserVoice } from '../store/userVoice';
 import { isOptedOut } from '../store/optout';
 import { isDetectionOn } from '../store/langDetect';
-import { prepareSpeech, redactRequest, hasReadableText, applyPersonaToRequest } from './prepareSpeech';
+import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { recallLang, rememberLang } from '../language/langMemory';
 import { log } from '../logging/logger';
 
@@ -247,9 +246,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       hasReadableText(redacted.text) || (redacted.segments?.some((s) => hasReadableText(s.text)) ?? false);
     if (!readable) return;
 
-    // Persona (/voice persona) DEPOIS da redação: o filtro vê o texto sem estilo (senão uma
-    // persona que altera a palavra bloqueada passava ao lado). 'none' -> req intacto.
-    const outReq = applyPersonaToRequest(redacted, getPersona(deps.db, message.guildId, message.author.id));
+    const outReq = redacted;
     // Efeito de voz (premium): aplicado ao WAV pelo EffectEngine (motor externo).
     outReq.effect = getVoiceEffect(deps.db, message.guildId, message.author.id);
 

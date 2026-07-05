@@ -104,16 +104,6 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, user_id)
       );
 
-      -- Persona de fala por-(guild,user): estilo com que o Voxi le as mensagens da pessoa
-      -- (pirate/uwu/yoda/cowboy/medieval). Sem linha => 'none' (leitura normal). Tabela
-      -- NOVA: o CREATE IF NOT EXISTS cobre DBs novas e antigas, sem coluna a migrar.
-      CREATE TABLE IF NOT EXISTS user_persona (
-        guild_id TEXT NOT NULL,
-        user_id  TEXT NOT NULL,
-        persona  TEXT NOT NULL,
-        PRIMARY KEY (guild_id, user_id)
-      );
-
       -- Aniversário por-(guild,user): mês + dia (sem ano). Quando a pessoa entra na call
       -- do Voxi no seu dia de anos, ele diz "Parabéns {nome}". Tabela NOVA (CREATE IF NOT
       -- EXISTS cobre DBs novas e antigas).

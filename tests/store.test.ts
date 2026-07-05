@@ -15,7 +15,6 @@ import {
 } from '../src/store/pronunciation';
 import { isOptedOut, setOptOut, setOptIn } from '../src/store/optout';
 import { getNickname, setNickname, clearNickname } from '../src/store/nickname';
-import { getPersona, setPersona, clearPersona } from '../src/store/persona';
 import { getVoiceEffect, setVoiceEffect } from '../src/store/voiceEffect';
 
 const G = 'guild-1';
@@ -346,33 +345,6 @@ describe('store', () => {
       setNickname(db, G, 'u1', 'A');
       expect(getNickname(db, 'outra-guild', 'u1')).toBeNull();
       expect(getNickname(db, G, 'u2')).toBeNull();
-    });
-  });
-
-  describe('persona', () => {
-    it('sem persona -> none', () => {
-      expect(getPersona(db, G, 'u1')).toBe('none');
-    });
-
-    it('persiste, sobrescreve e limpa', () => {
-      setPersona(db, G, 'u1', 'pirate');
-      expect(getPersona(db, G, 'u1')).toBe('pirate');
-      setPersona(db, G, 'u1', 'uwu');
-      expect(getPersona(db, G, 'u1')).toBe('uwu');
-      clearPersona(db, G, 'u1');
-      expect(getPersona(db, G, 'u1')).toBe('none');
-    });
-
-    it("setPersona('none') apaga a linha (equivalente a limpar)", () => {
-      setPersona(db, G, 'u1', 'yoda');
-      setPersona(db, G, 'u1', 'none');
-      expect(getPersona(db, G, 'u1')).toBe('none');
-    });
-
-    it('é por-(guild,user)', () => {
-      setPersona(db, G, 'u1', 'cowboy');
-      expect(getPersona(db, 'outra-guild', 'u1')).toBe('none');
-      expect(getPersona(db, G, 'u2')).toBe('none');
     });
   });
 

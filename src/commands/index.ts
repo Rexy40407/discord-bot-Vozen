@@ -26,8 +26,6 @@ import { getGuildConfig, setGuildConfig, resetGuildConfig } from '../store/guild
 import { addBlockword, removeBlockword, getBlocklist } from '../store/blocklist';
 import { setOptOut, setOptIn } from '../store/optout';
 import { setNickname, clearNickname } from '../store/nickname';
-import { getPersona, setPersona } from '../store/persona';
-import { isPersona, PERSONA_CHOICES, type Persona } from '../textCleaning/personas';
 import { getBirthday, setBirthday, clearBirthday, isValidBirthday } from '../store/birthday';
 import { getTopSpeakers } from '../store/talkStats';
 import {
@@ -53,7 +51,7 @@ import {
   removePronunciation,
 } from '../store/pronunciation';
 import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../textCleaning/clean';
-import { prepareSpeech, redactRequest, hasReadableText, applyPersonaToRequest } from './prepareSpeech';
+import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { recallLang, rememberLang } from '../language/langMemory';
 import type { SynthRequest } from '../tts/engine';
 import { voiceDisplayName, formatVoiceList, makeLocalizedNamer } from '../language/voiceMap';
@@ -355,19 +353,6 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             .setDescription('Spoken name (empty = use your server name)')
             .setRequired(false)
             .setMaxLength(40),
-        ),
-    )
-    .addSubcommand((s) =>
-      s
-        .setName('persona')
-        .setDescription('Read your messages in a fun style (pirate, uwu, Yoda...)')
-        .addStringOption((o) =>
-          o
-            .setName('style')
-            .setNameLocalizations({ 'pt-BR': 'estilo' })
-            .setDescription('Speaking style (none = normal)')
-            .setRequired(true)
-            .addChoices(...PERSONA_CHOICES),
         ),
     )
     .addSubcommand((s) =>
@@ -848,8 +833,7 @@ async function speakRawText(
   const readable =
     hasReadableText(redacted.text) || (redacted.segments?.some((s) => hasReadableText(s.text)) ?? false);
   if (!readable) return { status: 'blocked' };
-  // Persona DEPOIS da redação (o filtro vê o texto sem estilo). 'none' -> req intacto.
-  const outReq = applyPersonaToRequest(redacted, getPersona(deps.db, guildId, userId));
+  const outReq = redacted;
   outReq.effect = getVoiceEffect(deps.db, guildId, userId); // efeito de voz (premium)
   if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
   const queued = await player.say(outReq);
@@ -1274,11 +1258,6 @@ async function handleVoiceDetection(
   await reply(i, active ? t('voice.detection.on', locale) : t('voice.detection.off', locale));
 }
 
-/** Label legível de uma persona (o `name` da choice, ex. '🏴‍☠️ Pirate'); fallback ao id. */
-function personaLabel(persona: Persona): string {
-  return PERSONA_CHOICES.find((c) => c.value === persona)?.name ?? persona;
-}
-
 async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const sub = i.options.getSubcommand();
@@ -1359,18 +1338,6 @@ async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promi
       setNickname(deps.db, i.guildId!, i.user.id, clean);
       await reply(i, t('voice.nickname.set', locale, { name: clean }));
     }
-  } else if (sub === 'persona') {
-    // Persona de fala: estilo com que o Voxi lê as mensagens desta pessoa. As choices
-    // do builder já garantem um valor válido; isPersona é rede de segurança.
-    const style = i.options.getString('style', true);
-    const persona = isPersona(style) ? style : 'none';
-    setPersona(deps.db, i.guildId!, i.user.id, persona);
-    await reply(
-      i,
-      persona === 'none'
-        ? t('voice.persona.cleared', locale)
-        : t('voice.persona.set', locale, { style: personaLabel(persona) }),
-    );
   } else if (sub === 'effect') {
     const raw = i.options.getString('effect', true);
     const effect: VoiceEffect = isVoiceEffect(raw) ? raw : 'none';

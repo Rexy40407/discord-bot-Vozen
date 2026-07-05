@@ -10,7 +10,6 @@ import { expandAbbreviations, splitEnglishSlang } from '../textCleaning/abbrevia
 import { restoreAccents, accentLangOfModel } from '../textCleaning/accents';
 import { applyPronunciation, type PronunciationEntry } from '../textCleaning/pronunciation';
 import { redactBlocked } from '../moderation/filter';
-import { applyPersona, type Persona } from '../textCleaning/personas';
 import type { SynthRequest } from '../tts/engine';
 
 /** Há pelo menos uma letra ou número (algo legível para falar)? */
@@ -130,21 +129,6 @@ function capSynth(result: PreparedSpeech): PreparedSpeech {
     req.segments = kept;
   }
   return { ...result, req };
-}
-
-/**
- * Aplica a PERSONA (/voice persona) a um SynthRequest — `text` e cada segmento. Corre nos
- * CHAMADORES, DEPOIS da blocklist (redactRequest), para a redação ver o texto SEM estilo —
- * senão uma persona que altera a palavra bloqueada (uwu: "hello"->"hewwo") passava ao lado
- * do filtro. 'none'/ausente -> req intacto. PURA.
- */
-export function applyPersonaToRequest(req: SynthRequest, persona: Persona | undefined): SynthRequest {
-  if (!persona || persona === 'none') return req;
-  const out: SynthRequest = { ...req, text: applyPersona(req.text, persona) };
-  if (out.segments && out.segments.length > 0) {
-    out.segments = out.segments.map((s) => ({ ...s, text: applyPersona(s.text, persona) }));
-  }
-  return out;
 }
 
 export function prepareSpeech(input: PrepareSpeechInput): PreparedSpeech {

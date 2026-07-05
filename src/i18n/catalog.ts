@@ -155,15 +155,6 @@ export const catalog: Record<string, Entry> = {
     en: "That name has nothing readable to say out loud. Try letters or numbers.",
     pt: 'Esse nome não tem nada legível para dizer em voz alta. Usa letras ou números.',
   },
-  // /voice persona — estilo divertido com que o Voxi lê as mensagens da pessoa.
-  'voice.persona.set': {
-    en: '✅ Persona set to **{style}** — Voxi will read your messages in that style. Works best in English. Use `/voice persona none` to turn it off.',
-    pt: '✅ Persona definida para **{style}** — o Voxi vai ler as tuas mensagens nesse estilo. Funciona melhor em inglês. Usa `/voice persona none` para desligar.',
-  },
-  'voice.persona.cleared': {
-    en: '✅ Persona cleared — Voxi reads your messages normally again.',
-    pt: '✅ Persona removida — o Voxi volta a ler as tuas mensagens normalmente.',
-  },
   // /voice effect — efeito de voz (premium, 2 amostras grátis).
   'voice.effect.set': {
     en: '✅ Voice effect set to **{effect}** — your messages now play with that effect. Use `/voice effect none` to turn it off.',
@@ -865,7 +856,6 @@ export const catalog: Record<string, Entry> = {
       '• /voice preview — hear a sample of your voice\n' +
       '• /voice reset — go back to the default voice\n' +
       '• /voice detection <on/off> — native voice per language, speaker may change (off by default: one fixed voice)\n' +
-      '• /voice persona <style> — read your messages in a fun style (pirate, uwu, Yoda...)\n' +
       '• /voice effect <effect> — voice effect (robot, echo… 💎 more with Premium)\n' +
       '• /voice optout · /voice optin — turn auto-read off / on for you',
     pt:
@@ -874,7 +864,6 @@ export const catalog: Record<string, Entry> = {
       '• /voice preview — ouve uma amostra da tua voz\n' +
       '• /voice reset — volta a voz por defeito\n' +
       '• /voice detection <on/off> — voz nativa por lingua, o locutor pode mudar (desligado por defeito: uma voz fixa)\n' +
-      '• /voice persona <estilo> — le as tuas mensagens num estilo divertido (pirata, uwu, Yoda...)\n' +
       '• /voice effect <efeito> — efeito de voz (robot, echo… 💎 mais com Premium)\n' +
       '• /voice optout · /voice optin — desliga / liga a leitura automatica para ti',
   },
