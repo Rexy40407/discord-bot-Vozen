@@ -237,6 +237,54 @@ body > *:not(.grain):not(.orbs) { position: relative; z-index: 2; }
 .stat__inf { background: var(--grad-vivid); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .stat span { font-size: 14px; color: var(--text-1); }
 
+/* ── hear (audio demo) ──────────────────────────────────── */
+.hear { padding: clamp(48px, 7vw, 84px) 0 clamp(18px, 3vw, 34px); }
+.hear__inner { max-width: 720px; margin: 0 auto; text-align: center; }
+.hear__inner .eyebrow { justify-content: center; }
+.hear__title { font-size: clamp(26px, 4vw, 40px); font-weight: 800; margin: 14px 0 12px; }
+.hear__sub { color: var(--text-1); font-size: 17px; max-width: 520px; margin: 0 auto 30px; }
+.hear__stage {
+  display: flex; align-items: center; gap: 20px; text-align: left;
+  max-width: 620px; margin: 0 auto; padding: 22px 26px; border-radius: var(--radius);
+  background: var(--glass); border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 var(--hi), 0 30px 70px -40px rgba(0, 0, 0, 0.8);
+}
+.hear__btn {
+  flex: 0 0 auto; width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer;
+  color: #fff; background: linear-gradient(135deg, var(--blurple), var(--aqua));
+  display: grid; place-items: center; box-shadow: 0 12px 30px -8px rgba(102, 114, 255, 0.7);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hear__btn:hover { transform: translateY(-2px) scale(1.04); }
+.hear__btn:active { transform: scale(0.97); }
+.hear__ic { grid-area: 1 / 1; }
+.hear__ic--pause { display: none; }
+.hear__stage.is-playing .hear__ic--play { display: none; }
+.hear__stage.is-playing .hear__ic--pause { display: block; }
+.hear__meta { flex: 1; min-width: 0; }
+.hear__nowrow { display: flex; align-items: center; gap: 9px; margin-bottom: 5px; }
+.hear__flag { font-size: 20px; }
+.hear__lang { font-weight: 700; color: var(--text-0); font-size: 16px; }
+.hear__eq { color: var(--aqua); height: 15px; opacity: 0.32; transition: opacity 0.2s; margin-left: auto; }
+.hear__eq i { animation-play-state: paused; }
+.hear__stage.is-playing .hear__eq { opacity: 1; }
+.hear__stage.is-playing .hear__eq i { animation-play-state: running; }
+.hear__phrase { color: var(--text-1); font-size: 14.5px; line-height: 1.5; }
+.hear__chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
+.hear__chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border-radius: 999px; cursor: pointer;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line);
+  color: var(--text-1); font-size: 14px; font-weight: 600; font-family: inherit; transition: all 0.18s ease;
+}
+.hear__chip:hover { color: var(--text-0); border-color: var(--aqua); transform: translateY(-1px); }
+.hear__chip.is-active { color: #fff; background: var(--blurple); border-color: transparent; box-shadow: 0 8px 22px -8px rgba(102, 114, 255, 0.7); }
+.hear__chip span { font-size: 16px; }
+@media (max-width: 560px) {
+  .hear__stage { flex-direction: column; text-align: center; gap: 14px; }
+  .hear__nowrow { justify-content: center; }
+  .hear__eq { margin-left: 0; }
+}
+
 /* ── sections ───────────────────────────────────────────── */
 .section { padding: clamp(76px, 10vw, 128px) 0; }
 .section--alt { background: linear-gradient(180deg, transparent, rgba(10, 12, 26, 0.55), transparent); }

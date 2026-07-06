@@ -316,7 +316,63 @@
     draw();
   }
 
+  /* ── hear (audio demo) ─────────────────────────────────── */
+  // Cada amostra: bandeira, nome da lingua e a frase EXATA que foi sintetizada
+  // (tem de bater certo com o audio) + o mp3 gerado por tools/gen-samples.mjs.
+  const SAMPLES = {
+    en: { flag: "🇬🇧", lang: "English", phrase: "Hey! Welcome to the server. Type anything and I'll read it out loud." },
+    pt: { flag: "🇵🇹", lang: "Português", phrase: "Olá! Escreve o que quiseres e eu leio tudo em voz alta." },
+    es: { flag: "🇪🇸", lang: "Español", phrase: "¡Hola! Escribe lo que quieras y lo leeré en voz alta." },
+    fr: { flag: "🇫🇷", lang: "Français", phrase: "Salut ! Écris ce que tu veux, je le lis à voix haute." },
+    de: { flag: "🇩🇪", lang: "Deutsch", phrase: "Hallo! Schreib irgendwas und ich lese es laut vor." },
+    ja: { flag: "🇯🇵", lang: "日本語", phrase: "こんにちは！メッセージを読み上げます。" },
+  };
+
+  function initHear() {
+    const stage = $("#hearStage");
+    const audio = $("#hearAudio");
+    const btn = $("#hearBtn");
+    if (!stage || !audio || !btn) return;
+    const flagEl = $("#hearFlag"),
+      langEl = $("#hearLang"),
+      phraseEl = $("#hearPhrase");
+    let current = "en";
+
+    const select = (code, autoplay) => {
+      const s = SAMPLES[code];
+      if (!s) return;
+      current = code;
+      flagEl.textContent = s.flag;
+      langEl.textContent = s.lang;
+      phraseEl.textContent = s.phrase;
+      $$(".hear__chip").forEach((c) => c.classList.toggle("is-active", c.dataset.sample === code));
+      // preload="none" no <audio> => trocar o src NAO descarrega ate' se dar play.
+      audio.src = "assets/samples/" + code + ".mp3";
+      if (autoplay) audio.play().catch(() => {});
+    };
+
+    // Toca/pausa a amostra atual. is-playing (icone + equalizador) segue os eventos
+    // do proprio <audio>, por isso trocar de lingua a meio nunca deixa dois a tocar.
+    btn.addEventListener("click", () => (audio.paused ? audio.play().catch(() => {}) : audio.pause()));
+    $$(".hear__chip").forEach((chip) =>
+      chip.addEventListener("click", () => select(chip.dataset.sample, true)),
+    );
+    audio.addEventListener("play", () => {
+      stage.classList.add("is-playing");
+      btn.setAttribute("aria-pressed", "true");
+    });
+    const off = () => {
+      stage.classList.remove("is-playing");
+      btn.setAttribute("aria-pressed", "false");
+    };
+    audio.addEventListener("pause", off);
+    audio.addEventListener("ended", off);
+
+    select("en", false); // estado inicial: EN escolhido, sem tocar
+  }
+
   /* ── boot ────────────────────────────────────────────── */
   applyLang(lang);
   runChat();
+  initHear();
 })();
