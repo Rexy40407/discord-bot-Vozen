@@ -23,6 +23,7 @@ const EXPECTED_PERMISSIONS = new PermissionsBitField([
   PermissionFlagsBits.ViewChannel,
   PermissionFlagsBits.SendMessages,
   PermissionFlagsBits.ReadMessageHistory,
+  PermissionFlagsBits.EmbedLinks,
 ]).bitfield.toString();
 
 interface FakeInteraction {

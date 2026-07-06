@@ -150,6 +150,11 @@ export const INVITE_PERMISSIONS: string = new PermissionsBitField([
   PermissionFlagsBits.ViewChannel,
   PermissionFlagsBits.SendMessages,
   PermissionFlagsBits.ReadMessageHistory,
+  // EmbedLinks: o bot responde quase tudo em EMBEDS (ajuda, stats, jogos, setup).
+  // Sem esta permissão o Discord NÃO renderiza os embeds do bot em canais onde o
+  // @everyone não a tenha. Reações/anexos NÃO entram: o código não usa .react() nem
+  // envia ficheiros (auditado).
+  PermissionFlagsBits.EmbedLinks,
 ])
   .bitfield.toString();
 
