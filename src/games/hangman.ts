@@ -93,7 +93,11 @@ class HangmanGame implements Game {
     const lives = '❤️'.repeat(MAX_WRONG - this.wrong.size) + '🖤'.repeat(this.wrong.size);
     const wrong = [...this.wrong].join(' ').toUpperCase();
     const wrongLine = wrong ? `\n${ctx.t('game.hangman.wrongLetters', { letters: wrong })}` : '';
-    return `${header}\n\`${masked}\`\n${lives}${wrongLine}`;
+    // Boneco da forca em estágios (h0..h6 = nº de erros) quando os tiles existem; a linha
+    // de corações ❤️/🖤 mantém-se por baixo. Sem tiles, só os corações (como antes).
+    const figure = ctx.emoji(`h${this.wrong.size}`);
+    const figLine = figure ? `${figure}\n` : '';
+    return `${header}\n${figLine}\`${masked}\`\n${lives}${wrongLine}`;
   }
 }
 

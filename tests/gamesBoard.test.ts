@@ -96,6 +96,25 @@ describe('Forca', () => {
     expect(persistScores).not.toHaveBeenCalled();
     expect(mgr.active(G)).toBe(false);
   });
+
+  it('com tiles instalados: mostra o boneco da forca no estágio certo (nº de erros)', async () => {
+    const { env, send } = harness();
+    env.boardEmojis = Object.fromEntries(
+      Array.from({ length: 7 }, (_, i) => [`h${i}`, `<:h${i}:1234567890123456789>`]),
+    );
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('hangman')!.create());
+    await flush();
+    const { words } = wordsForLocale('en');
+    const word = normalizeAnswer(words[seededIndex(SEED, words.length)]);
+    // Início: 0 erros -> estágio h0 (só a forca).
+    expect(String(send.mock.calls[0][1])).toContain('<:h0:');
+    // Uma letra errada -> estágio h1.
+    const wrong = 'qwertyuiopasdfghjklzxcvbnm'.split('').find((l) => !word.includes(l))!;
+    say(mgr, 'u', wrong);
+    await flush();
+    expect(String(send.mock.calls[send.mock.calls.length - 1][1])).toContain('<:h1:');
+  });
 });
 
 describe('Termo/Wordle', () => {
@@ -209,6 +228,27 @@ describe('Galo', () => {
     expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.win'))).toBe(true);
     expect(persistScores.mock.calls[0][1].get('ana')).toBe(1);
     expect(mgr.active(G)).toBe(false);
+  });
+
+  it('com tiles instalados: grelha em emojis (tx/to/números), sem code block', async () => {
+    const { env, send } = harness();
+    env.boardEmojis = {
+      tx: '<:tx:1234567890123456789>',
+      to: '<:to:1234567890123456789>',
+      ...Object.fromEntries(
+        Array.from({ length: 9 }, (_, i) => [`t${i + 1}`, `<:t${i + 1}:1234567890123456789>`]),
+      ),
+    };
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('tictactoe')!.create());
+    await flush();
+    say(mgr, 'ana', '1'); // X joga na casa 1
+    await flush();
+    const msg = send.mock.calls.map((c) => String(c[1])).reverse().find((s) => s.includes('game.tictactoe.turn'));
+    expect(msg).toBeDefined();
+    expect(msg).not.toContain('```'); // já não é o ASCII
+    expect(msg).toContain('<:tx:'); // a jogada de X aparece como tile
+    expect((msg!.match(/<:t/g) ?? []).length).toBe(9); // 9 casas, cada uma um tile
   });
 
   it('tabuleiro cheio sem linha -> empate, sem pontos', async () => {

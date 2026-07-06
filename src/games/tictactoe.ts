@@ -27,7 +27,7 @@ class TicTacToeGame implements Game {
   private moves = 0;
 
   async start(ctx: GameContext): Promise<void> {
-    await ctx.send(`${ctx.t('game.tictactoe.intro')}\n${this.render()}`);
+    await ctx.send(`${ctx.t('game.tictactoe.intro')}\n${this.render(ctx)}`);
     this.armIdle(ctx);
   }
 
@@ -85,22 +85,32 @@ class TicTacToeGame implements Game {
       this.over = true;
       const uid = mark === 'X' ? this.xId! : this.oId!;
       ctx.award(uid, 1);
-      void ctx.send(`${ctx.t('game.tictactoe.win', { user: this.names[uid], mark })}\n${this.render()}`);
+      void ctx.send(`${ctx.t('game.tictactoe.win', { user: this.names[uid], mark })}\n${this.render(ctx)}`);
       announceWinner(ctx, this.names[uid]);
       ctx.end();
       return;
     }
     if (this.cells.every((c) => c !== '')) {
       this.over = true;
-      void ctx.send(`${ctx.t('game.tictactoe.draw')}\n${this.render()}`);
+      void ctx.send(`${ctx.t('game.tictactoe.draw')}\n${this.render(ctx)}`);
       ctx.end();
       return;
     }
     this.turn = mark === 'X' ? 'O' : 'X';
-    void ctx.send(`${this.render()}\n${ctx.t('game.tictactoe.turn', { mark: this.turn })}`);
+    void ctx.send(`${this.render(ctx)}\n${ctx.t('game.tictactoe.turn', { mark: this.turn })}`);
   }
 
-  private render(): string {
+  private render(ctx: GameContext): string {
+    // Tiles-emoji (tx/to/t1..t9) quando instalados; senão a grelha ASCII de sempre.
+    if (ctx.emoji('t1')) {
+      const cell = (i: number): string => {
+        const m = this.cells[i];
+        const name = m === 'X' ? 'tx' : m === 'O' ? 'to' : `t${i + 1}`;
+        return ctx.emoji(name) ?? '';
+      };
+      const row = (a: number): string => `${cell(a)}${cell(a + 1)}${cell(a + 2)}`;
+      return `${row(0)}\n${row(3)}\n${row(6)}`;
+    }
     const c = (i: number): string => this.cells[i] || String(i + 1);
     return (
       '```\n' +
