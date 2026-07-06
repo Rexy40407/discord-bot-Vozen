@@ -300,15 +300,18 @@ describe('Xadrez', () => {
     mgr.start(G, C, gameById('chess')!.create());
     await flush();
     const msg = String(send.mock.calls[0][1]);
-    // Uma partida nova = 64 casas, cada uma emite um emoji (peça ou casa vazia).
-    expect((msg.match(/<:/g) ?? []).length).toBe(64);
+    // Nova partida = 64 casas + 8 tiles de etiqueta de ficheiro = 72 emojis.
+    expect((msg.match(/<:/g) ?? []).length).toBe(72);
     // Mapeamento peça×casa: a8 (canto sup. esq.) é casa CLARA -> torre preta clara (brl);
     // b8 é escura -> cavalo preto escuro (bnd); a1 é escura -> torre branca escura (wrd).
     expect(msg).toContain('<:brl:');
     expect(msg).toContain('<:bnd:');
     expect(msg).toContain('<:wrd:');
-    // Etiquetas dos ficheiros (indicadores regionais) no topo.
-    expect(msg).toContain('🇦');
+    // Etiquetas dos ficheiros são tiles próprios (fa..fh), NÃO indicadores regionais
+    // (esses combinavam-se em bandeiras: 🇨🇩=Congo, 🇬🇭=Gana).
+    expect(msg).toContain('<:fa:');
+    expect(msg).toContain('<:fh:');
+    expect(msg).not.toContain('🇦');
     // Orçamento do Discord (UTF-16 length é um limite conservador vs code points).
     expect(msg.length).toBeLessThan(2000);
   });

@@ -157,11 +157,13 @@ class ChessGame implements Game {
   }
 
   /** Tabuleiro em emojis: peça cburnett sobre casa clara/escura; letras dos ficheiros
-   *  em cima (emojis regionais alinham com as colunas), números das filas à direita. */
+   *  em cima (tiles-emoji fa..fh — NÃO indicadores regionais, que se combinam em
+   *  bandeiras), números das filas à direita. */
   private renderEmoji(ctx: GameContext): string {
     const b = this.chess.board();
-    const files = '🇦🇧🇨🇩🇪🇫🇬🇭'; // indicadores regionais A–H (largura de emoji => alinham)
-    const lines: string[] = [files];
+    // Etiquetas A–H como tiles-emoji próprios (alinham com as colunas e nunca viram bandeiras).
+    const fileRow = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((f) => ctx.emoji(`f${f}`) ?? '').join('');
+    const lines: string[] = [fileRow];
     for (let r = 0; r < 8; r++) {
       let row = '';
       for (let f = 0; f < 8; f++) {

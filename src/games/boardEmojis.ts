@@ -11,7 +11,11 @@
 import type { Client } from 'discord.js';
 import { log } from '../logging/logger';
 
-/** Os 26 nomes esperados: {cor}{tipo}{casa} (ex. wpl, bkd) + casas vazias (el, ed). */
+/**
+ * Os 34 nomes esperados: {cor}{tipo}{casa} (ex. wpl, bkd) + casas vazias (el, ed) +
+ * etiquetas de ficheiro fa..fh (letras A–H em tiles, para não dependermos de indicadores
+ * regionais — esses combinam-se em BANDEIRAS aos pares, ex. 🇨🇩=Congo, 🇬🇭=Gana).
+ */
 export const CHESS_EMOJI_NAMES: readonly string[] = (() => {
   const names: string[] = ['el', 'ed'];
   for (const color of ['w', 'b']) {
@@ -19,6 +23,7 @@ export const CHESS_EMOJI_NAMES: readonly string[] = (() => {
       for (const sq of ['l', 'd']) names.push(`${color}${type}${sq}`);
     }
   }
+  for (const file of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) names.push(`f${file}`);
   return names;
 })();
 
