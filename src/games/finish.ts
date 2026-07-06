@@ -1,4 +1,5 @@
 import type { GameContext } from './types';
+import { rankMedal } from '../ui/theme';
 
 /** Placar local de uma partida: userId -> nome + pontos. */
 export type Tally = Map<string, { name: string; points: number }>;
@@ -32,7 +33,7 @@ export async function sendStandings(ctx: GameContext, tally: Tally): Promise<voi
     return;
   }
   const lines = ranked.map((r, i) =>
-    ctx.t('game.finish.line', { rank: i + 1, user: r.name, points: r.points }),
+    ctx.t('game.finish.line', { rank: rankMedal(i + 1), user: r.name, points: r.points }),
   );
   await ctx.send(`${ctx.t('game.finish.title')}\n${lines.join('\n')}`);
   // O 1º do placar (se pontuou) é anunciado em voz alta.

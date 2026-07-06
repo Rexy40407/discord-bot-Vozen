@@ -28,3 +28,8 @@ export type BrandColor = keyof typeof COLORS;
 export function brandEmbed(color: BrandColor = 'brand'): EmbedBuilder {
   return new EmbedBuilder().setColor(COLORS[color]);
 }
+
+/** Rótulo de posição: medalha para o top 3, `#n` para o resto. Usado em placares. */
+export function rankMedal(rank: number): string {
+  return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+}

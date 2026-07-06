@@ -1127,8 +1127,8 @@ export const catalog: Record<string, Entry> = {
     pt: 'Ainda não se jogou nada. Sê o primeiro — `/game play`!',
   },
   'game.leaderboard.line': {
-    en: '{rank}. <@{user}> — **{points}** pts ({wins} wins)',
-    pt: '{rank}. <@{user}> — **{points}** pts ({wins} vitórias)',
+    en: '{rank} <@{user}> — **{points}** pts ({wins} wins)',
+    pt: '{rank} <@{user}> — **{points}** pts ({wins} vitórias)',
   },
   // Resumo final partilhado por qualquer jogo (placar da partida).
   'game.finish.title': {
@@ -1136,8 +1136,8 @@ export const catalog: Record<string, Entry> = {
     pt: '🏁 **Fim de jogo!** Pontuações finais:',
   },
   'game.finish.line': {
-    en: '{rank}. **{user}** — {points}',
-    pt: '{rank}. **{user}** — {points}',
+    en: '{rank} **{user}** — {points}',
+    pt: '{rank} **{user}** — {points}',
   },
   'game.finish.noScores': {
     en: "🏁 Game over — nobody scored this time. Next time!",

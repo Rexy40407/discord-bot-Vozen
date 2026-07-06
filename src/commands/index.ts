@@ -23,7 +23,7 @@ import { metrics } from '../metrics';
 import { joinVoiceChannel, getVoiceConnection } from '@discordjs/voice';
 import type { BotDeps } from '../bot/deps';
 import { getPlayer, removePlayer, getLimiter } from '../bot/deps';
-import { brandEmbed } from '../ui/theme';
+import { brandEmbed, rankMedal } from '../ui/theme';
 import { GuildVoicePlayer } from '../voice/player';
 import { createVoiceSession, becomeSpeakerIfStage } from '../voice/session';
 import { getUserVoice, setUserVoice, resetUserVoice } from '../store/userVoice';
@@ -2256,7 +2256,9 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
     const lines = GAME_DEFS.map((g) =>
       t('game.list.line', locale, { name: t(g.nameKey, locale), desc: t(g.descKey, locale) }),
     );
-    await i.reply({ content: `${t('game.list.title', locale)}\n${lines.join('\n')}` });
+    await i.reply({
+      embeds: [brandEmbed().setDescription(`${t('game.list.title', locale)}\n${lines.join('\n')}`)],
+    });
     return;
   }
 
@@ -2268,13 +2270,15 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
     }
     const lines = rows.map((r, idx) =>
       t('game.leaderboard.line', locale, {
-        rank: idx + 1,
+        rank: rankMedal(idx + 1),
         user: r.userId,
         points: r.points,
         wins: r.wins,
       }),
     );
-    await i.reply({ content: `${t('game.leaderboard.title', locale)}\n${lines.join('\n')}` });
+    await i.reply({
+      embeds: [brandEmbed().setDescription(`${t('game.leaderboard.title', locale)}\n${lines.join('\n')}`)],
+    });
     return;
   }
 
@@ -2287,10 +2291,14 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
       return;
     }
     const rankStr = rank ? t('game.stats.rank', locale, { rank, total }) : t('game.stats.unranked', locale);
-    await reply(
-      i,
-      t('game.stats.body', locale, { points: score.points, wins: score.wins, rank: rankStr }),
-    );
+    await i.reply({
+      embeds: [
+        brandEmbed().setDescription(
+          t('game.stats.body', locale, { points: score.points, wins: score.wins, rank: rankStr }),
+        ),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 }
