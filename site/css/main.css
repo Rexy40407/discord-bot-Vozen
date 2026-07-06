@@ -424,6 +424,9 @@ body > *:not(.grain):not(.orbs) { position: relative; z-index: 2; }
 .foot__grid a { display: block; color: var(--text-1); padding: 5px 0; transition: color 0.2s; }
 .foot__grid a:hover { color: var(--text-0); }
 .foot__base { display: flex; justify-content: space-between; margin-top: 46px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--text-2); font-size: 14px; }
+.foot__legal { display: flex; gap: 18px; }
+.foot__base a { color: var(--text-2); transition: color 0.2s; }
+.foot__base a:hover { color: var(--text-0); }
 
 /* ── reveal animation ───────────────────────────────────── */
 .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s ease; }

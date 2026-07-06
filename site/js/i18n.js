@@ -105,6 +105,8 @@ window.VOXI_I18N = {
     "foot.community": "Community",
     "foot.support": "Support server",
     "foot.vote": "Vote on top.gg",
+    "foot.privacy": "Privacy",
+    "foot.terms": "Terms",
     "foot.legal": "Not affiliated with Discord.",
   },
 
@@ -212,6 +214,8 @@ window.VOXI_I18N = {
     "foot.community": "Comunidade",
     "foot.support": "Servidor de suporte",
     "foot.vote": "Votar no top.gg",
+    "foot.privacy": "Privacidade",
+    "foot.terms": "Termos",
     "foot.legal": "Sem afiliação com o Discord.",
   },
 };

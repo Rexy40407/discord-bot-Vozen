@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07070d" />
+    <title>Privacy Policy — Voxi</title>
+    <meta name="description" content="What data the Voxi Discord TTS bot stores, why, and how to delete it." />
+    <meta name="robots" content="index, follow" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+    <style>
+      .legal { max-width: 780px; margin: 0 auto; padding: 96px 22px 120px; }
+      .legal a.back { display: inline-flex; align-items: center; gap: 8px; color: var(--aqua); text-decoration: none; font-weight: 600; font-size: 15px; }
+      .legal a.back:hover { text-decoration: underline; }
+      .legal h1 { font-family: var(--f-display, "Unbounded", sans-serif); font-size: clamp(30px, 6vw, 44px); font-weight: 800; margin: 26px 0 6px; line-height: 1.1; }
+      .legal .updated { color: #8890b0; font-size: 14px; margin-bottom: 32px; }
+      .legal h2 { font-size: 21px; font-weight: 700; margin: 38px 0 12px; color: #fff; }
+      .legal p, .legal li { color: #c3c9e2; line-height: 1.72; font-size: 16.5px; }
+      .legal ul { margin: 10px 0 10px 2px; padding-left: 20px; }
+      .legal li { margin-bottom: 9px; }
+      .legal li b, .legal p b { color: #fff; font-weight: 600; }
+      .legal code { font-family: var(--f-mono, monospace); color: var(--aqua); background: rgba(46,230,200,0.1); padding: 1px 6px; border-radius: 5px; font-size: 0.92em; }
+      .legal .callout { border: 1px solid rgba(46,230,200,0.28); background: rgba(46,230,200,0.06); border-radius: 14px; padding: 18px 20px; margin: 22px 0; }
+      .legal .callout p { margin: 0; color: #d5dbf0; }
+      .legal hr { border: none; border-top: 1px solid rgba(255,255,255,0.09); margin: 40px 0; }
+      .legal .foot-note { color: #8890b0; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <main class="legal">
+      <a class="back" href="index.html">← Back to Voxi</a>
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: 6 July 2026</p>
+
+      <p>
+        Voxi is a text-to-speech (TTS) bot for Discord. This page explains exactly what
+        data Voxi stores, why, and how you can remove it. In plain language: Voxi keeps
+        the settings it needs to work, and nothing else. It does <b>not</b> keep a log of
+        your messages, and it never asks for your email, phone number, or password.
+      </p>
+
+      <h2>Who we are</h2>
+      <p>
+        Voxi is an open-source project maintained by an independent developer. The full
+        source code is public on
+        <a href="https://github.com/diogoshk3/discord-bot-Voxi" target="_blank" rel="noopener">GitHub</a>.
+        Voxi is not affiliated with Discord Inc.
+      </p>
+
+      <h2>What we store</h2>
+      <p>
+        Everything below is keyed to your Discord <b>user ID</b> and/or <b>server ID</b>
+        (the numeric identifiers Discord already shares with every bot). We never store
+        your real name — only the display name you already show in the server, and only at
+        the moment it is spoken.
+      </p>
+      <ul>
+        <li><b>Your preferences</b> — your chosen voice, speaking speed, personal abbreviations, and a phonetic nickname (how you want your name pronounced out loud).</li>
+        <li><b>Server settings</b> — set by server admins: the TTS channel, auto-read on/off, default voice, character/rate limits, language, greeting options, a word blocklist, and pronunciation overrides.</li>
+        <li><b>Opt-out list</b> — if you ask Voxi not to read your messages, we store that choice.</li>
+        <li><b>Fun stats</b> — minigame scores (points and wins) and "top speaker" counts (how many of your messages were read aloud, plus daily streaks). These power the <code>/topspeakers</code> and <code>/game</code> leaderboards.</li>
+        <li><b>Birthday</b> — only the <b>month and day</b> you optionally set, never the year. Used so Voxi can wish you a happy birthday in the voice channel.</li>
+        <li><b>Premium status</b> — whether a server or user has Premium, when it expires, and the source (e.g. a redeem code). Redeem codes themselves are stored until used.</li>
+      </ul>
+
+      <div class="callout">
+        <p>
+          <b>Voice clone (opt-in, sensitive).</b> If — and only if — you run
+          <code>/voice clone record</code>, Voxi stores a short audio recording of
+          <b>your own</b> voice plus the timestamp of your consent, so it can later speak
+          in your voice. Voxi records <b>only the person who ran the command</b>, only
+          during the explicit recording window, and never the rest of the channel. Only
+          you can enable, use, or delete your sample (<code>/voice clone delete</code>
+          removes the recording immediately). Please only clone a voice you have the right
+          to use.
+        </p>
+      </div>
+
+      <h2>What we do NOT store</h2>
+      <ul>
+        <li>We do <b>not</b> keep a history or log of your chat messages. Text is turned into speech on the fly and then discarded.</li>
+        <li>To speed up repeated phrases, recently synthesized audio may be cached briefly on the server. This cache is keyed by a hash of the text, is not tied to your identity, and rotates out over time.</li>
+        <li>Outside of a voice-clone recording you personally start, the bot stays deafened and does not listen to or store voice-channel audio.</li>
+      </ul>
+
+      <h2>Third parties</h2>
+      <p>
+        When you use a <b>Google voice</b>, the text to be spoken is sent to Google's
+        text-to-speech service to generate the audio. Neural voices and voice clones are
+        generated on our own server, and that text never leaves it. Discord processes all
+        bot activity under
+        <a href="https://discord.com/privacy" target="_blank" rel="noopener">Discord's Privacy Policy</a>.
+      </p>
+
+      <h2>Your controls &amp; deletion</h2>
+      <ul>
+        <li>Delete your voice clone: <code>/voice clone delete</code>.</li>
+        <li>Stop being read aloud: opt out with the relevant command in your server.</li>
+        <li>Server admins can reset server settings and per-user data for their server.</li>
+        <li>For a full deletion of any data tied to your ID, ask on our
+          <a href="https://discord.gg/V6PZYZmhcQ" target="_blank" rel="noopener">support server</a>.</li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>Voxi follows Discord's Terms of Service. You must meet Discord's minimum age requirement to use Discord and, by extension, Voxi.</p>
+
+      <h2>Changes</h2>
+      <p>We may update this policy as Voxi evolves. The "last updated" date above reflects the current version.</p>
+
+      <hr />
+      <p class="foot-note">
+        Questions? Join the
+        <a href="https://discord.gg/V6PZYZmhcQ" target="_blank" rel="noopener">support server</a>.
+        · <a href="terms.html">Terms of Service</a>
+      </p>
+    </main>
+  </body>
+</html>
