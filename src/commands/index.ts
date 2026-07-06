@@ -23,6 +23,7 @@ import { metrics } from '../metrics';
 import { joinVoiceChannel, getVoiceConnection } from '@discordjs/voice';
 import type { BotDeps } from '../bot/deps';
 import { getPlayer, removePlayer, getLimiter } from '../bot/deps';
+import { brandEmbed } from '../ui/theme';
 import { GuildVoicePlayer } from '../voice/player';
 import { createVoiceSession, becomeSpeakerIfStage } from '../voice/session';
 import { getUserVoice, setUserVoice, resetUserVoice } from '../store/userVoice';
@@ -1178,10 +1179,14 @@ async function handlePremium(i: ChatInputCommandInteraction, deps: BotDeps): Pro
     ? t('premium.lineUserActive', locale, { date: stamp(uExp) })
     : t('premium.lineUserFree', locale);
 
-  const lines = [t('premium.title', locale), serverLine, youLine];
+  // Cartão de marca: dourado quando há Premium ativo (servidor ou user), blurple senão.
+  const desc = [serverLine, youLine];
   // Só mostra o "como obter" quando NENHUM dos dois está ativo (senão é ruído).
-  if (!gActive && !uActive) lines.push('', t('premium.getHint', locale));
-  await reply(i, lines.join('\n'));
+  if (!gActive && !uActive) desc.push('', t('premium.getHint', locale));
+  const embed = brandEmbed(gActive || uActive ? 'premium' : 'brand')
+    .setTitle(t('premium.title', locale))
+    .setDescription(desc.join('\n'));
+  await i.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }
 
 /** /redeem <code> — resgata um código de Premium (servidor) ou Plus (utilizador). */
