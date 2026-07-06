@@ -12,6 +12,9 @@ const IDLE_MS = 180_000;
 const ESC = String.fromCharCode(27);
 const SGR = { g: '1;30;42', y: '1;30;43', x: '1;37;40' } as const;
 
+/** Estado de cada célula: verde (certo), amarelo (existe), cinza (ausente). */
+type CellState = 'g' | 'y' | 'x';
+
 /**
  * "Termo/Wordle" — colaborativo: qualquer um escreve uma palavra de 5 letras; o Voxi
  * responde com as LETRAS COLORIDAS (verde=certa no sítio, amarelo=existe/sítio errado,
@@ -27,6 +30,8 @@ class WordleGame implements Game {
   /** Letras JÁ SABIDAS: `present` estão na palavra; `absent` foram descartadas. */
   private readonly present = new Set<string>();
   private readonly absent = new Set<string>();
+  /** Histórico de palpites (letras + estados) — para desenhar a grelha completa. */
+  private readonly rows: { letters: string; states: CellState[] }[] = [];
 
   async start(ctx: GameContext): Promise<void> {
     const { words } = pickWordleWords(ctx.locale);
@@ -47,13 +52,11 @@ class WordleGame implements Game {
   }
 
   /**
-   * O palpite como LETRAS COLORIDAS num bloco ```ansi (regras do Wordle, ciente da
-   * contagem de letras repetidas). As letras SÃO os "quadrados" — alinham sempre
-   * (monospace) e mostram a letra. Fallback gracioso: um cliente sem ANSI mostra as
-   * letras em monospace, sem cor. ` X ` (com espaços) faz cada célula parecer um bloco.
+   * Estado de cada célula do palpite (regras do Wordle, ciente da contagem de letras
+   * repetidas): verde=certo no sítio, amarelo=existe/sítio errado, cinza=ausente.
    */
-  private renderRow(guess: string): string {
-    const state: ('g' | 'y' | 'x')[] = ['x', 'x', 'x', 'x', 'x'];
+  private computeStates(guess: string): CellState[] {
+    const state: CellState[] = ['x', 'x', 'x', 'x', 'x'];
     const counts = new Map<string, number>();
     for (const ch of this.target) counts.set(ch, (counts.get(ch) ?? 0) + 1);
     for (let i = 0; i < 5; i++) {
@@ -70,10 +73,43 @@ class WordleGame implements Game {
         counts.set(guess[i], left - 1);
       }
     }
-    const cells = [...guess.toUpperCase()]
-      .map((ch, i) => `${ESC}[${SGR[state[i]]}m ${ch} ${ESC}[0m`)
-      .join('');
-    return '```ansi\n' + cells + '\n```';
+    return state;
+  }
+
+  /** Há tiles do wordle carregados? (basta o cinza 'a' existir.) */
+  private hasEmojis(ctx: GameContext): boolean {
+    return ctx.emoji('wxa') !== undefined;
+  }
+
+  /**
+   * Grelha COMPLETA (todos os palpites feitos), cada letra um tile-emoji colorido — o
+   * verdadeiro aspeto do Wordle, e funciona no MOBILE (o ANSI não tem cor lá). Devolve
+   * null se faltar algum tile (ex. letra fora de a–z) para o chamador cair no ANSI.
+   */
+  private renderGridEmoji(ctx: GameContext): string | null {
+    const lines: string[] = [];
+    for (const r of this.rows) {
+      let line = '';
+      for (let i = 0; i < r.states.length; i++) {
+        const e = ctx.emoji(`w${r.states[i]}${r.letters[i].toLowerCase()}`);
+        if (!e) return null;
+        line += e;
+      }
+      lines.push(line);
+    }
+    return lines.join('\n');
+  }
+
+  /** Grelha completa em ANSI (fallback sem tiles): células coloridas em code block. */
+  private renderGridAnsi(): string {
+    const rows = this.rows.map((r) =>
+      [...r.letters.toUpperCase()].map((ch, i) => `${ESC}[${SGR[r.states[i]]}m ${ch} ${ESC}[0m`).join(''),
+    );
+    return '```ansi\n' + rows.join('\n') + '\n```';
+  }
+
+  private renderGrid(ctx: GameContext): string {
+    return (this.hasEmojis(ctx) ? this.renderGridEmoji(ctx) : null) ?? this.renderGridAnsi();
   }
 
   /** Regista as letras deste palpite: na palavra (present) ou descartadas (absent). */
@@ -103,13 +139,14 @@ class WordleGame implements Game {
     if (g.length !== 5) return; // so palpites de 5 letras contam
     this.armIdle(ctx);
     this.guesses++;
-    const row = this.renderRow(g);
+    this.rows.push({ letters: g, states: this.computeStates(g) });
     this.trackLetters(g);
+    const grid = this.renderGrid(ctx);
     if (g === this.target) {
       this.over = true;
       ctx.award(msg.authorId, 1);
       void ctx.send(
-        `${row}\n${ctx.t('game.wordle.win', { user: msg.authorName, word: this.target.toUpperCase(), n: this.guesses })}`,
+        `${grid}\n${ctx.t('game.wordle.win', { user: msg.authorName, word: this.target.toUpperCase(), n: this.guesses })}`,
       );
       announceWinner(ctx, msg.authorName);
       ctx.end();
@@ -117,12 +154,12 @@ class WordleGame implements Game {
     }
     if (this.guesses >= MAX_GUESSES) {
       this.over = true;
-      void ctx.send(`${row}\n${ctx.t('game.wordle.lose', { word: this.target.toUpperCase() })}`);
+      void ctx.send(`${grid}\n${ctx.t('game.wordle.lose', { word: this.target.toUpperCase() })}`);
       ctx.end();
       return;
     }
     void ctx.send(
-      `${row}\n${ctx.t('game.wordle.guess', { user: msg.authorName, left: MAX_GUESSES - this.guesses })}${this.keyboard(ctx)}`,
+      `${grid}\n${ctx.t('game.wordle.guess', { user: msg.authorName, left: MAX_GUESSES - this.guesses })}${this.keyboard(ctx)}`,
     );
   }
 }

@@ -151,6 +151,38 @@ describe('Termo/Wordle', () => {
     // A 1ª letra descartada aparece na linha "fora".
     expect(guessMsg).toContain(notInTarget[0].toUpperCase());
   });
+
+  // Mapa dos 78 tiles do wordle: w{g|y|x}{a-z} -> markup com id de 19 dígitos.
+  const fakeWordleMap = (): Record<string, string> => {
+    const m: Record<string, string> = {};
+    for (const s of ['g', 'y', 'x']) {
+      for (const l of 'abcdefghijklmnopqrstuvwxyz') m[`w${s}${l}`] = `<:w${s}${l}:1234567890123456789>`;
+    }
+    return m;
+  };
+
+  it('com tiles instalados: grelha em emojis (5 por palpite, acumula), sem bloco ansi', async () => {
+    const { env, send } = harness();
+    env.boardEmojis = fakeWordleMap();
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('wordle')!.create());
+    await flush();
+    const { words } = pickWordleWords('en');
+    const target = normalizeAnswer(words[seededIndex(SEED, words.length)]);
+    const g1 = target === 'zzzzz' ? 'aaaaa' : 'zzzzz';
+    const g2 = target === 'qqqqq' ? 'bbbbb' : 'qqqqq';
+    say(mgr, 'u', g1);
+    await flush();
+    const msg1 = send.mock.calls.map((c) => String(c[1])).find((s) => s.includes('game.wordle.guess'));
+    expect(msg1).toBeDefined();
+    expect(msg1).not.toContain('```ansi'); // já não é o fallback
+    expect((msg1!.match(/<:w[gyx]/g) ?? []).length).toBe(5); // 1 palpite = 5 tiles
+    // 2º palpite -> a grelha acumula para 10 tiles.
+    say(mgr, 'u', g2);
+    await flush();
+    const msg2 = send.mock.calls.map((c) => String(c[1])).reverse().find((s) => s.includes('game.wordle.guess'));
+    expect((msg2!.match(/<:w[gyx]/g) ?? []).length).toBe(10);
+  });
 });
 
 describe('Galo', () => {

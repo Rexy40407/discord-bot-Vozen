@@ -28,24 +28,26 @@ export const CHESS_EMOJI_NAMES: readonly string[] = (() => {
 })();
 
 /**
- * Preenche `target` (por referência) com nome->markup (`<:wpl:123>`) dos application
- * emojis conhecidos do tabuleiro. Chamar 1x no ClientReady (a `client.application` já
- * está preenchida). Só regista os nomes de tabuleiro — ignora outros app emojis.
+ * Preenche `target` (por referência) com nome->markup (`<:wpl:123>`) de TODOS os
+ * application emojis do bot (tiles de xadrez, wordle, …). Chamar 1x no ClientReady (a
+ * `client.application` já está preenchida). Best-effort: falha => mapa fica como está e
+ * os jogos caem no render de texto/ASCII. Carrega tudo (só temos tiles próprios), por
+ * isso adicionar novos grupos de tiles não exige mexer aqui.
  */
 export async function loadBoardEmojis(client: Client, target: Record<string, string>): Promise<void> {
   try {
     if (!client.application) return;
-    const known = new Set(CHESS_EMOJI_NAMES);
     const coll = await client.application.emojis.fetch();
     let n = 0;
     for (const e of coll.values()) {
-      if (e.name && known.has(e.name)) {
+      if (e.name) {
         target[e.name] = e.toString();
         n++;
       }
     }
-    log.info(`[chess] ${n}/${CHESS_EMOJI_NAMES.length} emojis do tabuleiro carregados${n === 0 ? ' (usa ASCII)' : ''}`);
+    const chess = CHESS_EMOJI_NAMES.filter((name) => target[name]).length;
+    log.info(`[emojis] ${n} tiles carregados (xadrez ${chess}/${CHESS_EMOJI_NAMES.length})${n === 0 ? ' — usa ASCII' : ''}`);
   } catch (err) {
-    log.warn('[chess] falha a carregar emojis do tabuleiro (usa ASCII)', err);
+    log.warn('[emojis] falha a carregar tiles (jogos usam ASCII)', err);
   }
 }
