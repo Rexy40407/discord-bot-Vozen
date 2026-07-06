@@ -74,14 +74,14 @@ Cada pasta de `src/` e a sua responsabilidade (o que está realmente no código)
 | `commands/messageHandler.ts` | `handleMessage`: pipeline de auto-leitura/menção/reply em `messageCreate`. | store, textCleaning, moderation, resolveSynth |
 | `commands/resolveSynth.ts` | `resolveSynth`: resolve `SynthRequest` — a **língua da mensagem decide a voz** (`lang = forceLang \|\| detectLang(text)` + `pickVoiceForLang`). `ResolveSynthInput` inclui `forceLang` (código franc que força a língua da voz, ignorando `detectLang`; usado quando a mensagem é só gírias EN). | `language` |
 | `commands/prepareSpeech.ts` | `prepareSpeech` (partilhado por `/tts` e leitura de canal): texto→`SynthRequest`. Deteção ON → parte **gírias EN** para um segmento em voz inglesa e deteta o resto por si (**vozes mistas**, ex. "isto funciona **btw**"); usa a **memória de língua** (`recentLang`) para desambiguar curtos e devolve `learnedLang` (deteção confiante) para o caller memorizar. Deteção OFF → voz fixa `singleVoice`. | `detect`, `voiceMap`, `abbreviations`, `pronunciation`, `langMemory` |
-| `content/jokes.ts` | Catálogo de piadas curtas multilingue (~34 línguas) + `JOKE_LANGUAGES` (autocomplete `idioma`), `jokeLangByKey`, `pickJoke(langKey, seed)` (puro/seeded). Usado pelo `/joke`. | — |
+| `content/jokes.ts` | Catálogo de piadas curtas multilingue (35 línguas) + `JOKE_LANGUAGES` (autocomplete `idioma`), `jokeLangByKey`, `pickJoke(langKey, seed)` (puro/seeded). Usado pelo `/joke`. | — |
 | `content/laughter.ts` | `laughterFor(prefix)`: riso localizado pela língua da voz (ex. cirílico para `ru_`), com fallback "hahaha". Usado pelo `/laugh` e pelo `/joke` (opção `risos`). | — |
 | `games/manager.ts` | `GameManager`: **1 jogo ativo por guild** (lock; há 1 só ligação de voz por guild). `handleMessage` encaminha as mensagens do **canal do jogo** para a partida e devolve `true` (consumida → o `handleMessage` do TTS salta essa mensagem). Possui os timers da sessão (cancelados **sempre** no fim); persiste pontos no fim **normal** (`end`), descarta no fim **forçado** (`stop`/`endGuild`). Desacoplado de discord.js/SQLite via `GameEnv`. | `games/types` |
 | `games/types.ts` | `Clock` (relógio + timers **injetáveis**, `systemClock`; testes deterministas), `GameContext` (`say`/`send`/`t`/`after`/`award`/`end` + `seed`/`locale`/`defaultVoice`), `Game`, `GameDefinition`, `GameEnv`. | — |
 | `games/quizGame.ts` | Base `QuizGame` dos 7 jogos "voz → 1º a acertar" (loop de N rondas, timeout com **guarda de ronda**, placar local, resumo final `game.finish.*`). Cada jogo concreto só implementa `prepare`/`makeRound`/`emptyMessage`. | `games/types` |
 | `games/finish.ts` | `bump`/`sendStandings`: placar partilhado pelos jogos que **não** assentam no `QuizGame` (Reflexos, Voxi Diz). | `games/types` |
-| `games/*.ts` | Os 13 jogos: `guessLanguage`, `math`, `skipCount`, `spelling`, `spellOut`, `fastSpeech`, `accentSwap` (voz, sobre `QuizGame`); `reflexes`, `voxiSays`, `roulette` (timing/one-shot); `hangman`, `wordle`, `tictactoe` (tabuleiro, texto). Conteúdo *seeded* em `games/content/*`. | `games/*`, `content` |
-| `games/index.ts` | Registo `GAME_DEFS` (13 jogos) + `gameById`/`filterGameChoices` (autocomplete com nomes na língua do utilizador). Adicionar um jogo = criar o ficheiro e listá-lo aqui. | todos os jogos |
+| `games/*.ts` | Os 14 jogos: `guessLanguage`, `math`, `skipCount`, `spelling`, `spellOut`, `fastSpeech`, `accentSwap` (voz, sobre `QuizGame`); `reflexes`, `voxiSays`, `roulette` (timing/one-shot); `hangman`, `wordle`, `tictactoe`, `chess` (tabuleiro, texto — `chess` é 💎 Premium, `GameDefinition.premium`). Conteúdo *seeded* em `games/content/*`. | `games/*`, `content` |
+| `games/index.ts` | Registo `GAME_DEFS` (14 jogos) + `gameById`/`filterGameChoices` (autocomplete com nomes na língua do utilizador). Adicionar um jogo = criar o ficheiro e listá-lo aqui. | todos os jogos |
 | `store/gameScore.ts` | Leaderboard SQLite (tabela `game_score`): `addPoints`/`addWin`/`persistGameScores` (transação: soma pontos + `+1 vitória` a quem mais pontuou), `getLeaderboard`/`getUserScore`/`getUserRank`. | `db` |
 | `bot/welcome.ts` | `pickWelcomeChannel(guild)` + `buildWelcomeEmbed(locale)` (puros): escolha do canal e embed de boas-vindas no `guildCreate` (onboarding). | `i18n`, `discord.js` |
 | `bot/client.ts` | `createClient` (intents + partials) e `bindEvents` (eventos do gateway + handlers globais `unhandledRejection`/`uncaughtException`; `guildCreate`→welcome; `guildDelete`→`handleGuildDelete`). | `discord.js`, `commands`, `welcome` |
@@ -99,7 +99,7 @@ Cada pasta de `src/` e a sua responsabilidade (o que está realmente no código)
 `/join`, `/leave`, `/tts <texto>`, `/skip`,
 `/laugh` (o Voxi ri na voz atual do utilizador; `content/laughter.ts`),
 `/joke <idioma> <risos>` (piada curta na língua escolhida — `idioma` por autocomplete
-sobre ~34 línguas; `risos` acrescenta o riso da língua no fim; `content/jokes.ts`),
+sobre 35 línguas; `risos` acrescenta o riso da língua no fim; `content/jokes.ts`),
 `/voice set|list|reset|optout|optin|preview`,
 `/voice abbrev add|remove|list` (abreviaturas **pessoais** por-utilizador, **globais**,
 cap 10; `store/userAbbrev.ts` + `textCleaning/userAbbrev.ts`, tabela `user_abbreviation`),
@@ -110,7 +110,7 @@ default-voice, **language**, show, reset, + subgrupos `blockword` e `pronunciati
 
 ### Minijogos (`/game`)
 
-**13 jogos** de grupo, geridos pelo `GameManager` (`src/games/`): **1 jogo ativo por
+**14 jogos** de grupo, geridos pelo `GameManager` (`src/games/`): **1 jogo ativo por
 guild** de cada vez. O comando `/game play <jogo>` arranca (autocomplete com os nomes
 na língua de quem invoca; jogos de **voz** exigem o bot numa call — `needsVoice`),
 `/game stop` pára, `/game list` lista, `/game leaderboard` mostra o top do servidor e
