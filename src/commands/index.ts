@@ -1392,6 +1392,13 @@ async function handleVoiceClone(
   await i.deferReply({ flags: MessageFlags.Ephemeral });
   const { channelId } = connection.joinConfig;
   activeCloneRecordings.add(userId);
+  // Handle mínimo (só o .stop() que o finally precisa) guardado FORA do try, para o
+  // finally poder parar o collector em QUALQUER saída — incluindo se recordUserSample
+  // lançar antes do collector.stop('done') normal. .stop() é idempotente (chamar de novo
+  // onde já corre não faz mal); isto só cobre a saída que faltava. Tipo minimo em vez do
+  // ReturnType real (que é uma UNIÃO de todos os componentType possíveis e não estreita
+  // bem para o Button específico usado aqui) — mesmo padrão do `ChildLike` em piperPool.ts.
+  let collectorHandle: { stop(reason?: string): void } | undefined;
   try {
     // Botão "Parar já": para além do auto-stop (~15s de FALA ou 45s de relógio), a pessoa
     // termina quando quiser. custom_id inclui o userId — só o próprio pode carregar.
@@ -1411,6 +1418,7 @@ async function handleVoiceClone(
       componentType: ComponentType.Button,
       time: 60_000,
     });
+    collectorHandle = collector;
     collector.on('collect', (btn) => {
       if (btn.user.id !== userId) {
         void btn.reply({ content: t('clone.stopNotYours', locale), flags: MessageFlags.Ephemeral });
@@ -1447,6 +1455,7 @@ async function handleVoiceClone(
     log.error('[clone] gravação falhou:', err);
     await i.editReply({ content: t('clone.failed', locale), components: [] }).catch(() => {});
   } finally {
+    collectorHandle?.stop('finally');
     // Volta SEMPRE a ensurdecer (privacidade por defeito), aconteça o que acontecer.
     try {
       connection.rejoin({ channelId, selfDeaf: true, selfMute: false });
