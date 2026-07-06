@@ -13,6 +13,7 @@ import { rouletteDef } from './roulette';
 import { hangmanDef } from './hangman';
 import { wordleDef } from './wordle';
 import { tictactoeDef } from './tictactoe';
+import { chessDef } from './chess';
 
 /**
  * Registo de todos os minijogos do /game. Adicionar um jogo novo = criar o ficheiro
@@ -33,6 +34,7 @@ export const GAME_DEFS: readonly GameDefinition[] = [
   hangmanDef,
   wordleDef,
   tictactoeDef,
+  chessDef,
 ];
 
 /** Procura um jogo pelo id (o value do autocomplete). undefined se nao existir. */

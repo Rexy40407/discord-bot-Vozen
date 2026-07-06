@@ -79,7 +79,8 @@ describe('jogos de voz — smoke (todos arrancam e terminam sem crashar)', () =>
       await flush();
       // Avanca o relogio muito para la de qualquer round-limit, varias vezes, para
       // esgotar TODAS as rondas por timeout ate a partida terminar.
-      for (let i = 0; i < 8; i++) {
+      // 12x30s=360s cobre o idle mais longo registado (xadrez, 300s).
+      for (let i = 0; i < 12; i++) {
         clock.advance(30_000);
         await flush();
       }

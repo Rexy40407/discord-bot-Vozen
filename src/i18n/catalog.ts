@@ -205,6 +205,10 @@ export const catalog: Record<string, Entry> = {
     en: "You don't have a voice clone yet. Record one with `/voice clone record` (Premium).",
     pt: 'Ainda não tens um clone de voz. Grava um com `/voice clone record` (Premium).',
   },
+  'clone.deleted': {
+    en: '🗑️ Voice clone deleted — sample and consent record removed, no trace kept.',
+    pt: '🗑️ Clone de voz apagado — amostra e registo de consentimento removidos, sem rasto.',
+  },
   'clone.status': {
     en: '🧬 Voice clone: sample recorded {date} · currently **{state}**.',
     pt: '🧬 Clone de voz: amostra gravada {date} · neste momento **{state}**.',
@@ -1040,6 +1044,10 @@ export const catalog: Record<string, Entry> = {
     en: "A game is already running in <#{channel}>. Finish it (or use `/game stop`) before starting another.",
     pt: 'Já há um jogo a decorrer em <#{channel}>. Termina-o (ou usa `/game stop`) antes de começar outro.',
   },
+  'game.start.premiumLocked': {
+    en: '🔒 **{game}** is a Premium game (it costs real compute). See `/premium`.',
+    pt: '🔒 **{game}** é um jogo Premium (custa computação a sério). Vê `/premium`.',
+  },
   'game.start.started': {
     en: '🎮 Starting **{game}**! Watch the channel — good luck!',
     pt: '🎮 A começar **{game}**! Atenção ao canal — boa sorte!',
@@ -1319,6 +1327,28 @@ export const catalog: Record<string, Entry> = {
   'game.tictactoe.win': { en: '🎉 **{user}** ({mark}) wins!', pt: '🎉 **{user}** ({mark}) ganhou!' },
   'game.tictactoe.draw': { en: '🤝 It’s a draw!', pt: '🤝 Empate!' },
   'game.tictactoe.idle': { en: '🕹️ Game ended (nobody playing).', pt: '🕹️ Jogo terminado (ninguém a jogar).' },
+
+  // ── Xadrez (💎 Premium) ────────────────────────────────────────────────────
+  'game.chess.name': { en: 'Chess', pt: 'Xadrez' },
+  'game.chess.desc': {
+    en: 'Two players — real chess rules (check, castling, promotion…). Type a move like "e4" or "Nf3". 💎 Premium.',
+    pt: 'Dois jogadores — regras reais de xadrez (xeque, roque, promoção…). Escreve uma jogada tipo "e4" ou "Nf3". 💎 Premium.',
+  },
+  'game.chess.intro': {
+    en: '♟️ **Chess** — the first two players to move are White and Black (White starts). Type a move in algebraic notation ("e4", "Nf3", "O-O") or coordinates ("e2e4"). Type "resign" to give up.',
+    pt: '♟️ **Xadrez** — os dois primeiros a jogar ficam com as brancas e as pretas (as brancas começam). Escreve uma jogada em notação algébrica ("e4", "Nf3", "O-O") ou por coordenadas ("e2e4"). Escreve "desisto" para desistir.',
+  },
+  'game.chess.white': { en: 'White', pt: 'brancas' },
+  'game.chess.black': { en: 'Black', pt: 'pretas' },
+  'game.chess.seats': { en: '⚪ White: **{white}** · ⚫ Black: **{black}**', pt: '⚪ Brancas: **{white}** · ⚫ Pretas: **{black}**' },
+  'game.chess.turn': { en: '{move} — turn: **{color}**', pt: '{move} — vez de: **{color}**' },
+  'game.chess.check': { en: '♟️ Check!', pt: '♟️ Xeque!' },
+  'game.chess.notYourTurn': { en: '⏳ **{user}**, it’s **{color}**’s turn.', pt: '⏳ **{user}**, é a vez das **{color}**.' },
+  'game.chess.illegalMove': { en: '🚫 "{move}" isn’t a legal move — try again.', pt: '🚫 "{move}" não é uma jogada válida — tenta outra vez.' },
+  'game.chess.checkmate': { en: '🏆 Checkmate ({move})! **{user}** wins!', pt: '🏆 Xeque-mate ({move})! **{user}** ganhou!' },
+  'game.chess.draw': { en: '🤝 It’s a draw ({move})!', pt: '🤝 Empate ({move})!' },
+  'game.chess.resigned': { en: '🏳️ **{user}** resigned — **{winner}** wins!', pt: '🏳️ **{user}** desistiu — **{winner}** ganhou!' },
+  'game.chess.idle': { en: '🕹️ Game ended (nobody playing).', pt: '🕹️ Jogo terminado (ninguém a jogar).' },
 
   // ── /game stats (por-utilizador) ──────────────────────────────────────────
   'game.stats.none': {

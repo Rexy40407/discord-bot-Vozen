@@ -216,3 +216,74 @@ describe('Galo', () => {
     expect(mgr.active(G)).toBe(true); // ainda a decorrer
   });
 });
+
+describe('Xadrez', () => {
+  it('mate do pastor invertido (fool\'s mate): brancas=1º a jogar, pretas dão xeque-mate em 4 jogadas', async () => {
+    const { env, send, persistScores } = harness();
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('chess')!.create());
+    await flush();
+    say(mgr, 'ana', 'f3'); // ana -> brancas
+    await flush();
+    say(mgr, 'rui', 'e5'); // rui -> pretas
+    await flush();
+    say(mgr, 'ana', 'g4');
+    await flush();
+    say(mgr, 'rui', 'Qh4'); // xeque-mate
+    await flush();
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.checkmate'))).toBe(true);
+    expect(persistScores.mock.calls[0][1].get('rui')).toBe(3); // rui (pretas) ganhou
+    expect(mgr.active(G)).toBe(false);
+  });
+
+  it('jogar fora da vez é recusado; jogada ilegal é recusada sem mudar o turno', async () => {
+    const { env, send } = harness();
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('chess')!.create());
+    await flush();
+    say(mgr, 'ana', 'f3'); // ana -> brancas, joga
+    await flush();
+    say(mgr, 'ana', 'f4'); // ana tenta jogar de novo fora da vez -> recusado
+    await flush();
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.notYourTurn'))).toBe(true);
+    say(mgr, 'rui', 'e6'); // rui -> pretas, joga bem
+    await flush();
+    say(mgr, 'ana', 'Qh8'); // brancas: jogada ilegal (dama nao chega ali)
+    await flush();
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.illegalMove'))).toBe(true);
+    expect(mgr.active(G)).toBe(true); // jogo continua, ninguem ganhou por engano
+  });
+
+  it('desistir ("resign") termina o jogo e dá a vitória ao adversário', async () => {
+    const { env, send, persistScores } = harness();
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('chess')!.create());
+    await flush();
+    say(mgr, 'ana', 'f3'); // ana -> brancas
+    await flush();
+    say(mgr, 'rui', 'e5'); // rui -> pretas
+    await flush();
+    say(mgr, 'ana', 'resign');
+    await flush();
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.resigned'))).toBe(true);
+    expect(persistScores.mock.calls[0][1].get('rui')).toBe(3);
+    expect(mgr.active(G)).toBe(false);
+  });
+
+  it('um 3º jogador é espetador; conversa normal não conta como jogada', async () => {
+    const { env, send } = harness();
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('chess')!.create());
+    await flush();
+    say(mgr, 'ana', 'hello everyone, good luck!'); // conversa, nao e jogada -> ignorado
+    await flush();
+    say(mgr, 'ana', 'f3'); // so agora ana reclama as brancas
+    await flush();
+    say(mgr, 'rui', 'e5'); // rui -> pretas
+    await flush();
+    say(mgr, 'carlos', 'Nc3'); // espetador (assentos cheios) -> ignorado, mesmo sendo jogada válida
+    await flush();
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.illegalMove'))).toBe(false);
+    expect(mgr.active(G)).toBe(true); // ainda a decorrer, vez das brancas
+  });
+});

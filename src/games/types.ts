@@ -93,6 +93,8 @@ export interface GameDefinition {
   readonly descKey: string;
   /** Precisa do bot numa call (jogos de voz) ? */
   readonly needsVoice: boolean;
+  /** Exige Premium (Plus do proprio OU Premium do servidor) para iniciar? Ausente/false = gratis. */
+  readonly premium?: boolean;
   /** Cria uma instancia NOVA da partida. */
   create(): Game;
 }

@@ -2061,6 +2061,16 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
       await reply(i, t('game.start.needVoice', locale));
       return;
     }
+    // Jogos 💎 Premium (ex. xadrez): Plus do próprio OU Premium do servidor, mesmo
+    // padrão do /voice clone e /voice effect.
+    if (def.premium) {
+      const now = Date.now();
+      const premium = isUserPremium(deps.db, i.user.id, now) || isGuildPremium(deps.db, i.guildId!, now);
+      if (!premium) {
+        await reply(i, t('game.start.premiumLocked', locale, { game: t(def.nameKey, locale) }));
+        return;
+      }
+    }
     // Locale do jogo = o de QUEM inicia (localeForUser), não o da guild — assim um
     // servidor sem /config language joga na língua de quem clicou (ex.: PT).
     const res = deps.games.start(i.guildId!, i.channelId, def.create(), def.needsVoice, locale);
