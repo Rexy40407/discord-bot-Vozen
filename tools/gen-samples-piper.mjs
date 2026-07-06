@@ -57,7 +57,7 @@ for (const { lang, model, text } of SAMPLES) {
     console.error(`FALTA o modelo: ${onnx}`);
     process.exit(1);
   }
-  const work = join(tmpdir(), `voxi-piper-${lang}`);
+  const work = join(tmpdir(), `voxem-piper-${lang}`);
   mkdirSync(work, { recursive: true });
   const wav = join(work, 'out.wav');
   // Piper le a frase do stdin (UTF-8) e escreve o WAV; cwd = pasta do exe (acha o espeak-ng-data).

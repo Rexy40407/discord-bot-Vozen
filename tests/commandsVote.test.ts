@@ -61,11 +61,11 @@ describe('/vote — link para a pagina de voto top.gg', () => {
     expect(text).toContain('/vote');
   });
 
-  it('inclui a linha de marca/CTA do Voxi', async () => {
+  it('inclui a linha de marca/CTA do Voxem', async () => {
     const i = makeVoteInteraction();
     await handleInteraction(i as any, makeDeps(CLIENT_ID));
     const text = i.replies.join('\n');
-    expect(text).toMatch(/Voxi/);
+    expect(text).toMatch(/Voxem/);
     expect(text).toMatch(/12h/);
   });
 

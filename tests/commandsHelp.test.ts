@@ -150,11 +150,11 @@ describe('/help — discovery de comandos em-app', () => {
     expect(text).not.toContain('Getting started');
   });
 
-  it('(b) inclui a marca/tagline Voxi', async () => {
+  it('(b) inclui a marca/tagline Voxem', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
-    expect(text).toContain('Voxi');
+    expect(text).toContain('Voxem');
     expect(text).toMatch(/type it, hear it/i);
   });
 

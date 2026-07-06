@@ -134,7 +134,7 @@ export function localeForUser(
 }
 
 /**
- * Permissoes minimas que o Voxi precisa no servidor onde for convidado, derivadas
+ * Permissoes minimas que o Voxem precisa no servidor onde for convidado, derivadas
  * dos 5 bits nomeados via PermissionsBitField (NAO um numero magico):
  *  - Connect/Speak       -> entrar e falar nos canais de voz (o core do bot)
  *  - ViewChannel         -> ver os canais (texto e voz)
@@ -156,18 +156,18 @@ export const INVITE_PERMISSIONS: string = new PermissionsBitField([
 const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
   // /invite — gatilho do loop viral: qualquer utilizador pode pedir o link de
   // convite OAuth2 do bot. Top-level e SEM setDefaultMemberPermissions (nao
-  // admin-only), para que quem ouve o Voxi numa call o possa adicionar.
+  // admin-only), para que quem ouve o Voxem numa call o possa adicionar.
   new SlashCommandBuilder()
     .setName('invite')
-    .setDescription('Show the link to add Voxi to your server')
+    .setDescription('Show the link to add Voxem to your server')
     .toJSON(),
-  // /vote — link para a pagina de voto do Voxi no top.gg (P11.5). Top-level e SEM
+  // /vote — link para a pagina de voto do Voxem no top.gg (P11.5). Top-level e SEM
   // setDefaultMemberPermissions (NAO admin-only): qualquer utilizador pode votar.
   // Tal como o /invite, e um gatilho de crescimento — votar (gratis, a cada 12h)
   // sobe a visibilidade do bot no top.gg.
   new SlashCommandBuilder()
     .setName('vote')
-    .setDescription('Show the link to vote for Voxi on top.gg')
+    .setDescription('Show the link to vote for Voxem on top.gg')
     .toJSON(),
   // /help — discovery de comandos em-app, para donos de servidor nao-tecnicos.
   // Top-level e SEM setDefaultMemberPermissions (NAO admin-only): qualquer
@@ -175,13 +175,13 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
   // handleHelp), por isso este comando inclui-se a si proprio no grupo "Geral".
   new SlashCommandBuilder()
     .setName('help')
-    .setDescription("Show Voxi's command list")
+    .setDescription("Show Voxem's command list")
     .toJSON(),
   new SlashCommandBuilder().setName('join').setDescription('Join your voice channel').toJSON(),
   new SlashCommandBuilder().setName('leave').setDescription('Leave the voice channel').toJSON(),
   new SlashCommandBuilder()
     .setName('tts')
-    .setDescription('Voxi reads a text out loud')
+    .setDescription('Voxem reads a text out loud')
     .addStringOption((o) =>
       o
         .setName('text')
@@ -191,25 +191,25 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .toJSON(),
   new SlashCommandBuilder().setName('skip').setDescription('Skip the current audio').toJSON(),
-  // /shutup — cala o Voxi JÁ: esvazia a fila toda e pára o que está a tocar (sem sair
+  // /shutup — cala o Voxem JÁ: esvazia a fila toda e pára o que está a tocar (sem sair
   // da call). O /skip salta só a mensagem atual; este limpa tudo.
   new SlashCommandBuilder()
     .setName('shutup')
     .setNameLocalizations({ 'pt-BR': 'cala-te' })
-    .setDescription('Make Voxi stop talking now (clears the whole queue)')
+    .setDescription('Make Voxem stop talking now (clears the whole queue)')
     .toJSON(),
-  // /laugh — diversao por-utilizador (como /tts): o Voxi ri na voz ATUAL do user.
+  // /laugh — diversao por-utilizador (como /tts): o Voxem ri na voz ATUAL do user.
   // Sem opcoes, sem gate de admin; exige um player ativo (user numa call).
   new SlashCommandBuilder()
     .setName('laugh')
-    .setDescription('Voxi laughs out loud in your current voice')
+    .setDescription('Voxem laughs out loud in your current voice')
     .toJSON(),
   // /joke — conta uma piada curta na LINGUA escolhida. `idioma` usa AUTOCOMPLETE
   // (nao choices): suportamos ~34 linguas e o Discord limita choices estaticas a
   // 25. `risos` (obrigatorio) acrescenta uma gargalhada no fim.
   new SlashCommandBuilder()
     .setName('joke')
-    .setDescription('Voxi tells a short joke in the language you pick')
+    .setDescription('Voxem tells a short joke in the language you pick')
     .addStringOption((o) =>
       o
         .setName('language')
@@ -227,7 +227,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .toJSON(),
   // Micro-comandos divertidos (falados na voz + resposta pública). Funcionam sem estar
-  // numa call (só texto); se o Voxi estiver na call, também fala.
+  // numa call (só texto); se o Voxem estiver na call, também fala.
   new SlashCommandBuilder()
     .setName('8ball')
     .setDescription('Ask the magic 8-ball a yes/no question')
@@ -242,21 +242,21 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .toJSON(),
   new SlashCommandBuilder()
     .setName('fortune')
-    .setDescription('Voxi reads you a fortune')
+    .setDescription('Voxem reads you a fortune')
     .toJSON(),
   new SlashCommandBuilder()
     .setName('fact')
-    .setDescription('Voxi tells you a random fun fact')
+    .setDescription('Voxem tells you a random fun fact')
     .toJSON(),
   new SlashCommandBuilder()
     .setName('wyr')
-    .setDescription('Voxi asks a "would you rather" question')
+    .setDescription('Voxem asks a "would you rather" question')
     .toJSON(),
-  // /birthday — regista o teu aniversário; o Voxi diz "Parabéns" quando entrares na call
+  // /birthday — regista o teu aniversário; o Voxem diz "Parabéns" quando entrares na call
   // nesse dia. Sem ano (só interessa o dia). set / clear / show.
   new SlashCommandBuilder()
     .setName('birthday')
-    .setDescription('Voxi wishes you a happy birthday when you join on your day')
+    .setDescription('Voxem wishes you a happy birthday when you join on your day')
     .addSubcommand((s) =>
       s
         .setName('set')
@@ -283,24 +283,24 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) => s.setName('clear').setDescription('Remove your saved birthday'))
     .addSubcommand((s) => s.setName('show').setDescription('Show your saved birthday'))
     .toJSON(),
-  // /topspeakers — quem teve mais mensagens lidas pelo Voxi + streaks de dias seguidos.
+  // /topspeakers — quem teve mais mensagens lidas pelo Voxem + streaks de dias seguidos.
   new SlashCommandBuilder()
     .setName('topspeakers')
-    .setDescription('See who Voxi has read the most — and daily streaks')
+    .setDescription('See who Voxem has read the most — and daily streaks')
     .toJSON(),
   // /premium — estado da assinatura + como obter. /redeem — resgatar um código.
   new SlashCommandBuilder()
     .setName('premium')
-    .setDescription('See this server’s Voxi Premium status')
+    .setDescription('See this server’s Voxem Premium status')
     .toJSON(),
   new SlashCommandBuilder()
     .setName('redeem')
-    .setDescription('Redeem a Voxi Premium/Plus code')
+    .setDescription('Redeem a Voxem Premium/Plus code')
     .addStringOption((o) =>
       o
         .setName('code')
         .setNameLocalizations({ 'pt-BR': 'codigo' })
-        .setDescription('Your redeem code (VOXI-XXXX-XXXX-XXXX)')
+        .setDescription('Your redeem code (VOXEM-XXXX-XXXX-XXXX)')
         .setRequired(true)
         .setMaxLength(40),
     )
@@ -372,7 +372,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) =>
       s
         .setName('nickname')
-        .setDescription('How Voxi should call you out loud (xsaid). Leave empty to clear.')
+        .setDescription('How Voxem should call you out loud (xsaid). Leave empty to clear.')
         .addStringOption((o) =>
           o
             .setName('name')
@@ -536,7 +536,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) =>
       s
         .setName('autojoin')
-        .setDescription('Voxi joins your voice channel automatically when you type in the TTS channel')
+        .setDescription('Voxem joins your voice channel automatically when you type in the TTS channel')
         .addBooleanOption((o) =>
           o
             .setName('active')
@@ -562,7 +562,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       s
         .setName('text-in-voice')
         .setNameLocalizations({ 'pt-BR': 'texto-em-voz' })
-        .setDescription("Also read the text chat inside the voice channel Voxi is in (off by default)")
+        .setDescription("Also read the text chat inside the voice channel Voxem is in (off by default)")
         .addBooleanOption((o) =>
           o
             .setName('active')
@@ -710,11 +710,11 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .toJSON(),
   new SlashCommandBuilder()
     .setName('uptime')
-    .setDescription('How long Voxi has been online')
+    .setDescription('How long Voxem has been online')
     .toJSON(),
   new SlashCommandBuilder()
     .setName('botstats')
-    .setDescription('Public Voxi stats: servers, voice sessions, uptime')
+    .setDescription('Public Voxem stats: servers, voice sessions, uptime')
     .toJSON(),
   // /game — minijogos de grupo. PUBLICO (sem gate de admin): qualquer um começa um
   // jogo. Guild-only (nao esta em DM_CAPABLE_COMMANDS -> o .map poe contexts:[Guild]).
@@ -773,7 +773,7 @@ async function reply(i: ChatInputCommandInteraction, content: string): Promise<v
 }
 
 /**
- * Resultado (discriminado) de tentar juntar o Voxi ao canal de voz do invocador.
+ * Resultado (discriminado) de tentar juntar o Voxem ao canal de voz do invocador.
  * NAO contem texto de UI — quem chama e que renderiza a mensagem (via t()), para
  * que uma unica interacao produza uma unica resposta. Isto e o que permite
  * partilhar a logica entre /join (que responde) e /setup (que dobra o resultado
@@ -824,7 +824,7 @@ async function handleJoin(i: ChatInputCommandInteraction, deps: BotDeps): Promis
       await reply(i, t('join.missingPerms', locale, { channel: outcome.channelName }));
       return;
     case 'joined':
-      // Anúncio PÚBLICO (todos no canal veem que o Voxi entrou, como um bot de TTS
+      // Anúncio PÚBLICO (todos no canal veem que o Voxem entrou, como um bot de TTS
       // faz) — NÃO ephemeral. Na língua da GUILD (localeFor), porque é uma mensagem
       // para toda a gente, não só para quem invocou. Os erros acima ficam ephemeral
       // (são feedback para o invocador). `i.reply` sem flags = mensagem pública.
@@ -901,7 +901,7 @@ async function speakRawText(
   // Motor escolhido pelo user (google default | piper) — usado pelo PerUserEngineRouter.
   req.engine = userVoice?.engine;
 
-  // Blocklist: REDIGE as palavras bloqueadas (o Voxi lê o resto sem as dizer). Só devolve
+  // Blocklist: REDIGE as palavras bloqueadas (o Voxem lê o resto sem as dizer). Só devolve
   // 'blocked' se, depois de as remover, não sobrar nada legível (era só palavra bloqueada).
   const blocklist = getBlocklist(deps.db, guildId);
   const redacted = redactRequest(req, blocklist);
@@ -962,7 +962,7 @@ export async function handleMessageContextMenu(
   // Ao contrário dos comandos slash (todos protegidos pelo try/catch de
   // handleInteraction), o context-menu é despachado direto em client.ts com
   // `void handleMessageContextMenu(...)` — SEM catch. Sem este try/catch, um throw
-  // no speakRawText deixava o utilizador preso em "Voxi is thinking…" para sempre
+  // no speakRawText deixava o utilizador preso em "Voxem is thinking…" para sempre
   // (o deferReply nunca era editado) + unhandledRejection. Espelha o catch do slash.
   try {
     await i.deferReply({ flags: MessageFlags.Ephemeral });
@@ -1008,7 +1008,7 @@ async function handleSkip(i: ChatInputCommandInteraction, deps: BotDeps): Promis
   await reply(i, t('skip.skipped', locale));
 }
 
-/** /shutup — cala o Voxi já: esvazia a fila e pára o que está a tocar (fica na call). */
+/** /shutup — cala o Voxem já: esvazia a fila e pára o que está a tocar (fica na call). */
 async function handleShutup(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const player = getPlayer(deps, i.guildId!);
@@ -1039,7 +1039,7 @@ export function localePrefixOf(model: string): string {
 }
 
 /**
- * /laugh — o Voxi ri na voz ATUALMENTE selecionada pelo utilizador. Por-utilizador
+ * /laugh — o Voxem ri na voz ATUALMENTE selecionada pelo utilizador. Por-utilizador
  * (como /tts), sem gate de admin, mas exige um player ativo (user numa call). A voz
  * e RESOLVIDA por precedencia (voz do user > default da guild > .env) e o riso e
  * escolhido pela LINGUA dessa voz (nao por deteccao) — por isso construimos o
@@ -1088,7 +1088,7 @@ async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps): Promi
 /**
  * Pausa (ms) entre a piada e o riso no /joke. O riso e uma fala SEPARADA que leva
  * este valor em `leadSilenceMs` (silencio PREPENDido), criando um intervalo real —
- * o Voxi fala a piada, espera ~1s, e SO DEPOIS ri.
+ * o Voxem fala a piada, espera ~1s, e SO DEPOIS ri.
  */
 const JOKE_LAUGH_PAUSE_MS = 1000;
 
@@ -1152,7 +1152,7 @@ async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps): Promis
   const queued = await player.say({ text: joke, model, speed, singleVoice: true, engine });
 
   // Se `risos` E a piada entrou na fila, enfileira o RISO como fala SEPARADA com uma
-  // pausa real de 2s A FRENTE (leadSilenceMs). Assim o Voxi fala a piada, PAUSA ~2s,
+  // pausa real de 2s A FRENTE (leadSilenceMs). Assim o Voxem fala a piada, PAUSA ~2s,
   // e SO DEPOIS ri (em vez de rir colado ao fim da piada, como antes). O riso e
   // best-effort: se a fila enche entretanto, simplesmente nao ri (o reply ja reflete
   // a piada). Duas fila-items: um /skip durante a piada nao apanha o riso — aceitavel.
@@ -1174,7 +1174,7 @@ async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps): Promis
 }
 
 /**
- * /topspeakers — ranking público de quem teve mais mensagens LIDAS pelo Voxi nesta guild,
+ * /topspeakers — ranking público de quem teve mais mensagens LIDAS pelo Voxem nesta guild,
  * com o streak (dias seguidos a falar) de cada um. Mesma renderização do game leaderboard
  * (<@id> + linhas i18n). Vazio -> mensagem a convidar a falar.
  */
@@ -1251,7 +1251,7 @@ type MicroFunKind = '8ball' | 'fortune' | 'fact' | 'wyr';
 
 /**
  * Micro-comandos divertidos (/8ball, /fortune, /fact, /wyr): escolhem uma frase do banco
- * na LÍNGUA DA UI do utilizador (EN/PT) e respondem PUBLICAMENTE em texto; se o Voxi
+ * na LÍNGUA DA UI do utilizador (EN/PT) e respondem PUBLICAMENTE em texto; se o Voxem
  * estiver na call, também a FALA (voz da língua da frase, motor do utilizador). Ao
  * contrário do /joke, funcionam FORA de uma call (texto na mesma). A fala é best-effort e
  * rate-limited (mesmo limiter do /tts): rate-limit -> texto na mesma, sem falar.
@@ -1289,7 +1289,7 @@ async function handleMicroFun(
       break;
   }
 
-  // Fala (best-effort): só se o Voxi estiver na call E o utilizador não estiver rate-limited.
+  // Fala (best-effort): só se o Voxem estiver na call E o utilizador não estiver rate-limited.
   const player = getPlayer(deps, i.guildId!);
   if (player) {
     const cfg = getGuildConfig(deps.db, i.guildId!);
@@ -1312,7 +1312,7 @@ async function handleMicroFun(
 
 /**
  * /birthday set|clear|show — regista o dia de anos (mês+dia, sem ano) por-(guild,user).
- * No dia, quando a pessoa entra na call do Voxi, ele diz "Parabéns" (greetOnJoin). Valida
+ * No dia, quando a pessoa entra na call do Voxem, ele diz "Parabéns" (greetOnJoin). Valida
  * a combinação dia/mês (recusa 31/02 etc.). Respostas ephemeral no locale do próprio.
  */
 async function handleBirthday(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
@@ -1343,7 +1343,7 @@ async function handleBirthday(i: ChatInputCommandInteraction, deps: BotDeps): Pr
 /**
  * /voice detection active:<bool> — liga/desliga a DETECAO AUTOMATICA de lingua para
  * o proprio utilizador (por-guild). Por-utilizador (sem gate de admin), sob o /voice.
- * ON (default): o Voxi deteta a lingua da mensagem e le nessa lingua, misturando
+ * ON (default): o Voxem deteta a lingua da mensagem e le nessa lingua, misturando
  * vozes num texto multi-lingua. OFF: usa sempre a voz fixa escolhida (/voice set).
  * Resposta i18n no locale do proprio (localeForUser).
  */
@@ -1774,7 +1774,7 @@ async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   } else if (sub === 'effect') {
     const raw = i.options.getString('effect', true);
     const effect: VoiceEffect = isVoiceEffect(raw) ? raw : 'none';
-    // GATE premium: efeitos premium exigem Voxi Premium (servidor) OU Voxi Plus (user).
+    // GATE premium: efeitos premium exigem Voxem Premium (servidor) OU Voxem Plus (user).
     // Só aqui, ao GUARDAR — o player aplica cegamente o que estiver guardado.
     if (isPremiumEffect(effect)) {
       const now = Date.now();
@@ -1952,12 +1952,12 @@ async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps): Prom
     setGuildConfig(deps.db, i.guildId!, { autojoin: on });
     await reply(i, on ? t('config.autojoinOn', locale) : t('config.autojoinOff', locale));
   } else if (sub === 'read-bots') {
-    // Ler outros bots/webhooks. DESLIGADO por defeito (o Voxi nunca se lê a si próprio).
+    // Ler outros bots/webhooks. DESLIGADO por defeito (o Voxem nunca se lê a si próprio).
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { readBots: on });
     await reply(i, on ? t('config.readBotsOn', locale) : t('config.readBotsOff', locale));
   } else if (sub === 'text-in-voice') {
-    // Ler o chat de texto dentro do canal de voz onde o Voxi está. DESLIGADO por defeito.
+    // Ler o chat de texto dentro do canal de voz onde o Voxem está. DESLIGADO por defeito.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { textInVoice: on });
     await reply(i, on ? t('config.textInVoiceOn', locale) : t('config.textInVoiceOff', locale));
@@ -2228,7 +2228,7 @@ export function formatDuration(totalSec: number): string {
   return parts.length ? parts.join(' ') : '<1m';
 }
 
-/** /uptime — PÚBLICO: há quanto tempo o Voxi está online. */
+/** /uptime — PÚBLICO: há quanto tempo o Voxem está online. */
 async function handleUptime(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   await reply(i, t('uptime.text', locale, { uptime: formatDuration(process.uptime()) }));
@@ -2368,7 +2368,7 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
  * Decisoes de design:
  *  - Reply NORMAL (nao ephemeral): o objetivo do comando e partilhar o link, por
  *    isso queremos que fique visivel no canal para quem mais quiser adicionar o
- *    Voxi. Por isso NAO usamos o helper reply() (que e ephemeral) — chamamos
+ *    Voxem. Por isso NAO usamos o helper reply() (que e ephemeral) — chamamos
  *    i.reply() diretamente sem flags.
  *  - O URL e montado com URLSearchParams para escapar corretamente os valores; o
  *    scope "bot applications.commands" fica codificado (o espaco vira '+'), o que
@@ -2400,7 +2400,7 @@ async function handleInvite(i: ChatInputCommandInteraction, deps: BotDeps): Prom
 }
 
 /**
- * /vote — devolve o link da pagina de voto do Voxi no top.gg (P11.5),
+ * /vote — devolve o link da pagina de voto do Voxem no top.gg (P11.5),
  * construido a partir do CLIENT_ID da config. Gatilho de crescimento, irmao do
  * /invite.
  *
@@ -2431,7 +2431,7 @@ async function handleVote(i: ChatInputCommandInteraction, deps: BotDeps): Promis
 /**
  * /help — discovery de comandos em-app, pensado para PRINCIPIANTES (dono de
  * servidor ou membro que nunca usou o bot). Responde com um EMBED beginner-friendly:
- * intro do que o Voxi faz + um "Quick start (3 steps)" + comandos AGRUPADOS por
+ * intro do que o Voxem faz + um "Quick start (3 steps)" + comandos AGRUPADOS por
  * tarefa (Getting started / Your voice / Fun / Server admin / More), cada linha com
  * um one-liner amigavel e pelo menos um exemplo concreto.
  *
@@ -2482,7 +2482,7 @@ async function handleHelp(i: ChatInputCommandInteraction, deps: BotDeps): Promis
   const embed = new EmbedBuilder()
     .setColor(0x5865f2) // blurple — parece intencional, nao o cinzento default
     .setTitle(t('help.embedTitle', locale))
-    // Descricao: tagline da marca + o que o Voxi faz (intro) + o diferenciador
+    // Descricao: tagline da marca + o que o Voxem faz (intro) + o diferenciador
     // (voz neural gratis) — a mesma chave do welcome embed.
     .setDescription(`${t('help.title', locale)}\n${t('help.intro', locale)}\n\n${t('welcome.tagline', locale)}`)
     .addFields(fields)

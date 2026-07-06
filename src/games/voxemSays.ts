@@ -5,20 +5,20 @@ import { makeRng, normalizeAnswer, seededShuffle } from './util';
 
 const ROUNDS = 6;
 const REACT_MS = 12_000;
-/** Probabilidade (em 10) de a ordem ser REAL ("Voxi diz"). O resto sao ratoeiras. */
+/** Probabilidade (em 10) de a ordem ser REAL ("Voxem diz"). O resto sao ratoeiras. */
 const REAL_IN_TEN = 6;
 
 /**
- * "Voxi Diz" (Simon Says) — o Voxi manda escrever uma palavra. So se obedece quando a
- * ordem comeca por "Voxi diz": nesse caso o 1o a escrever a palavra ganha o ponto. Se
- * NAO tiver "Voxi diz" (ratoeira), quem escrever a palavra e APANHADO (vergonha, sem
+ * "Voxem Diz" (Simon Says) — o Voxem manda escrever uma palavra. So se obedece quando a
+ * ordem comeca por "Voxem diz": nesse caso o 1o a escrever a palavra ganha o ponto. Se
+ * NAO tiver "Voxem diz" (ratoeira), quem escrever a palavra e APANHADO (vergonha, sem
  * ponto); quem se aguentar sobrevive. Palavras da lingua da voz default da guild.
  *
  * Nao ha penalizacao negativa (mantem o placar simples/nao-negativo): as ratoeiras sao
  * momentos de gozo, os pontos vem so das ordens reais cumpridas.
  */
-class VoxiSaysGame implements Game {
-  readonly id = 'voxi-says';
+class VoxemSaysGame implements Game {
+  readonly id = 'voxem-says';
   private src: WordSource | null = null;
   private items: string[] = [];
   private round = 0;
@@ -38,7 +38,7 @@ class VoxiSaysGame implements Game {
       ctx.end();
       return;
     }
-    await ctx.send(ctx.t('game.voxiSays.intro', { rounds: ROUNDS }));
+    await ctx.send(ctx.t('game.voxemSays.intro', { rounds: ROUNDS }));
     this.nextRound(ctx);
   }
 
@@ -53,12 +53,12 @@ class VoxiSaysGame implements Game {
     this.done = false;
     this.caught.clear();
     const my = this.round;
-    const prefix = ctx.t('game.voxiSays.prefix');
-    const verb = ctx.t('game.voxiSays.verb');
-    // Texto FALADO da ordem (na voz da guild): com/sem o "Voxi diz" a frente.
+    const prefix = ctx.t('game.voxemSays.prefix');
+    const verb = ctx.t('game.voxemSays.verb');
+    // Texto FALADO da ordem (na voz da guild): com/sem o "Voxem diz" a frente.
     const spoken = this.real ? `${prefix}, ${verb} ${this.item}` : `${verb} ${this.item}`;
     void ctx.send(
-      ctx.t(this.real ? 'game.voxiSays.real' : 'game.voxiSays.trap', {
+      ctx.t(this.real ? 'game.voxemSays.real' : 'game.voxemSays.trap', {
         n: this.round,
         total: ROUNDS,
         command: spoken,
@@ -77,20 +77,20 @@ class VoxiSaysGame implements Game {
       this.done = true;
       ctx.award(msg.authorId, 1);
       bump(this.tally, msg.authorId, msg.authorName, 1);
-      void ctx.send(ctx.t('game.voxiSays.obeyed', { user: msg.authorName }));
+      void ctx.send(ctx.t('game.voxemSays.obeyed', { user: msg.authorName }));
       this.nextRound(ctx);
     } else {
       // Ratoeira: apanhado. Nao termina a ronda (outros ainda podem cair); so gozo.
       if (this.caught.has(msg.authorId)) return;
       this.caught.add(msg.authorId);
-      void ctx.send(ctx.t('game.voxiSays.caught', { user: msg.authorName }));
+      void ctx.send(ctx.t('game.voxemSays.caught', { user: msg.authorName }));
     }
   }
 
   private onTimeout(ctx: GameContext): void {
     this.done = true;
     void ctx.send(
-      ctx.t(this.real ? 'game.voxiSays.nobody' : 'game.voxiSays.trapCleared', { word: this.item }),
+      ctx.t(this.real ? 'game.voxemSays.nobody' : 'game.voxemSays.trapCleared', { word: this.item }),
     );
     this.nextRound(ctx);
   }
@@ -101,10 +101,10 @@ class VoxiSaysGame implements Game {
   }
 }
 
-export const voxiSaysDef: GameDefinition = {
-  id: 'voxi-says',
-  nameKey: 'game.voxiSays.name',
-  descKey: 'game.voxiSays.desc',
+export const voxemSaysDef: GameDefinition = {
+  id: 'voxem-says',
+  nameKey: 'game.voxemSays.name',
+  descKey: 'game.voxemSays.desc',
   needsVoice: true,
-  create: () => new VoxiSaysGame(),
+  create: () => new VoxemSaysGame(),
 };

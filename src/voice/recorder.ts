@@ -241,7 +241,7 @@ export function pcmToWavFile(pcm: Buffer, outPath: string, deps: PcmToWavDeps = 
   const spawnImpl = deps.spawnImpl ?? spawn;
   if (!ff) return Promise.reject(new Error('recorder: ffmpeg-static não encontrado'));
 
-  const workDir = mkdtempSync(join(tmpdir(), 'voxi-rec-'));
+  const workDir = mkdtempSync(join(tmpdir(), 'voxem-rec-'));
   const rawPath = join(workDir, 'in.raw');
   const wavPath = join(workDir, 'out.wav');
   try {

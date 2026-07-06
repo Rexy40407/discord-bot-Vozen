@@ -1,6 +1,6 @@
 // src/language/spokenPhrases.ts
 //
-// Léxico de FRASES FALADAS (não é UI — é texto que o Voxi SINTETIZA em voz alta)
+// Léxico de FRASES FALADAS (não é UI — é texto que o Voxem SINTETIZA em voz alta)
 // para os anúncios: media (link/gif/imagem/…), o "disse" do xsaid, e "spoiler"/
 // "código". Ao contrário do i18n (resolvido pelo locale do Discord do utilizador),
 // isto é resolvido pela LÍNGUA DA VOZ que fala — a mesma voz diz o anúncio, por isso

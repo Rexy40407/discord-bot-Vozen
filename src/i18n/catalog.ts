@@ -157,12 +157,12 @@ export const catalog: Record<string, Entry> = {
     pt: 'Voltas a ser lido automaticamente.',
   },
   'voice.nickname.set': {
-    en: '✅ Voxi will now call you **{name}** out loud.',
-    pt: '✅ O Voxi vai chamar-te **{name}** em voz alta.',
+    en: '✅ Voxem will now call you **{name}** out loud.',
+    pt: '✅ O Voxem vai chamar-te **{name}** em voz alta.',
   },
   'voice.nickname.cleared': {
-    en: '✅ Spoken nickname cleared — Voxi will use your server name.',
-    pt: '✅ Apelido falado removido — o Voxi vai usar o teu nome do servidor.',
+    en: '✅ Spoken nickname cleared — Voxem will use your server name.',
+    pt: '✅ Apelido falado removido — o Voxem vai usar o teu nome do servidor.',
   },
   'voice.nickname.invalid': {
     en: "That name has nothing readable to say out loud. Try letters or numbers.",
@@ -291,8 +291,8 @@ export const catalog: Record<string, Entry> = {
     pt: '✅ Voz clonada desligada — de volta à tua voz normal.',
   },
   'voice.effect.locked': {
-    en: '🔒 **{effect}** is a Premium effect. Free effects: 🤖 Robot and 🔊 Echo. Unlock all with Voxi Premium — see `/premium`.',
-    pt: '🔒 **{effect}** é um efeito Premium. Efeitos grátis: 🤖 Robot e 🔊 Echo. Desbloqueia todos com o Voxi Premium — vê `/premium`.',
+    en: '🔒 **{effect}** is a Premium effect. Free effects: 🤖 Robot and 🔊 Echo. Unlock all with Voxem Premium — see `/premium`.',
+    pt: '🔒 **{effect}** é um efeito Premium. Efeitos grátis: 🤖 Robot e 🔊 Echo. Desbloqueia todos com o Voxem Premium — vê `/premium`.',
   },
   // /voice detection — liga/desliga a deteccao AUTOMATICA de lingua para o proprio.
   // DEFAULT = OFF (voz UNICA fixa p/ todas as linguas — parece a mesma pessoa). ON e
@@ -321,9 +321,9 @@ export const catalog: Record<string, Entry> = {
   },
   // Frase-amostra falada pela voz escolhida no /voice preview. Curta e neutra.
   'preview.sample': {
-    en: "Hi, I'm Voxi. type it, hear it.",
+    en: "Hi, I'm Voxem. type it, hear it.",
     // FIX (auditoria i18n/locale — docs/I18N-LOCALE-AUDIT.md §2): a versao anterior
-    // tinha "Ola, eu sou o Voxi. type it, hear it." — a 2.a frase ficava por
+    // tinha "Ola, eu sou o Voxem. type it, hear it." — a 2.a frase ficava por
     // traduzir. Esta chave e FALADA pelo TTS (a unica excecao "falada" do
     // catalogo, ver comentario no topo do ficheiro), por isso uma frase
     // bilingue soa a erro de sintetizador, nao a escolha de marca — ao contrario
@@ -333,7 +333,7 @@ export const catalog: Record<string, Entry> = {
     // ja traduziram esta frase por inteiro (ex. es: "escríbelo, escúchalo"; ca:
     // "Escriu-ho i escolta'l") — pt (curado a mao na Fase A) era a UNICA excecao.
     // Alinhado ao mesmo padrao curto/imperativo.
-    pt: 'Ola, eu sou o Voxi. escreve, ouve.',
+    pt: 'Ola, eu sou o Voxem. escreve, ouve.',
   },
 
   // ── /laugh · /joke (diversao por-utilizador; tocam audio via player.say) ────
@@ -410,8 +410,8 @@ export const catalog: Record<string, Entry> = {
 
   // ── /premium & /redeem ─────────────────────────────────────────────────────
   'premium.title': {
-    en: '💎 **Voxi Premium status**',
-    pt: '💎 **Estado do Voxi Premium**',
+    en: '💎 **Voxem Premium status**',
+    pt: '💎 **Estado do Voxem Premium**',
   },
   'premium.lineServerActive': {
     en: '🖥️ **Server:** Premium until {date}',
@@ -434,12 +434,12 @@ export const catalog: Record<string, Entry> = {
     pt: 'Tudo o que já usas continua grátis. O Premium (€4/mês) acrescenta vozes premium, 24/7 na call, efeitos de voz completos e limites maiores. Apoio: https://ko-fi.com/',
   },
   'redeem.ok': {
-    en: '✅ Code redeemed! **{target}** now has Voxi Premium until {date}.',
-    pt: '✅ Código resgatado! **{target}** tem agora Voxi Premium até {date}.',
+    en: '✅ Code redeemed! **{target}** now has Voxem Premium until {date}.',
+    pt: '✅ Código resgatado! **{target}** tem agora Voxem Premium até {date}.',
   },
   'redeem.invalid': {
-    en: "That code doesn't exist. Check for typos (format: VOXI-XXXX-XXXX-XXXX).",
-    pt: 'Esse código não existe. Verifica se está bem escrito (formato: VOXI-XXXX-XXXX-XXXX).',
+    en: "That code doesn't exist. Check for typos (format: VOXEM-XXXX-XXXX-XXXX).",
+    pt: 'Esse código não existe. Verifica se está bem escrito (formato: VOXEM-XXXX-XXXX-XXXX).',
   },
   'redeem.used': {
     en: 'That code has already been used.',
@@ -584,36 +584,36 @@ export const catalog: Record<string, Entry> = {
     pt: 'TTS **desativado** neste servidor.',
   },
   'config.xsaidOn': {
-    en: 'Voxi will now announce **who spoke** before each message (e.g. "Alex said hi"). Turn off with `/config xsaid active:false`.',
-    pt: 'O Voxi vai anunciar **quem falou** antes de cada mensagem (ex.: "Alex disse olá"). Desliga com `/config xsaid active:false`.',
+    en: 'Voxem will now announce **who spoke** before each message (e.g. "Alex said hi"). Turn off with `/config xsaid active:false`.',
+    pt: 'O Voxem vai anunciar **quem falou** antes de cada mensagem (ex.: "Alex disse olá"). Desliga com `/config xsaid active:false`.',
   },
   'config.xsaidOff': {
-    en: 'Voxi will **no longer** announce who spoke — it reads only the message.',
-    pt: 'O Voxi **deixou de** anunciar quem falou — lê só a mensagem.',
+    en: 'Voxem will **no longer** announce who spoke — it reads only the message.',
+    pt: 'O Voxem **deixou de** anunciar quem falou — lê só a mensagem.',
   },
   'config.autojoinOn': {
-    en: '✅ Auto-join **on** — Voxi will join your voice channel when you type in the TTS channel.',
-    pt: '✅ Auto-entrada **ligada** — o Voxi entra no teu canal de voz quando escreves no canal de TTS.',
+    en: '✅ Auto-join **on** — Voxem will join your voice channel when you type in the TTS channel.',
+    pt: '✅ Auto-entrada **ligada** — o Voxem entra no teu canal de voz quando escreves no canal de TTS.',
   },
   'config.autojoinOff': {
-    en: 'Auto-join **off** — use `/join` to bring Voxi into voice.',
-    pt: 'Auto-entrada **desligada** — usa `/join` para trazer o Voxi para a voz.',
+    en: 'Auto-join **off** — use `/join` to bring Voxem into voice.',
+    pt: 'Auto-entrada **desligada** — usa `/join` para trazer o Voxem para a voz.',
   },
   'config.readBotsOn': {
-    en: '✅ Voxi will now read messages from **other bots and webhooks** too.',
-    pt: '✅ O Voxi passa a ler também mensagens de **outros bots e webhooks**.',
+    en: '✅ Voxem will now read messages from **other bots and webhooks** too.',
+    pt: '✅ O Voxem passa a ler também mensagens de **outros bots e webhooks**.',
   },
   'config.readBotsOff': {
-    en: 'Voxi will **ignore** other bots and webhooks (only real people are read).',
-    pt: 'O Voxi **ignora** outros bots e webhooks (só lê pessoas reais).',
+    en: 'Voxem will **ignore** other bots and webhooks (only real people are read).',
+    pt: 'O Voxem **ignora** outros bots e webhooks (só lê pessoas reais).',
   },
   'config.textInVoiceOn': {
-    en: "✅ Voxi will also read the **text chat inside its voice channel**.",
-    pt: '✅ O Voxi também vai ler o **chat de texto dentro do canal de voz** onde está.',
+    en: "✅ Voxem will also read the **text chat inside its voice channel**.",
+    pt: '✅ O Voxem também vai ler o **chat de texto dentro do canal de voz** onde está.',
   },
   'config.textInVoiceOff': {
-    en: 'Voxi will **not** read the voice channel text chat (only the TTS channel).',
-    pt: 'O Voxi **não** lê o chat de texto do canal de voz (só o canal de TTS).',
+    en: 'Voxem will **not** read the voice channel text chat (only the TTS channel).',
+    pt: 'O Voxem **não** lê o chat de texto do canal de voz (só o canal de TTS).',
   },
   'config.greetOn': {
     en: "✅ I'll greet people by name when they join the voice channel.",
@@ -741,8 +741,8 @@ export const catalog: Record<string, Entry> = {
     pt: 'O canal de auto-leitura tem de ser um canal de texto do servidor (nao voz nem categoria). Indica um na opcao "canal".',
   },
   'setup.done': {
-    en: '**All set — Voxi is ready.**',
-    pt: '**Setup do Voxi concluido.**',
+    en: '**All set — Voxem is ready.**',
+    pt: '**Setup do Voxem concluido.**',
   },
   'setup.channelLine': {
     en: 'Auto-read channel: {channel}',
@@ -785,8 +785,8 @@ export const catalog: Record<string, Entry> = {
     pt: '⏳ {label} — nao verificado (sera validado no /join)',
   },
   'setup.fixHint': {
-    en: "To fix what's missing: in your server settings open Voxi's role (or the channel's permissions) and enable the items marked with ❌.",
-    pt: 'Para corrigir o que falta: nas definicoes do servidor abre o role do Voxi (ou as permissoes do canal) e ativa as permissoes marcadas com ❌.',
+    en: "To fix what's missing: in your server settings open Voxem's role (or the channel's permissions) and enable the items marked with ❌.",
+    pt: 'Para corrigir o que falta: nas definicoes do servidor abre o role do Voxem (ou as permissoes do canal) e ativa as permissoes marcadas com ❌.',
   },
   'setup.voiceUncheckedNote': {
     en: "You're not in a voice channel, so I couldn't check Connect/Speak yet — I'll verify them when you run /join.",
@@ -828,8 +828,8 @@ export const catalog: Record<string, Entry> = {
 
   // ── /stats ────────────────────────────────────────────────────────────────
   'stats.title': {
-    en: '**Voxi stats**',
-    pt: '**Estatisticas do Voxi**',
+    en: '**Voxem stats**',
+    pt: '**Estatisticas do Voxem**',
   },
   'stats.messagesSpoken': {
     en: 'Messages spoken: {value}',
@@ -884,12 +884,12 @@ export const catalog: Record<string, Entry> = {
 
   // ── /uptime · /botstats (públicos) ────────────────────────────────────────
   'uptime.text': {
-    en: '🟢 Voxi has been online for **{uptime}**.',
-    pt: '🟢 O Voxi está online há **{uptime}**.',
+    en: '🟢 Voxem has been online for **{uptime}**.',
+    pt: '🟢 O Voxem está online há **{uptime}**.',
   },
   'botstats.title': {
-    en: '📊 **Voxi — stats**',
-    pt: '📊 **Voxi — estatísticas**',
+    en: '📊 **Voxem — stats**',
+    pt: '📊 **Voxem — estatísticas**',
   },
   'botstats.servers': {
     en: 'Servers: **{value}**',
@@ -910,38 +910,38 @@ export const catalog: Record<string, Entry> = {
 
   // ── /invite · /vote ───────────────────────────────────────────────────────
   'invite.noClientId': {
-    en: "Voxi's invite link isn't set up yet (CLIENT_ID is missing). Let the bot admin know.",
-    pt: 'O Voxi ainda nao tem o link de convite configurado (CLIENT_ID em falta). Avisa o admin do bot.',
+    en: "Voxem's invite link isn't set up yet (CLIENT_ID is missing). Let the bot admin know.",
+    pt: 'O Voxem ainda nao tem o link de convite configurado (CLIENT_ID em falta). Avisa o admin do bot.',
   },
   'invite.link': {
-    en: 'Add Voxi to your server:\n{url}',
-    pt: 'Adiciona o Voxi ao teu servidor:\n{url}',
+    en: 'Add Voxem to your server:\n{url}',
+    pt: 'Adiciona o Voxem ao teu servidor:\n{url}',
   },
   'vote.noClientId': {
-    en: "Voxi's vote link isn't set up yet (CLIENT_ID is missing). Let the bot admin know.",
-    pt: 'O Voxi ainda nao tem o link de voto configurado (CLIENT_ID em falta). Avisa o admin do bot.',
+    en: "Voxem's vote link isn't set up yet (CLIENT_ID is missing). Let the bot admin know.",
+    pt: 'O Voxem ainda nao tem o link de voto configurado (CLIENT_ID em falta). Avisa o admin do bot.',
   },
   'vote.link': {
-    en: 'Vote for Voxi (free, every 12h) and help more people find it:\n{url}',
-    pt: 'Vota no Voxi (grátis, a cada 12h) e ajuda mais gente a encontrá-lo:\n{url}',
+    en: 'Vote for Voxem (free, every 12h) and help more people find it:\n{url}',
+    pt: 'Vota no Voxem (grátis, a cada 12h) e ajuda mais gente a encontrá-lo:\n{url}',
   },
-  'invite.button': { en: 'Add Voxi', pt: 'Adicionar o Voxi' },
+  'invite.button': { en: 'Add Voxem', pt: 'Adicionar o Voxem' },
   'vote.button': { en: 'Vote on top.gg', pt: 'Votar no top.gg' },
 
   // ── /help chrome (tudo o que NAO e a lista de comandos, que vem de commandDefs) ──
   // O titulo vira DESCRICAO do embed (embeds nao renderizam markdown no titulo),
   // por isso 'help.title' e texto simpatico sem `**…**`.
   'help.title': {
-    en: 'Voxi — type it, hear it.',
+    en: 'Voxem — type it, hear it.',
     // Sem `pt`: a marca/tagline e a mesma em qualquer idioma (fallback a en).
   },
   'help.embedTitle': {
-    en: 'Voxi — Commands',
-    pt: 'Voxi — Comandos',
+    en: 'Voxem — Commands',
+    pt: 'Voxem — Comandos',
   },
   'help.intro': {
-    en: 'Voxi reads your text aloud in voice channels — free neural voices, dozens of languages.',
-    pt: 'O Voxi le o teu texto em voz alta nos canais de voz — vozes neurais gratis, dezenas de linguas.',
+    en: 'Voxem reads your text aloud in voice channels — free neural voices, dozens of languages.',
+    pt: 'O Voxem le o teu texto em voz alta nos canais de voz — vozes neurais gratis, dezenas de linguas.',
   },
 
   // Quick start (3 passos): o primeiro FIELD do embed. Curto, numerado, para um
@@ -1043,12 +1043,12 @@ export const catalog: Record<string, Entry> = {
   },
   'help.groupMoreBody': {
     en:
-      '• /invite — add Voxi to another server\n' +
-      '• /vote — vote for Voxi on top.gg\n' +
+      '• /invite — add Voxem to another server\n' +
+      '• /vote — vote for Voxem on top.gg\n' +
       '• /help — show this help',
     pt:
-      '• /invite — adiciona o Voxi a outro servidor\n' +
-      '• /vote — vota no Voxi no top.gg\n' +
+      '• /invite — adiciona o Voxem a outro servidor\n' +
+      '• /vote — vota no Voxem no top.gg\n' +
       '• /help — mostra esta ajuda',
   },
   'help.footer': {
@@ -1057,16 +1057,16 @@ export const catalog: Record<string, Entry> = {
   },
 
   // ── welcome embed (guildCreate) ────────────────────────────────────────────
-  // Enviado UMA vez quando o Voxi entra num servidor novo. Guild nova nao tem
+  // Enviado UMA vez quando o Voxem entra num servidor novo. Guild nova nao tem
   // config, por isso o locale e sempre o default ('en'). Beginner-friendly: diz
-  // o que o Voxi faz + como comecar (/setup) + onde ver a ajuda (/help).
+  // o que o Voxem faz + como comecar (/setup) + onde ver a ajuda (/help).
   'welcome.title': {
-    en: 'Thanks for adding Voxi! 👋',
-    pt: 'Obrigado por adicionares o Voxi! 👋',
+    en: 'Thanks for adding Voxem! 👋',
+    pt: 'Obrigado por adicionares o Voxem! 👋',
   },
   'welcome.description': {
-    en: "Voxi reads your chat out loud in voice channels — type it, hear it.\n\n**Get started in one step:** run {setup} and I'll set up auto-read and join your voice channel.\n\nNeed the full command list? Run {help}.",
-    pt: 'O Voxi le o teu chat em voz alta nos canais de voz — escreve e ouve.\n\n**Comeca num passo:** corre {setup} e eu configuro a auto-leitura e entro no teu canal de voz.\n\nQueres a lista completa de comandos? Corre {help}.',
+    en: "Voxem reads your chat out loud in voice channels — type it, hear it.\n\n**Get started in one step:** run {setup} and I'll set up auto-read and join your voice channel.\n\nNeed the full command list? Run {help}.",
+    pt: 'O Voxem le o teu chat em voz alta nos canais de voz — escreve e ouve.\n\n**Comeca num passo:** corre {setup} e eu configuro a auto-leitura e entro no teu canal de voz.\n\nQueres a lista completa de comandos? Corre {help}.',
   },
   // Field do welcome: o fluxo em 3 passos para os MEMBROS arrancarem. Curto e
   // concreto (join voz -> /join -> escrever/tts), a apontar para /help para a lista
@@ -1088,11 +1088,11 @@ export const catalog: Record<string, Entry> = {
       'Lista completa de comandos: /help',
   },
   'welcome.footer': {
-    en: 'Voxi — type it, hear it.',
+    en: 'Voxem — type it, hear it.',
     // Sem `pt`: a tagline e a mesma em qualquer idioma (fallback a en).
   },
   // Diferenciador vs. o lider pago do mercado ("TTS Bot", ~€5/mes): a voz neural do
-  // Voxi e gratuita e sem paywall. SO texto de posicionamento — NAO promete "mais
+  // Voxem e gratuita e sem paywall. SO texto de posicionamento — NAO promete "mais
   // facil"/"invite-and-go" (o projeto e self-host; os docs avisam para nao o dizer).
   'welcome.tagline': {
     en: 'Natural neural voice — free forever, no paywall.',
@@ -1163,7 +1163,7 @@ export const catalog: Record<string, Entry> = {
     en: "🏁 Game over — nobody scored this time. Next time!",
     pt: '🏁 Fim de jogo — ninguém pontuou desta vez. Para a próxima!',
   },
-  // FALADO (na voz da guild): o Voxi anuncia o vencedor em voz alta no fim.
+  // FALADO (na voz da guild): o Voxem anuncia o vencedor em voz alta no fim.
   'game.finish.winnerVoice': {
     en: '{user} wins!',
     pt: '{user} venceu!',
@@ -1314,25 +1314,25 @@ export const catalog: Record<string, Entry> = {
   'game.reflexes.win': { en: '⚡ **{user}** is the fastest! Point!', pt: '⚡ **{user}** foi o mais rápido! Ponto!' },
   'game.reflexes.tooSlow': { en: '😴 Nobody reacted in time. Next!', pt: '😴 Ninguém reagiu a tempo. Próxima!' },
 
-  // ── Voxi Diz (Simon Says) ─────────────────────────────────────────────────
-  'game.voxiSays.name': { en: 'Voxi Says', pt: 'Voxi Diz' },
-  'game.voxiSays.desc': {
-    en: "Only obey when the order starts with 'Voxi says'. Fall for a trap and you're caught!",
-    pt: "Só obedeces quando a ordem começa por 'Voxi diz'. Cais numa ratoeira e és apanhado!",
+  // ── Voxem Diz (Simon Says) ─────────────────────────────────────────────────
+  'game.voxemSays.name': { en: 'Voxem Says', pt: 'Voxem Diz' },
+  'game.voxemSays.desc': {
+    en: "Only obey when the order starts with 'Voxem says'. Fall for a trap and you're caught!",
+    pt: "Só obedeces quando a ordem começa por 'Voxem diz'. Cais numa ratoeira e és apanhado!",
   },
-  'game.voxiSays.intro': {
-    en: "🫡 **Voxi Says** — {rounds} orders. Do it ONLY if I start with **'Voxi says'**. Otherwise, don't move!",
-    pt: "🫡 **Voxi Diz** — {rounds} ordens. Só cumpres se eu começar por **'Voxi diz'**. Caso contrário, não mexas!",
+  'game.voxemSays.intro': {
+    en: "🫡 **Voxem Says** — {rounds} orders. Do it ONLY if I start with **'Voxem says'**. Otherwise, don't move!",
+    pt: "🫡 **Voxem Diz** — {rounds} ordens. Só cumpres se eu começar por **'Voxem diz'**. Caso contrário, não mexas!",
   },
   // FALADOS (na voz da guild): o prefixo da ordem e o verbo.
-  'game.voxiSays.prefix': { en: 'Voxi says', pt: 'Voxi diz' },
-  'game.voxiSays.verb': { en: 'type', pt: 'escrevam' },
-  'game.voxiSays.real': { en: '🗣️ Round {n}/{total} — “{command}”', pt: '🗣️ Ronda {n}/{total} — «{command}»' },
-  'game.voxiSays.trap': { en: '🗣️ Round {n}/{total} — “{command}”', pt: '🗣️ Ronda {n}/{total} — «{command}»' },
-  'game.voxiSays.obeyed': { en: '✅ **{user}** obeyed first — point!', pt: '✅ **{user}** obedeceu primeiro — ponto!' },
-  'game.voxiSays.caught': { en: "🔴 **{user}** — I didn't say Voxi says! Caught!", pt: '🔴 **{user}** — eu não disse Voxi diz! Apanhado!' },
-  'game.voxiSays.nobody': { en: '😴 Nobody obeyed **{word}** in time. Next!', pt: '😴 Ninguém obedeceu a **{word}** a tempo. Próxima!' },
-  'game.voxiSays.trapCleared': { en: '😌 It was a trap — well spotted, nobody fell for **{word}**.', pt: '😌 Era uma ratoeira — bem visto, ninguém caiu em **{word}**.' },
+  'game.voxemSays.prefix': { en: 'Voxem says', pt: 'Voxem diz' },
+  'game.voxemSays.verb': { en: 'type', pt: 'escrevam' },
+  'game.voxemSays.real': { en: '🗣️ Round {n}/{total} — “{command}”', pt: '🗣️ Ronda {n}/{total} — «{command}»' },
+  'game.voxemSays.trap': { en: '🗣️ Round {n}/{total} — “{command}”', pt: '🗣️ Ronda {n}/{total} — «{command}»' },
+  'game.voxemSays.obeyed': { en: '✅ **{user}** obeyed first — point!', pt: '✅ **{user}** obedeceu primeiro — ponto!' },
+  'game.voxemSays.caught': { en: "🔴 **{user}** — I didn't say Voxem says! Caught!", pt: '🔴 **{user}** — eu não disse Voxem diz! Apanhado!' },
+  'game.voxemSays.nobody': { en: '😴 Nobody obeyed **{word}** in time. Next!', pt: '😴 Ninguém obedeceu a **{word}** a tempo. Próxima!' },
+  'game.voxemSays.trapCleared': { en: '😌 It was a trap — well spotted, nobody fell for **{word}**.', pt: '😌 Era uma ratoeira — bem visto, ninguém caiu em **{word}**.' },
 
   // ── Roleta (Verdade ou Consequência) ──────────────────────────────────────
   'game.roulette.name': { en: 'Truth or Dare Roulette', pt: 'Roleta (Verdade ou Consequência)' },
