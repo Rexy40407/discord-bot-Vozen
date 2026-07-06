@@ -174,8 +174,16 @@ export const catalog: Record<string, Entry> = {
     pt: 'Tens de estar no canal de voz **comigo** para gravar. Usa `/join` primeiro.',
   },
   'clone.recording': {
-    en: "🎙️ **Recording your voice** — speak normally for ~15 seconds (read anything aloud). Pauses don't count; I only keep YOUR audio and stop automatically.",
-    pt: '🎙️ **A gravar a tua voz** — fala normalmente durante ~15 segundos (lê qualquer coisa em voz alta). As pausas não contam; só guardo o TEU áudio e paro sozinho.',
+    en: "🎙️ **Recording your voice** — read anything aloud until it stops on its own (~15s of speech, pauses don't count), or press **⏹️ Stop** whenever you're done. I only keep YOUR audio.",
+    pt: '🎙️ **A gravar a tua voz** — lê qualquer coisa em voz alta até parar sozinho (~15s de fala, as pausas não contam), ou carrega em **⏹️ Parar** quando quiseres. Só guardo o TEU áudio.',
+  },
+  'clone.stopBtn': {
+    en: 'Stop',
+    pt: 'Parar',
+  },
+  'clone.stopNotYours': {
+    en: 'Only the person recording can stop it.',
+    pt: 'Só quem está a gravar pode parar.',
   },
   'clone.tooShort': {
     en: 'I only caught {seconds}s of speech — I need ~15s to clone well. Try again with `/voice clone record`.',

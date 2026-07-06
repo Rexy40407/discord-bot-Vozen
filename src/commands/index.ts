@@ -13,6 +13,10 @@ import {
   ChannelType,
   MessageFlags,
   InteractionContextType,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  ComponentType,
   type RESTPostAPIApplicationCommandsJSONBody,
 } from 'discord.js';
 import { metrics } from '../metrics';
@@ -1375,12 +1379,38 @@ async function handleVoiceClone(
   await i.deferReply({ flags: MessageFlags.Ephemeral });
   const { channelId } = connection.joinConfig;
   try {
+    // Botão "Parar já": para além do auto-stop (~15s de FALA ou 45s de relógio), a pessoa
+    // termina quando quiser. custom_id inclui o userId — só o próprio pode carregar.
+    const stopBtn = new ButtonBuilder()
+      .setCustomId(`clonestop:${userId}`)
+      .setLabel(t('clone.stopBtn', locale))
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji('⏹️');
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(stopBtn);
     // Destapa os ouvidos SÓ para esta janela (selfDeaf false), gravando apenas o invocador.
     connection.rejoin({ channelId, selfDeaf: false, selfMute: false });
-    await i.editReply(t('clone.recording', locale));
-    const { pcm, voicedMs } = await recordUserSample(connection, userId);
+    const msg = await i.editReply({ content: t('clone.recording', locale), components: [row] });
+
+    // Sinal de paragem manual: o coletor de botões liga-o; o recorder faz poll dele.
+    let stopped = false;
+    const collector = msg.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 60_000,
+    });
+    collector.on('collect', (btn) => {
+      if (btn.user.id !== userId) {
+        void btn.reply({ content: t('clone.stopNotYours', locale), flags: MessageFlags.Ephemeral });
+        return;
+      }
+      stopped = true;
+      void btn.deferUpdate();
+      collector.stop('user');
+    });
+
+    const { pcm, voicedMs } = await recordUserSample(connection, userId, { shouldStop: () => stopped });
+    collector.stop('done');
     if (voicedMs < 5_000) {
-      await i.editReply(t('clone.tooShort', locale, { seconds: Math.round(voicedMs / 1000) }));
+      await i.editReply({ content: t('clone.tooShort', locale, { seconds: Math.round(voicedMs / 1000) }), components: [] });
       return;
     }
     // Ficheiro VERSIONADO por timestamp: uma re-gravação é um path novo -> chave de cache
@@ -1398,10 +1428,10 @@ async function handleVoiceClone(
         // ficheiro antigo já removido — inofensivo
       }
     }
-    await i.editReply(t('clone.saved', locale, { seconds: Math.round(voicedMs / 1000) }));
+    await i.editReply({ content: t('clone.saved', locale, { seconds: Math.round(voicedMs / 1000) }), components: [] });
   } catch (err) {
     log.error('[clone] gravação falhou:', err);
-    await i.editReply(t('clone.failed', locale));
+    await i.editReply({ content: t('clone.failed', locale), components: [] }).catch(() => {});
   } finally {
     // Volta SEMPRE a ensurdecer (privacidade por defeito), aconteça o que acontecer.
     try {

@@ -79,14 +79,15 @@ export interface RecordResult {
 export async function recordUserSample(
   connection: VoiceConnection,
   userId: string,
-  opts: { targetVoicedMs?: number; maxWallMs?: number } = {},
+  opts: { targetVoicedMs?: number; maxWallMs?: number; shouldStop?: () => boolean } = {},
 ): Promise<RecordResult> {
   const targetVoicedMs = opts.targetVoicedMs ?? 15_000;
   const maxWallMs = opts.maxWallMs ?? 45_000;
+  const shouldStop = opts.shouldStop ?? (() => false);
   const collector = new VoicedCollector(targetVoicedMs);
   const deadline = Date.now() + maxWallMs;
 
-  while (!collector.done && Date.now() < deadline) {
+  while (!collector.done && Date.now() < deadline && !shouldStop()) {
     const gotAudio = await new Promise<boolean>((resolve) => {
       let received = false;
       const opus = connection.receiver.subscribe(userId, {
@@ -94,8 +95,12 @@ export async function recordUserSample(
       });
       const decoder = new prism.opus.Decoder({ rate: 48000, channels: 2, frameSize: 960 });
       // Guarda-tempo da RONDA: se o user não falar de todo, o AfterSilence nunca arma
-      // (só conta após o 1.º pacote nalgumas versões) — corta a ronda ao fim de 5s.
+      // (só conta após o 1.º pacote nalgumas versões) — corta a ronda ao fim de 5s. Também
+      // faz poll do shouldStop (botão "Parar") para fechar a ronda em curso ~200ms depois.
       const roundTimer = setTimeout(() => opus.destroy(), 5_000);
+      const stopPoll = setInterval(() => {
+        if (shouldStop()) opus.destroy();
+      }, 200);
       opus.pipe(decoder);
       decoder.on('data', (chunk: Buffer) => {
         received = true;
@@ -103,6 +108,7 @@ export async function recordUserSample(
       });
       const finish = (): void => {
         clearTimeout(roundTimer);
+        clearInterval(stopPoll);
         decoder.removeAllListeners();
         resolve(received);
       };
@@ -113,7 +119,7 @@ export async function recordUserSample(
     });
     // Ronda sem um único frame (user calado): espera um nadinha antes de re-subscrever
     // para não fazer busy-loop de subscribe/destroy.
-    if (!gotAudio && !collector.done) await new Promise((r) => setTimeout(r, 400));
+    if (!gotAudio && !collector.done && !shouldStop()) await new Promise((r) => setTimeout(r, 400));
   }
 
   return { pcm: collector.pcm(), voicedMs: collector.voicedMs };
