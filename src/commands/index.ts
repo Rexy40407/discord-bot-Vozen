@@ -1355,13 +1355,14 @@ async function handleVoiceClone(
       await reply(i, t('clone.none', locale));
       return;
     }
-    await reply(
-      i,
+    // Cartão: verde quando o clone está LIGADO, blurple quando só gravado.
+    const embed = brandEmbed(c.enabled ? 'success' : 'brand').setDescription(
       t('clone.status', locale, {
         date: `<t:${Math.floor(c.consentAt / 1000)}:D>`,
         state: c.enabled ? t('clone.stateOn', locale) : t('clone.stateOff', locale),
       }),
     );
+    await i.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -2151,7 +2152,7 @@ async function handleStats(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     t('stats.servers', locale, { value: deps.client.guilds.cache.size }),
     t('stats.uptime', locale, { value: uptimeSec }),
   ];
-  await reply(i, lines.join('\n'));
+  await i.reply({ embeds: [brandEmbed().setDescription(lines.join('\n'))], flags: MessageFlags.Ephemeral });
 }
 
 /**
@@ -2187,7 +2188,7 @@ async function handleBotstats(i: ChatInputCommandInteraction, deps: BotDeps): Pr
     t('botstats.messagesSpoken', locale, { value: snap.messagesSpoken }),
     t('botstats.uptime', locale, { value: formatDuration(process.uptime()) }),
   ];
-  await reply(i, lines.join('\n'));
+  await i.reply({ embeds: [brandEmbed().setDescription(lines.join('\n'))], flags: MessageFlags.Ephemeral });
 }
 
 /**

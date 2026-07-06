@@ -19,8 +19,10 @@ function makeInteraction(commandName: string) {
     replied: false,
     deferred: false,
     isRepliable: () => true,
-    reply: async (o: { content: string; flags?: number }) => {
-      replies.push(o.content);
+    reply: async (o: { content?: string; embeds?: { data?: { description?: string } }[]; flags?: number }) => {
+      // Regista texto OU a descrição do embed (o /botstats e /stats passaram a embeds).
+      const fromEmbeds = (o.embeds ?? []).map((e) => e?.data?.description ?? '').join('\n');
+      replies.push(o.content ?? fromEmbeds);
     },
   };
 }
