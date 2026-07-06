@@ -119,6 +119,24 @@ export class GuildVoicePlayer {
     }
   }
 
+  /**
+   * "Cala-te já": esvazia a fila TODA e pára o que está a tocar, mas FICA na call
+   * (ao contrário de destroy(), que sai). O /shutup usa isto. Depois do stop(), o
+   * player emite Idle -> playNext() encontra a fila vazia -> fica em repouso. Trata a
+   * mesma janela de síntese do skip(): se o AudioPlayer real ainda está Idle (a fala
+   * está a ser sintetizada), stop() é no-op, por isso marcamos pendingSkip para o
+   * item in-flight ser descartado em vez de tocar.
+   */
+  silence(): void {
+    if (this.destroyed) return;
+    this.queue.clear();
+    const wasPlaying =
+      this.player.state.status === AudioPlayerStatus.Playing ||
+      this.player.state.status === AudioPlayerStatus.Buffering;
+    this.player.stop(true);
+    if (!wasPlaying) this.pendingSkip = true;
+  }
+
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;

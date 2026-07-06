@@ -68,6 +68,19 @@ export const catalog: Record<string, Entry> = {
     en: 'Nothing is playing right now.',
     pt: 'Não está nada a tocar de momento.',
   },
+  // /shutup — cala tudo já (esvazia a fila + pára o atual), fica na call.
+  'shutup.notInVoice': {
+    en: "I'm not in a voice channel yet — join one and run /join first.",
+    pt: 'Ainda não estou num canal de voz — entra num e corre /join primeiro.',
+  },
+  'shutup.nothing': {
+    en: 'Nothing is playing right now.',
+    pt: 'Não está nada a tocar de momento.',
+  },
+  'shutup.done': {
+    en: '🤐 Okay, I\'ll stop — cleared everything in the queue.',
+    pt: '🤐 Está bem, calo-me — limpei tudo o que estava na fila.',
+  },
   // Partilhada por /tts, /joke e /laugh ("sem player" -> bot fora da voz). Guia o
   // principiante: junta-te a uma call E corre /join, depois tenta outra vez.
   'tts.notInVoice': {

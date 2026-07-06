@@ -191,6 +191,13 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .toJSON(),
   new SlashCommandBuilder().setName('skip').setDescription('Skip the current audio').toJSON(),
+  // /shutup — cala o Voxi JÁ: esvazia a fila toda e pára o que está a tocar (sem sair
+  // da call). O /skip salta só a mensagem atual; este limpa tudo.
+  new SlashCommandBuilder()
+    .setName('shutup')
+    .setNameLocalizations({ 'pt-BR': 'cala-te' })
+    .setDescription('Make Voxi stop talking now (clears the whole queue)')
+    .toJSON(),
   // /laugh — diversao por-utilizador (como /tts): o Voxi ri na voz ATUAL do user.
   // Sem opcoes, sem gate de admin; exige um player ativo (user numa call).
   new SlashCommandBuilder()
@@ -988,6 +995,24 @@ async function handleSkip(i: ChatInputCommandInteraction, deps: BotDeps): Promis
   }
   player.skip();
   await reply(i, t('skip.skipped', locale));
+}
+
+/** /shutup — cala o Voxi já: esvazia a fila e pára o que está a tocar (fica na call). */
+async function handleShutup(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+  const locale = localeForUser(deps, i);
+  const player = getPlayer(deps, i.guildId!);
+  if (!player) {
+    await reply(i, t('shutup.notInVoice', locale));
+    return;
+  }
+  // Ler isActive() ANTES de silence() (silence faz stop()/emit(Idle) e distorceria o
+  // estado): distingue "não havia nada a falar" de "calei mesmo".
+  if (!player.isActive()) {
+    await reply(i, t('shutup.nothing', locale));
+    return;
+  }
+  player.silence();
+  await reply(i, t('shutup.done', locale));
 }
 
 /**
@@ -2566,6 +2591,8 @@ export async function handleInteraction(i: ChatInputCommandInteraction, deps: Bo
         return await handleTts(i, deps);
       case 'skip':
         return await handleSkip(i, deps);
+      case 'shutup':
+        return await handleShutup(i, deps);
       case 'laugh':
         return await handleLaugh(i, deps);
       case 'joke':
