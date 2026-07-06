@@ -1,8 +1,9 @@
 name: Deploy site to GitHub Pages
 
 # Publica a pasta site/ como um site estatico em GitHub Pages.
-# ONE-TIME: no repo, Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
-# Depois disso, cada push a main que mexa em site/ redeploya automaticamente.
+# O passo configure-pages (enablement: true) LIGA o Pages sozinho na 1a corrida,
+# por isso nao e preciso mexer em Settings -> Pages. Cada push a main que altere
+# site/ redeploya automaticamente.
 
 on:
   push:
@@ -31,6 +32,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
