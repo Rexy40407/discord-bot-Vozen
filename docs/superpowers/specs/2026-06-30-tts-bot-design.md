@@ -1,4 +1,4 @@
-Nome do produto: **Voxem** — *type it, hear it.*
+Nome do produto: **Vozi** — *type it, hear it.*
 
 # Design — TTS Bot (v0 "núcleo competitivo")
 

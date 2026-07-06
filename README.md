@@ -1,6 +1,6 @@
-<p align="center"><img src="assets/voxem-banner.png" alt="Voxem — type it, hear it." width="640"></p>
+<p align="center"><img src="assets/vozi-banner.png" alt="Vozi — type it, hear it." width="640"></p>
 
-# Voxem
+# Vozi
 
 > type it, hear it.
 
@@ -12,19 +12,19 @@
 
 **Pronto para ir live? Ver [GO-LIVE.md](GO-LIVE.md).**
 
-**Voz neural (não robótica) que não cai do canal — e cuja qualidade nunca fica atrás de paywall.** O Voxem é um bot de Text-to-Speech para Discord que lê texto em canais de voz com voz **neural** (Piper): comando `/tts`, auto-leitura de um canal configurado e leitura de menções/replies ao bot. Deteta a língua de cada mensagem e escolhe a voz sozinho, e cada utilizador pode fixar a sua própria voz.
+**Voz neural (não robótica) que não cai do canal — e cuja qualidade nunca fica atrás de paywall.** O Vozi é um bot de Text-to-Speech para Discord que lê texto em canais de voz com voz **neural** (Piper): comando `/tts`, auto-leitura de um canal configurado e leitura de menções/replies ao bot. Deteta a língua de cada mensagem e escolhe a voz sozinho, e cada utilizador pode fixar a sua própria voz.
 
-A maioria dos bots de TTS força-te a escolher: ou é grátis-mas-robótico, ou natural-mas-atrás de paywall — e o líder de mercado "desconecta durante horas". O Voxem tem tudo o que o líder tem (auto-leitura, `/setup` de um comando, deteta a língua sozinho) — e ainda os **dois** trunfos que o líder não reúne para línguas ocidentais (PT/EN/europeu):
+A maioria dos bots de TTS força-te a escolher: ou é grátis-mas-robótico, ou natural-mas-atrás de paywall — e o líder de mercado "desconecta durante horas". O Vozi tem tudo o que o líder tem (auto-leitura, `/setup` de um comando, deteta a língua sozinho) — e ainda os **dois** trunfos que o líder não reúne para línguas ocidentais (PT/EN/europeu):
 
 - **Voz neural genuinamente natural, grátis** — Piper, não a voz robótica do gTTS/eSpeak do plano gratuito.
 - **Qualidade NUNCA atrás de paywall** — sem vozes premium pagas, sem "vota para desbloquear". O líder esconde as boas vozes atrás de ~€5/mês; aqui a melhor voz é a de fábrica.
 - **Não cai do canal de voz** — auto-reconexão à voz (mata o "desconecta durante horas" do líder).
 
-Estes dois (voz neural grátis + fiabilidade) são o que distingue o Voxem. O resto é **paridade** — o líder também o faz, mas o Voxem não fica atrás: auto-leitura sem prefixo (lê um canal configurado e menções/replies, configurável em um passo com `/setup`) e deteção automática de língua por mensagem em PT, EN e línguas europeias.
+Estes dois (voz neural grátis + fiabilidade) são o que distingue o Vozi. O resto é **paridade** — o líder também o faz, mas o Vozi não fica atrás: auto-leitura sem prefixo (lê um canal configurado e menções/replies, configurável em um passo com `/setup`) e deteção automática de língua por mensagem em PT, EN e línguas europeias.
 
 A par disto: moderação (blocklist, rate-limit, limite de chars, gating por canal), fila FIFO com `/skip`, auto-saída por inatividade e cache de áudio.
 
-> Estado: **v0** (núcleo competitivo). Motor neural pago, streaming e monetização estão **fora** deste v0. O Voxem é **self-host**: corre no teu PC ou podes **alojá-lo tu** num VPS via Docker (continua a exigir setup — não é um bot já alojado que se convida) — ver secção **Deploy em VPS (Docker)** no fim.
+> Estado: **v0** (núcleo competitivo). Motor neural pago, streaming e monetização estão **fora** deste v0. O Vozi é **self-host**: corre no teu PC ou podes **alojá-lo tu** num VPS via Docker (continua a exigir setup — não é um bot já alojado que se convida) — ver secção **Deploy em VPS (Docker)** no fim.
 
 ---
 
@@ -33,7 +33,7 @@ A par disto: moderação (blocklist, rate-limit, limite de chars, gating por can
 Já tens o Node (>= 20), o binário do Piper e pelo menos um modelo de voz `.onnx`? Então o mínimo para arrancar é:
 
 ```bash
-git clone https://github.com/diogoshk3/discord-bot-Voxi.git voxem && cd voxem
+git clone https://github.com/diogoshk3/discord-bot-Voxi.git vozi && cd vozi
 npm install                       # deps + bindings nativos
 cp .env.example .env              # edita: DISCORD_TOKEN, CLIENT_ID, PIPER_PATH, MODELS_DIR; depois: npm run register && npm run dev
 ```
@@ -123,11 +123,11 @@ Edita `.env`:
 
 ### 1.5 Modelos de voz (línguas)
 
-O Voxem **deteta a língua de cada mensagem** e escolhe automaticamente um modelo cujo nome começa pelo **prefixo de locale** dessa língua. Basta colocares o modelo certo em `models/`.
+O Vozi **deteta a língua de cada mensagem** e escolhe automaticamente um modelo cujo nome começa pelo **prefixo de locale** dessa língua. Basta colocares o modelo certo em `models/`.
 
 **Onde obter modelos.** Todos os modelos Piper vivem em **https://huggingface.co/rhasspy/piper-voices** (pasta por língua/país/voz). Cada voz são sempre **2 ficheiros**: `<voz>.onnx` + `<voz>.onnx.json`. Descarrega **ambos** e põe-nos em `models/`.
 
-**Como o nome do ficheiro mapeia para a deteção.** O Voxem olha apenas para o **prefixo de locale** no início do nome do ficheiro (`pt_`, `en_`, `es_`, ...). Por isso `pt_PT-tugão-medium` **e** `pt_BR-faber-medium` contam ambos como Português — se só tiveres um, é esse que toca; se tiveres os dois, toca o primeiro por ordem. Se não houver nenhum modelo da língua detetada, o Voxem cai no `DEFAULT_VOICE`.
+**Como o nome do ficheiro mapeia para a deteção.** O Vozi olha apenas para o **prefixo de locale** no início do nome do ficheiro (`pt_`, `en_`, `es_`, ...). Por isso `pt_PT-tugão-medium` **e** `pt_BR-faber-medium` contam ambos como Português — se só tiveres um, é esse que toca; se tiveres os dois, toca o primeiro por ordem. Se não houver nenhum modelo da língua detetada, o Vozi cai no `DEFAULT_VOICE`.
 
 Línguas mapeadas (código de deteção → prefixo do nome de ficheiro):
 
@@ -172,7 +172,7 @@ Faz esta checklist com o bot a correr (`npm run dev`) e tu num servidor Discord 
 
 ### 3.1 Criar e configurar a aplicação Discord
 
-- [ ] Em https://discord.com/developers/applications → **New Application** → dá o nome **Voxem** (recomendado para consistência de marca).
+- [ ] Em https://discord.com/developers/applications → **New Application** → dá o nome **Vozi** (recomendado para consistência de marca).
 - [ ] Separador **Bot** → **Reset Token** → copia o token para `DISCORD_TOKEN` no `.env`.
 - [ ] **General Information** → copia o **Application ID** para `CLIENT_ID` no `.env`.
 - [ ] Separador **Bot** → secção **Privileged Gateway Intents** → ativa:
@@ -269,7 +269,7 @@ Com autoread ligado, escreve cada um e confirma o comportamento ouvido:
 
 ## 5. Deploy em VPS (Docker)
 
-Caminho **self-host alojado** (alojas tu numa VPS): corres o Voxem numa VPS Linux com `docker compose`, sem instalar Node nem build tools à mão. O bot é um cliente websocket de saída — **não** expõe portas nem precisa de domínio/reverse-proxy.
+Caminho **self-host alojado** (alojas tu numa VPS): corres o Vozi numa VPS Linux com `docker compose`, sem instalar Node nem build tools à mão. O bot é um cliente websocket de saída — **não** expõe portas nem precisa de domínio/reverse-proxy.
 
 > Estado: o build da imagem e a síntese real do Piper são **(verificação ao vivo pendente)** — não foram corridos neste ambiente.
 
@@ -330,7 +330,7 @@ Preenche **apenas** os segredos e tunables — **não** definas `DB_PATH`, `MODE
 
 ```
 docker compose up -d --build   # constrói a imagem e arranca em background
-docker compose logs -f voxem    # segue os logs (esperado: [client] online como ...)
+docker compose logs -f vozi    # segue os logs (esperado: [client] online como ...)
 docker compose down            # pára e remove o container (os dados persistem no volume)
 ```
 
@@ -374,12 +374,12 @@ Topics a aplicar ao repositório (para descoberta no GitHub), quando for públic
 
 Copyright (C) 2026 Diogo Cabral.
 
-O Voxem é software livre: podes redistribuí-lo e/ou modificá-lo nos termos da **GNU Affero
+O Vozi é software livre: podes redistribuí-lo e/ou modificá-lo nos termos da **GNU Affero
 General Public License, versão 3** (AGPL-3.0), conforme publicada pela Free Software
 Foundation. Ver o ficheiro [`LICENSE`](LICENSE) para o texto completo.
 
 A AGPL-3.0 acrescenta ao GPL uma condição-chave: **quem correr uma versão modificada do
-Voxem acessível pela rede tem de disponibilizar o código-fonte dessa versão aos
-utilizadores**. Isto mantém o Voxem aberto mesmo quando corrido como serviço.
+Vozi acessível pela rede tem de disponibilizar o código-fonte dessa versão aos
+utilizadores**. Isto mantém o Vozi aberto mesmo quando corrido como serviço.
 
-O Voxem é fornecido SEM QUALQUER GARANTIA; ver a secção 15 da licença.
+O Vozi é fornecido SEM QUALQUER GARANTIA; ver a secção 15 da licença.
