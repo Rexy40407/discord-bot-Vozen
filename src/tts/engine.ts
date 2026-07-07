@@ -19,11 +19,12 @@ export interface SynthRequest {
   // `model` e os WAVs sao concatenados. O `text`/`model` de topo continuam a ser o
   // fallback single-voice (flag do motor OFF) e a base da chave de cache.
   segments?: { text: string; model: string }[];
-  // MOTOR escolhido PELO UTILIZADOR para esta fala: 'google' (gTTS, default) ou
-  // 'piper' (self-host). Ausente/undefined = 'google'. O PerUserEngineRouter despacha
-  // por este campo; entra na chave de cache (só quando 'piper') para não cruzar áudio
-  // entre users de motores diferentes.
-  engine?: 'google' | 'piper';
+  // MOTOR escolhido PELO UTILIZADOR para esta fala: 'google' (gTTS, default),
+  // 'piper' (self-host) ou 'kokoro' (neural opt-in — cai no gTTS nas línguas que não
+  // suporta / em falha). Ausente/undefined = 'google'. O PerUserEngineRouter despacha
+  // por este campo; entra na chave de cache (quando 'piper' ou 'kokoro') para não
+  // cruzar áudio entre users de motores diferentes.
+  engine?: 'google' | 'piper' | 'kokoro';
   // EFEITO de voz (premium) a aplicar ao WAV DEPOIS da síntese (robot/echo/deep...).
   // Ausente/'none' => voz limpa. NÃO entra na cacheKey (o EffectEngine tem cache própria
   // keyed por cacheKey+efeito), por isso o áudio limpo continua partilhado entre users.

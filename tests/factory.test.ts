@@ -3,11 +3,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createEngine, selectEngine } from '../src/tts/factory';
+import { createEngine, createPerUserEngine, selectEngine } from '../src/tts/factory';
 import { AudioCache } from '../src/tts/cache';
 import { PiperEngine } from '../src/tts/piper';
 import { NeuralEngine } from '../src/tts/neural';
 import { MultiSegmentEngine } from '../src/tts/multiSegment';
+import { PerUserEngineRouter } from '../src/tts/perUserRouter';
 import type { TTSEngine } from '../src/tts/engine';
 import type { AppConfig } from '../src/config/index';
 
@@ -37,6 +38,8 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     gttsBreakerCooldownMs: 60_000,
     gttsChunkConcurrency: 3,
     supportUrl: 'https://discord.gg/V6PZYZmhcQ',
+    kokoroCmd: undefined,
+    kokoroLangs: new Set(['en', 'es', 'fr', 'hi', 'it', 'pt', 'ja']),
     ...overrides,
   };
 }
@@ -71,6 +74,35 @@ describe('createEngine', () => {
     expect(() =>
       createEngine(baseConfig({ ttsEngine: 'neural', openaiApiKey: undefined }), cache),
     ).toThrow(/TTS_ENGINE=neural requer OPENAI_API_KEY/);
+  });
+});
+
+// Plano 016 — createPerUserEngine: o Kokoro é OPT-IN. Sem sidecar, o router por-user
+// é o de hoje (google default + piper); com KOKORO_CMD, o caminho 'kokoro' passa a ser
+// um RouterEngine(kokoro->gTTS). A construção não faz spawn nem rede — só o wiring.
+describe('createPerUserEngine (google default + piper + kokoro opt-in)', () => {
+  let dir: string;
+  let cache: AudioCache;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'puecache-'));
+    cache = new AudioCache(dir);
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('sem sidecar Kokoro -> constrói o router por-user (comportamento de hoje)', () => {
+    const eng = createPerUserEngine(baseConfig({ kokoroCmd: undefined }), cache);
+    expect(eng).toBeInstanceOf(PerUserEngineRouter);
+  });
+
+  it('com KOKORO_CMD explícito -> constrói na mesma (Kokoro embrulhado em RouterEngine)', () => {
+    // resolveKokoroCmd(explícito) devolve o cmd SEM tocar no disco -> exercita o ramo
+    // com sidecar sem precisar da venv instalada. A construção não arranca o processo.
+    const eng = createPerUserEngine(baseConfig({ kokoroCmd: 'py tools/kokoro_server.py' }), cache);
+    expect(eng).toBeInstanceOf(PerUserEngineRouter);
   });
 });
 

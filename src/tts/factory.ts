@@ -9,6 +9,7 @@ import { MultiSegmentEngine } from './multiSegment';
 import { RouterEngine } from './router';
 import { PerUserEngineRouter } from './perUserRouter';
 import { CircuitBreakerEngine } from './circuitBreaker';
+import { KokoroEngine, resolveKokoroCmd } from './kokoroEngine';
 import { log } from '../logging/logger';
 
 /**
@@ -39,10 +40,26 @@ export function createPerUserEngine(config: AppConfig, cache: AudioCache): TTSEn
     cooldownMs: config.gttsBreakerCooldownMs,
     label: 'gtts',
   });
+  // Kokoro (OPT-IN, /voice set engine:Kokoro): se o sidecar estiver instalado, o caminho
+  // 'kokoro' é um RouterEngine que tenta o Kokoro nas suas línguas e CAI no gTTS (google)
+  // no resto / em falha — quem opta nunca fica sem voz. SEM sidecar, o caminho 'kokoro'
+  // É o próprio gTTS, por isso escolher Kokoro comporta-se como o default. O gTTS de
+  // toda a gente fica INALTERADO em qualquer caso.
+  const kokoroCmd = resolveKokoroCmd(config.kokoroCmd);
+  const kokoro: TTSEngine = kokoroCmd
+    ? new RouterEngine([
+        {
+          engine: new KokoroEngine(cache.withNamespace('kokoro'), kokoroCmd),
+          langs: config.kokoroLangs,
+          label: 'kokoro',
+        },
+        { engine: google, langs: null, label: 'gtts' },
+      ])
+    : google;
   log.info(
-    `[factory] motor por-utilizador ativo: google+breaker (${config.gttsBreakerThreshold} falhas -> ${config.gttsBreakerCooldownMs}ms) + piper (opção do user).`,
+    `[factory] motor por-utilizador ativo: google+breaker (${config.gttsBreakerThreshold} falhas -> ${config.gttsBreakerCooldownMs}ms) + piper + kokoro (${kokoroCmd ? 'sidecar detetado' : 'sem sidecar -> = gTTS'}) (opção do user).`,
   );
-  return new PerUserEngineRouter(google, piper);
+  return new PerUserEngineRouter(google, piper, kokoro);
 }
 
 function makePiper(config: AppConfig, cache: AudioCache): TTSEngine {

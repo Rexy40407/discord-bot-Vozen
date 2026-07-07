@@ -6,7 +6,7 @@ import type { SynthRequest, TTSEngine } from '../src/tts/engine';
 function fake(name: string): TTSEngine {
   return { synth: vi.fn(async () => `/wav/${name}.wav`) };
 }
-const req = (engine?: 'google' | 'piper'): SynthRequest => ({
+const req = (engine?: 'google' | 'piper' | 'kokoro'): SynthRequest => ({
   text: 'olá',
   model: 'pt_BR-cadu-medium',
   speed: 1,
@@ -17,16 +17,30 @@ describe('PerUserEngineRouter — despacha por req.engine', () => {
   it("engine='piper' -> Piper", async () => {
     const g = fake('gtts');
     const p = fake('piper');
-    const r = new PerUserEngineRouter(g, p);
+    const k = fake('kokoro');
+    const r = new PerUserEngineRouter(g, p, k);
     expect(await r.synth(req('piper'))).toBe('/wav/piper.wav');
     expect(p.synth).toHaveBeenCalledTimes(1);
     expect(g.synth).not.toHaveBeenCalled();
+    expect(k.synth).not.toHaveBeenCalled();
+  });
+
+  it("engine='kokoro' -> Kokoro", async () => {
+    const g = fake('gtts');
+    const p = fake('piper');
+    const k = fake('kokoro');
+    const r = new PerUserEngineRouter(g, p, k);
+    expect(await r.synth(req('kokoro'))).toBe('/wav/kokoro.wav');
+    expect(k.synth).toHaveBeenCalledTimes(1);
+    expect(g.synth).not.toHaveBeenCalled();
+    expect(p.synth).not.toHaveBeenCalled();
   });
 
   it("engine='google' -> gTTS", async () => {
     const g = fake('gtts');
     const p = fake('piper');
-    const r = new PerUserEngineRouter(g, p);
+    const k = fake('kokoro');
+    const r = new PerUserEngineRouter(g, p, k);
     expect(await r.synth(req('google'))).toBe('/wav/gtts.wav');
     expect(g.synth).toHaveBeenCalledTimes(1);
   });
@@ -34,10 +48,12 @@ describe('PerUserEngineRouter — despacha por req.engine', () => {
   it('engine ausente -> gTTS (default)', async () => {
     const g = fake('gtts');
     const p = fake('piper');
-    const r = new PerUserEngineRouter(g, p);
+    const k = fake('kokoro');
+    const r = new PerUserEngineRouter(g, p, k);
     expect(await r.synth(req(undefined))).toBe('/wav/gtts.wav');
     expect(g.synth).toHaveBeenCalledTimes(1);
     expect(p.synth).not.toHaveBeenCalled();
+    expect(k.synth).not.toHaveBeenCalled();
   });
 });
 
@@ -48,5 +64,10 @@ describe('cacheKey — separa motores sem invalidar a cache existente', () => {
 
   it('piper dá chave DIFERENTE (não cruza áudio entre motores)', () => {
     expect(cacheKey(req('piper'))).not.toBe(cacheKey(req('google')));
+  });
+
+  it('kokoro dá chave DIFERENTE de google E de piper', () => {
+    expect(cacheKey(req('kokoro'))).not.toBe(cacheKey(req('google')));
+    expect(cacheKey(req('kokoro'))).not.toBe(cacheKey(req('piper')));
   });
 });

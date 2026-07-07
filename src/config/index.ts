@@ -66,6 +66,14 @@ export interface AppConfig {
   // desativada (fallback à voz normal) até o operador instalar o motor (setup na
   // Vaga 2). Env: CLONE_CMD.
   cloneCmd?: string;
+  // Kokoro (motor neural OPT-IN, /voice set engine:Kokoro): comando do sidecar Python
+  // (auto-deteta tools/kokoro-venv + modelo se ausente). SEM sidecar => escolher Kokoro
+  // serve o gTTS (nunca silêncio). Env: KOKORO_CMD.
+  kokoroCmd?: string;
+  // Línguas que o Kokoro serve (as outras caem no gTTS via RouterEngine). Prefixos de
+  // locale (o que langKeyOfModel devolve). Default = as validadas no spike (sem 'zh',
+  // que precisa de misaki[zh]). Env KOKORO_LANGS = csv, ex. "en,pt,es".
+  kokoroLangs: Set<string>;
   // Canal de suporte/denúncia mostrado no /help. A Política de Desenvolvedor do
   // Discord exige que o utilizador tenha uma forma de reportar problemas/violações;
   // este link satisfaz esse requisito. Default = servidor de suporte oficial do
@@ -241,6 +249,17 @@ export function loadConfig(): AppConfig {
     // Clone de voz: comando do sidecar Python (ausente => síntese clonada desativada;
     // a gravação/gestão de amostras funciona na mesma).
     cloneCmd: process.env.CLONE_CMD?.trim() || undefined,
+    // Kokoro: comando do sidecar (ausente => auto-deteta tools/kokoro-venv).
+    kokoroCmd: process.env.KOKORO_CMD?.trim() || undefined,
+    // Línguas do Kokoro: csv KOKORO_LANGS (prefixos), ou as validadas no spike por defeito.
+    kokoroLangs: new Set(
+      (process.env.KOKORO_LANGS?.trim()
+        ? process.env.KOKORO_LANGS.split(',')
+        : ['en', 'es', 'fr', 'hi', 'it', 'pt', 'ja']
+      )
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean),
+    ),
     // Canal de suporte/denúncia (requisito da Política de Desenvolvedor do Discord).
     // Default = servidor de suporte oficial do Vozen; override por SUPPORT_URL.
     supportUrl: strEnv('SUPPORT_URL', 'https://discord.gg/V6PZYZmhcQ'),
