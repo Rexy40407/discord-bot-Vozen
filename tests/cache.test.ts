@@ -101,6 +101,19 @@ describe('AudioCache', () => {
     expect(cache.get('naoexiste')).toBeNull();
   });
 
+  it('put SOBREVIVE à pasta ser apagada em runtime (regressão: purge do /voice clone delete)', () => {
+    // O purge de privacidade apaga audio-cache/clone/ INTEIRA em runtime; o constructor
+    // só faz mkdir uma vez. Sem o mkdir no put(), toda a síntese desse namespace caía
+    // em ENOENT (fallback à voz normal) até ao próximo restart — o bug real de produção.
+    const cache = new AudioCache(dir).withNamespace('clone');
+    const src = join(srcDir, 'clonado.wav');
+    writeFileSync(src, Buffer.from('RIFFclone'));
+    rmSync(join(dir, 'clone'), { recursive: true, force: true }); // simula o purge
+    const stored = cache.put('chave-pos-purge', src);
+    expect(existsSync(stored)).toBe(true);
+    expect(readFileSync(stored).toString()).toBe('RIFFclone');
+  });
+
   it('put copia o ficheiro para o dir e devolve o caminho; get devolve-o depois', () => {
     const cache = new AudioCache(dir);
     const src = join(srcDir, 'gerado.wav');
