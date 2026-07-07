@@ -1,33 +1,64 @@
 /**
  * Palavras de 5 LETRAS para o Termo/Wordle, por lingua-base da INTERFACE da guild.
- * Sem acentos (a comparacao e feita sobre a forma normalizada) e exatamente 5 letras.
- * Fallback a ingles. Ter mais linguas do que o necessario e inofensivo.
+ * Sem acentos (a comparacao e feita sobre a forma normalizada) e exatamente 5 letras
+ * ASCII — ha um teste estrutural (gameContent.test.ts) que o garante, por isso o
+ * filtro defensivo do pickWordleWords nunca deve deitar nada fora. Fallback a ingles.
  */
 export const WORDLE_WORDS: Record<string, string[]> = {
   en: [
     'apple', 'beach', 'chair', 'dance', 'eagle', 'flame', 'grape', 'house', 'juice', 'lemon',
     'money', 'night', 'ocean', 'piano', 'queen', 'river', 'stone', 'table', 'water', 'zebra',
     'bread', 'cloud', 'dream', 'earth', 'ghost',
+    'tiger', 'snake', 'mouse', 'horse', 'sheep', 'whale', 'shark', 'plant', 'grass', 'sugar',
+    'candy', 'pasta', 'pizza', 'toast', 'fruit', 'peach', 'melon', 'olive', 'onion', 'storm',
+    'frost', 'medal', 'track', 'field', 'beard', 'brain', 'heart', 'elbow', 'thumb', 'ankle',
+    'chest', 'crown', 'sword', 'torch', 'arrow', 'spear', 'tower', 'cabin', 'hotel', 'fence',
+    'brick', 'glass', 'chalk', 'paper', 'ruler', 'globe', 'atlas', 'novel', 'story', 'actor',
+    'movie', 'radio', 'phone', 'clock', 'watch',
   ],
   pt: [
-    'praia', 'gato', 'livro', 'porta', 'noite', 'verde', 'campo', 'fruta', 'letra', 'mundo',
-    'plano', 'ponte', 'ramo', 'sonho', 'terra', 'vento', 'carta', 'festa', 'lugar', 'tempo',
+    'praia', 'livro', 'porta', 'noite', 'verde', 'campo', 'fruta', 'letra', 'mundo',
+    'plano', 'ponte', 'sonho', 'terra', 'vento', 'carta', 'festa', 'lugar', 'tempo',
     'pedra', 'nuvem', 'praca', 'forte', 'largo',
+    'tigre', 'cobra', 'barco', 'navio', 'aviao', 'trigo', 'arroz', 'leite', 'tarte', 'salsa',
+    'limao', 'manga', 'melao', 'milho', 'couve', 'lirio', 'pinho', 'selva', 'areia', 'chuva',
+    'brisa', 'lenha', 'chama', 'tocha', 'lanca', 'coroa', 'trono', 'reino', 'torre', 'grade',
+    'vidro', 'papel', 'lapis', 'regua', 'globo', 'conto', 'poema', 'atriz', 'filme', 'radio',
+    'toque', 'danca', 'baile', 'dados', 'pista', 'corpo', 'braco', 'perna', 'rosto', 'barba',
+    'peito', 'ombro', 'costa', 'monte', 'serra', 'ponto', 'linha',
   ],
   es: [
-    'playa', 'gato', 'libro', 'perro', 'noche', 'verde', 'campo', 'fruta', 'letra', 'mundo',
-    'plato', 'punto', 'reloj', 'sueno', 'tierra', 'viento', 'carta', 'fiesta', 'lugar', 'tiempo',
-    'piedra', 'nubes', 'plaza', 'fuego', 'largo',
+    'playa', 'libro', 'perro', 'noche', 'verde', 'campo', 'fruta', 'letra', 'mundo',
+    'plato', 'punto', 'reloj', 'sueno', 'carta', 'lugar', 'nubes', 'plaza', 'fuego', 'largo',
+    'tigre', 'cobra', 'barco', 'avion', 'trigo', 'arroz', 'leche', 'queso', 'pasta', 'pizza',
+    'salsa', 'limon', 'mango', 'melon', 'grano', 'tarta', 'dulce', 'pollo', 'carne', 'selva',
+    'arena', 'nieve', 'brisa', 'llama', 'lanza', 'reina', 'trono', 'reino', 'torre', 'pared',
+    'jarra', 'papel', 'lapiz', 'regla', 'globo', 'poema', 'actor', 'radio', 'danza', 'baile',
+    'dados', 'pista', 'brazo', 'barba', 'pecho', 'labio', 'monte', 'valle', 'costa', 'golfo',
+    'linea', 'plano', 'suelo', 'techo', 'silla', 'banco', 'horno', 'patio', 'hogar', 'hotel',
+    'calle',
   ],
   fr: [
-    'plage', 'chat', 'livre', 'porte', 'verre', 'monde', 'fruit', 'lettre', 'point', 'reine',
-    'terre', 'vente', 'carte', 'ville', 'temps', 'pierre', 'place', 'jaune', 'blanc', 'route',
+    'plage', 'livre', 'porte', 'verre', 'monde', 'fruit', 'point', 'reine',
+    'terre', 'vente', 'carte', 'ville', 'temps', 'place', 'jaune', 'blanc', 'route',
     'arbre', 'fleur', 'chien', 'table', 'ecole',
+    'tigre', 'lapin', 'singe', 'zebre', 'vache', 'poule', 'sirop', 'sucre', 'creme', 'pomme',
+    'poire', 'peche', 'melon', 'prune', 'soupe', 'tarte', 'pizza', 'epice', 'foret', 'sable',
+    'pluie', 'neige', 'orage', 'nuage', 'brise', 'lance', 'sabre', 'trone', 'ferme', 'vitre',
+    'stylo', 'regle', 'globe', 'conte', 'poeme', 'roman', 'scene', 'radio', 'danse', 'piste',
+    'corps', 'coude', 'jambe', 'barbe', 'levre', 'genou', 'doigt', 'front', 'champ', 'golfe',
+    'ligne', 'seuil', 'salon', 'hotel', 'metro', 'train', 'avion', 'canot',
   ],
   de: [
-    'apfel', 'stuhl', 'blume', 'katze', 'nacht', 'gruen', 'feld', 'frau', 'welt', 'punkt',
-    'erde', 'karte', 'stadt', 'zeit', 'stein', 'platz', 'gelb', 'weiss', 'baum', 'hund',
-    'tisch', 'wasser', 'licht', 'brot', 'vogel',
+    'apfel', 'stuhl', 'blume', 'katze', 'nacht', 'gruen', 'punkt', 'karte', 'stadt', 'stein',
+    'platz', 'weiss', 'tisch', 'licht', 'vogel',
+    'tiger', 'pferd', 'schaf', 'ratte', 'biene', 'fisch', 'fuchs', 'loewe', 'ziege', 'krebs',
+    'zebra', 'milch', 'kaese', 'honig', 'salat', 'suppe', 'pizza', 'nudel', 'birne', 'beere',
+    'mango', 'torte', 'wiese', 'insel', 'regen', 'wolke', 'sturm', 'blitz', 'frost', 'nebel',
+    'feuer', 'kerze', 'lampe', 'lanze', 'krone', 'thron', 'reich', 'mauer', 'prinz', 'tasse',
+    'gabel', 'kanne', 'stift', 'tafel', 'kugel', 'roman', 'fabel', 'szene', 'radio', 'musik',
+    'geige', 'piano', 'zunge', 'lippe', 'stirn', 'wange', 'brust', 'ferse', 'ebene', 'fluss',
+    'teich', 'ozean', 'welle', 'ampel', 'brief',
   ],
 };
 

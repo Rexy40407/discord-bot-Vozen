@@ -54,7 +54,10 @@ describe('guessLanguage — funcoes puras', () => {
     expect(cands.map((c) => c.base)).toEqual(['en', 'de']);
     // A 1a voz de cada base e a escolhida.
     expect(cands[0].model).toBe('en_US-amy-medium');
-    expect(cands[0].phrase.length).toBeGreaterThan(0);
+    // Cada candidata traz VARIAS frases (>=3) — a variedade e o antidoto de decorar
+    // "frase X = lingua Y" (uma e escolhida ao acaso em cada ronda).
+    expect(cands[0].phrases.length).toBeGreaterThanOrEqual(3);
+    for (const p of cands[0].phrases) expect(p.length).toBeGreaterThan(0);
   });
 
   it('acceptableAnswers: aceita codigo, autonimo, nome no locale e nome em ingles', () => {

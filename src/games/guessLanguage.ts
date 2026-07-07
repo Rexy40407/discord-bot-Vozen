@@ -2,7 +2,7 @@ import { LOCALE_DISPLAY_NAMES } from '../i18n/index';
 import type { GameContext, GameDefinition } from './types';
 import { QuizGame, type QuizRound } from './quizGame';
 import { LANGUAGE_PHRASES } from './content/languagePhrases';
-import { baseCodeOf, localizedLanguageName, normalizeAnswer, seededShuffle } from './util';
+import { baseCodeOf, localizedLanguageName, makeRng, normalizeAnswer, seededShuffle } from './util';
 
 /** Rondas por partida e tempo-limite de cada ronda. */
 const ROUNDS = 5;
@@ -11,11 +11,12 @@ const ROUND_MS = 25_000;
 interface Candidate {
   base: string;
   model: string;
-  phrase: string;
+  /** As frases possiveis desta lingua — UMA e escolhida ao acaso em cada ronda. */
+  phrases: string[];
 }
 
 /**
- * Linguas jogaveis: as que tem AO MESMO TEMPO uma voz instalada E uma frase. Uma
+ * Linguas jogaveis: as que tem AO MESMO TEMPO uma voz instalada E frases. Uma
  * entrada por base (a 1a voz encontrada para essa lingua), preservando a ordem de
  * availableModels. PURA.
  */
@@ -25,10 +26,10 @@ export function guessableLanguages(availableModels: string[]): Candidate[] {
   for (const model of availableModels) {
     const base = baseCodeOf(model);
     if (seen.has(base)) continue;
-    const phrase = LANGUAGE_PHRASES[base];
-    if (!phrase) continue;
+    const phrases = LANGUAGE_PHRASES[base];
+    if (!phrases?.length) continue;
     seen.add(base);
-    out.push({ base, model, phrase });
+    out.push({ base, model, phrases });
   }
   return out;
 }
@@ -70,10 +71,14 @@ class GuessLanguageGame extends QuizGame {
   protected roundMs = ROUND_MS;
   private order: Candidate[] = [];
   private rounds = 0;
+  private rng: () => number = () => 0;
 
   protected prepare(ctx: GameContext): number {
     this.order = seededShuffle(guessableLanguages(ctx.availableModels), ctx.seed);
     this.rounds = Math.min(ROUNDS, this.order.length);
+    // Rng da semente para variar a FRASE de cada ronda (nao so a lingua) — senao
+    // decorava-se "frase X = lingua Y" ao fim de meia duzia de partidas.
+    this.rng = makeRng(ctx.seed);
     return this.rounds;
   }
 
@@ -89,8 +94,9 @@ class GuessLanguageGame extends QuizGame {
     const cand = this.order[index];
     const answers = acceptableAnswers(cand.base, ctx.locale);
     const language = localizedLanguageName(cand.base, ctx.locale);
+    const phrase = cand.phrases[this.rng() % cand.phrases.length];
     return {
-      speak: { text: cand.phrase, opts: { model: cand.model } },
+      speak: { text: phrase, opts: { model: cand.model } },
       announce: ctx.t('game.guessLanguage.round', { n: index + 1, total: this.rounds }),
       accept: (raw) => answers.has(normalizeAnswer(raw)),
       onCorrect: (user) => ctx.t('game.guessLanguage.correct', { user, language }),
