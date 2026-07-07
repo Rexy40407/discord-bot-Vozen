@@ -1,28 +1,24 @@
 // tools/gen-og-image.mjs
 //
-// Rasteriza site/assets/og-image.svg -> site/assets/og-image.png (1200x630), o
-// og:image que aparece quando um link do Vozen e' partilhado no Discord/Twitter.
-// SVG nao e' aceite de forma fiavel como og:image, por isso comitamos o PNG.
+// Gera site/assets/og-image.png (1200x630) a partir do banner de marca
+// (assets/vozen-banner.png) — o og:image que aparece quando um link do Vozen e
+// partilhado no Discord/Twitter. Cover-fit centrado: mantem o logo+wordmark
+// completos, corta so uns pixeis no topo/fundo (o banner e 1792x1024).
 //
-// Regenerar (o rasterizador NAO esta em package.json, e' so uma ferramenta de build):
-//   npm i --no-save @resvg/resvg-js
+// Regenerar (sharp NAO esta em package.json, e so uma ferramenta de build):
+//   npm i --no-save sharp
 //   node tools/gen-og-image.mjs
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { Resvg } from '@resvg/resvg-js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const svgPath = join(root, 'site', 'assets', 'og-image.svg');
-const outPath = join(root, 'site', 'assets', 'og-image.png');
+const src = join(root, 'assets', 'vozen-banner.png');
+const out = join(root, 'site', 'assets', 'og-image.png');
 
-const svg = readFileSync(svgPath, 'utf8');
-const resvg = new Resvg(svg, {
-  fitTo: { mode: 'width', value: 1200 }, // viewBox 1200x630 -> PNG 1200x630
-  background: '#05060f', // fundo solido (og:image nao suporta transparencia)
-  font: { loadSystemFonts: true }, // usa fontes do sistema para o texto
-});
-const png = resvg.render().asPng();
-writeFileSync(outPath, png);
-console.log(`og-image.png escrito: ${outPath} (${png.length} bytes)`);
+const info = await sharp(src)
+  .resize(1200, 630, { fit: 'cover', position: 'center' })
+  .png()
+  .toFile(out);
+console.log(`og-image.png escrito de ${src}: ${info.size} bytes (1200x630)`);
