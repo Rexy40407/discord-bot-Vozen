@@ -18,7 +18,7 @@ Repo verification baseline at planning time: `npm run build` (tsc) exit 0;
 | 003 | `/game play`: deferReply before the thread-creation REST call | P1 | S | — | DONE |
 | 004 | Security hardening trio (vote webhook secret · gate guild `/redeem` · scrub error webhook) | P1 | S | 003* | DONE |
 | 005 | Typecheck the test suite + `engines` field | P1 | S | — | DONE |
-| 006 | `CLAUDE.md` + `.env.example` in English | P2 | S | — | TODO |
+| 006 | `CLAUDE.md` + `.env.example` in English | P2 | S | — | DONE |
 | 007 | Pin the Python clone-sidecar dependencies | P2 | S | — | TODO |
 | 008 | AudioCache: size counter instead of per-synthesis directory scan | P2 | S | — | TODO |
 | 009 | gTTS: bounded-concurrency chunk fetch (cap 3) | P2 | S-M | — | TODO |
