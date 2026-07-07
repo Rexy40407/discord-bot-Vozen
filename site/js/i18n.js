@@ -45,7 +45,7 @@ window.VOZEN_I18N = {
     "feat.7.t": "Voice effects",
     "feat.7.d": "Robot, echo, deep, chipmunk, radio, demon… your messages, transformed. Two effects free, all eight with Premium.",
     "feat.8.t": "Fair Premium",
-    "feat.8.d": "€4/month unlocks the extras. Everything that's free today stays free — that's a promise, not a trick.",
+    "feat.8.d": "€3.99/month unlocks the extras. Everything that's free today stays free — that's a promise, not a trick.",
     "feat.9.t": "Open source",
     "feat.9.d": "All of Vozen's code is public on GitHub. Audit it, learn from it, or open a PR — no secrets, no spyware.",
 
@@ -167,7 +167,7 @@ window.VOZEN_I18N = {
     "feat.7.t": "Efeitos de voz",
     "feat.7.d": "Robô, eco, grave, esquilo, rádio, demónio… as tuas mensagens, transformadas. Dois efeitos grátis, os oito com Premium.",
     "feat.8.t": "Premium justo",
-    "feat.8.d": "€4/mês desbloqueia os extras. Tudo o que hoje é grátis continua grátis — é uma promessa, não um truque.",
+    "feat.8.d": "€3,99/mês desbloqueia os extras. Tudo o que hoje é grátis continua grátis — é uma promessa, não um truque.",
     "feat.9.t": "Open source",
     "feat.9.d": "Todo o código do Vozen é público no GitHub. Audita-o, aprende com ele ou abre um PR — sem segredos, sem spyware.",
 
@@ -297,11 +297,11 @@ window.VOZEN_COMMANDS = {
 window.VOZEN_FAQ = [
   [
     { en: "Is Vozen really free?", pt: "O Vozen é mesmo grátis?" },
-    { en: "Yes — everything Vozen does today is free and stays free: all voices, all 15 games, greetings, admin tools. Vozen Premium (€4/month per server) only adds optional extras like the full voice-effect pack. Nothing you use ever moves behind a paywall.", pt: "Sim — tudo o que o Vozen faz hoje é grátis e continua grátis: todas as vozes, os 15 jogos, saudações, ferramentas de admin. O Vozen Premium (€4/mês por servidor) só acrescenta extras opcionais, como o pack completo de efeitos de voz. Nada do que usas passa para trás de um paywall." },
+    { en: "Yes — everything Vozen does today is free and stays free: all voices, all 15 games, greetings, admin tools. Vozen Premium (€3.99/month per server) only adds optional extras like the full voice-effect pack. Nothing you use ever moves behind a paywall.", pt: "Sim — tudo o que o Vozen faz hoje é grátis e continua grátis: todas as vozes, os 15 jogos, saudações, ferramentas de admin. O Vozen Premium (€3,99/mês por servidor) só acrescenta extras opcionais, como o pack completo de efeitos de voz. Nada do que usas passa para trás de um paywall." },
   ],
   [
     { en: "What does Premium include?", pt: "O que inclui o Premium?" },
-    { en: "All 8 voice effects (deep, demon, radio, underwater…), with premium neural voices and 24/7 in-call mode on the way. €4/month or €40/year per server, or Vozen Plus (€1.99/month) for personal perks that follow you across servers. Redeem codes with /redeem.", pt: "Os 8 efeitos de voz (grave, demónio, rádio, debaixo de água…), com vozes neurais premium e modo 24/7 na call a caminho. €4/mês ou €40/ano por servidor, ou Vozen Plus (€1,99/mês) para vantagens pessoais que te seguem entre servidores. Resgata códigos com /redeem." },
+    { en: "All 8 voice effects (deep, demon, radio, underwater…), with premium neural voices and 24/7 in-call mode on the way. €3.99/month or €40/year per server, or Vozen Plus (€1.99/month) for personal perks that follow you across servers. Redeem codes with /redeem.", pt: "Os 8 efeitos de voz (grave, demónio, rádio, debaixo de água…), com vozes neurais premium e modo 24/7 na call a caminho. €3,99/mês ou €40/ano por servidor, ou Vozen Plus (€1,99/mês) para vantagens pessoais que te seguem entre servidores. Resgata códigos com /redeem." },
   ],
   [
     { en: "How do I add Vozen to my server?", pt: "Como adiciono o Vozen ao meu servidor?" },

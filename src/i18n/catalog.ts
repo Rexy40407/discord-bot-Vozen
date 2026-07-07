@@ -435,8 +435,8 @@ export const catalog: Record<string, Entry> = {
     pt: '👤 **Tu (Plus):** inativo',
   },
   'premium.getHint': {
-    en: 'Everything you use today stays free. Premium (€4/mo) adds premium voices, 24/7 in-call, full voice effects and higher limits. Support: https://ko-fi.com/',
-    pt: 'Tudo o que já usas continua grátis. O Premium (€4/mês) acrescenta vozes premium, 24/7 na call, efeitos de voz completos e limites maiores. Apoio: https://ko-fi.com/',
+    en: 'Everything you use today stays free. Premium (€3.99/mo) adds premium voices, 24/7 in-call, full voice effects and higher limits. Support: https://ko-fi.com/',
+    pt: 'Tudo o que já usas continua grátis. O Premium (€3,99/mês) acrescenta vozes premium, 24/7 na call, efeitos de voz completos e limites maiores. Apoio: https://ko-fi.com/',
   },
   'redeem.ok': {
     en: '✅ Code redeemed! **{target}** now has Vozen Premium until {date}.',

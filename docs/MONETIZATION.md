@@ -9,7 +9,7 @@
 
 | Tier | Price | Scope | Notes |
 |------|-------|-------|-------|
-| **Vozen Premium** | **€4.00 / month** | per **server** | A touch under TTS Bot Premium (~$4.99). Pitch: "cheaper — and our games are free." |
+| **Vozen Premium** | **€3.99 / month** | per **server** | A touch under TTS Bot Premium (~$4.99). Pitch: "cheaper — and our games are free." |
 | **Vozen Premium (annual)** | **€40 / year** | per server | 2 months free (€48 → €40) |
 | **Vozen Plus** | **€1.99 / month** | per **user** | Personal perks that follow you across servers |
 
@@ -117,7 +117,7 @@ app. Vozen is neither yet (verification needs ~75 servers), so the rule does not
 
 | Offering | Ko-fi / external | Discord SKU (USD) | Discord type | Notes |
 |---|---|---|---|---|
-| **Vozen Premium** (per server) | €4.00 / mo | **$3.99 / mo** guild subscription | monthly sub ✅ supported | Parity: Discord ≤ external. |
+| **Vozen Premium** (per server) | €3.99 / mo | **$3.99 / mo** guild subscription | monthly sub ✅ supported | Parity: Discord ($3.99) ≈ external (€3.99 ≈ $4.3). Discord ≤ external ✅. |
 | **Vozen Plus** (per user) | €1.99 / mo | **$1.99 / mo** user subscription | monthly sub ✅ supported | Parity: Discord ≤ external. |
 | **Vozen Premium (annual)** | €40 / yr | — | annual sub ⏳ not yet supported | Offer via Discord once annual subs ship; grace period applies. |
 
