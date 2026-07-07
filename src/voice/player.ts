@@ -12,6 +12,7 @@ import {
 import type { TTSEngine, SynthRequest } from '../tts/engine';
 import { emphasisGain } from '../tts/emphasis';
 import { PlayQueue } from './queue';
+import { raceStates } from './raceStates';
 import { log } from '../logging/logger';
 import { metrics } from '../metrics';
 
@@ -299,7 +300,9 @@ export class GuildVoicePlayer {
     metrics.inc('voiceDrops');
     try {
       // Reconexao "soft": o gateway esta a renegociar a sessao de voz.
-      await Promise.race([
+      // raceStates (e não o race nativo): o entersState PERDEDOR rejeita mais tarde
+      // e sem handler gerava um unhandledRejection espúrio no webhook de erros.
+      await raceStates([
         entersState(this.connection, VoiceConnectionStatus.Signalling, 5_000),
         entersState(this.connection, VoiceConnectionStatus.Connecting, 5_000),
       ]);

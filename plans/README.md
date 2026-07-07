@@ -14,7 +14,7 @@ Repo verification baseline at planning time: `npm run build` (tsc) exit 0;
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001 | Clone sidecar warmup deadline (wedged sidecar can stall a guild's TTS) | P1 | S | — | DONE |
-| 002 | Voice soft-recovery: handle the losing `entersState` rejection | P1 | S | — | TODO |
+| 002 | Voice soft-recovery: handle the losing `entersState` rejection | P1 | S | — | DONE |
 | 003 | `/game play`: deferReply before the thread-creation REST call | P1 | S | — | TODO |
 | 004 | Security hardening trio (vote webhook secret · gate guild `/redeem` · scrub error webhook) | P1 | S | 003* | TODO |
 | 005 | Typecheck the test suite + `engines` field | P1 | S | — | TODO |
