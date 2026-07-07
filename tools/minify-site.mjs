@@ -71,7 +71,8 @@ async function run() {
       minified++;
     } else if (ext === '.css') {
       const res = new CleanCSS({ returnPromise: false }).minify(await readFile(file, 'utf8'));
-      if (res.errors.length) throw new Error(`clean-css falhou em ${rel}: ${res.errors.join('; ')}`);
+      if (res.errors.length)
+        throw new Error(`clean-css falhou em ${rel}: ${res.errors.join('; ')}`);
       await writeFile(outPath, res.styles);
       minified++;
     } else {
@@ -79,7 +80,9 @@ async function run() {
       copied++;
     }
   }
-  console.log(`[minify-site] ${minified} ficheiro(s) minificado(s), ${copied} copiado(s) -> site-dist/`);
+  console.log(
+    `[minify-site] ${minified} ficheiro(s) minificado(s), ${copied} copiado(s) -> site-dist/`,
+  );
 }
 
 run().catch((err) => {

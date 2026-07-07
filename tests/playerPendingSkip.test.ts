@@ -130,7 +130,7 @@ describe('GuildVoicePlayer — /skip na janela de sintese (pendingSkip, P19.C)',
 
   it('skip na janela de sintese: o item in-flight NAO toca e o proximo toca', async () => {
     const { engine, waitSynthCalled, release } = makeDeferredEngine();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -165,7 +165,7 @@ describe('GuildVoicePlayer — /skip na janela de sintese (pendingSkip, P19.C)',
 
   it('NO-LEAK: skip durante B descarta B mas C (proximo) toca NORMALMENTE', async () => {
     const { engine, waitSynthCalled, release } = makeDeferredEngine();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -199,7 +199,7 @@ describe('GuildVoicePlayer — /skip na janela de sintese (pendingSkip, P19.C)',
     // Aqui NAO diferimos: engine resolve logo, para o item chegar a play() e o
     // player ficar Playing. Depois skip() enquanto Playing -> stop() emite Idle.
     const engine: TTSEngine = { synth: async (r: SynthRequest) => r.text };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -255,7 +255,6 @@ describe('GuildVoicePlayer — /skip na janela de sintese (pendingSkip, P19.C)',
     process.on('unhandledRejection', onUnhandled);
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 

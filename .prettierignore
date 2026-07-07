@@ -7,3 +7,7 @@ tools/clone-venv/
 audio-cache/
 voice-clones/
 package-lock.json
+scratchpad/
+# docs/ contém material de outras sessões e ficheiros não-versionados que este
+# toolchain não deve reformatar — fora do âmbito da passagem de estilo.
+docs/

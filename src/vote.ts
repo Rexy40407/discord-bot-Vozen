@@ -71,7 +71,9 @@ export interface VoteData {
  * antes de comparar. Bonus: o digest tambem nao vaza o comprimento do secret.
  */
 function authMatches(authHeader: string | undefined, secret: string): boolean {
-  const a = createHash('sha256').update(authHeader ?? '').digest();
+  const a = createHash('sha256')
+    .update(authHeader ?? '')
+    .digest();
   const b = createHash('sha256').update(secret).digest();
   return timingSafeEqual(a, b);
 }
@@ -223,9 +225,7 @@ export function startVoteWebhookServer(
   });
 
   server.listen(port, () => {
-    log.info(
-      `[vote] servidor de webhook top.gg a ouvir na porta ${port} (POST /webhook/topgg).`,
-    );
+    log.info(`[vote] servidor de webhook top.gg a ouvir na porta ${port} (POST /webhook/topgg).`);
   });
 
   return server;

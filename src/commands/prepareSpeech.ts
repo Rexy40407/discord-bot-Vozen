@@ -111,7 +111,10 @@ const MAX_SYNTH_CHARS = 2400;
 function capSynth(result: PreparedSpeech): PreparedSpeech {
   const text = result.req.text;
   if (text.length <= MAX_SYNTH_CHARS) return result;
-  const req: SynthRequest = { ...result.req, text: Array.from(text).slice(0, MAX_SYNTH_CHARS).join('') };
+  const req: SynthRequest = {
+    ...result.req,
+    text: Array.from(text).slice(0, MAX_SYNTH_CHARS).join(''),
+  };
   if (req.segments && req.segments.length > 0) {
     const kept: { text: string; model: string }[] = [];
     let budget = MAX_SYNTH_CHARS;
@@ -150,7 +153,8 @@ function decorateAnnouncements(result: PreparedSpeech, input: PrepareSpeechInput
   const phrases = spokenPhrasesFor(langKeyOfModel(result.req.model));
   const name = input.announceSpeaker?.trim();
   const prefix = name ? `${name} ${phrases.said}` : '';
-  const suffix = input.media && input.media.length > 0 ? buildMediaSuffix(input.media, phrases) : '';
+  const suffix =
+    input.media && input.media.length > 0 ? buildMediaSuffix(input.media, phrases) : '';
   if (!prefix && !suffix) return result;
 
   const spoken = [prefix, result.spoken, suffix].filter((s) => s && s.length > 0).join(' ');
@@ -184,7 +188,11 @@ function prepareSpeechCore(input: PrepareSpeechInput): PreparedSpeech {
     // aplicado a montante no messageHandler): pessoal > /pronunciation > gírias.
     const spokenRaw = expandAbbreviations(applyPronunciation(input.personal, input.pronunciations));
     const spoken = restoreAccents(spokenRaw, accentLangOfModel(preferred));
-    return { spoken, req: { text: spoken, model: preferred, speed, singleVoice: true }, learnedLang: '' };
+    return {
+      spoken,
+      req: { text: spoken, model: preferred, speed, singleVoice: true },
+      learnedLang: '',
+    };
   }
 
   // Deteccao LIGADA. Pronúncia da guild PRIMEIRO — ANTES de partir por gíria — para
@@ -200,7 +208,10 @@ function prepareSpeechCore(input: PrepareSpeechInput): PreparedSpeech {
 
   // Lingua-base = deteccao SO da parte non-slang (as girias EN nao poluem). Deteta-se
   // sobre o texto SEM acentos restaurados (e o que temos); restauram-se DEPOIS.
-  const baseText = proc0.filter((s) => !s.isEnglish).map((s) => s.text).join(' ');
+  const baseText = proc0
+    .filter((s) => !s.isEnglish)
+    .map((s) => s.text)
+    .join(' ');
   const { lang: detectedBase, confident } = detectLangDetailed(baseText);
   // Memoria adaptativa (T3.2): se a deteccao e AMBIGUA e ha uma lingua recente do user,
   // usa a recente (resolve "isto ta a funcionar" -> por depois de um "olá" confiante).

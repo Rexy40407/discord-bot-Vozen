@@ -90,7 +90,9 @@ class VozenSaysGame implements Game {
   private onTimeout(ctx: GameContext): void {
     this.done = true;
     void ctx.send(
-      ctx.t(this.real ? 'game.vozenSays.nobody' : 'game.vozenSays.trapCleared', { word: this.item }),
+      ctx.t(this.real ? 'game.vozenSays.nobody' : 'game.vozenSays.trapCleared', {
+        word: this.item,
+      }),
     );
     this.nextRound(ctx);
   }

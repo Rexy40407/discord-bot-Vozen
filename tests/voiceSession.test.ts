@@ -19,14 +19,24 @@ vi.mock('@discordjs/voice', () => ({
 }));
 
 // Fake do GuildVoicePlayer que CAPTURA o onIdle (5.º arg do ctor) e expõe destroy.
-const captured = vi.hoisted(() => ({ players: [] as Array<{ onIdle: () => void; destroy: ReturnType<typeof vi.fn> }> }));
+const captured = vi.hoisted(() => ({
+  players: [] as Array<{ onIdle: () => void; destroy: ReturnType<typeof vi.fn> }>,
+}));
 vi.mock('../src/voice/player', () => ({
   GuildVoicePlayer: class {
     onIdle: () => void;
     destroy = vi.fn();
-    constructor(_conn: unknown, _engine: unknown, _cap: number, _idleMs: number, onIdle: () => void) {
+    constructor(
+      _conn: unknown,
+      _engine: unknown,
+      _cap: number,
+      _idleMs: number,
+      onIdle: () => void,
+    ) {
       this.onIdle = onIdle;
-      captured.players.push(this as unknown as { onIdle: () => void; destroy: ReturnType<typeof vi.fn> });
+      captured.players.push(
+        this as unknown as { onIdle: () => void; destroy: ReturnType<typeof vi.fn> },
+      );
     }
   },
 }));
@@ -51,7 +61,10 @@ describe('createVoiceSession — guard identity-aware do onIdle', () => {
 
   it('(a) idle normal: remove o player e destrói a ligação', () => {
     const deps = makeDeps();
-    const player = createVoiceSession(deps, 'G', 'C', {} as never) as unknown as { onIdle: () => void; destroy: ReturnType<typeof vi.fn> };
+    const player = createVoiceSession(deps, 'G', 'C', {} as never) as unknown as {
+      onIdle: () => void;
+      destroy: ReturnType<typeof vi.fn>;
+    };
     expect(deps.players.get('G')).toBe(player);
     expect(h.joinVoiceChannel).toHaveBeenCalledWith({
       channelId: 'C',
@@ -68,8 +81,14 @@ describe('createVoiceSession — guard identity-aware do onIdle', () => {
 
   it('(b) REGRESSÃO: o onIdle do player VELHO não derruba o SUBSTITUTO', () => {
     const deps = makeDeps();
-    const a = createVoiceSession(deps, 'G', 'C1', {} as never) as unknown as { onIdle: () => void; destroy: ReturnType<typeof vi.fn> };
-    const b = createVoiceSession(deps, 'G', 'C2', {} as never) as unknown as { onIdle: () => void; destroy: ReturnType<typeof vi.fn> };
+    const a = createVoiceSession(deps, 'G', 'C1', {} as never) as unknown as {
+      onIdle: () => void;
+      destroy: ReturnType<typeof vi.fn>;
+    };
+    const b = createVoiceSession(deps, 'G', 'C2', {} as never) as unknown as {
+      onIdle: () => void;
+      destroy: ReturnType<typeof vi.fn>;
+    };
     expect(deps.players.get('G')).toBe(b);
     h.connDestroy.mockClear(); // isola o callback obsoleto (o replace já chamou removePlayer)
     // Dispara o closure OBSOLETO do A:

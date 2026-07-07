@@ -32,6 +32,7 @@
   The decision logic to extract, verbatim as it exists today:
 
   Exit classification + backoff (`scripts/start-prod.mjs:141-161`):
+
   ```js
   child.on('exit', (code, signal) => {
     if (currentChild === child) currentChild = null;
@@ -48,12 +49,15 @@
     // Backoff exponencial limitado a 60s.
     const delayMs = Math.min(60000, 2000 * 2 ** attempt);
     attempt++;
-    log(`bot caiu (código ${code ?? 'null'}, sinal ${signal ?? 'null'}) — reinício #${attempt} em ${delayMs / 1000}s.`);
+    log(
+      `bot caiu (código ${code ?? 'null'}, sinal ${signal ?? 'null'}) — reinício #${attempt} em ${delayMs / 1000}s.`,
+    );
     setTimeout(startOnce, delayMs);
   });
   ```
 
   Backoff reset after stable uptime — CONFIRMED present (`scripts/start-prod.mjs:163-168`):
+
   ```js
   // Um arranque que dure >60s conta como saudável → limpa o backoff. ...
   resetTimer = setTimeout(() => {
@@ -63,6 +67,7 @@
   ```
 
   Preheat retry loop (`scripts/start-prod.mjs:101-118`):
+
   ```js
   /** Pré-aquece o davey até carregar OK (anti-Smart App Control). */
   function prewarmDavey() {
@@ -92,24 +97,26 @@
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Install | `npm install` | exit 0 |
-| Build   | `npm run build` | exit 0 (unaffected — scripts/ not in tsconfig) |
-| Tests   | `npx vitest run tests/startProd.test.ts` | new tests pass |
-| Full suite | `npx vitest run` | all pass |
-| Syntax check | `node --check scripts/start-prod.mjs` and `node --check scripts/supervisorPolicy.mjs` | no output, exit 0 |
-| Import smoke | `node -e "import('./scripts/supervisorPolicy.mjs').then(m=>console.log(Object.keys(m).sort().join(',')))"` | prints the export names |
+| Purpose      | Command                                                                                                    | Expected on success                            |
+| ------------ | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Install      | `npm install`                                                                                              | exit 0                                         |
+| Build        | `npm run build`                                                                                            | exit 0 (unaffected — scripts/ not in tsconfig) |
+| Tests        | `npx vitest run tests/startProd.test.ts`                                                                   | new tests pass                                 |
+| Full suite   | `npx vitest run`                                                                                           | all pass                                       |
+| Syntax check | `node --check scripts/start-prod.mjs` and `node --check scripts/supervisorPolicy.mjs`                      | no output, exit 0                              |
+| Import smoke | `node -e "import('./scripts/supervisorPolicy.mjs').then(m=>console.log(Object.keys(m).sort().join(',')))"` | prints the export names                        |
 
 ## Scope
 
 **In scope** (the only files you should create/modify):
+
 - `scripts/supervisorPolicy.mjs` (create)
 - `scripts/supervisorPolicy.d.mts` (create — type declarations for the test import)
 - `scripts/start-prod.mjs` (rewire to use the policy module; no behavior change)
 - `tests/startProd.test.ts` (create)
 
 **Out of scope** (do NOT touch):
+
 - The single-instance lock, log rotation, and signal-forwarding blocks of `start-prod.mjs` — they stay exactly as they are (side-effectful, incident-hardened; extracting them is not worth the risk here).
 - `package.json` scripts — `start:prod` must keep working unchanged.
 - Anything under `src/` — the supervisor is deliberately outside the TS build.
@@ -233,7 +240,9 @@ export declare function prewarmNative(
      return;
    }
    attempt = d.nextAttempt;
-   log(`bot caiu (código ${code ?? 'null'}, sinal ${signal ?? 'null'}) — reinício #${attempt} em ${d.delayMs / 1000}s.`);
+   log(
+     `bot caiu (código ${code ?? 'null'}, sinal ${signal ?? 'null'}) — reinício #${attempt} em ${d.delayMs / 1000}s.`,
+   );
    setTimeout(startOnce, d.delayMs);
    ```
    This is 1:1: the original computed `delayMs` from the pre-increment `attempt` and logged the post-increment value — `decideOnExit` reproduces exactly that (`delayMs` from current attempt, `nextAttempt = attempt + 1`, and the log prints `#${attempt}` AFTER the assignment). The `currentChild`/`resetTimer` cleanup lines above it stay untouched.
@@ -242,6 +251,7 @@ export declare function prewarmNative(
 Do not change anything else: shebang-less header, lock, logging, signals all untouched.
 
 **Verify**:
+
 - `node --check scripts/start-prod.mjs` → exit 0.
 - `git diff scripts/start-prod.mjs` — confirm the diff touches only: the import line, the `prewarmDavey` body, the exit-decision block, the reset-timer constant. No log string changed (inspect the diff: every removed log line reappears verbatim).
 
@@ -266,6 +276,7 @@ Cover exactly these cases (see Test plan for the full list): the backoff sequenc
 ### Step 5: Full gate
 
 **Verify**:
+
 - `npx vitest run` → entire suite passes (previous count + new tests).
 - `npm run build` → exit 0 (scripts/ is outside the TS build; this proves no accidental spillover).
 - If `npm run typecheck` exists (plan 005 landed): exit 0.

@@ -72,7 +72,6 @@ function fakeFfmpeg(behavior: 'ok' | 'fail') {
       }
     });
     return child;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 }
 
@@ -97,7 +96,10 @@ describe('pcmToWavFile — conversão + escrita no destino', () => {
 
   it('falha do ffmpeg -> rejeita', async () => {
     await expect(
-      pcmToWavFile(voiced(10), join(dir, 'x.wav'), { ffmpegPath: '/fake/ffmpeg', spawnImpl: fakeFfmpeg('fail') }),
+      pcmToWavFile(voiced(10), join(dir, 'x.wav'), {
+        ffmpegPath: '/fake/ffmpeg',
+        spawnImpl: fakeFfmpeg('fail'),
+      }),
     ).rejects.toThrow(/saiu com 1/);
   });
 });

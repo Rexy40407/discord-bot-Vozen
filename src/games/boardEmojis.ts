@@ -34,7 +34,10 @@ export const CHESS_EMOJI_NAMES: readonly string[] = (() => {
  * os jogos caem no render de texto/ASCII. Carrega tudo (só temos tiles próprios), por
  * isso adicionar novos grupos de tiles não exige mexer aqui.
  */
-export async function loadBoardEmojis(client: Client, target: Record<string, string>): Promise<void> {
+export async function loadBoardEmojis(
+  client: Client,
+  target: Record<string, string>,
+): Promise<void> {
   try {
     if (!client.application) return;
     const coll = await client.application.emojis.fetch();
@@ -46,7 +49,9 @@ export async function loadBoardEmojis(client: Client, target: Record<string, str
       }
     }
     const chess = CHESS_EMOJI_NAMES.filter((name) => target[name]).length;
-    log.info(`[emojis] ${n} tiles carregados (xadrez ${chess}/${CHESS_EMOJI_NAMES.length})${n === 0 ? ' — usa ASCII' : ''}`);
+    log.info(
+      `[emojis] ${n} tiles carregados (xadrez ${chess}/${CHESS_EMOJI_NAMES.length})${n === 0 ? ' — usa ASCII' : ''}`,
+    );
   } catch (err) {
     log.warn('[emojis] falha a carregar tiles (jogos usam ASCII)', err);
   }

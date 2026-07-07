@@ -56,9 +56,7 @@ vi.mock('@discordjs/voice', async () => {
       if (ctrl.readyNeverResolves) {
         return Promise.reject(new Error('ready nunca resolve'));
       }
-      return ctrl.readyCalls >= 2
-        ? Promise.resolve()
-        : Promise.reject(new Error('not ready yet'));
+      return ctrl.readyCalls >= 2 ? Promise.resolve() : Promise.reject(new Error('not ready yet'));
     },
   };
 });
@@ -94,7 +92,7 @@ describe('GuildVoicePlayer — rejoin manual (ciclo de backoff) e metricas', () 
 
   it('recupera via rejoin apos varias tentativas e conta voiceReconnects UMA so vez', async () => {
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -103,10 +101,7 @@ describe('GuildVoicePlayer — rejoin manual (ciclo de backoff) e metricas', () 
     // tem timeout folgado.
     conn.emit('disconnected');
 
-    await vi.waitFor(
-      () => expect(metrics.snapshot().voiceReconnects).toBe(1),
-      { timeout: 3000 },
-    );
+    await vi.waitFor(() => expect(metrics.snapshot().voiceReconnects).toBe(1), { timeout: 3000 });
 
     // Drop conta 1 vez; reconnect conta 1 vez apesar das multiplas tentativas de
     // rejoin no loop de backoff (o sucesso e contado no RESULTADO do loop).
@@ -132,7 +127,7 @@ describe('GuildVoicePlayer — rejoin manual (ciclo de backoff) e metricas', () 
     ctrl.readyNeverResolves = true;
 
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     conn.destroy = vi.fn();
     const onIdle = vi.fn();

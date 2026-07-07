@@ -50,17 +50,17 @@ Every raw SQL touching these tables lives ONLY in `src/store/*` (verified:
 `grep -rn "db.prepare\|db.exec" src --include=*.ts | grep -v "src/store/"`
 returns nothing). The complete mutation list per table:
 
-| Store file | Cached read accessor | Cache key | Setters that MUST invalidate that key |
-|---|---|---|---|
-| `src/store/guildConfig.ts` | `getGuildConfig` (:74) | `guildId` | `setGuildConfig` (:105-148), `resetGuildConfig` (:101-103) |
-| `src/store/blocklist.ts` | `getBlocklist` (:7) | `guildId` | `addBlockword` (:14-19), `removeBlockword` (:21-23) |
-| `src/store/pronunciation.ts` | `getPronunciations` (:4) | `guildId` | `addPronunciation` (:11-23), `removePronunciation` (:25-27) |
-| `src/store/userVoice.ts` | `getUserVoice` (:12) | `guildId:userId` | `setUserVoice` (:25-39), `resetUserVoice` (:41-47) |
-| `src/store/nickname.ts` | `getNickname` (:7) | `guildId:userId` | `setNickname` (:18-29), `clearNickname` (:31-33) |
-| `src/store/optout.ts` | `isOptedOut` (:7) | `guildId:userId` | `setOptOut` (:14-19), `setOptIn` (:21-23) |
-| `src/store/langDetect.ts` | `isDetectionOn` (:20) | `guildId:userId` | `setDetection` (:37-54) — BOTH branches (insert and delete) |
-| `src/store/voiceEffect.ts` | `getVoiceEffect` (:8) | `guildId:userId` | `setVoiceEffect` (:16-31) AND `clearVoiceEffect` (:33-35). Note: `setVoiceEffect('none')` delegates to `clearVoiceEffect`, so invalidating in both is safe/idempotent |
-| `src/store/voiceClone.ts` | `getClone` (:18) | `userId` (GLOBAL, no guild) | `saveClone` (:38-53), `setCloneEnabled` (:56-61), `deleteClone` (:64-69), `deleteClonesByTarget` (:77-87) — the last one deletes MANY rows; it already SELECTs the affected `user_id`s into `rows` before the DELETE (:81-85), so invalidate `rows[i].user_id` for each |
+| Store file                   | Cached read accessor     | Cache key                   | Setters that MUST invalidate that key                                                                                                                                                                                                                                   |
+| ---------------------------- | ------------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/store/guildConfig.ts`   | `getGuildConfig` (:74)   | `guildId`                   | `setGuildConfig` (:105-148), `resetGuildConfig` (:101-103)                                                                                                                                                                                                              |
+| `src/store/blocklist.ts`     | `getBlocklist` (:7)      | `guildId`                   | `addBlockword` (:14-19), `removeBlockword` (:21-23)                                                                                                                                                                                                                     |
+| `src/store/pronunciation.ts` | `getPronunciations` (:4) | `guildId`                   | `addPronunciation` (:11-23), `removePronunciation` (:25-27)                                                                                                                                                                                                             |
+| `src/store/userVoice.ts`     | `getUserVoice` (:12)     | `guildId:userId`            | `setUserVoice` (:25-39), `resetUserVoice` (:41-47)                                                                                                                                                                                                                      |
+| `src/store/nickname.ts`      | `getNickname` (:7)       | `guildId:userId`            | `setNickname` (:18-29), `clearNickname` (:31-33)                                                                                                                                                                                                                        |
+| `src/store/optout.ts`        | `isOptedOut` (:7)        | `guildId:userId`            | `setOptOut` (:14-19), `setOptIn` (:21-23)                                                                                                                                                                                                                               |
+| `src/store/langDetect.ts`    | `isDetectionOn` (:20)    | `guildId:userId`            | `setDetection` (:37-54) — BOTH branches (insert and delete)                                                                                                                                                                                                             |
+| `src/store/voiceEffect.ts`   | `getVoiceEffect` (:8)    | `guildId:userId`            | `setVoiceEffect` (:16-31) AND `clearVoiceEffect` (:33-35). Note: `setVoiceEffect('none')` delegates to `clearVoiceEffect`, so invalidating in both is safe/idempotent                                                                                                   |
+| `src/store/voiceClone.ts`    | `getClone` (:18)         | `userId` (GLOBAL, no guild) | `saveClone` (:38-53), `setCloneEnabled` (:56-61), `deleteClone` (:64-69), `deleteClonesByTarget` (:77-87) — the last one deletes MANY rows; it already SELECTs the affected `user_id`s into `rows` before the DELETE (:81-85), so invalidate `rows[i].user_id` for each |
 
 NOT cached (out of scope): `talkStats.ts` (`bumpTalk` is a write;
 `getTopSpeakers` is a rare command), `premium.ts` (written by
@@ -151,18 +151,19 @@ It is called from `src/bot/client.ts:158-160` with the FULL `deps` object
 
 ## Commands you will need
 
-| Purpose   | Command                          | Expected on success        |
-|-----------|----------------------------------|----------------------------|
-| Install   | `npm install`                    | exit 0                     |
-| Typecheck | `npm run build`                  | exit 0 (tsc, no errors)    |
-| Tests (files) | `npx vitest run tests/store.test.ts tests/messageHandler.test.ts tests/langDetect.test.ts tests/voiceClone.test.ts tests/guildDelete.test.ts` | all pass |
-| Tests (all)  | `npx vitest run`              | 114 files / 1298+ tests pass |
+| Purpose       | Command                                                                                                                                       | Expected on success          |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Install       | `npm install`                                                                                                                                 | exit 0                       |
+| Typecheck     | `npm run build`                                                                                                                               | exit 0 (tsc, no errors)      |
+| Tests (files) | `npx vitest run tests/store.test.ts tests/messageHandler.test.ts tests/langDetect.test.ts tests/voiceClone.test.ts tests/guildDelete.test.ts` | all pass                     |
+| Tests (all)   | `npx vitest run`                                                                                                                              | 114 files / 1298+ tests pass |
 
 (Verified at `fb7f916`: `npx vitest run` → 1298 passed. No lint script.)
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `src/store/cache.ts` (create)
 - `src/store/guildConfig.ts`, `src/store/blocklist.ts`,
   `src/store/pronunciation.ts`, `src/store/userVoice.ts`,
@@ -174,6 +175,7 @@ It is called from `src/bot/client.ts:158-160` with the FULL `deps` object
   `tests/guildDelete.test.ts`
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `src/store/talkStats.ts`, `src/store/premium.ts`, `src/store/birthday.ts`,
   `src/store/gameScore.ts`, `src/store/db.ts` — not cached in this plan.
 - `src/commands/messageHandler.ts` and `src/commands/index.ts` — the whole
@@ -225,6 +227,7 @@ export function invalidateGuild(db: Database.Database, guildId: string): void { 
 ```
 
 Semantics `cached` MUST implement:
+
 - `map.has(key)` decides a hit (so cached `null`/`false` values are hits);
 - entry stores `{ value, at: Date.now() }`; if `ttlMs` is provided and
   `Date.now() - at >= ttlMs`, treat as miss (reload and overwrite);
@@ -291,6 +294,7 @@ simplest: at the end of each branch), `voiceEffect.ts` (invalidate in
 `setVoiceEffect`'s upsert path AND in `clearVoiceEffect`).
 
 Two ordering rules (both matter):
+
 1. Invalidation goes AFTER the DB write (a throw in `.run()` must not evict a
    still-valid entry — better-sqlite3 writes are atomic).
 2. `getGuildConfig`'s cached value must be the OBJECT the function returns
@@ -364,7 +368,7 @@ Confirm no write site outside the enumerated setters exists for any cached
 table. Run, and compare against the expected output:
 
 ```
-grep -rln "guild_config\|blocklist\|pronunciation\|tts_optout\|tts_lang_detect_on\|user_nickname\|user_voice\|user_effect\|user_clone" src --include=*.ts | grep -v "src/store/" | grep -v "src/i18n/" 
+grep -rln "guild_config\|blocklist\|pronunciation\|tts_optout\|tts_lang_detect_on\|user_nickname\|user_voice\|user_effect\|user_clone" src --include=*.ts | grep -v "src/store/" | grep -v "src/i18n/"
 ```
 
 Expected: only files that reference these names in comments or via the store
@@ -407,7 +411,7 @@ Model per-store tests on the existing get→set→get blocks in
    write a nickname in db1; `getNickname(db2, ...)` returns null (WeakMap
    scoping works).
 4. **Returned objects are not aliased** — `const a = getGuildConfig(db, G);
-   a.maxChars = 999;` then `getGuildConfig(db, G).maxChars` still equals the
+a.maxChars = 999;` then `getGuildConfig(db, G).maxChars` still equals the
    stored value (shallow-copy rule from Step 2).
 5. **Clone TTL** — with `vi.useFakeTimers()`: `getClone` (miss), external
    change simulated by running the raw UPDATE via `db.prepare` directly in the

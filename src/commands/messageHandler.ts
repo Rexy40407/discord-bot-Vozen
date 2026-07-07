@@ -125,8 +125,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       ignoreRepliedUser: true,
     });
     const isReplyToBot =
-      message.reference?.messageId != null &&
-      message.mentions.repliedUser?.id === me.id;
+      message.reference?.messageId != null && message.mentions.repliedUser?.id === me.id;
     // text-in-voice: mensagem enviada no chat de texto DENTRO do canal de voz onde o
     // Vozen está agora (o texto do canal de voz tem channelId == id do canal de voz).
     const botVoiceChannelId = message.guild.members?.me?.voice?.channelId ?? null;
@@ -195,7 +194,11 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // bloqueadas, fica sem nada legível E não há media, não vale a pena falar — nem sequer
     // anunciar "{nome} disse" (xsaid) para uma mensagem que era só palavra(s) banida(s).
     // (A redação real do que é sintetizado — incl. gírias expandidas — faz-se no req.)
-    if (blocklist.length > 0 && media.length === 0 && !hasReadableText(redactBlocked(cleaned, blocklist)))
+    if (
+      blocklist.length > 0 &&
+      media.length === 0 &&
+      !hasReadableText(redactBlocked(cleaned, blocklist))
+    )
       return;
 
     // Personalizacao de palavras e agora so via /config pronunciation (aplicada
@@ -249,7 +252,8 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // palavra(s) bloqueada(s)), não fala. (`blocklist` já foi buscada no guard acima.)
     const redacted = redactRequest(req, blocklist);
     const readable =
-      hasReadableText(redacted.text) || (redacted.segments?.some((s) => hasReadableText(s.text)) ?? false);
+      hasReadableText(redacted.text) ||
+      (redacted.segments?.some((s) => hasReadableText(s.text)) ?? false);
     if (!readable) return;
 
     const outReq = redacted;

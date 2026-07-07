@@ -4,12 +4,19 @@ import { resolveSynth } from '../src/commands/resolveSynth';
 // Frases LONGAS verificadas empiricamente com franc v5: PT -> 'por', EN -> 'eng'.
 // (franc precisa de texto suficiente; frases curtas devolvem '' e cairiam na voz
 // preferida — evitamos isso para que as asercoes de troca de voz sejam reais.)
-const PT_LONG = 'isto e uma frase em portugues para deteccao de lingua correta e sem duvidas nenhumas';
-const EN_LONG = 'hello world this is a longer test sentence for reliable language detection here today';
+const PT_LONG =
+  'isto e uma frase em portugues para deteccao de lingua correta e sem duvidas nenhumas';
+const EN_LONG =
+  'hello world this is a longer test sentence for reliable language detection here today';
 
 describe('resolveSynth — a lingua da mensagem decide a voz', () => {
   // Catalogo com duas vozes inglesas (para provar "honra a voz especifica") + PT + ES.
-  const available = ['en_GB-alan-medium', 'en_US-amy-medium', 'pt_PT-tugao-medium', 'es_ES-davefx-medium'];
+  const available = [
+    'en_GB-alan-medium',
+    'en_US-amy-medium',
+    'pt_PT-tugao-medium',
+    'es_ES-davefx-medium',
+  ];
 
   // ── O BUG DO DONO: voz inglesa fixa NAO pode ler portugues ────────────────
   it('user com voz inglesa + texto PORTUGUES => troca para voz pt_ (nao le PT na voz EN)', () => {

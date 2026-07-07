@@ -89,7 +89,10 @@ describe('Forca', () => {
     await flush();
     const { words } = wordsForLocale('en');
     const word = normalizeAnswer(words[seededIndex(SEED, words.length)]);
-    const wrong = 'qwertyuiopasdfghjklzxcvbnm'.split('').filter((l) => !word.includes(l)).slice(0, 6);
+    const wrong = 'qwertyuiopasdfghjklzxcvbnm'
+      .split('')
+      .filter((l) => !word.includes(l))
+      .slice(0, 6);
     for (const l of wrong) {
       say(mgr, 'u', l);
       await flush();
@@ -147,7 +150,9 @@ describe('Termo/Wordle', () => {
     const guess = target === 'zzzzz' ? 'aaaaa' : 'zzzzz';
     say(mgr, 'u', guess);
     await flush();
-    const guessMsg = send.mock.calls.map((c) => String(c[1])).find((s) => s.includes('game.wordle.guess'));
+    const guessMsg = send.mock.calls
+      .map((c) => String(c[1]))
+      .find((s) => s.includes('game.wordle.guess'));
     expect(guessMsg).toBeDefined();
     // As letras coloridas vêm num bloco ```ansi com as letras do palpite (maiúsculas).
     expect(guessMsg).toContain('```ansi');
@@ -164,10 +169,15 @@ describe('Termo/Wordle', () => {
     const target = normalizeAnswer(words[seededIndex(SEED, words.length)]);
     // Palpite de 5 letras que NÃO estão no alvo -> todas viram "fora".
     const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
-    const notInTarget = alphabet.filter((l) => !target.includes(l)).slice(0, 5).join('');
+    const notInTarget = alphabet
+      .filter((l) => !target.includes(l))
+      .slice(0, 5)
+      .join('');
     say(mgr, 'u', notInTarget);
     await flush();
-    const guessMsg = send.mock.calls.map((c) => String(c[1])).find((s) => s.includes('game.wordle.guess'));
+    const guessMsg = send.mock.calls
+      .map((c) => String(c[1]))
+      .find((s) => s.includes('game.wordle.guess'));
     expect(guessMsg).toContain('game.wordle.out'); // linha das letras descartadas
     // A 1ª letra descartada aparece na linha "fora".
     expect(guessMsg).toContain(notInTarget[0].toUpperCase());
@@ -177,7 +187,8 @@ describe('Termo/Wordle', () => {
   const fakeWordleMap = (): Record<string, string> => {
     const m: Record<string, string> = {};
     for (const s of ['g', 'y', 'x']) {
-      for (const l of 'abcdefghijklmnopqrstuvwxyz') m[`w${s}${l}`] = `<:w${s}${l}:1234567890123456789>`;
+      for (const l of 'abcdefghijklmnopqrstuvwxyz')
+        m[`w${s}${l}`] = `<:w${s}${l}:1234567890123456789>`;
     }
     return m;
   };
@@ -194,14 +205,19 @@ describe('Termo/Wordle', () => {
     const g2 = target === 'qqqqq' ? 'bbbbb' : 'qqqqq';
     say(mgr, 'u', g1);
     await flush();
-    const msg1 = send.mock.calls.map((c) => String(c[1])).find((s) => s.includes('game.wordle.guess'));
+    const msg1 = send.mock.calls
+      .map((c) => String(c[1]))
+      .find((s) => s.includes('game.wordle.guess'));
     expect(msg1).toBeDefined();
     expect(msg1).not.toContain('```ansi'); // já não é o fallback
     expect((msg1!.match(/<:w[gyx]/g) ?? []).length).toBe(5); // 1 palpite = 5 tiles
     // 2º palpite -> a grelha acumula para 10 tiles.
     say(mgr, 'u', g2);
     await flush();
-    const msg2 = send.mock.calls.map((c) => String(c[1])).reverse().find((s) => s.includes('game.wordle.guess'));
+    const msg2 = send.mock.calls
+      .map((c) => String(c[1]))
+      .reverse()
+      .find((s) => s.includes('game.wordle.guess'));
     expect((msg2!.match(/<:w[gyx]/g) ?? []).length).toBe(10);
   });
 });
@@ -217,7 +233,9 @@ describe('Galo', () => {
     await flush();
     say(mgr, 'ana', '2');
     await flush();
-    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.notYourTurn'))).toBe(true);
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.notYourTurn'))).toBe(
+      true,
+    );
     // O (rui) joga 4; segue a sequência até X fazer a linha 1-2-3.
     say(mgr, 'rui', '4');
     await flush();
@@ -246,7 +264,10 @@ describe('Galo', () => {
     await flush();
     say(mgr, 'ana', '1'); // X joga na casa 1
     await flush();
-    const msg = send.mock.calls.map((c) => String(c[1])).reverse().find((s) => s.includes('game.tictactoe.turn'));
+    const msg = send.mock.calls
+      .map((c) => String(c[1]))
+      .reverse()
+      .find((s) => s.includes('game.tictactoe.turn'));
     expect(msg).toBeDefined();
     expect(msg).not.toContain('```'); // já não é o ASCII
     expect(msg).toContain('<:tx:'); // a jogada de X aparece como tile
@@ -261,8 +282,15 @@ describe('Galo', () => {
     // Sequência conhecida de "gato" (X começa): X:1 O:3 X:2 O:4 X:6 O:5 X:7 O:8 X:9.
     // Resultado: X em 1,2,6,7,9 e O em 3,4,5,8 — 9 casas, nenhuma linha.
     const seq: [string, string][] = [
-      ['ana', '1'], ['rui', '3'], ['ana', '2'], ['rui', '4'], ['ana', '6'],
-      ['rui', '5'], ['ana', '7'], ['rui', '8'], ['ana', '9'],
+      ['ana', '1'],
+      ['rui', '3'],
+      ['ana', '2'],
+      ['rui', '4'],
+      ['ana', '6'],
+      ['rui', '5'],
+      ['ana', '7'],
+      ['rui', '8'],
+      ['ana', '9'],
     ];
     for (const [u, n] of seq) {
       say(mgr, u, n);
@@ -287,13 +315,15 @@ describe('Galo', () => {
     await flush();
     say(mgr, 'ana', '3'); // X consegue jogar a 3 (não foi ocupada pelo carlos)
     await flush();
-    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.taken'))).toBe(false);
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.taken'))).toBe(
+      false,
+    );
     expect(mgr.active(G)).toBe(true); // ainda a decorrer
   });
 });
 
 describe('Xadrez', () => {
-  it('mate do pastor invertido (fool\'s mate): brancas=1º a jogar, pretas dão xeque-mate em 4 jogadas', async () => {
+  it("mate do pastor invertido (fool's mate): brancas=1º a jogar, pretas dão xeque-mate em 4 jogadas", async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create());
@@ -320,12 +350,16 @@ describe('Xadrez', () => {
     await flush();
     say(mgr, 'ana', 'f4'); // ana tenta jogar de novo fora da vez -> recusado
     await flush();
-    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.notYourTurn'))).toBe(true);
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.notYourTurn'))).toBe(
+      true,
+    );
     say(mgr, 'rui', 'e6'); // rui -> pretas, joga bem
     await flush();
     say(mgr, 'ana', 'Qh8'); // brancas: jogada ilegal (dama nao chega ali)
     await flush();
-    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.illegalMove'))).toBe(true);
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.illegalMove'))).toBe(
+      true,
+    );
     expect(mgr.active(G)).toBe(true); // jogo continua, ninguem ganhou por engano
   });
 
@@ -358,7 +392,9 @@ describe('Xadrez', () => {
     await flush();
     say(mgr, 'carlos', 'Nc3'); // espetador (assentos cheios) -> ignorado, mesmo sendo jogada válida
     await flush();
-    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.illegalMove'))).toBe(false);
+    expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.illegalMove'))).toBe(
+      false,
+    );
     expect(mgr.active(G)).toBe(true); // ainda a decorrer, vez das brancas
   });
 

@@ -20,7 +20,8 @@ describe('prepareSpeech — texto sem girias (single voice)', () => {
   it('frase PT longa -> req sem `segments`, model pt_', () => {
     const { req } = prepareSpeech({
       ...BASE,
-      personal: 'isto e uma frase em portugues bem comprida para deteccao de lingua correta e fiavel',
+      personal:
+        'isto e uma frase em portugues bem comprida para deteccao de lingua correta e fiavel',
     });
     expect(req.model.startsWith('pt_')).toBe(true);
     expect(req.segments).toBeUndefined();

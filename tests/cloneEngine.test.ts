@@ -9,7 +9,10 @@ import type { SynthRequest, TTSEngine } from '../src/tts/engine';
 
 describe('parseCommand', () => {
   it('parte exe + args e respeita aspas do path', () => {
-    expect(parseCommand('python script.py --x')).toEqual({ exe: 'python', args: ['script.py', '--x'] });
+    expect(parseCommand('python script.py --x')).toEqual({
+      exe: 'python',
+      args: ['script.py', '--x'],
+    });
     expect(parseCommand('"C:\\Program Files\\py.exe" a.py')).toEqual({
       exe: 'C:\\Program Files\\py.exe',
       args: ['a.py'],
@@ -52,21 +55,29 @@ function fakeSidecar(
         queueMicrotask(() => {
           if (req.warmup) {
             if (behavior === 'never-ready') return; // wedged: nunca responde {ready}
-            child.stdout.emit('data', Buffer.from(JSON.stringify({ ok: true, ready: true, model: 'en' }) + '\n'));
+            child.stdout.emit(
+              'data',
+              Buffer.from(JSON.stringify({ ok: true, ready: true, model: 'en' }) + '\n'),
+            );
             return;
           }
           if (behavior === 'hang' || behavior === 'never-ready') return;
           if (behavior === 'ok') {
             writeFileSync(req.out, Buffer.from('RIFFcloned'));
-            child.stdout.emit('data', Buffer.from(JSON.stringify({ ok: true, out: req.out }) + '\n'));
+            child.stdout.emit(
+              'data',
+              Buffer.from(JSON.stringify({ ok: true, out: req.out }) + '\n'),
+            );
           } else {
-            child.stdout.emit('data', Buffer.from(JSON.stringify({ ok: false, error: 'model boom' }) + '\n'));
+            child.stdout.emit(
+              'data',
+              Buffer.from(JSON.stringify({ ok: false, error: 'model boom' }) + '\n'),
+            );
           }
         });
       },
     };
     return child;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 }
 
@@ -90,7 +101,12 @@ describe('CloneEngine', () => {
   });
 
   it('sem cloneRef -> voz normal (inner), sem tocar no sidecar', async () => {
-    const eng = new CloneEngine(innerReturning('/normal.wav'), cache(), { exe: 'x', args: [] }, fakeSidecar('ok'));
+    const eng = new CloneEngine(
+      innerReturning('/normal.wav'),
+      cache(),
+      { exe: 'x', args: [] },
+      fakeSidecar('ok'),
+    );
     expect(await eng.synth(REQ())).toBe('/normal.wav');
   });
 
@@ -101,7 +117,12 @@ describe('CloneEngine', () => {
   });
 
   it('com cloneRef -> sintetiza via sidecar e cacheia (2.º = hit)', async () => {
-    const eng = new CloneEngine(innerReturning('/normal.wav'), cache(), { exe: 'x', args: [] }, fakeSidecar('ok'));
+    const eng = new CloneEngine(
+      innerReturning('/normal.wav'),
+      cache(),
+      { exe: 'x', args: [] },
+      fakeSidecar('ok'),
+    );
     const out1 = await eng.synth(REQ({ cloneRef: '/ref.wav' }));
     expect(out1).not.toBe('/normal.wav'); // veio do clone, foi para a cache
     const out2 = await eng.synth(REQ({ cloneRef: '/ref.wav' }));
@@ -109,12 +130,22 @@ describe('CloneEngine', () => {
   });
 
   it('CRÍTICO: falha do sidecar -> cai na voz normal (nunca lança)', async () => {
-    const eng = new CloneEngine(innerReturning('/normal.wav'), cache(), { exe: 'x', args: [] }, fakeSidecar('fail'));
+    const eng = new CloneEngine(
+      innerReturning('/normal.wav'),
+      cache(),
+      { exe: 'x', args: [] },
+      fakeSidecar('fail'),
+    );
     await expect(eng.synth(REQ({ cloneRef: '/ref.wav' }))).resolves.toBe('/normal.wav');
   });
 
   it('REGRESSÃO: re-gravar (ref diferente) NÃO serve a voz velha da cache', async () => {
-    const eng = new CloneEngine(innerReturning('/normal.wav'), cache(), { exe: 'x', args: [] }, fakeSidecar('ok'));
+    const eng = new CloneEngine(
+      innerReturning('/normal.wav'),
+      cache(),
+      { exe: 'x', args: [] },
+      fakeSidecar('ok'),
+    );
     const a = await eng.synth(REQ({ text: 'hello', cloneRef: '/clones/u1-1000.wav' }));
     // mesma frase, MAS amostra re-gravada (path versionado diferente) -> chave nova
     const b = await eng.synth(REQ({ text: 'hello', cloneRef: '/clones/u1-2000.wav' }));

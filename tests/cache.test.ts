@@ -1,6 +1,15 @@
 // tests/cache.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, readdirSync, utimesSync, statSync } from 'node:fs';
+import {
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  utimesSync,
+  statSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cacheKey, AudioCache } from '../src/tts/cache';
@@ -10,7 +19,6 @@ import type { SynthRequest } from '../src/tts/engine';
 // afterEach (mockReset limpa tambem a impl default). `vi.hoisted` corre antes do
 // factory de vi.mock, por isso as refs estao disponiveis dentro dele.
 const realFs = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const actual = require('node:fs') as typeof import('node:fs');
   return { statSync: actual.statSync, readdirSync: actual.readdirSync };
 });
@@ -328,7 +336,7 @@ describe('AudioCache eviction (maxFiles)', () => {
     const remaining = readdirSync(dir).filter((f) => f.endsWith('.wav'));
     expect(remaining.length).toBeLessThanOrEqual(3);
     expect(existsSync(paths[0])).toBe(false); // old0 removido
-    expect(existsSync(newest)).toBe(true);     // recém-escrito nunca e removido
+    expect(existsSync(newest)).toBe(true); // recém-escrito nunca e removido
   });
 
   it('ao exceder por mais de 1, remove todos os excedentes mais antigos', () => {

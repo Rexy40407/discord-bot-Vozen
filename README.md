@@ -44,11 +44,11 @@ This is just the summary. For the step-by-step (Piper binary, voice models, all 
 
 Three paths to the same bot — pick by the control/effort you want; there is no "easier than inviting." Self-host always requires setup.
 
-| Level | For whom | How | Section |
-|---|---|---|---|
-| **Easy** | Those who want the bot always online without installing Node by hand | You host it on a Linux VPS with `docker compose` | [§5 Deploy on a VPS (Docker)](#5-deploy-on-a-vps-docker) |
-| **Normal** | Those who run it on their own PC to test or use occasionally | Local Node + Piper, `npm install` → `npm run dev` | [§1 Prerequisites](#1-prerequisites) and [§2 Setup](#2-setup) |
-| **Hard** | Those who want to tune voices/engine or try neural TTS via API | Neural engine (`TTS_ENGINE=neural` + OpenAI) and model/locale tweaks | [§1.5 Models](#15-voice-models-languages) and [§5.4 `.env`](#54-env-file) |
+| Level      | For whom                                                             | How                                                                  | Section                                                                   |
+| ---------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Easy**   | Those who want the bot always online without installing Node by hand | You host it on a Linux VPS with `docker compose`                     | [§5 Deploy on a VPS (Docker)](#5-deploy-on-a-vps-docker)                  |
+| **Normal** | Those who run it on their own PC to test or use occasionally         | Local Node + Piper, `npm install` → `npm run dev`                    | [§1 Prerequisites](#1-prerequisites) and [§2 Setup](#2-setup)             |
+| **Hard**   | Those who want to tune voices/engine or try neural TTS via API       | Neural engine (`TTS_ENGINE=neural` + OpenAI) and model/locale tweaks | [§1.5 Models](#15-voice-models-languages) and [§5.4 `.env`](#54-env-file) |
 
 ## Demo
 
@@ -107,19 +107,19 @@ copy .env.example .env
 
 Edit `.env`:
 
-| Variable | What to put |
-|---|---|
-| `DISCORD_TOKEN` | Bot token (Discord Dev Portal → Bot → Reset Token) |
-| `CLIENT_ID` | Application ID (Dev Portal → General Information) |
-| `PIPER_PATH` | Path to the executable, e.g. `C:\piper\piper.exe` |
-| `MODELS_DIR` | Path to the models folder, e.g. `./models` |
-| `DB_PATH` | SQLite path, e.g. `./tts.db` |
+| Variable        | What to put                                                   |
+| --------------- | ------------------------------------------------------------- |
+| `DISCORD_TOKEN` | Bot token (Discord Dev Portal → Bot → Reset Token)            |
+| `CLIENT_ID`     | Application ID (Dev Portal → General Information)             |
+| `PIPER_PATH`    | Path to the executable, e.g. `C:\piper\piper.exe`             |
+| `MODELS_DIR`    | Path to the models folder, e.g. `./models`                    |
+| `DB_PATH`       | SQLite path, e.g. `./tts.db`                                  |
 | `DEFAULT_VOICE` | Name of a model present in `models/`, e.g. `en_US-amy-medium` |
-| `DEFAULT_SPEED` | Base speed, e.g. `1.0` |
-| `INACTIVITY_MS` | Auto-leave on inactivity in ms, e.g. `300000` (5 min) |
-| `QUEUE_CAP` | Maximum queue size, e.g. `20` |
-| `MAX_CHARS` | Max characters per message, e.g. `300` |
-| `RATE_PER_MIN` | Messages per minute per user, e.g. `5` |
+| `DEFAULT_SPEED` | Base speed, e.g. `1.0`                                        |
+| `INACTIVITY_MS` | Auto-leave on inactivity in ms, e.g. `300000` (5 min)         |
+| `QUEUE_CAP`     | Maximum queue size, e.g. `20`                                 |
+| `MAX_CHARS`     | Max characters per message, e.g. `300`                        |
+| `RATE_PER_MIN`  | Messages per minute per user, e.g. `5`                        |
 
 ### 1.5 Voice models (languages)
 
@@ -131,18 +131,18 @@ Vozen **detects the language of each message** and automatically picks a model w
 
 Mapped languages (detection code → file-name prefix):
 
-| Language | Prefix | Example model |
-|---|---|---|
-| Portuguese (PT **and** BR) | `pt_` | `pt_PT-tugão-medium`, `pt_BR-faber-medium` |
-| English | `en_` | `en_US-amy-medium`, `en_GB-alan-low` |
-| Spanish | `es_` | `es_ES-davefx-medium` |
-| French | `fr_` | `fr_FR-siwis-medium` |
-| German | `de_` | `de_DE-thorsten-medium` |
-| Italian | `it_` | `it_IT-riccardo-x_low` |
-| Dutch | `nl_` | `nl_NL-mls-medium` |
-| Russian | `ru_` | `ru_RU-dmitri-medium` |
-| Polish · Ukrainian · Turkish · Czech · Catalan | `pl_` · `uk_` · `tr_` · `cs_` · `ca_` | — |
-| Swedish · Finnish · Danish · Romanian · Greek · Hungarian | `sv_` · `fi_` · `da_` · `ro_` · `el_` · `hu_` | — |
+| Language                                                  | Prefix                                        | Example model                              |
+| --------------------------------------------------------- | --------------------------------------------- | ------------------------------------------ |
+| Portuguese (PT **and** BR)                                | `pt_`                                         | `pt_PT-tugão-medium`, `pt_BR-faber-medium` |
+| English                                                   | `en_`                                         | `en_US-amy-medium`, `en_GB-alan-low`       |
+| Spanish                                                   | `es_`                                         | `es_ES-davefx-medium`                      |
+| French                                                    | `fr_`                                         | `fr_FR-siwis-medium`                       |
+| German                                                    | `de_`                                         | `de_DE-thorsten-medium`                    |
+| Italian                                                   | `it_`                                         | `it_IT-riccardo-x_low`                     |
+| Dutch                                                     | `nl_`                                         | `nl_NL-mls-medium`                         |
+| Russian                                                   | `ru_`                                         | `ru_RU-dmitri-medium`                      |
+| Polish · Ukrainian · Turkish · Czech · Catalan            | `pl_` · `uk_` · `tr_` · `cs_` · `ca_`         | —                                          |
+| Swedish · Finnish · Danish · Romanian · Greek · Hungarian | `sv_` · `fi_` · `da_` · `ro_` · `el_` · `hu_` | —                                          |
 
 > You don't need **every** language: put in only the models you want to serve. Those without a model fall back to `DEFAULT_VOICE`.
 
@@ -312,19 +312,19 @@ cp .env.example .env
 
 Fill in **only** the secrets and tunables — do **not** set `DB_PATH`, `MODELS_DIR` or `PIPER_PATH` in the `.env`: those come fixed from `docker-compose.yml` with the container paths (`/data/tts.db`, `/models`, `/opt/piper/piper`).
 
-| Variable | Required? | What to put |
-|---|---|---|
-| `DISCORD_TOKEN` | **Yes** | Bot token (Dev Portal → Bot → Reset Token) |
-| `CLIENT_ID` | **Yes** | Application ID (Dev Portal → General Information) |
-| `DEFAULT_VOICE` | No | Model present in `./models/`, e.g. `en_US-amy-medium` |
-| `DEFAULT_SPEED` | No | Base speed (default `1.0`) |
-| `INACTIVITY_MS` | No | Auto-leave on inactivity in ms (default `300000`) |
-| `QUEUE_CAP` | No | Maximum queue size (default `20`) |
-| `MAX_CHARS` | No | Max characters per message (default `300`) |
-| `RATE_PER_MIN` | No | Messages per minute per user (default `5`) |
-| `LOG_LEVEL` | No | `debug` \| `info` \| `warn` \| `error` (default `info`) |
-| `TTS_ENGINE` | No | `piper` (default) or `neural` |
-| `OPENAI_API_KEY` | Only if `TTS_ENGINE=neural` | OpenAI API key |
+| Variable         | Required?                   | What to put                                             |
+| ---------------- | --------------------------- | ------------------------------------------------------- |
+| `DISCORD_TOKEN`  | **Yes**                     | Bot token (Dev Portal → Bot → Reset Token)              |
+| `CLIENT_ID`      | **Yes**                     | Application ID (Dev Portal → General Information)       |
+| `DEFAULT_VOICE`  | No                          | Model present in `./models/`, e.g. `en_US-amy-medium`   |
+| `DEFAULT_SPEED`  | No                          | Base speed (default `1.0`)                              |
+| `INACTIVITY_MS`  | No                          | Auto-leave on inactivity in ms (default `300000`)       |
+| `QUEUE_CAP`      | No                          | Maximum queue size (default `20`)                       |
+| `MAX_CHARS`      | No                          | Max characters per message (default `300`)              |
+| `RATE_PER_MIN`   | No                          | Messages per minute per user (default `5`)              |
+| `LOG_LEVEL`      | No                          | `debug` \| `info` \| `warn` \| `error` (default `info`) |
+| `TTS_ENGINE`     | No                          | `piper` (default) or `neural`                           |
+| `OPENAI_API_KEY` | Only if `TTS_ENGINE=neural` | OpenAI API key                                          |
 
 ### 5.5 Startup
 
@@ -351,7 +351,7 @@ docker compose down            # stops and removes the container (data persists 
 - [**Privacy Policy** (`PRIVACY.md`)](PRIVACY.md) — what data the instance stores (only Discord IDs + preferences/config), what happens to message content, retention and deletion, and third parties (Discord; **Google Translate TTS** if `TTS_ENGINE=gtts`/`router`; OpenAI if `TTS_ENGINE=neural`).
 - [**Terms of Service** (`TERMS.md`)](TERMS.md) — acceptable use, absence of warranties, limitation of liability and license (AGPL-3.0).
 
-> **Note for Discord registration/verification.** The Discord Developer Portal asks for a **Privacy Policy URL** and a **Terms of Service URL** (e.g. for *Public Bot* / verification). When this repository is **public**, the URLs to paste into those fields are the files here in the repo:
+> **Note for Discord registration/verification.** The Discord Developer Portal asks for a **Privacy Policy URL** and a **Terms of Service URL** (e.g. for _Public Bot_ / verification). When this repository is **public**, the URLs to paste into those fields are the files here in the repo:
 >
 > - Privacy Policy URL: `https://github.com/diogoshk3/discord-bot-Vozen/blob/main/PRIVACY.md`
 > - Terms of Service URL: `https://github.com/diogoshk3/discord-bot-Vozen/blob/main/TERMS.md`

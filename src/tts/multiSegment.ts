@@ -115,7 +115,12 @@ export class MultiSegmentEngine implements TTSEngine {
     // combinar nem cachear no namespace 'multiseg'; a cache single-voice do base chega).
     if (segs.length === 1) {
       const seg = segs[0];
-      return this.base.synth({ text: seg.text, model: seg.model, speed: req.speed, engine: req.engine });
+      return this.base.synth({
+        text: seg.text,
+        model: seg.model,
+        speed: req.speed,
+        engine: req.engine,
+      });
     }
 
     // Chave da cache do resultado COMBINADO. Inclui os PROPRIOS segmentos (texto+voz)
@@ -155,7 +160,12 @@ export class MultiSegmentEngine implements TTSEngine {
         '[multiSegment] falha no caminho de segmentos explicitos, fallback single-voice:',
         (err as Error).message,
       );
-      return this.base.synth({ text: req.text, model: req.model, speed: req.speed, engine: req.engine });
+      return this.base.synth({
+        text: req.text,
+        model: req.model,
+        speed: req.speed,
+        engine: req.engine,
+      });
     }
   }
 

@@ -51,7 +51,9 @@ export function parseCommand(cmd: string): { exe: string; args: string[] } {
  * tools/clone-venv (criado por setup-clone). Devolve null se nada estiver instalado
  * (=> o motor de clone fica inerte e serve sempre a voz normal).
  */
-export function resolveCloneCmd(explicit: string | undefined): { exe: string; args: string[] } | null {
+export function resolveCloneCmd(
+  explicit: string | undefined,
+): { exe: string; args: string[] } | null {
   if (explicit && explicit.trim()) return parseCommand(explicit.trim());
   const venvPy = join(process.cwd(), 'tools', 'clone-venv', 'Scripts', 'python.exe');
   const server = join(process.cwd(), 'tools', 'clone_server.py');
@@ -163,7 +165,9 @@ export class CloneEngine implements TTSEngine {
     if (!this.cmd) return false;
     try {
       this.starting = true;
-      const child = this.spawnImpl(this.cmd.exe, this.cmd.args, { stdio: ['pipe', 'pipe', 'pipe'] });
+      const child = this.spawnImpl(this.cmd.exe, this.cmd.args, {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
       this.child = child;
       child.stdout!.on('data', (c: Buffer) => this.onData(c));
       child.stderr!.on('data', (c: Buffer) => log.info(`[clone-py] ${c.toString().trim()}`));

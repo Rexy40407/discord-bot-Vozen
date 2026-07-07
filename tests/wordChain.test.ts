@@ -67,7 +67,10 @@ const msg = (authorId: string, content: string) => ({
   content,
 });
 // A última chave enviada e os seus params (o translate mock devolve "key {json}").
-function lastSend(send: ReturnType<typeof vi.fn>): { key: string; params: Record<string, unknown> } {
+function lastSend(send: ReturnType<typeof vi.fn>): {
+  key: string;
+  params: Record<string, unknown>;
+} {
   const raw = String(send.mock.calls.at(-1)?.[1] ?? '');
   const sp = raw.indexOf(' ');
   const key = sp === -1 ? raw : raw.slice(0, sp);
@@ -186,6 +189,6 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     expect(mgr.active(G)).toBe(false);
     expect(persistScores).toHaveBeenCalledTimes(1); // fim NORMAL -> persiste
     const points = persistScores.mock.calls[0][1] as Map<string, number>;
-    expect((points.get('u2') ?? 0)).toBeGreaterThan(0); // vencedor pontuou
+    expect(points.get('u2') ?? 0).toBeGreaterThan(0); // vencedor pontuou
   });
 });

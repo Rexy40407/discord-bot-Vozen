@@ -45,8 +45,21 @@ describe('WordSetDictionary', () => {
 
 // Dicionário de teste com cadeia controlada: g->o->a->e->t...
 const DICT = new WordSetDictionary([
-  'gato', 'orca', 'arte', 'elefante', 'tigre', 'ema', 'ave', 'estrela',
-  'texto', 'ovo', 'osso', 'aro', 'era', 'tao', 'oca',
+  'gato',
+  'orca',
+  'arte',
+  'elefante',
+  'tigre',
+  'ema',
+  'ave',
+  'estrela',
+  'texto',
+  'ovo',
+  'osso',
+  'aro',
+  'era',
+  'tao',
+  'oca',
 ]);
 
 describe('ChainEngine.validate — motivos de rejeição', () => {
@@ -115,7 +128,11 @@ describe('ChainEngine — rampa de dificuldade', () => {
   });
 
   it('turnMs encurta com a cadeia e tem piso', () => {
-    const e = new ChainEngine(DICT, 9, { startTurnMs: 15000, minTurnMs: 6000, turnDecrementMs: 400 });
+    const e = new ChainEngine(DICT, 9, {
+      startTurnMs: 15000,
+      minTurnMs: 6000,
+      turnDecrementMs: 400,
+    });
     expect(e.turnMs).toBe(15000);
     e.accept('gato'); // -1x400
     expect(e.turnMs).toBe(14600);

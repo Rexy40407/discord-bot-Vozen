@@ -48,14 +48,14 @@ const MODELS_38 = [
 describe('detectLang', () => {
   it('deteta portugues numa frase longa', () => {
     const lang = detectLang(
-      'Ola a todos, hoje vamos falar sobre o tempo que esta a fazer aqui na nossa cidade durante esta semana.'
+      'Ola a todos, hoje vamos falar sobre o tempo que esta a fazer aqui na nossa cidade durante esta semana.',
     );
     expect(lang).toBe('por');
   });
 
   it('deteta ingles numa frase longa', () => {
     const lang = detectLang(
-      'Hello everyone, today we are going to talk about the weather we are having here in our city during this week.'
+      'Hello everyone, today we are going to talk about the weather we are having here in our city during this week.',
     );
     expect(lang).toBe('eng');
   });
@@ -109,7 +109,9 @@ describe('pickVoice', () => {
 
   // Japones: detecao 'jpn' -> voz sintetica ja_JP (so-gTTS, sem modelo Piper).
   it('escolhe a voz japonesa para "jpn"', () => {
-    expect(pickVoice('jpn', ['ja_JP-google-medium', ...available], fallback)).toBe('ja_JP-google-medium');
+    expect(pickVoice('jpn', ['ja_JP-google-medium', ...available], fallback)).toBe(
+      'ja_JP-google-medium',
+    );
   });
 
   it('escolhe voz ucraniana para "ukr"', () => {
@@ -137,7 +139,9 @@ describe('pickVoice', () => {
   });
 
   it('escolhe voz dinamarquesa para "dan"', () => {
-    expect(pickVoice('dan', ['da_DK-talesyntese-medium'], fallback)).toBe('da_DK-talesyntese-medium');
+    expect(pickVoice('dan', ['da_DK-talesyntese-medium'], fallback)).toBe(
+      'da_DK-talesyntese-medium',
+    );
   });
 
   it('escolhe voz romena para "ron"', () => {
@@ -159,7 +163,9 @@ describe('pickVoice', () => {
 
   // Determinismo: multiplos modelos com o mesmo prefixo → escolhe o primeiro por ordem
   it('com multiplos modelos do mesmo prefixo escolhe o primeiro por ordem', () => {
-    expect(pickVoice('eng', ['en_GB-alan-low', 'en_US-amy-medium'], fallback)).toBe('en_GB-alan-low');
+    expect(pickVoice('eng', ['en_GB-alan-low', 'en_US-amy-medium'], fallback)).toBe(
+      'en_GB-alan-low',
+    );
   });
 
   // ------------------------------------------------------------------
@@ -243,7 +249,12 @@ describe('pickVoice', () => {
 // ------------------------------------------------------------------
 
 describe('pickVoiceForLang', () => {
-  const available = ['en_GB-alan-medium', 'en_US-amy-medium', 'pt_PT-tugao-medium', 'es_ES-davefx-medium'];
+  const available = [
+    'en_GB-alan-medium',
+    'en_US-amy-medium',
+    'pt_PT-tugao-medium',
+    'es_ES-davefx-medium',
+  ];
 
   it('lingua desconhecida no mapa => devolve a voz preferida (nao da para detetar)', () => {
     expect(pickVoiceForLang('xyz', available, 'en_US-amy-medium')).toBe('en_US-amy-medium');

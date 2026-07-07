@@ -113,7 +113,8 @@ function numEnvPositive(name: string, fallback: number, opts: { integer?: boolea
   const raw = process.env[name];
   if (raw === undefined || raw.trim() === '') return fallback;
   const parsed = Number(raw);
-  const bad = !Number.isFinite(parsed) || parsed <= 0 || (opts.integer && !Number.isInteger(parsed));
+  const bad =
+    !Number.isFinite(parsed) || parsed <= 0 || (opts.integer && !Number.isInteger(parsed));
   if (bad) {
     log.warn(
       `[config] ${name}="${raw}" invalido (esperado ${opts.integer ? 'inteiro ' : ''}> 0). A usar o default ${fallback}.`,
@@ -171,7 +172,8 @@ function engineEnv(): TtsEngineKind {
   const raw = process.env.TTS_ENGINE;
   if (raw === undefined || raw.trim() === '') return 'piper';
   const value = raw.trim().toLowerCase();
-  if (value === 'piper' || value === 'neural' || value === 'gtts' || value === 'router') return value;
+  if (value === 'piper' || value === 'neural' || value === 'gtts' || value === 'router')
+    return value;
   log.warn(
     `[config] TTS_ENGINE invalido: "${raw}". Valores aceites: piper | neural | gtts | router. A usar 'piper'.`,
   );

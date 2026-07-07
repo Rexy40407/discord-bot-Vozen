@@ -20,7 +20,7 @@
 - **Priority**: P3
 - **Effort**: L
 - **Risk**: MED
-- **Depends on**: plans/003-*.md and plans/004-*.md (they edit
+- **Depends on**: plans/003-_.md and plans/004-_.md (they edit
   `src/commands/index.ts`; executing 015 first would make their diffs
   unappliable — execute this plan LAST among all plans touching
   `src/commands/`)
@@ -53,6 +53,7 @@ here" cleanups.
 
 **Who imports from `src/commands/index`** (verified by grep; all must keep
 working unchanged):
+
 - `src/bot/client.ts:13` — `handleInteraction, handleAutocomplete, handleMessageContextMenu`
 - `src/bot/registerCommands.ts:5` — `commandDefs`
 - ~25 test files (`tests/commands*.test.ts`, `tests/autocomplete.test.ts`,
@@ -94,18 +95,19 @@ it uses — TypeScript will tell you exactly which (missing-symbol errors).
 
 ## Commands you will need
 
-| Purpose   | Command                          | Expected on success        |
-|-----------|----------------------------------|----------------------------|
-| Install   | `npm install`                    | exit 0                     |
-| Typecheck | `npm run build`                  | exit 0 (tsc, no errors)    |
-| Tests (all — the primary gate) | `npx vitest run` | **all 114 files / 1298+ tests pass, unchanged** |
-| Line count | `wc -l src/commands/index.ts src/commands/handlers/*.ts` | index.ts well under 1300 |
+| Purpose                        | Command                                                  | Expected on success                             |
+| ------------------------------ | -------------------------------------------------------- | ----------------------------------------------- |
+| Install                        | `npm install`                                            | exit 0                                          |
+| Typecheck                      | `npm run build`                                          | exit 0 (tsc, no errors)                         |
+| Tests (all — the primary gate) | `npx vitest run`                                         | **all 114 files / 1298+ tests pass, unchanged** |
+| Line count                     | `wc -l src/commands/index.ts src/commands/handlers/*.ts` | index.ts well under 1300                        |
 
 (Verified at `fb7f916`: `npx vitest run` → 1298 passed in ~9 s. No lint script.)
 
 ## Scope
 
 **In scope**:
+
 - `src/commands/index.ts` (shrinks; keeps: imports it still needs, command
   defs/registry (`commandDefsRaw`, `DM_CAPABLE_COMMANDS`, `commandDefs`),
   autocomplete plumbing (`computeAutocompleteChoices`, `handleAutocomplete`,
@@ -120,6 +122,7 @@ it uses — TypeScript will tell you exactly which (missing-symbol errors).
 - `src/commands/handlers/meta.ts` (create)
 
 **Out of scope** (do NOT touch):
+
 - ANY test file — 1298 passing tests unchanged is the acceptance criterion,
   and no test imports a new path.
 - `src/bot/client.ts`, `src/bot/registerCommands.ts` — their imports from
@@ -244,6 +247,7 @@ imports (tsc's `noUnusedLocals`, if enabled, or manual pruning — `npm run
 build` must be clean either way).
 
 Machine checks for "movement only":
+
 1. `npx vitest run` → same totals as the pre-split baseline (run it on the
    branch base first and note the number — 1298 at fb7f916, possibly higher
    after plans 003/004).

@@ -318,10 +318,10 @@ describe('store', () => {
       setGuildConfig(db, G, { maxChars: 500, ratePerMin: 10 });
       setGuildConfig(db, G, { enabled: false });
       const cfg = getGuildConfig(db, G);
-      expect(cfg.ttsChannelId).toBe('chan-1');   // do 1.º patch
-      expect(cfg.maxChars).toBe(500);            // do 2.º patch
-      expect(cfg.ratePerMin).toBe(10);           // do 2.º patch
-      expect(cfg.enabled).toBe(false);           // do 3.º patch
+      expect(cfg.ttsChannelId).toBe('chan-1'); // do 1.º patch
+      expect(cfg.maxChars).toBe(500); // do 2.º patch
+      expect(cfg.ratePerMin).toBe(10); // do 2.º patch
+      expect(cfg.enabled).toBe(false); // do 3.º patch
       expect(cfg.defaultVoice).toBe(''); // vazio = guild nao definiu voz default
     });
 
@@ -473,7 +473,9 @@ describe('initDb — migracao target_id (user_clone) em DB de esquema antigo', (
         );
       `);
       old
-        .prepare('INSERT INTO user_clone (user_id, sample_path, consent_at, enabled) VALUES (?, ?, ?, ?)')
+        .prepare(
+          'INSERT INTO user_clone (user_id, sample_path, consent_at, enabled) VALUES (?, ?, ?, ?)',
+        )
         .run('u-old', '/x/u-old.wav', 111, 1);
       old.close();
 
@@ -656,7 +658,9 @@ describe('store — cache write-through', () => {
     const spy = vi.spyOn(db, 'prepare');
     getNickname(db, G, U); // miss -> SELECT
     getNickname(db, G, U); // hit -> sem novo SELECT
-    const selects = spy.mock.calls.filter((c) => String(c[0]).includes('FROM user_nickname')).length;
+    const selects = spy.mock.calls.filter((c) =>
+      String(c[0]).includes('FROM user_nickname'),
+    ).length;
     expect(selects).toBe(1); // só um SELECT apesar de dois gets (null foi cacheado)
     spy.mockRestore();
     setNickname(db, G, U, 'Ana');

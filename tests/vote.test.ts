@@ -10,7 +10,11 @@ function cfg(
   topggWebhookSecret?: string,
   topggWebhookAllowInsecure = false,
 ): AppConfig {
-  return { topggWebhookPort, topggWebhookSecret, topggWebhookAllowInsecure } as unknown as AppConfig;
+  return {
+    topggWebhookPort,
+    topggWebhookSecret,
+    topggWebhookAllowInsecure,
+  } as unknown as AppConfig;
 }
 
 const SECRET = 's3cr3t';

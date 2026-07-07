@@ -29,8 +29,7 @@ function diagnoseThreadDelete(ch: unknown, _channelId: string): void {
       parent?: { permissionsFor?: (m: unknown) => { has?: (p: bigint) => boolean } | null };
     };
     const me = thread.guild?.members?.me as
-      | { permissions?: { has?: (p: bigint) => boolean } }
-      | undefined;
+      { permissions?: { has?: (p: bigint) => boolean } } | undefined;
     if (!me) return; // sem o membro-bot em cache não há o que comparar
     const guildHas = me.permissions?.has?.(PermissionFlagsBits.ManageThreads) ?? false;
     // Permissão EFETIVA no canal-pai (já com as exceções aplicadas); se o pai não está em
@@ -67,7 +66,8 @@ export async function createGameThread(channel: unknown, name: string): Promise<
       threads?: { create?: (o: unknown) => Promise<{ id: string }> };
     };
     // Só canais de TEXTO/ANÚNCIO de servidor suportam threads públicas.
-    if (ch?.type !== ChannelType.GuildText && ch?.type !== ChannelType.GuildAnnouncement) return null;
+    if (ch?.type !== ChannelType.GuildText && ch?.type !== ChannelType.GuildAnnouncement)
+      return null;
     if (typeof ch.threads?.create !== 'function') return null;
     const thread = await ch.threads.create({
       name: name.slice(0, 100), // limite do Discord

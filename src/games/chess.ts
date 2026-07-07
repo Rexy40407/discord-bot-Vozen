@@ -79,7 +79,10 @@ class ChessGame implements Game {
 
     if (color !== this.chess.turn()) {
       void ctx.send(
-        ctx.t('game.chess.notYourTurn', { user: msg.authorName, color: this.colorName(ctx, this.chess.turn()) }),
+        ctx.t('game.chess.notYourTurn', {
+          user: msg.authorName,
+          color: this.colorName(ctx, this.chess.turn()),
+        }),
       );
       return;
     }
@@ -89,7 +92,9 @@ class ChessGame implements Game {
       const winnerId = color === 'w' ? this.blackId : this.whiteId;
       if (winnerId) {
         ctx.award(winnerId, 3);
-        void ctx.send(ctx.t('game.chess.resigned', { user: msg.authorName, winner: this.names[winnerId] }));
+        void ctx.send(
+          ctx.t('game.chess.resigned', { user: msg.authorName, winner: this.names[winnerId] }),
+        );
         announceWinner(ctx, this.names[winnerId]);
       }
       ctx.end();
@@ -124,7 +129,12 @@ class ChessGame implements Game {
       this.over = true;
       if (this.whiteId) ctx.award(this.whiteId, 1);
       if (this.blackId) ctx.award(this.blackId, 1);
-      void this.sendBoard(ctx, this.render(ctx), ctx.t('game.chess.draw', { move: result.san }), true);
+      void this.sendBoard(
+        ctx,
+        this.render(ctx),
+        ctx.t('game.chess.draw', { move: result.san }),
+        true,
+      );
       ctx.end();
       return;
     }
@@ -162,7 +172,9 @@ class ChessGame implements Game {
   private renderEmoji(ctx: GameContext): string {
     const b = this.chess.board();
     // Etiquetas A–H como tiles-emoji próprios (alinham com as colunas e nunca viram bandeiras).
-    const fileRow = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((f) => ctx.emoji(`f${f}`) ?? '').join('');
+    const fileRow = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+      .map((f) => ctx.emoji(`f${f}`) ?? '')
+      .join('');
     const lines: string[] = [fileRow];
     for (let r = 0; r < 8; r++) {
       let row = '';

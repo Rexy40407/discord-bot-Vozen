@@ -58,7 +58,7 @@ const req = (text: string): SynthRequest => ({ text, model: 'm', speed: 1 });
 describe('GuildVoicePlayer.isActive() (P18.3)', () => {
   it('player recem-criado sem fila -> false', () => {
     const engine: TTSEngine = { synth: async (r: SynthRequest) => r.text };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -71,7 +71,7 @@ describe('GuildVoicePlayer.isActive() (P18.3)', () => {
     // Sintese que NUNCA resolve: o item fica in-flight em playNext (playing=true)
     // sem nunca chegar a Idle. Deterministico, sem timers.
     const engine: TTSEngine = { synth: () => new Promise<string>(() => {}) };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 

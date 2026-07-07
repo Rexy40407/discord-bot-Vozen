@@ -87,8 +87,7 @@ describe('GuildVoicePlayer — error+idle sincronos nao fazem double-drain (P19.
       resolveB = res;
     });
     const engine: TTSEngine = {
-      synth: (req: SynthRequest) =>
-        req.text === 'B' ? bPending : Promise.resolve(req.text),
+      synth: (req: SynthRequest) => (req.text === 'B' ? bPending : Promise.resolve(req.text)),
     };
 
     // Silencia (e observa) o log.error do handler 'error' — prova que o caminho de
@@ -96,7 +95,7 @@ describe('GuildVoicePlayer — error+idle sincronos nao fazem double-drain (P19.
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     let onIdleCalls = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     // inactivityMs pequeno: se o Idle-handler drenar a fila vazia e armar o
     // idle-timer a meio da sintese de B (bug), onIdle dispara. No codigo corrigido

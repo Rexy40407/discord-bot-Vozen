@@ -25,7 +25,11 @@ describe('supervisorPolicy — decideOnExit', () => {
   it('crash -> restart com delay do attempt ATUAL e nextAttempt+1', () => {
     expect(decideOnExit(1, false, 0)).toEqual({ action: 'restart', delayMs: 2000, nextAttempt: 1 });
     // código null (morto por sinal) também reinicia (espelha o check `=== 0`).
-    expect(decideOnExit(null, false, 2)).toEqual({ action: 'restart', delayMs: 8000, nextAttempt: 3 });
+    expect(decideOnExit(null, false, 2)).toEqual({
+      action: 'restart',
+      delayMs: 8000,
+      nextAttempt: 3,
+    });
   });
 
   it('stopping -> ignore (qualquer código)', () => {

@@ -26,11 +26,31 @@ if (!PIPER_EXE || !PIPER_MODELS) {
 
 // Uma so voz por lingua — as mesmas frases que a versao Google (gen-samples.mjs).
 const SAMPLES = [
-  { lang: 'en', model: 'en_US-amy-medium', text: "Hey! Welcome to the server. Type anything and I'll read it out loud." },
-  { lang: 'pt', model: 'pt_BR-faber-medium', text: 'Olá! Escreva qualquer coisa e eu leio em voz alta.' },
-  { lang: 'es', model: 'es_ES-davefx-medium', text: '¡Hola! Escribe lo que quieras y lo leeré en voz alta.' },
-  { lang: 'fr', model: 'fr_FR-siwis-medium', text: 'Salut ! Écris ce que tu veux, je le lis à voix haute.' },
-  { lang: 'de', model: 'de_DE-thorsten-medium', text: 'Hallo! Schreib irgendwas und ich lese es laut vor.' },
+  {
+    lang: 'en',
+    model: 'en_US-amy-medium',
+    text: "Hey! Welcome to the server. Type anything and I'll read it out loud.",
+  },
+  {
+    lang: 'pt',
+    model: 'pt_BR-faber-medium',
+    text: 'Olá! Escreva qualquer coisa e eu leio em voz alta.',
+  },
+  {
+    lang: 'es',
+    model: 'es_ES-davefx-medium',
+    text: '¡Hola! Escribe lo que quieras y lo leeré en voz alta.',
+  },
+  {
+    lang: 'fr',
+    model: 'fr_FR-siwis-medium',
+    text: 'Salut ! Écris ce que tu veux, je le lis à voix haute.',
+  },
+  {
+    lang: 'de',
+    model: 'de_DE-thorsten-medium',
+    text: 'Hallo! Schreib irgendwas und ich lese es laut vor.',
+  },
 ];
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -43,7 +63,9 @@ function run(exe, args, opts, stdin) {
     let stderr = '';
     child.stderr?.on('data', (d) => (stderr += d.toString()));
     child.on('error', reject);
-    child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`exit ${code}: ${stderr.slice(-300)}`))));
+    child.on('close', (code) =>
+      code === 0 ? resolve() : reject(new Error(`exit ${code}: ${stderr.slice(-300)}`)),
+    );
     if (stdin !== undefined) {
       child.stdin.write(Buffer.from(stdin, 'utf8'));
       child.stdin.end();
@@ -61,10 +83,31 @@ for (const { lang, model, text } of SAMPLES) {
   mkdirSync(work, { recursive: true });
   const wav = join(work, 'out.wav');
   // Piper le a frase do stdin (UTF-8) e escreve o WAV; cwd = pasta do exe (acha o espeak-ng-data).
-  await run(PIPER_EXE, ['-m', onnx, '-f', wav], { cwd: dirname(PIPER_EXE), stdio: ['pipe', 'ignore', 'pipe'] }, text);
+  await run(
+    PIPER_EXE,
+    ['-m', onnx, '-f', wav],
+    { cwd: dirname(PIPER_EXE), stdio: ['pipe', 'ignore', 'pipe'] },
+    text,
+  );
   const mp3 = join(outDir, `${lang}-piper.mp3`);
   // WAV -> MP3 (mesmo formato web dos clipes Google).
-  await run(ffmpegPath, ['-hide_banner', '-loglevel', 'error', '-i', wav, '-codec:a', 'libmp3lame', '-qscale:a', '4', mp3, '-y'], { stdio: ['ignore', 'ignore', 'pipe'] });
+  await run(
+    ffmpegPath,
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      wav,
+      '-codec:a',
+      'libmp3lame',
+      '-qscale:a',
+      '4',
+      mp3,
+      '-y',
+    ],
+    { stdio: ['ignore', 'ignore', 'pipe'] },
+  );
   const bytes = readFileSync(mp3).length;
   console.log(`${lang}-piper.mp3  ${bytes} bytes  (${model})`);
   rmSync(work, { recursive: true, force: true });

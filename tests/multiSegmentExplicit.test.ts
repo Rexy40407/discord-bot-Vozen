@@ -73,7 +73,11 @@ describe('MultiSegmentEngine — segmentos EXPLICITOS (req.segments)', () => {
     const resolved = await eng.synth(req);
 
     expect(calls).toHaveLength(2);
-    expect(calls[0]).toMatchObject({ text: 'isto ta a funcionar', model: 'pt_PT-tugao-medium', speed: 1 });
+    expect(calls[0]).toMatchObject({
+      text: 'isto ta a funcionar',
+      model: 'pt_PT-tugao-medium',
+      speed: 1,
+    });
     expect(calls[1]).toMatchObject({ text: 'by the way', model: 'en_US-amy-medium', speed: 1 });
 
     const buf = readFileSync(resolved);

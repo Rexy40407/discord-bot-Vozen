@@ -91,7 +91,7 @@ describe('GuildVoicePlayer — espera Ready antes de play() (P13.1)', () => {
 
   it('ja Ready: toca imediatamente (caminho feliz, sem regressao)', async () => {
     ctrl.readyBehavior = 'resolve';
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -123,7 +123,6 @@ describe('GuildVoicePlayer — espera Ready antes de play() (P13.1)', () => {
     };
     process.on('unhandledRejection', onUnhandled);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -166,7 +165,6 @@ describe('GuildVoicePlayer — espera Ready antes de play() (P13.1)', () => {
     };
     process.on('unhandledRejection', onUnhandled);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 60_000, 60_000, () => {});
 

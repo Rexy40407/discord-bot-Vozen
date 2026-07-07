@@ -24,9 +24,7 @@ class FakeClock implements Clock {
   advance(ms: number): void {
     const target = this.time + ms;
     for (;;) {
-      const due = this.timers
-        .filter((t) => t.at <= target)
-        .sort((a, b) => a.at - b.at)[0];
+      const due = this.timers.filter((t) => t.at <= target).sort((a, b) => a.at - b.at)[0];
       if (!due) break;
       this.timers = this.timers.filter((t) => t.id !== due.id);
       this.time = due.at;
@@ -126,7 +124,13 @@ describe('GameManager', () => {
 
   it('sem jogo ativo -> handleMessage devolve false', () => {
     expect(
-      mgr.handleMessage({ guildId: GUILD, channelId: CHAN, authorId: 'u', authorName: 'U', content: 'x' }),
+      mgr.handleMessage({
+        guildId: GUILD,
+        channelId: CHAN,
+        authorId: 'u',
+        authorName: 'U',
+        content: 'x',
+      }),
     ).toBe(false);
   });
 
@@ -163,7 +167,12 @@ describe('GameManager', () => {
     expect(env.persistScores).toHaveBeenCalledTimes(1);
     const [gid, points] = (env.persistScores as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(gid).toBe(GUILD);
-    expect(points).toEqual(new Map([['a', 3], ['b', 5]]));
+    expect(points).toEqual(
+      new Map([
+        ['a', 3],
+        ['b', 5],
+      ]),
+    );
     // Apos end o lock esta livre.
     expect(mgr.active(GUILD)).toBe(false);
   });
@@ -269,8 +278,24 @@ describe('GameManager — jogo em thread descartável', () => {
     await flush();
     expect(mgr.channelOf(GUILD)).toBe(THREAD);
     // Mensagem NA thread -> consumida; no canal-pai -> NÃO (é o chat normal).
-    expect(mgr.handleMessage({ guildId: GUILD, channelId: THREAD, authorId: 'u', authorName: 'U', content: 'ola' })).toBe(true);
-    expect(mgr.handleMessage({ guildId: GUILD, channelId: PARENT, authorId: 'u', authorName: 'U', content: 'oi' })).toBe(false);
+    expect(
+      mgr.handleMessage({
+        guildId: GUILD,
+        channelId: THREAD,
+        authorId: 'u',
+        authorName: 'U',
+        content: 'ola',
+      }),
+    ).toBe(true);
+    expect(
+      mgr.handleMessage({
+        guildId: GUILD,
+        channelId: PARENT,
+        authorId: 'u',
+        authorName: 'U',
+        content: 'oi',
+      }),
+    ).toBe(false);
     await flush();
     expect(g.messages).toEqual(['ola']);
   });

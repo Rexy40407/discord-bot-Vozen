@@ -35,7 +35,13 @@ function main(): void {
   const days = Number(daysArg);
   const count = Number(countArg);
 
-  if ((kind !== 'guild' && kind !== 'user') || !Number.isInteger(days) || days <= 0 || !Number.isInteger(count) || count <= 0) {
+  if (
+    (kind !== 'guild' && kind !== 'user') ||
+    !Number.isInteger(days) ||
+    days <= 0 ||
+    !Number.isInteger(count) ||
+    count <= 0
+  ) {
     console.error('Uso: npx tsx tools/premium-codes.ts <guild|user> <dias> <quantidade>');
     process.exit(1);
   }
@@ -60,7 +66,9 @@ function main(): void {
   }
   db.close();
 
-  console.log(`\n${count} código(s) de ${days} dias (${kind === 'guild' ? 'Premium/servidor' : 'Plus/utilizador'}) em ${dbPath}:\n`);
+  console.log(
+    `\n${count} código(s) de ${days} dias (${kind === 'guild' ? 'Premium/servidor' : 'Plus/utilizador'}) em ${dbPath}:\n`,
+  );
   for (const c of codes) console.log('  ' + c);
   console.log('');
 }

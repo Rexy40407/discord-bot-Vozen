@@ -207,7 +207,7 @@ export function spokenPhrasesFor(langKey: string): SpokenPhrases {
  */
 export function buildMediaSuffix(media: MediaItem[], phrases: SpokenPhrases): string {
   return media
-    .map((m) => (m.kind === 'sticker' ? (m.text?.trim() || phrases.sticker) : phrases[m.kind]))
+    .map((m) => (m.kind === 'sticker' ? m.text?.trim() || phrases.sticker : phrases[m.kind]))
     .filter((s) => s.length > 0)
     .join(' ');
 }

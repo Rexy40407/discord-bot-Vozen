@@ -45,7 +45,9 @@ describe('isBlocked', () => {
 
 describe('redactBlocked — remove a palavra, mantem o resto legivel', () => {
   it('remove a palavra bloqueada e le o resto', () => {
-    expect(redactBlocked('isto e um teste palavrao aqui', ['palavrao'])).toBe('isto e um teste aqui');
+    expect(redactBlocked('isto e um teste palavrao aqui', ['palavrao'])).toBe(
+      'isto e um teste aqui',
+    );
   });
 
   it('ignora maiusculas/minusculas ao remover', () => {

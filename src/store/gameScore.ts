@@ -79,11 +79,7 @@ export function persistGameScores(
  * Top `limit` jogadores desta guild, ordenados por pontos (desc) e depois por
  * vitorias (desc). Devolve [] se ninguem jogou ainda.
  */
-export function getLeaderboard(
-  db: Database.Database,
-  guildId: string,
-  limit = 10,
-): ScoreRow[] {
+export function getLeaderboard(db: Database.Database, guildId: string, limit = 10): ScoreRow[] {
   const rows = db
     .prepare(
       `SELECT user_id, points, wins FROM game_score
@@ -96,11 +92,7 @@ export function getLeaderboard(
 }
 
 /** Pontuacao de um utilizador (0/0 se nunca jogou). */
-export function getUserScore(
-  db: Database.Database,
-  guildId: string,
-  userId: string,
-): ScoreRow {
+export function getUserScore(db: Database.Database, guildId: string, userId: string): ScoreRow {
   const row = db
     .prepare('SELECT user_id, points, wins FROM game_score WHERE guild_id = ? AND user_id = ?')
     .get(guildId, userId) as GameScoreRow | undefined;
@@ -119,7 +111,9 @@ export function getUserRank(
   userId: string,
 ): { rank: number | null; total: number } {
   const total = (
-    db.prepare('SELECT COUNT(*) AS n FROM game_score WHERE guild_id = ?').get(guildId) as { n: number }
+    db.prepare('SELECT COUNT(*) AS n FROM game_score WHERE guild_id = ?').get(guildId) as {
+      n: number;
+    }
   ).n;
   const me = db
     .prepare('SELECT points FROM game_score WHERE guild_id = ? AND user_id = ?')

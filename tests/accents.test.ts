@@ -7,7 +7,9 @@ describe('restoreAccents — repõe acentos da língua', () => {
     expect(restoreAccents('nao', 'por')).toBe('não');
     expect(restoreAccents('voce e portugues', 'por')).toBe('você e português'); // "e" fica (ambíguo)
     expect(restoreAccents('ate amanha', 'por')).toBe('até amanhã');
-    expect(restoreAccents('isto e muito rapido e facil', 'por')).toBe('isto e muito rápido e fácil');
+    expect(restoreAccents('isto e muito rapido e facil', 'por')).toBe(
+      'isto e muito rápido e fácil',
+    );
   });
 
   it('PT: cedilha e nasais', () => {
@@ -59,8 +61,18 @@ describe('restoreAccents — repõe acentos da língua', () => {
   it('DE: pares MÍNIMOS ambíguos NÃO são tocados (a forma sem-trema é outra palavra)', () => {
     // Landmines: cada um é uma palavra alemã comum por si só -> tem de ficar intacto.
     for (const w of [
-      'schon', 'wurde', 'mochte', 'hatte', 'konnte', 'musste', 'durfte',
-      'ware', 'wahlen', 'zahlen', 'lauft', 'uber',
+      'schon',
+      'wurde',
+      'mochte',
+      'hatte',
+      'konnte',
+      'musste',
+      'durfte',
+      'ware',
+      'wahlen',
+      'zahlen',
+      'lauft',
+      'uber',
     ]) {
       expect(restoreAccents(w, 'deu')).toBe(w);
     }
@@ -89,7 +101,11 @@ describe('prepareSpeech — integra o restauro de acentos', () => {
   };
 
   it('língua-base PT (via memória) => o texto falado leva os acentos', () => {
-    const r = prepareSpeech({ ...base, personal: 'nao quero fazer isto amanha', recentLang: 'por' });
+    const r = prepareSpeech({
+      ...base,
+      personal: 'nao quero fazer isto amanha',
+      recentLang: 'por',
+    });
     expect(r.req.model.startsWith('pt_')).toBe(true);
     expect(r.spoken).toContain('não');
     expect(r.spoken).toContain('amanhã');

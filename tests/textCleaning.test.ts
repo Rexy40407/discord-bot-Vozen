@@ -234,9 +234,7 @@ describe('cleanText', () => {
 
     it('limpa role + custom emoji + URL na mesma mensagem', () => {
       // role removido, custom emoji LIDO (fire), URL removida do corpo
-      expect(
-        cleanText('check <@&999> <:fire:123> at https://x.com', opts),
-      ).toBe('check fire at');
+      expect(cleanText('check <@&999> <:fire:123> at https://x.com', opts)).toBe('check fire at');
     });
 
     it('mensagem so de emojis unicode devolve ""', () => {

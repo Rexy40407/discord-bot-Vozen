@@ -206,7 +206,12 @@ describe('isSafeModelName — validacao de nome de modelo (anti path-traversal)'
   });
 
   it('aceita nomes reais (letras/digitos/_/-, sem separadores)', () => {
-    for (const good of ['en_US-amy-medium', 'pt_BR-cadu-medium', 'pt_PT-tugao-medium', 'pt_PT-test']) {
+    for (const good of [
+      'en_US-amy-medium',
+      'pt_BR-cadu-medium',
+      'pt_PT-tugao-medium',
+      'pt_PT-test',
+    ]) {
       expect(isSafeModelName(good)).toBe(true);
     }
   });

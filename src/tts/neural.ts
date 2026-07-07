@@ -82,9 +82,10 @@ export class NeuralEngine implements TTSEngine {
         signal: controller.signal,
       });
     } catch (err) {
-      const reason = (err as Error)?.name === 'AbortError'
-        ? `timeout (${NEURAL_TIMEOUT_MS}ms)`
-        : (err as Error).message;
+      const reason =
+        (err as Error)?.name === 'AbortError'
+          ? `timeout (${NEURAL_TIMEOUT_MS}ms)`
+          : (err as Error).message;
       throw new Error(`Falha de rede ao contactar a API OpenAI TTS: ${reason}`, { cause: err });
     } finally {
       clearTimeout(timer);

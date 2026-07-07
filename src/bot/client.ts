@@ -131,7 +131,9 @@ export function bindEvents(deps: BotDeps): void {
   client.on(Events.GuildCreate, (guild: Guild) => {
     void (async () => {
       try {
-        const channel = pickWelcomeChannel(guild as unknown as Parameters<typeof pickWelcomeChannel>[0]);
+        const channel = pickWelcomeChannel(
+          guild as unknown as Parameters<typeof pickWelcomeChannel>[0],
+        );
         if (!channel) return;
         const embed = buildWelcomeEmbed(DEFAULT_LOCALE);
         // O canal escolhido e sempre um GuildText enviavel (pickWelcomeChannel ja
@@ -189,7 +191,10 @@ export function bindEvents(deps: BotDeps): void {
     void errorReporter.report(reason, 'unhandledRejection');
   });
   process.on('uncaughtException', (err) => {
-    log.error('[process] uncaughtException — a reportar e a SAIR (o supervisor reinicia limpo)', err);
+    log.error(
+      '[process] uncaughtException — a reportar e a SAIR (o supervisor reinicia limpo)',
+      err,
+    );
     // Guia do Node: após uma exceção não-apanhada o processo fica em estado indefinido.
     // Saímos com código != 0 para o supervisor (start-prod.mjs) reiniciar de fresco, em
     // vez de ficarmos "vivos mas partidos" — o que o health endpoint reportaria como OK

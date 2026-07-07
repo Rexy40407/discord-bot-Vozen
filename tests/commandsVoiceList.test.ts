@@ -53,11 +53,7 @@ function makeListInteraction() {
 
 describe('formatVoiceList (agrupamento por lingua)', () => {
   it('agrupa por lingua, com cabecalho amigavel e o id entre parenteses', () => {
-    const out = formatVoiceList([
-      'en_US-ryan-medium',
-      'en_US-amy-medium',
-      'pt_PT-tugao-medium',
-    ]);
+    const out = formatVoiceList(['en_US-ryan-medium', 'en_US-amy-medium', 'pt_PT-tugao-medium']);
     // Um cabecalho por lingua (autonimo), vozes ordenadas por nome, id copy-pasteavel.
     expect(out).toBe(
       [
@@ -90,9 +86,7 @@ describe('voiceDisplayName (nome amigavel lingua + voz)', () => {
   });
 
   it('distingue duas vozes da MESMA lingua (nao colapsa no autonimo)', () => {
-    expect(voiceDisplayName('en_US-amy-medium')).not.toBe(
-      voiceDisplayName('en_US-ryan-medium'),
-    );
+    expect(voiceDisplayName('en_US-amy-medium')).not.toBe(voiceDisplayName('en_US-ryan-medium'));
   });
 
   it('locale nao mapeado -> cai no id cru como lingua (nunca esconde a voz)', () => {
@@ -119,11 +113,7 @@ describe('/voice list (handler agrupado)', () => {
   });
 
   it('responde com as vozes AGRUPADAS por lingua e nomes amigaveis', async () => {
-    const deps = makeDeps(db, [
-      'en_US-amy-medium',
-      'en_US-ryan-medium',
-      'pt_PT-tugao-medium',
-    ]);
+    const deps = makeDeps(db, ['en_US-amy-medium', 'en_US-ryan-medium', 'pt_PT-tugao-medium']);
     const i = makeListInteraction();
 
     await handleInteraction(i as any, deps);

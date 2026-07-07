@@ -35,7 +35,9 @@ export class RouterEngine implements TTSEngine {
     // Invariante de COBERTURA: o último motor tem de ser apanha-tudo (langs=null),
     // senão uma língua sem rota específica cairia num throw. Barato de garantir aqui.
     if (routes[routes.length - 1].langs !== null) {
-      throw new Error('[router] o último motor tem de ser apanha-tudo (langs=null) — cobertura total');
+      throw new Error(
+        '[router] o último motor tem de ser apanha-tudo (langs=null) — cobertura total',
+      );
     }
   }
 

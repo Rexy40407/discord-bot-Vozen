@@ -29,7 +29,11 @@ function makeDeps(
     players: new Map<string, unknown>(),
     db,
     config: { defaultSpeed: 1.0, defaultVoice: 'en_US-amy-medium' },
-    availableModels: availableModels ?? ['en_US-amy-medium', 'ru_RU-dmitri-medium', 'fr_FR-siwis-medium'],
+    availableModels: availableModels ?? [
+      'en_US-amy-medium',
+      'ru_RU-dmitri-medium',
+      'fr_FR-siwis-medium',
+    ],
     limiters: new Map(),
   } as unknown as BotDeps;
   if (player) {

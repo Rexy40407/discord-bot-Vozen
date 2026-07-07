@@ -9,7 +9,11 @@ import { cached, invalidate } from './cache';
 
 const keyOf = (guildId: string, userId: string): string => `${guildId}:${userId}`;
 
-export function getVoiceEffect(db: Database.Database, guildId: string, userId: string): VoiceEffect {
+export function getVoiceEffect(
+  db: Database.Database,
+  guildId: string,
+  userId: string,
+): VoiceEffect {
   return cached(db, 'user_effect', keyOf(guildId, userId), () => {
     const row = db
       .prepare('SELECT effect FROM user_effect WHERE guild_id = ? AND user_id = ?')

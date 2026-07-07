@@ -155,7 +155,10 @@ export function splitEnglishSlang(text: string): SlangSegment[] {
  * o sotaque errado. Funcao PURA.
  */
 export function isAllEnglishAbbrev(text: string): boolean {
-  const tokens = text.trim().split(/\s+/).filter((t) => t.length > 0);
+  const tokens = text
+    .trim()
+    .split(/\s+/)
+    .filter((t) => t.length > 0);
   if (tokens.length === 0) return false;
   // Antes da lookup, retira a pontuacao envolvente (nao-\p{L}\p{N} no inicio/fim),
   // espelhando a semantica de FRONTEIRA do expandAbbreviations: este expande "omg!"/

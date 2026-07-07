@@ -18,7 +18,7 @@ import { LANGUAGE_PHRASES } from '../src/games/content/languagePhrases';
 function dup<T>(arr: readonly T[]): T[] {
   const seen = new Set<T>();
   const dups: T[] = [];
-  for (const x of arr) (seen.has(x) ? dups.push(x) : seen.add(x));
+  for (const x of arr) seen.has(x) ? dups.push(x) : seen.add(x);
   return dups;
 }
 
@@ -27,7 +27,8 @@ describe('WORD_BANK (Ditado/Soletrado/Sotaque/Vozen Diz/Forca)', () => {
     for (const [lang, words] of Object.entries(WORD_BANK)) {
       expect(words.length, `banco ${lang}`).toBeGreaterThanOrEqual(40);
       expect(dup(words), `duplicados em ${lang}`).toEqual([]);
-      for (const w of words) expect(w.length, `palavra curta em ${lang}: ${w}`).toBeGreaterThanOrEqual(3);
+      for (const w of words)
+        expect(w.length, `palavra curta em ${lang}: ${w}`).toBeGreaterThanOrEqual(3);
     }
   });
 

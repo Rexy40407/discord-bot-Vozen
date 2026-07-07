@@ -72,7 +72,11 @@ interface FakeInteraction {
   commandName: string;
   guildId: string;
   replies: string[];
-  reply: (opts: { content?: string; embeds?: { data?: { description?: string } }[]; flags?: number }) => Promise<void>;
+  reply: (opts: {
+    content?: string;
+    embeds?: { data?: { description?: string } }[];
+    flags?: number;
+  }) => Promise<void>;
   isRepliable: () => boolean;
   replied: boolean;
   deferred: boolean;
@@ -273,11 +277,11 @@ describe('AudioCache.get — wiring de métricas', () => {
     writeFileSync(src, Buffer.from('wav'));
     cache.put('k', src);
 
-    cache.get('k');       // hit
-    cache.get('k');       // hit
-    cache.get('miss1');   // miss
-    cache.get('miss2');   // miss
-    cache.get('miss3');   // miss
+    cache.get('k'); // hit
+    cache.get('k'); // hit
+    cache.get('miss1'); // miss
+    cache.get('miss2'); // miss
+    cache.get('miss3'); // miss
 
     const snap = metrics.snapshot();
     expect(snap.cacheHits).toBe(2);
@@ -294,16 +298,13 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
     const engine: TTSEngine = {
       synth: async (req: SynthRequest) => req.text,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
     await player.say({ text: 'ola', model: 'm', speed: 1 });
 
-    await vi.waitFor(
-      () => expect(metrics.snapshot().messagesSpoken).toBe(1),
-      { timeout: 1000 },
-    );
+    await vi.waitFor(() => expect(metrics.snapshot().messagesSpoken).toBe(1), { timeout: 1000 });
 
     player.destroy();
     expect(metrics.snapshot().synthErrors).toBe(0);
@@ -311,18 +312,17 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
 
   it('synthErrors incrementa quando a síntese falha', async () => {
     const engine: TTSEngine = {
-      synth: async () => { throw new Error('piper boom'); },
+      synth: async () => {
+        throw new Error('piper boom');
+      },
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
     await player.say({ text: 'texto', model: 'm', speed: 1 });
 
-    await vi.waitFor(
-      () => expect(metrics.snapshot().synthErrors).toBe(1),
-      { timeout: 1000 },
-    );
+    await vi.waitFor(() => expect(metrics.snapshot().synthErrors).toBe(1), { timeout: 1000 });
 
     player.destroy();
     expect(metrics.snapshot().messagesSpoken).toBe(0);
@@ -332,16 +332,15 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
     const engine: TTSEngine = {
       synth: async (req: SynthRequest) => req.text,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
     await player.say({ text: 'teste', model: 'm', speed: 1 });
 
-    await vi.waitFor(
-      () => expect(metrics.snapshot().messagesSpoken).toBeGreaterThanOrEqual(1),
-      { timeout: 1000 },
-    );
+    await vi.waitFor(() => expect(metrics.snapshot().messagesSpoken).toBeGreaterThanOrEqual(1), {
+      timeout: 1000,
+    });
 
     player.destroy();
     expect(metrics.snapshot().synthErrors).toBe(0);
@@ -358,7 +357,7 @@ describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)'
 
   it('uma queda (Disconnected) -> voiceDrops sobe 1 e a recuperacao -> voiceReconnects sobe 1', async () => {
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -366,10 +365,7 @@ describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)'
     // sempre (mock), a recuperacao "soft" volta a Ready -> conta o reconnect.
     conn.emit('disconnected');
 
-    await vi.waitFor(
-      () => expect(metrics.snapshot().voiceReconnects).toBe(1),
-      { timeout: 1000 },
-    );
+    await vi.waitFor(() => expect(metrics.snapshot().voiceReconnects).toBe(1), { timeout: 1000 });
     expect(metrics.snapshot().voiceDrops).toBe(1);
 
     player.destroy();
@@ -377,7 +373,7 @@ describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)'
 
   it('Disconnected repetido no mesmo episodio nao conta a dobrar (dedup por episodio)', async () => {
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -387,10 +383,7 @@ describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)'
     conn.emit('disconnected');
     conn.emit('disconnected');
 
-    await vi.waitFor(
-      () => expect(metrics.snapshot().voiceReconnects).toBe(1),
-      { timeout: 1000 },
-    );
+    await vi.waitFor(() => expect(metrics.snapshot().voiceReconnects).toBe(1), { timeout: 1000 });
     // Episodio unico: exatamente 1 drop e 1 reconnect, apesar dos 2 eventos.
     expect(metrics.snapshot().voiceDrops).toBe(1);
     expect(metrics.snapshot().voiceReconnects).toBe(1);

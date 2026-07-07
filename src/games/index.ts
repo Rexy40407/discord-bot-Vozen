@@ -71,7 +71,10 @@ export function gameById(id: string): GameDefinition | undefined {
  * utilizador escreve (case-insensitive, pelo nome traduzido OU pelo id), limitado a
  * 25 (cap do Discord). PURA/testavel. `locale` deve ja vir na forma base ('pt', 'fr').
  */
-export function filterGameChoices(query: string, locale: string): { name: string; value: string }[] {
+export function filterGameChoices(
+  query: string,
+  locale: string,
+): { name: string; value: string }[] {
   const q = query.trim().toLowerCase();
   return GAME_DEFS.map((g) => ({ name: t(g.nameKey, locale), value: g.id }))
     .filter((c) => c.name.toLowerCase().includes(q) || c.value.toLowerCase().includes(q))

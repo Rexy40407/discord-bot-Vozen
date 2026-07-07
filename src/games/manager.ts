@@ -1,11 +1,4 @@
-import type {
-  Game,
-  GameContext,
-  GameEnv,
-  GameMessage,
-  Sendable,
-  TimerHandle,
-} from './types';
+import type { Game, GameContext, GameEnv, GameMessage, Sendable, TimerHandle } from './types';
 
 /** Estado interno de uma partida ativa (uma por guild). */
 interface Session {

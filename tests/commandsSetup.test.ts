@@ -93,7 +93,10 @@ interface FakeInteraction {
   commandName: string;
   guildId: string;
   replies: string[];
-  reply: (opts: { content?: string; embeds?: { data?: { description?: string } }[] }) => Promise<void>;
+  reply: (opts: {
+    content?: string;
+    embeds?: { data?: { description?: string } }[];
+  }) => Promise<void>;
   isRepliable: () => boolean;
   replied: boolean;
   deferred: boolean;
@@ -474,9 +477,7 @@ describe('/setup — definicao do comando', () => {
     const def = commandDefs.find((c) => c.name === 'setup');
     expect(def).toBeDefined();
     // ManageGuild = bit 0x20 = "32" (string) no campo default_member_permissions
-    expect(def?.default_member_permissions).toBe(
-      PermissionFlagsBits.ManageGuild.toString(),
-    );
+    expect(def?.default_member_permissions).toBe(PermissionFlagsBits.ManageGuild.toString());
   });
 
   it('tem uma opcao "channel" (ingles) opcional do tipo text channel', () => {

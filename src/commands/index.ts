@@ -50,11 +50,7 @@ import {
 } from '../tts/effects';
 import { sanitizeSpeakerName } from '../language/speakerName';
 import { isDetectionOn, setDetection } from '../store/langDetect';
-import {
-  getPronunciations,
-  addPronunciation,
-  removePronunciation,
-} from '../store/pronunciation';
+import { getPronunciations, addPronunciation, removePronunciation } from '../store/pronunciation';
 import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../textCleaning/clean';
 import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { recallLang, rememberLang } from '../language/langMemory';
@@ -77,7 +73,13 @@ import { GREET_LANGUAGE_CHOICES, GREET_LOCALES } from '../voice/greeting';
 import { log } from '../logging/logger';
 import { join, dirname } from 'node:path';
 import { unlinkSync, rmSync } from 'node:fs';
-import { getClone, saveClone, setCloneEnabled, deleteClone, deleteClonesByTarget } from '../store/voiceClone';
+import {
+  getClone,
+  saveClone,
+  setCloneEnabled,
+  deleteClone,
+  deleteClonesByTarget,
+} from '../store/voiceClone';
 import { recordUserSample, pcmToWavFile } from '../voice/recorder';
 import {
   t,
@@ -163,8 +165,7 @@ export const INVITE_PERMISSIONS: string = new PermissionsBitField([
   PermissionFlagsBits.CreatePublicThreads,
   PermissionFlagsBits.SendMessagesInThreads,
   PermissionFlagsBits.ManageThreads,
-])
-  .bitfield.toString();
+]).bitfield.toString();
 
 const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
   // /invite — gatilho do loop viral: qualquer utilizador pode pedir o link de
@@ -186,10 +187,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
   // Top-level e SEM setDefaultMemberPermissions (NAO admin-only): qualquer
   // utilizador pode pedir a lista. O texto e DERIVADO destes commandDefs (ver
   // handleHelp), por isso este comando inclui-se a si proprio no grupo "Geral".
-  new SlashCommandBuilder()
-    .setName('help')
-    .setDescription("Show Vozen's command list")
-    .toJSON(),
+  new SlashCommandBuilder().setName('help').setDescription("Show Vozen's command list").toJSON(),
   new SlashCommandBuilder().setName('join').setDescription('Join your voice channel').toJSON(),
   new SlashCommandBuilder().setName('leave').setDescription('Leave the voice channel').toJSON(),
   new SlashCommandBuilder()
@@ -253,10 +251,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setMaxLength(200),
     )
     .toJSON(),
-  new SlashCommandBuilder()
-    .setName('fortune')
-    .setDescription('Vozen reads you a fortune')
-    .toJSON(),
+  new SlashCommandBuilder().setName('fortune').setDescription('Vozen reads you a fortune').toJSON(),
   new SlashCommandBuilder()
     .setName('fact')
     .setDescription('Vozen tells you a random fun fact')
@@ -325,8 +320,12 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       s
         .setName('set')
         .setDescription('Set your voice')
-        .addStringOption((o) => o.setName('model').setDescription('Piper model').setRequired(true).setAutocomplete(true))
-        .addNumberOption((o) => o.setName('speed').setDescription('Speed (0.5-2.0)').setRequired(false))
+        .addStringOption((o) =>
+          o.setName('model').setDescription('Piper model').setRequired(true).setAutocomplete(true),
+        )
+        .addNumberOption((o) =>
+          o.setName('speed').setDescription('Speed (0.5-2.0)').setRequired(false),
+        )
         .addStringOption((o) =>
           o
             .setName('engine')
@@ -362,19 +361,25 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) =>
       s
         .setName('detection')
-        .setDescription('Native voice per language (speaker may change). Off by default: one fixed voice.')
+        .setDescription(
+          'Native voice per language (speaker may change). Off by default: one fixed voice.',
+        )
         .addBooleanOption((o) =>
           o
             .setName('active')
             .setNameLocalizations({ 'pt-BR': 'ativo' })
-            .setDescription('On = native voice per language; Off (default) = your one fixed voice for everything')
+            .setDescription(
+              'On = native voice per language; Off (default) = your one fixed voice for everything',
+            )
             .setRequired(true),
         )
         .addStringOption((o) =>
           o
             .setName('engine')
             .setNameLocalizations({ 'pt-BR': 'motor' })
-            .setDescription('Voice engine: Google (default) or Piper — Piper often sounds better in some languages')
+            .setDescription(
+              'Voice engine: Google (default) or Piper — Piper often sounds better in some languages',
+            )
             .setRequired(false)
             .addChoices(
               { name: 'Google (default)', value: 'google' },
@@ -417,7 +422,9 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .addSubcommand((s) =>
           s
             .setName('record')
-            .setDescription('Record a voice in the call to build your clone (yours, or someone who agrees)')
+            .setDescription(
+              'Record a voice in the call to build your clone (yours, or someone who agrees)',
+            )
             // STRING + autocomplete (não addUserOption): o seletor nativo de utilizador do
             // Discord só mostra membros em cache/recentes. Aqui listamos EXATAMENTE quem está
             // na call contigo — os únicos alvos válidos (gravar exige estar no canal do bot).
@@ -425,7 +432,9 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
               o
                 .setName('user')
                 .setNameLocalizations({ 'pt-BR': 'pessoa' })
-                .setDescription('Whose voice to clone — pick someone in the call (empty = yourself). They must agree.')
+                .setDescription(
+                  'Whose voice to clone — pick someone in the call (empty = yourself). They must agree.',
+                )
                 .setRequired(false)
                 .setAutocomplete(true),
             )
@@ -519,7 +528,10 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setName('role')
         .setDescription('Restrict auto-read to a role (omit the role to clear the restriction)')
         .addRoleOption((o) =>
-          o.setName('role').setDescription('Allowed role (empty = no restriction)').setRequired(false),
+          o
+            .setName('role')
+            .setDescription('Allowed role (empty = no restriction)')
+            .setRequired(false),
         ),
     )
     .addSubcommand((s) =>
@@ -549,7 +561,9 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) =>
       s
         .setName('autojoin')
-        .setDescription('Vozen joins your voice channel automatically when you type in the TTS channel')
+        .setDescription(
+          'Vozen joins your voice channel automatically when you type in the TTS channel',
+        )
         .addBooleanOption((o) =>
           o
             .setName('active')
@@ -575,7 +589,9 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       s
         .setName('text-in-voice')
         .setNameLocalizations({ 'pt-BR': 'texto-em-voz' })
-        .setDescription("Also read the text chat inside the voice channel Vozen is in (off by default)")
+        .setDescription(
+          'Also read the text chat inside the voice channel Vozen is in (off by default)',
+        )
         .addBooleanOption((o) =>
           o
             .setName('active')
@@ -613,8 +629,12 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) =>
       s
         .setName('default-voice')
-        .setDescription("Set the server's default voice (used when the user has no voice of their own)")
-        .addStringOption((o) => o.setName('model').setDescription('Piper model').setRequired(true).setAutocomplete(true)),
+        .setDescription(
+          "Set the server's default voice (used when the user has no voice of their own)",
+        )
+        .addStringOption((o) =>
+          o.setName('model').setDescription('Piper model').setRequired(true).setAutocomplete(true),
+        ),
     )
     .addSubcommand((s) =>
       s
@@ -632,8 +652,12 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             .setAutocomplete(true),
         ),
     )
-    .addSubcommand((s) => s.setName('show').setDescription("Show the server's current configuration"))
-    .addSubcommand((s) => s.setName('reset').setDescription("Reset the server's configuration to defaults"))
+    .addSubcommand((s) =>
+      s.setName('show').setDescription("Show the server's current configuration"),
+    )
+    .addSubcommand((s) =>
+      s.setName('reset').setDescription("Reset the server's configuration to defaults"),
+    )
     .addSubcommandGroup((g) =>
       g
         .setName('blockword')
@@ -784,9 +808,7 @@ const DM_CAPABLE_COMMANDS = new Set(['invite', 'vote', 'help', 'uptime', 'botsta
 // .setContexts() em ~10 builders) para não esquecer nenhum comando novo. Cobre
 // também o context-menu "Speak" (precisa de canal de voz).
 export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = commandDefsRaw.map((def) =>
-  DM_CAPABLE_COMMANDS.has(def.name)
-    ? def
-    : { ...def, contexts: [InteractionContextType.Guild] },
+  DM_CAPABLE_COMMANDS.has(def.name) ? def : { ...def, contexts: [InteractionContextType.Guild] },
 );
 
 async function reply(i: ChatInputCommandInteraction, content: string): Promise<void> {
@@ -849,7 +871,9 @@ async function handleJoin(i: ChatInputCommandInteraction, deps: BotDeps): Promis
       // faz) — NÃO ephemeral. Na língua da GUILD (localeFor), porque é uma mensagem
       // para toda a gente, não só para quem invocou. Os erros acima ficam ephemeral
       // (são feedback para o invocador). `i.reply` sem flags = mensagem pública.
-      await i.reply({ content: t('join.joined', localeFor(deps, i.guildId), { channel: outcome.channelName }) });
+      await i.reply({
+        content: t('join.joined', localeFor(deps, i.guildId), { channel: outcome.channelName }),
+      });
       return;
   }
 }
@@ -927,7 +951,8 @@ async function speakRawText(
   const blocklist = getBlocklist(deps.db, guildId);
   const redacted = redactRequest(req, blocklist);
   const readable =
-    hasReadableText(redacted.text) || (redacted.segments?.some((s) => hasReadableText(s.text)) ?? false);
+    hasReadableText(redacted.text) ||
+    (redacted.segments?.some((s) => hasReadableText(s.text)) ?? false);
   if (!readable) return { status: 'blocked' };
   const outReq = redacted;
   outReq.effect = getVoiceEffect(deps.db, guildId, userId); // efeito de voz (premium)
@@ -1089,8 +1114,7 @@ async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps): Promi
 
   const stored = getUserVoice(deps.db, i.guildId!, i.user.id);
   // Precedencia da voz: voz guardada do user > default_voice da guild > .env > amy.
-  const model =
-    stored?.model || cfg.defaultVoice || deps.config.defaultVoice || 'en_US-amy-medium';
+  const model = stored?.model || cfg.defaultVoice || deps.config.defaultVoice || 'en_US-amy-medium';
   const speed = stored?.speed ?? deps.config.defaultSpeed;
   // singleVoice: a voz e DELIBERADAMENTE escolhida (a voz atual do user); a deteccao
   // nunca deve sobrepor-se nem partir o riso por lingua.
@@ -1275,8 +1299,12 @@ async function handleRedeem(i: ChatInputCommandInteraction, deps: BotDeps): Prom
     await reply(i, t('redeem.used', locale));
     return;
   }
-  const target = res.kind === 'guild' ? t('redeem.targetServer', locale) : t('redeem.targetYou', locale);
-  await reply(i, t('redeem.ok', locale, { target, date: `<t:${Math.floor(res.expiresAt! / 1000)}:D>` }));
+  const target =
+    res.kind === 'guild' ? t('redeem.targetServer', locale) : t('redeem.targetYou', locale);
+  await reply(
+    i,
+    t('redeem.ok', locale, { target, date: `<t:${Math.floor(res.expiresAt! / 1000)}:D>` }),
+  );
 }
 
 type MicroFunKind = '8ball' | 'fortune' | 'fact' | 'wyr';
@@ -1335,7 +1363,13 @@ async function handleMicroFun(
         'en_US-amy-medium';
       const engine = getUserVoice(deps.db, i.guildId!, i.user.id)?.engine;
       // singleVoice: a língua da frase é CONHECIDA (o banco), a deteção não manda.
-      void player.say({ text: spoken, model, speed: deps.config.defaultSpeed, singleVoice: true, engine });
+      void player.say({
+        text: spoken,
+        model,
+        speed: deps.config.defaultSpeed,
+        singleVoice: true,
+        engine,
+      });
     }
   }
 
@@ -1367,7 +1401,9 @@ async function handleBirthday(i: ChatInputCommandInteraction, deps: BotDeps): Pr
     const bd = getBirthday(deps.db, i.guildId!, i.user.id);
     await reply(
       i,
-      bd ? t('birthday.show', locale, { day: bd.day, month: bd.month }) : t('birthday.none', locale),
+      bd
+        ? t('birthday.show', locale, { day: bd.day, month: bd.month })
+        : t('birthday.none', locale),
     );
   }
 }
@@ -1401,7 +1437,9 @@ async function handleVoiceDetection(
       cur?.speed ?? deps.config.defaultSpeed,
       engineOpt,
     );
-    msg += '\n' + t('voice.detection.engine', locale, { engine: engineOpt === 'piper' ? 'Piper' : 'Google' });
+    msg +=
+      '\n' +
+      t('voice.detection.engine', locale, { engine: engineOpt === 'piper' ? 'Piper' : 'Google' });
   }
   await reply(i, msg);
 }
@@ -1547,7 +1585,9 @@ async function handleVoiceClone(
   }
   if (targetChannelId !== botChannelId) {
     await i.editReply({
-      content: isSelf ? t('clone.notInVoice', locale) : t('clone.targetNotInVoice', locale, { who }),
+      content: isSelf
+        ? t('clone.notInVoice', locale)
+        : t('clone.targetNotInVoice', locale, { who }),
     });
     return;
   }
@@ -1597,7 +1637,10 @@ async function handleVoiceClone(
       });
       col.on('collect', (btn) => {
         if (btn.user.id !== targetId) {
-          void btn.reply({ content: t('clone.consentNotYou', gLocale), flags: MessageFlags.Ephemeral });
+          void btn.reply({
+            content: t('clone.consentNotYou', gLocale),
+            flags: MessageFlags.Ephemeral,
+          });
           return;
         }
         const ok = btn.customId.startsWith('cloneok:');
@@ -1675,7 +1718,10 @@ async function handleVoiceClone(
         lastEdit = now;
         void i
           .editReply({
-            content: t('clone.recordingProgress', locale, { got: Math.round(ms / 1000), target: seconds }),
+            content: t('clone.recordingProgress', locale, {
+              got: Math.round(ms / 1000),
+              target: seconds,
+            }),
             components: [row],
           })
           .catch(() => {});
@@ -1883,7 +1929,13 @@ async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     // singleVoice: o preview e um DEMO de UMA voz especifica; a deteccao nunca deve
     // sobrepor-se nem partir a frase-amostra por lingua. O motor e o do user (o preview
     // tem de soar ao que ele vai ouvir de facto).
-    const req: SynthRequest = { text: SAMPLE, model, speed, singleVoice: true, engine: stored?.engine };
+    const req: SynthRequest = {
+      text: SAMPLE,
+      model,
+      speed,
+      singleVoice: true,
+      engine: stored?.engine,
+    };
     // say() devolve false quando a fila esta no cap: nesse caso NAO mentir "a
     // reproduzir" — reutilizamos a mesma chave tts.busy do /tts (consistencia).
     const queued = await player.say(req);
@@ -2045,7 +2097,13 @@ async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps): Prom
     setGuildConfig(deps.db, i.guildId!, { defaultVoice: model });
     // Copy beginner-friendly: lidera com o nome amigavel (voiceDisplayName) e mantem
     // o id cru copy-pasteavel. Comportamento inalterado (so params de apresentacao).
-    await reply(i, t('config.defaultVoiceSet', locale, { name: makeLocalizedNamer(i.locale, deps.availableModels)(model), model }));
+    await reply(
+      i,
+      t('config.defaultVoiceSet', locale, {
+        name: makeLocalizedNamer(i.locale, deps.availableModels)(model),
+        model,
+      }),
+    );
   } else if (sub === 'language') {
     // Troca do idioma da INTERFACE. As choices ja limitam a SUPPORTED_LOCALES, mas
     // validamos de novo (defensivo) — includes() precisa do cast porque o array e
@@ -2060,10 +2118,7 @@ async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps): Prom
     setGuildConfig(deps.db, i.guildId!, { locale: chosen });
     // Confirmacao JA na NOVA lingua (usa `chosen`, nao `locale`): o admin ve logo
     // que a mudanca surtiu efeito. {language} = nome legivel do idioma escolhido.
-    await reply(
-      i,
-      t('config.language.set', chosen, { language: LOCALE_DISPLAY_NAMES[chosen] }),
-    );
+    await reply(i, t('config.language.set', chosen, { language: LOCALE_DISPLAY_NAMES[chosen] }));
   } else if (sub === 'show') {
     const cfg = getGuildConfig(deps.db, i.guildId!);
     const blocklistCount = getBlocklist(deps.db, i.guildId!).length;
@@ -2085,7 +2140,8 @@ async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps): Prom
       t('config.showTextInVoice', locale, { value: cfg.textInVoice ? on : off }),
       t('config.showGreet', locale, {
         value: cfg.greetOnJoin ? on : off,
-        language: GREET_LANGUAGE_CHOICES.find((c) => c.value === cfg.greetLocale)?.name ?? cfg.greetLocale,
+        language:
+          GREET_LANGUAGE_CHOICES.find((c) => c.value === cfg.greetLocale)?.name ?? cfg.greetLocale,
       }),
       t('config.showVoice', locale, { value: voiceStr }),
       t('config.showMaxChars', locale, { value: cfg.maxChars }),
@@ -2138,7 +2194,8 @@ async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   }
 
   // (a) Resolver o canal alvo: opcao `channel` ou, se omitida, o canal da interacao.
-  const ref = (i.options.getChannel('channel', false) as { id: string; type?: number } | null) ?? i.channel;
+  const ref =
+    (i.options.getChannel('channel', false) as { id: string; type?: number } | null) ?? i.channel;
   if (!ref || !('id' in ref)) {
     await reply(i, t('setup.noChannel', locale));
     return;
@@ -2226,7 +2283,10 @@ async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   // Ja juntos a voz -> proximo passo e so escrever; senao (nao estava em voz mas
   // tudo o resto ok) mantemos a dica de correr /join.
   if (!anyMissing && connectState === 'ok' && speakState === 'ok') {
-    lines.push('', joinedChannelName !== null ? t('setup.readyTalk', locale) : t('setup.allGood', locale));
+    lines.push(
+      '',
+      joinedChannelName !== null ? t('setup.readyTalk', locale) : t('setup.allGood', locale),
+    );
   }
 
   // Guia para MEMBROS: o admin acabou de configurar o servidor, mas os MEMBROS
@@ -2267,7 +2327,10 @@ async function handleStats(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     t('stats.servers', locale, { value: deps.client.guilds.cache.size }),
     t('stats.uptime', locale, { value: uptimeSec }),
   ];
-  await i.reply({ embeds: [brandEmbed().setDescription(lines.join('\n'))], flags: MessageFlags.Ephemeral });
+  await i.reply({
+    embeds: [brandEmbed().setDescription(lines.join('\n'))],
+    flags: MessageFlags.Ephemeral,
+  });
 }
 
 /**
@@ -2303,7 +2366,10 @@ async function handleBotstats(i: ChatInputCommandInteraction, deps: BotDeps): Pr
     t('botstats.messagesSpoken', locale, { value: snap.messagesSpoken }),
     t('botstats.uptime', locale, { value: formatDuration(process.uptime()) }),
   ];
-  await i.reply({ embeds: [brandEmbed().setDescription(lines.join('\n'))], flags: MessageFlags.Ephemeral });
+  await i.reply({
+    embeds: [brandEmbed().setDescription(lines.join('\n'))],
+    flags: MessageFlags.Ephemeral,
+  });
 }
 
 /**
@@ -2348,7 +2414,8 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
     // padrão do /voice clone e /voice effect.
     if (def.premium) {
       const now = Date.now();
-      const premium = isUserPremium(deps.db, i.user.id, now) || isGuildPremium(deps.db, i.guildId!, now);
+      const premium =
+        isUserPremium(deps.db, i.user.id, now) || isGuildPremium(deps.db, i.guildId!, now);
       if (!premium) {
         await i.editReply(t('game.start.premiumLocked', locale, { game: t(def.nameKey, locale) }));
         return;
@@ -2429,7 +2496,9 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
       }),
     );
     await i.reply({
-      embeds: [brandEmbed().setDescription(`${t('game.leaderboard.title', locale)}\n${lines.join('\n')}`)],
+      embeds: [
+        brandEmbed().setDescription(`${t('game.leaderboard.title', locale)}\n${lines.join('\n')}`),
+      ],
     });
     return;
   }
@@ -2442,7 +2511,9 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
       await reply(i, t('game.stats.none', locale));
       return;
     }
-    const rankStr = rank ? t('game.stats.rank', locale, { rank, total }) : t('game.stats.unranked', locale);
+    const rankStr = rank
+      ? t('game.stats.rank', locale, { rank, total })
+      : t('game.stats.unranked', locale);
     await i.reply({
       embeds: [
         brandEmbed().setDescription(
@@ -2488,7 +2559,11 @@ async function handleInvite(i: ChatInputCommandInteraction, deps: BotDeps): Prom
   // Botão de link + o URL no texto (fica clicável e copiável). ButtonStyle.Link não tem
   // customId — leva só o URL, por isso não precisa de coletor.
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(t('invite.button', locale)).setEmoji('➕'),
+    new ButtonBuilder()
+      .setStyle(ButtonStyle.Link)
+      .setURL(url)
+      .setLabel(t('invite.button', locale))
+      .setEmoji('➕'),
   );
   await i.reply({ content: t('invite.link', locale, { url }), components: [row] });
 }
@@ -2517,7 +2592,11 @@ async function handleVote(i: ChatInputCommandInteraction, deps: BotDeps): Promis
   }
   const url = `https://top.gg/bot/${clientId}/vote`;
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel(t('vote.button', locale)).setEmoji('🗳️'),
+    new ButtonBuilder()
+      .setStyle(ButtonStyle.Link)
+      .setURL(url)
+      .setLabel(t('vote.button', locale))
+      .setEmoji('🗳️'),
   );
   await i.reply({ content: t('vote.link', locale, { url }), components: [row] });
 }
@@ -2565,9 +2644,7 @@ async function handleHelp(i: ChatInputCommandInteraction, deps: BotDeps): Promis
   // apensa-o ao grupo "More" (o ultimo field). Mantem o /help como discovery real
   // sem repetir a lista a mao.
   const mentioned = fields.map((f) => f.value).join('\n');
-  const missing = commandDefs
-    .map((d) => d.name)
-    .filter((name) => !mentioned.includes(`/${name}`));
+  const missing = commandDefs.map((d) => d.name).filter((name) => !mentioned.includes(`/${name}`));
   if (missing.length) {
     const more = fields[fields.length - 1];
     more.value += '\n' + missing.map((name) => `• /${name}`).join('\n');
@@ -2608,18 +2685,20 @@ export function filterModelChoices(
   const q = query.trim().toLowerCase();
   // voice:false -> o picker mostra só a LÍNGUA (como sempre), agora na língua do user.
   const namer = makeLocalizedNamer(locale, models, { voice: false });
-  return models
-    .map((m) => ({ name: namer(m), value: m }))
-    // Procura pelo nome localizado E pelo id cru (o user pode escrever na sua língua
-    // OU o nome técnico/voz). Também casa o autónimo para não regredir a pesquisa.
-    .filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.value.toLowerCase().includes(q) ||
-        voiceDisplayName(c.value).toLowerCase().includes(q),
-    )
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 25);
+  return (
+    models
+      .map((m) => ({ name: namer(m), value: m }))
+      // Procura pelo nome localizado E pelo id cru (o user pode escrever na sua língua
+      // OU o nome técnico/voz). Também casa o autónimo para não regredir a pesquisa.
+      .filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.value.toLowerCase().includes(q) ||
+          voiceDisplayName(c.value).toLowerCase().includes(q),
+      )
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, 25)
+  );
 }
 
 /**
@@ -2647,7 +2726,8 @@ export function filterJokeLanguages(query: string): { name: string; value: strin
 export function filterLocaleChoices(query: string): { name: string; value: string }[] {
   const q = query.trim().toLowerCase();
   return SUPPORTED_LOCALES.filter(
-    (code) => LOCALE_DISPLAY_NAMES[code].toLowerCase().includes(q) || code.toLowerCase().includes(q),
+    (code) =>
+      LOCALE_DISPLAY_NAMES[code].toLowerCase().includes(q) || code.toLowerCase().includes(q),
   )
     .map((code) => ({ name: LOCALE_DISPLAY_NAMES[code], value: code }))
     .slice(0, 25);
@@ -2711,7 +2791,12 @@ function computeAutocompleteChoices(
     return botChannel
       ? [...botChannel.members.values()]
           .filter((m) => !m.user.bot)
-          .filter((m) => !q || m.displayName.toLowerCase().includes(q) || m.user.username.toLowerCase().includes(q))
+          .filter(
+            (m) =>
+              !q ||
+              m.displayName.toLowerCase().includes(q) ||
+              m.user.username.toLowerCase().includes(q),
+          )
           .slice(0, 25)
           .map((m) => ({ name: m.displayName, value: m.id }))
       : [];
@@ -2719,10 +2804,7 @@ function computeAutocompleteChoices(
   return [];
 }
 
-export async function handleAutocomplete(
-  i: AutocompleteInteraction,
-  deps: BotDeps,
-): Promise<void> {
+export async function handleAutocomplete(i: AutocompleteInteraction, deps: BotDeps): Promise<void> {
   // Instrumentação anti-"Falha ao carregar opções". O autocomplete NÃO pode ser
   // deferido e o token morre ~3s depois de o utilizador escrever; o orçamento
   // divide-se em: entrega gateway->bot (age), handler (síncrono, ~0ms) e o POST
@@ -2763,7 +2845,10 @@ export async function handleAutocomplete(
   }
 }
 
-export async function handleInteraction(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+export async function handleInteraction(
+  i: ChatInputCommandInteraction,
+  deps: BotDeps,
+): Promise<void> {
   try {
     switch (i.commandName) {
       case 'join':

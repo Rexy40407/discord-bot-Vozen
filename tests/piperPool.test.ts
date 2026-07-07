@@ -101,7 +101,7 @@ describe('PiperProcess — crash e timeout', () => {
     expect(onExit).toHaveBeenCalledWith(proc);
   });
 
-  it("crash seguido de nada nao dispara onExit duas vezes (guard)", async () => {
+  it('crash seguido de nada nao dispara onExit duas vezes (guard)', async () => {
     const child = makeFakeChild();
     const onExit = vi.fn();
     const proc = new PiperProcess(child, onExit);

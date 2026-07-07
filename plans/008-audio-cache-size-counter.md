@@ -121,28 +121,30 @@ pattern to reuse.
 
 ## Commands you will need
 
-| Purpose   | Command                          | Expected on success        |
-|-----------|----------------------------------|----------------------------|
-| Install   | `npm install`                    | exit 0                     |
-| Typecheck | `npm run build`                  | exit 0 (tsc, no errors)    |
-| Tests (file) | `npx vitest run tests/cache.test.ts` | all pass              |
-| Tests (all)  | `npx vitest run`              | 114 files / 1298+ tests pass |
+| Purpose      | Command                              | Expected on success          |
+| ------------ | ------------------------------------ | ---------------------------- |
+| Install      | `npm install`                        | exit 0                       |
+| Typecheck    | `npm run build`                      | exit 0 (tsc, no errors)      |
+| Tests (file) | `npx vitest run tests/cache.test.ts` | all pass                     |
+| Tests (all)  | `npx vitest run`                     | 114 files / 1298+ tests pass |
 
 (Verified at `fb7f916`: `npx vitest run` → 1298 passed. There is no lint script.)
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `src/tts/cache.ts`
 - `tests/cache.test.ts`
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `src/tts/factory.ts`, `src/tts/multiSegment.ts`, `src/tts/gtts.ts`,
   `src/tts/piper.ts`, `src/tts/neural.ts` — consumers of `AudioCache`; the
   public API (`get`/`put`/`withNamespace` signatures and return values) must
   not change, so they need no edits.
-- Any change to the eviction *policy* (LRU by mtime, `justWritten` exclusion,
-  `maxFiles=0` disables eviction). This plan only changes *when* the scan runs.
+- Any change to the eviction _policy_ (LRU by mtime, `justWritten` exclusion,
+  `maxFiles=0` disables eviction). This plan only changes _when_ the scan runs.
 - Cross-process counter coherence (multiple bot processes sharing one
   `audio-cache/` dir). The readdir inside `evict()` remains the authority; see
   Maintenance notes.
@@ -196,19 +198,19 @@ Still in `src/tts/cache.ts`, inside `put()`:
    `audio-cache/clone/` entirely):
 
 ```ts
-    // Detecao barata de pasta removida em runtime (purge do /voice clone delete):
-    // se o dir sumiu, recria-o e ZERA o contador (a pasta nova está vazia).
-    if (!existsSync(this.dir)) {
-      mkdirSync(this.dir, { recursive: true });
-      this.count = 0;
-    }
+// Detecao barata de pasta removida em runtime (purge do /voice clone delete):
+// se o dir sumiu, recria-o e ZERA o contador (a pasta nova está vazia).
+if (!existsSync(this.dir)) {
+  mkdirSync(this.dir, { recursive: true });
+  this.count = 0;
+}
 ```
 
-   Note this preserves today's behavior: `mkdirSync(..., {recursive:true})` on
-   an existing dir was a no-op; now it is simply skipped. The exists-first
-   guard `if (existsSync(dest)) return dest;` at the top of `put()` must stay
-   BEFORE this block, unchanged — an overwrite of an existing key returns
-   early and must NOT touch the counter (no double-count).
+Note this preserves today's behavior: `mkdirSync(..., {recursive:true})` on
+an existing dir was a no-op; now it is simply skipped. The exists-first
+guard `if (existsSync(dest)) return dest;` at the top of `put()` must stay
+BEFORE this block, unchanged — an overwrite of an existing key returns
+early and must NOT touch the counter (no double-count).
 
 2. Increment the counter only after a **successful** `renameSync` (a new file
    really landed). Do NOT increment on the `catch (err)` path (whether it
@@ -217,15 +219,15 @@ Still in `src/tts/cache.ts`, inside `put()`:
 3. Gate the eviction on the counter:
 
 ```ts
-    if (this.maxFiles > 0) {
-      this.count++;
-      if (this.count > this.maxFiles) this.evict(dest);
-    } else {
-      this.count++;
-    }
+if (this.maxFiles > 0) {
+  this.count++;
+  if (this.count > this.maxFiles) this.evict(dest);
+} else {
+  this.count++;
+}
 ```
 
-   (Equivalently: increment once, then `if (this.maxFiles > 0 && this.count > this.maxFiles) this.evict(dest);` — pick the simpler form.)
+(Equivalently: increment once, then `if (this.maxFiles > 0 && this.count > this.maxFiles) this.evict(dest);` — pick the simpler form.)
 
 **Verify**: `npm run build` → exit 0, then
 `npx vitest run tests/cache.test.ts` → all existing tests still pass
@@ -244,12 +246,12 @@ unlinks):
 3. In the unlink loop, decrement on each **successful** `unlinkSync` only:
 
 ```ts
-      try {
-        unlinkSync(candidates[i].path);
-        this.count--;
-      } catch {
-        // ficheiro já removido por outro processo — ignorar
-      }
+try {
+  unlinkSync(candidates[i].path);
+  this.count--;
+} catch {
+  // ficheiro já removido por outro processo — ignorar
+}
 ```
 
 Do not change the ordering, the `justWritten` exclusion, or the
@@ -328,8 +330,8 @@ Stop and report back (do not improvise) if:
   (e.g. `put()` no longer uses the exists-first guard or tmp+rename — the
   counter logic depends on both).
 - The existing defensive-branch tests (`AudioCache.evict — ramos defensivos`)
-  fail after Step 3 and cannot be fixed by adjusting only *call-count
-  expectations* — a behavioral change there means the reconciliation is wrong.
+  fail after Step 3 and cannot be fixed by adjusting only _call-count
+  expectations_ — a behavioral change there means the reconciliation is wrong.
 - You find another writer of `*.wav` files into the cache dir inside `src/`
   that bypasses `put()` (grep `audio-cache` and `\.wav` under `src/tts/`); the
   counter assumes `put()`/`evict()` are the only in-process mutators.

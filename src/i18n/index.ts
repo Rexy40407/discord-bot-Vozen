@@ -17,9 +17,41 @@ export const DEFAULT_LOCALE = 'en' as const;
  * Discord), o `/config language` usa AUTOCOMPLETE em vez de choices.
  */
 export const SUPPORTED_LOCALES = [
-  'en', 'pt', 'es', 'fr', 'de', 'nl', 'pl', 'tr', 'cs', 'sv', 'fi', 'da',
-  'ro', 'hu', 'cy', 'is', 'lb', 'lv', 'sk', 'sl', 'sw', 'vi', 'ca', 'it',
-  'el', 'ru', 'uk', 'kk', 'sr', 'ar', 'fa', 'ka', 'ne', 'zh', 'ja',
+  'en',
+  'pt',
+  'es',
+  'fr',
+  'de',
+  'nl',
+  'pl',
+  'tr',
+  'cs',
+  'sv',
+  'fi',
+  'da',
+  'ro',
+  'hu',
+  'cy',
+  'is',
+  'lb',
+  'lv',
+  'sk',
+  'sl',
+  'sw',
+  'vi',
+  'ca',
+  'it',
+  'el',
+  'ru',
+  'uk',
+  'kk',
+  'sr',
+  'ar',
+  'fa',
+  'ka',
+  'ne',
+  'zh',
+  'ja',
 ] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
@@ -93,11 +125,7 @@ function interpolate(template: string, params?: Record<string, string | number>)
  * `locale` nao suportado (ou suportado mas ainda sem traducao) comporta-se como
  * ausente -> cai no fallback `en`.
  */
-export function t(
-  key: string,
-  locale: string,
-  params?: Record<string, string | number>,
-): string {
+export function t(key: string, locale: string, params?: Record<string, string | number>): string {
   const entry = catalog[key];
   if (!entry) return key;
   // (1) Registry por-locale: um ficheiro locales/<locale>.ts pode sobrepor a chave.

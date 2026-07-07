@@ -8,11 +8,7 @@ import { cached, invalidate } from './cache';
 
 const keyOf = (guildId: string, userId: string): string => `${guildId}:${userId}`;
 
-export function getNickname(
-  db: Database.Database,
-  guildId: string,
-  userId: string,
-): string | null {
+export function getNickname(db: Database.Database, guildId: string, userId: string): string | null {
   return cached(db, 'user_nickname', keyOf(guildId, userId), () => {
     const row = db
       .prepare('SELECT nickname FROM user_nickname WHERE guild_id = ? AND user_id = ?')

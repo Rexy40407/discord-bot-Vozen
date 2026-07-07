@@ -5,7 +5,10 @@ import { createErrorReporter, formatErrorMessage } from '../src/errorReporter';
 // O mock é passado com cast `as unknown as typeof fetch`, por isso a forma do opts
 // pode ser a que o teste lê (method+body).
 function okFetch() {
-  return vi.fn(async (_url: string, _opts: { method: string; body: string }) => ({ ok: true, status: 204 }) as Response);
+  return vi.fn(
+    async (_url: string, _opts: { method: string; body: string }) =>
+      ({ ok: true, status: 204 }) as Response,
+  );
 }
 
 describe('formatErrorMessage', () => {
@@ -53,7 +56,10 @@ describe('createErrorReporter', () => {
 
   it('com url -> envia POST ao webhook com content', async () => {
     const fetchImpl = okFetch();
-    const r = createErrorReporter('https://discord.com/api/webhooks/x', fetchImpl as unknown as typeof fetch);
+    const r = createErrorReporter(
+      'https://discord.com/api/webhooks/x',
+      fetchImpl as unknown as typeof fetch,
+    );
     expect(await r.report(new Error('boom'), 'gateway')).toBe(true);
     const [url, opts] = fetchImpl.mock.calls[0];
     expect(url).toBe('https://discord.com/api/webhooks/x');

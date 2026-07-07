@@ -59,7 +59,9 @@ describe('entitlements — mapeamento puro', () => {
     expect(isEntitlementActive({ skuId: 's', endsTimestamp: null }, NOW)).toBe(true);
     expect(isEntitlementActive({ skuId: 's', endsTimestamp: NOW + 1 }, NOW)).toBe(true);
     expect(isEntitlementActive({ skuId: 's', endsTimestamp: NOW - 1 }, NOW)).toBe(false);
-    expect(isEntitlementActive({ skuId: 's', endsTimestamp: NOW + 1, deleted: true }, NOW)).toBe(false);
+    expect(isEntitlementActive({ skuId: 's', endsTimestamp: NOW + 1, deleted: true }, NOW)).toBe(
+      false,
+    );
   });
 
   it('entitlementsEnabled: false sem SKUs, true com pelo menos um', () => {
@@ -73,14 +75,11 @@ describe('collectPaged — o /entitlements NÃO auto-pagina (cap 100/página)', 
   it('junta TODAS as páginas (150 entitlements em páginas de 100 + 50)', async () => {
     const all = Array.from({ length: 150 }, (_, k) => ({ id: `e${String(k).padStart(3, '0')}` }));
     const pages: (string | undefined)[] = [];
-    const got = await collectPaged(
-      async (after) => {
-        pages.push(after);
-        const start = after ? all.findIndex((x) => x.id === after) + 1 : 0;
-        return all.slice(start, start + 100);
-      },
-      100,
-    );
+    const got = await collectPaged(async (after) => {
+      pages.push(after);
+      const start = after ? all.findIndex((x) => x.id === after) + 1 : 0;
+      return all.slice(start, start + 100);
+    }, 100);
     expect(got.length).toBe(150); // sem paginação teria parado nos 100 -> revogava 50 pagantes
     expect(pages).toEqual([undefined, 'e099']); // 2 chamadas: 1ª e cursor após o 100.º
   });

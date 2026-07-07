@@ -17,32 +17,28 @@ export interface RedeemResult {
 }
 
 export function isGuildPremium(db: Database.Database, guildId: string, now: number): boolean {
-  const row = db
-    .prepare('SELECT expires_at FROM premium_guild WHERE guild_id = ?')
-    .get(guildId) as { expires_at: number } | undefined;
+  const row = db.prepare('SELECT expires_at FROM premium_guild WHERE guild_id = ?').get(guildId) as
+    { expires_at: number } | undefined;
   return !!row && row.expires_at > now;
 }
 
 export function isUserPremium(db: Database.Database, userId: string, now: number): boolean {
-  const row = db
-    .prepare('SELECT expires_at FROM premium_user WHERE user_id = ?')
-    .get(userId) as { expires_at: number } | undefined;
+  const row = db.prepare('SELECT expires_at FROM premium_user WHERE user_id = ?').get(userId) as
+    { expires_at: number } | undefined;
   return !!row && row.expires_at > now;
 }
 
 /** Expiry do premium da guild (unix ms) ou null se nunca teve. Pode estar no passado. */
 export function getGuildPremiumExpiry(db: Database.Database, guildId: string): number | null {
-  const row = db
-    .prepare('SELECT expires_at FROM premium_guild WHERE guild_id = ?')
-    .get(guildId) as { expires_at: number } | undefined;
+  const row = db.prepare('SELECT expires_at FROM premium_guild WHERE guild_id = ?').get(guildId) as
+    { expires_at: number } | undefined;
   return row ? row.expires_at : null;
 }
 
 /** Expiry do Plus do utilizador (unix ms) ou null se nunca teve. Pode estar no passado. */
 export function getUserPremiumExpiry(db: Database.Database, userId: string): number | null {
-  const row = db
-    .prepare('SELECT expires_at FROM premium_user WHERE user_id = ?')
-    .get(userId) as { expires_at: number } | undefined;
+  const row = db.prepare('SELECT expires_at FROM premium_user WHERE user_id = ?').get(userId) as
+    { expires_at: number } | undefined;
   return row ? row.expires_at : null;
 }
 
@@ -76,9 +72,8 @@ export function grantUserPremium(
   source: string,
   now: number,
 ): number {
-  const row = db
-    .prepare('SELECT expires_at FROM premium_user WHERE user_id = ?')
-    .get(userId) as { expires_at: number } | undefined;
+  const row = db.prepare('SELECT expires_at FROM premium_user WHERE user_id = ?').get(userId) as
+    { expires_at: number } | undefined;
   const base = row && row.expires_at > now ? row.expires_at : now;
   const expiresAt = base + days * DAY_MS;
   db.prepare(
@@ -167,10 +162,14 @@ export function syncDiscordEntitlements(
       }[]
     ).filter((r) => !activeUsers.has(r.user_id));
     for (const r of staleGuilds) {
-      db.prepare("DELETE FROM premium_guild WHERE guild_id = ? AND source = 'discord'").run(r.guild_id);
+      db.prepare("DELETE FROM premium_guild WHERE guild_id = ? AND source = 'discord'").run(
+        r.guild_id,
+      );
     }
     for (const r of staleUsers) {
-      db.prepare("DELETE FROM premium_user WHERE user_id = ? AND source = 'discord'").run(r.user_id);
+      db.prepare("DELETE FROM premium_user WHERE user_id = ? AND source = 'discord'").run(
+        r.user_id,
+      );
     }
 
     // Concede/estende os ativos.
@@ -209,8 +208,7 @@ export function createRedeemCode(
  */
 export function peekRedeemCodeKind(db: Database.Database, code: string): PremiumKind | null {
   const row = db.prepare('SELECT kind FROM redeem_code WHERE code = ?').get(code) as
-    | { kind: string }
-    | undefined;
+    { kind: string } | undefined;
   if (!row) return null;
   return row.kind === 'guild' ? 'guild' : 'user';
 }
@@ -240,7 +238,11 @@ export function redeemCode(
     if (kind === 'guild' && !target.guildId) return { status: 'invalid' };
 
     const usedBy = kind === 'guild' ? (target.guildId as string) : target.userId;
-    db.prepare('UPDATE redeem_code SET used_by = ?, used_at = ? WHERE code = ?').run(usedBy, now, code);
+    db.prepare('UPDATE redeem_code SET used_by = ?, used_at = ? WHERE code = ?').run(
+      usedBy,
+      now,
+      code,
+    );
 
     const expiresAt =
       kind === 'guild'

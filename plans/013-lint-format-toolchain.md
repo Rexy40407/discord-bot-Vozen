@@ -42,25 +42,27 @@ The repo has no linter, no formatter, no `.editorconfig`; CI runs only build + t
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Install new devDeps | `npm install -D eslint @eslint/js typescript-eslint prettier eslint-config-prettier` | exit 0 |
-| Lint | `npm run lint` | exit 0 (after Step 5) |
-| Lint autofix | `npm run lint:fix` | exit 0 |
-| Format count | `npx prettier --check .` | lists files needing format (Step 4) |
-| Format | `npm run format` | exit 0 |
-| Tests | `npx vitest run` | all pass |
-| Build | `npm run build` | exit 0 |
+| Purpose             | Command                                                                              | Expected on success                 |
+| ------------------- | ------------------------------------------------------------------------------------ | ----------------------------------- |
+| Install new devDeps | `npm install -D eslint @eslint/js typescript-eslint prettier eslint-config-prettier` | exit 0                              |
+| Lint                | `npm run lint`                                                                       | exit 0 (after Step 5)               |
+| Lint autofix        | `npm run lint:fix`                                                                   | exit 0                              |
+| Format count        | `npx prettier --check .`                                                             | lists files needing format (Step 4) |
+| Format              | `npm run format`                                                                     | exit 0                              |
+| Tests               | `npx vitest run`                                                                     | all pass                            |
+| Build               | `npm run build`                                                                      | exit 0                              |
 
 ## Scope
 
 **In scope**:
+
 - `eslint.config.mjs`, `.prettierrc`, `.prettierignore`, `.editorconfig` (create)
 - `package.json` + `package-lock.json` (devDeps + scripts)
 - `.github/workflows/ci.yml` (add lint/format-check steps)
 - The one-time mechanical reformat of `src/**`, `tests/**`, `scripts/**`, `tools/*.{ts,mjs}`, `vitest.config.ts` and root JSON/MD files (Step 6, separate commit)
 
 **Out of scope** (do NOT touch):
+
 - Any BEHAVIORAL change while fixing lint findings — autofix and formatting only; a lint error that needs a logic change is a STOP.
 - `dist/`, `site/`, `site-dist/`, `logs/`, `tools/clone-venv/`, `audio-cache/`, `voice-clones/` — ignored, never reformatted.
 - Type-checked (type-aware) ESLint rules — explicitly NOT enabled in this plan (keeps lint fast; can be a follow-up).
@@ -175,8 +177,8 @@ In `package.json` `scripts`, add:
 In `.github/workflows/ci.yml`, after `npm run build` (and after `npm run typecheck` if plan 005 already landed):
 
 ```yaml
-      - run: npm run lint
-      - run: npm run format:check
+- run: npm run lint
+- run: npm run format:check
 ```
 
 **Verify**: `git grep -n "npm run lint" -- .github/workflows/ci.yml` → 1 match; `node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('json ok')"` → `json ok`.

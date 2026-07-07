@@ -149,7 +149,9 @@ function startOnce() {
       return;
     }
     attempt = d.nextAttempt;
-    log(`bot caiu (código ${code ?? 'null'}, sinal ${signal ?? 'null'}) — reinício #${attempt} em ${d.delayMs / 1000}s.`);
+    log(
+      `bot caiu (código ${code ?? 'null'}, sinal ${signal ?? 'null'}) — reinício #${attempt} em ${d.delayMs / 1000}s.`,
+    );
     setTimeout(startOnce, d.delayMs);
   });
 

@@ -36,10 +36,7 @@ function scriptOf(ch: string): Script {
     return 'cjk';
   }
   // Latin basico + Latin-1 suplemento + Latin estendido A/B (acentos).
-  if (
-    (c >= 0x0041 && c <= 0x007a) ||
-    (c >= 0x00c0 && c <= 0x024f)
-  ) {
+  if ((c >= 0x0041 && c <= 0x007a) || (c >= 0x00c0 && c <= 0x024f)) {
     return 'latin';
   }
   // Pontuacao, digitos, espacos, simbolos: neutros (nao forcam fronteira).

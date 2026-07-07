@@ -148,7 +148,13 @@ describe('guessLanguage — partida completa', () => {
     await flush();
 
     // Palpite errado -> ignorado (sem award).
-    mgr.handleMessage({ guildId: G, channelId: C, authorId: 'u', authorName: 'U', content: 'klingon' });
+    mgr.handleMessage({
+      guildId: G,
+      channelId: C,
+      authorId: 'u',
+      authorName: 'U',
+      content: 'klingon',
+    });
     await flush();
 
     // Esgota as 5 rondas por TIMEOUT (25s cada). Ninguem pontuou -> nao persiste.
@@ -172,11 +178,25 @@ describe('guessLanguage — partida completa', () => {
     const mgr = new GameManager(env);
     mgr.start(G, C, guessLanguageDef.create());
     await flush();
-    const base = baseCodeOf((say.mock.calls[say.mock.calls.length - 1][0] as { model: string }).model);
+    const base = baseCodeOf(
+      (say.mock.calls[say.mock.calls.length - 1][0] as { model: string }).model,
+    );
     const answer = localizedLanguageName(base, 'en');
     // Dois acertos na MESMA ronda: so o 'first' conta.
-    mgr.handleMessage({ guildId: G, channelId: C, authorId: 'first', authorName: 'F', content: answer });
-    mgr.handleMessage({ guildId: G, channelId: C, authorId: 'second', authorName: 'S', content: answer });
+    mgr.handleMessage({
+      guildId: G,
+      channelId: C,
+      authorId: 'first',
+      authorName: 'F',
+      content: answer,
+    });
+    mgr.handleMessage({
+      guildId: G,
+      channelId: C,
+      authorId: 'second',
+      authorName: 'S',
+      content: answer,
+    });
     await flush();
     // Deixa as rondas restantes expirarem por timeout para a partida terminar e persistir.
     for (let r = 0; r < 5; r++) clock.advance(25_000);
@@ -187,4 +207,3 @@ describe('guessLanguage — partida completa', () => {
     expect(points.has('second')).toBe(false);
   });
 });
-

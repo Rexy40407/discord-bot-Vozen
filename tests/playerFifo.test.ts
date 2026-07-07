@@ -65,7 +65,6 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
         new Promise((resolve) => setTimeout(() => resolve(req.text), delays[req.text] ?? 0)),
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -107,9 +106,7 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     // o 1o e saltado e o 2o toca — a prova e __playOrder === ['ok'].
     const engine: TTSEngine = {
       synth: (req: SynthRequest) =>
-        req.text === 'falha'
-          ? Promise.reject(new Error('synth boom'))
-          : Promise.resolve(req.text),
+        req.text === 'falha' ? Promise.reject(new Error('synth boom')) : Promise.resolve(req.text),
     };
 
     // Captura unhandledRejection durante o teste — nao deve ocorrer nenhuma:
@@ -120,7 +117,6 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     };
     process.on('unhandledRejection', onUnhandled);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 

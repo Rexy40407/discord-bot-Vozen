@@ -110,7 +110,7 @@ const JOKES: Record<string, string[]> = {
   ],
   fr: [
     'Que dit un escargot quand il croise une limace ? Regarde, un nudiste !',
-    "Quel est le comble pour un électricien ? De ne pas être au courant.",
+    'Quel est le comble pour un électricien ? De ne pas être au courant.',
     'Pourquoi les poissons détestent l’ordinateur ? À cause du Net.',
   ],
   de: [
@@ -131,19 +131,9 @@ const JOKES: Record<string, string[]> = {
     'Почему компьютер простудился? Потому что забыл закрыть окна.',
     'Что сказал ноль восьмёрке? Классный ремень!',
   ],
-  uk: [
-    'Чому комп’ютер застудився? Бо не закрив вікна.',
-    'Що сказав нуль вісімці? Гарний пояс!',
-  ],
-  zh: [
-    '为什么数学书不开心？因为它有太多问题。',
-    '零对八说了什么？你的腰带真好看！',
-  ],
-  ja: [
-    '布団が吹っ飛んだ。',
-    '電話に出んわ。',
-    'ゼロが8に言いました。素敵なベルトだね！',
-  ],
+  uk: ['Чому комп’ютер застудився? Бо не закрив вікна.', 'Що сказав нуль вісімці? Гарний пояс!'],
+  zh: ['为什么数学书不开心？因为它有太多问题。', '零对八说了什么？你的腰带真好看！'],
+  ja: ['布団が吹っ飛んだ。', '電話に出んわ。', 'ゼロが8に言いました。素敵なベルトだね！'],
   // ── Piadas simples e universais (curadoria nativa a melhorar depois) ───────
   ar: [
     'ماذا قال الصفر للثمانية؟ يا له من حزام جميل!',
@@ -201,10 +191,7 @@ const JOKES: Record<string, string[]> = {
     'शून्यले आठलाई के भन्यो? राम्रो पेटी!',
     'गणितको किताब किन दुःखी थियो? किनकि यसमा धेरै समस्या थिए।',
   ],
-  fa: [
-    'صفر به هشت چه گفت؟ چه کمربند قشنگی!',
-    'چرا کتاب ریاضی ناراحت بود؟ چون مشکلات زیادی داشت.',
-  ],
+  fa: ['صفر به هشت چه گفت؟ چه کمربند قشنگی!', 'چرا کتاب ریاضی ناراحت بود؟ چون مشکلات زیادی داشت.'],
   pl: [
     'Co zero powiedziało ósemce? Ładny pasek!',
     'Dlaczego książka do matematyki była smutna? Bo miała za dużo problemów.',

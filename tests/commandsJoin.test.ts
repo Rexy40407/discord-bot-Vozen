@@ -44,9 +44,7 @@ interface FakeInteraction {
   guild: unknown;
 }
 
-function makeJoinInteraction(opts: {
-  channel: unknown;
-}): FakeInteraction {
+function makeJoinInteraction(opts: { channel: unknown }): FakeInteraction {
   const replies: string[] = [];
   return {
     commandName: 'join',
@@ -87,7 +85,6 @@ describe('handleJoin — permissoes Connect/Speak', () => {
     const i = makeJoinInteraction({ channel });
     const deps = makeDeps();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleInteraction(i as any, deps);
 
     expect(joinVoiceChannel).not.toHaveBeenCalled();
@@ -115,7 +112,6 @@ describe('handleJoin — permissoes Connect/Speak', () => {
     };
     joinVoiceChannel.mockReturnValue(fakeConn);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleInteraction(i as any, deps);
 
     expect(joinVoiceChannel).toHaveBeenCalledTimes(1);
@@ -138,7 +134,6 @@ describe('handleJoin — permissoes Connect/Speak', () => {
     const i = makeJoinInteraction({ channel: null });
     const deps = makeDeps();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleInteraction(i as any, deps);
 
     expect(joinVoiceChannel).not.toHaveBeenCalled();

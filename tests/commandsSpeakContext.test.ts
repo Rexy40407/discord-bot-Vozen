@@ -17,7 +17,11 @@ import { setGuildConfig } from '../src/store/guildConfig';
 
 const GUILD = 'g-speak';
 
-function makeDeps(db: Database.Database, say: ReturnType<typeof vi.fn>, withPlayer = true): BotDeps {
+function makeDeps(
+  db: Database.Database,
+  say: ReturnType<typeof vi.fn>,
+  withPlayer = true,
+): BotDeps {
   const players = new Map<string, unknown>();
   if (withPlayer) players.set(GUILD, { say });
   return {
@@ -35,7 +39,10 @@ function makeInteraction(content: string) {
   return {
     commandName: 'Speak',
     guildId: GUILD,
-    guild: { members: { cache: { get: () => undefined } }, channels: { cache: { get: () => undefined } } },
+    guild: {
+      members: { cache: { get: () => undefined } },
+      channels: { cache: { get: () => undefined } },
+    },
     user: { id: 'u-1' },
     locale: 'pt-BR',
     targetMessage: { content },

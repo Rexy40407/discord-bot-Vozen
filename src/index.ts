@@ -52,7 +52,9 @@ async function main(): Promise<void> {
   const EXCLUDED_MODELS = new Set(['pt_PT-tugao-medium']);
   const piperModels = discoverModels(config.modelsDir).filter((m) => !EXCLUDED_MODELS.has(m));
   if (piperModels.length === 0) {
-    log.warn(`[index] nenhum modelo .onnx em ${config.modelsDir} — so vozes gTTS ficarao disponiveis.`);
+    log.warn(
+      `[index] nenhum modelo .onnx em ${config.modelsDir} — so vozes gTTS ficarao disponiveis.`,
+    );
   }
   // Vozes SO-Google: linguas que o gTTS fala mas SEM modelo Piper standard (ex.: japones
   // — o rhasspy/piper-voices nao tem ja_JP). O motor-base publico e o per-user com o
@@ -92,7 +94,9 @@ async function main(): Promise<void> {
   // Só com TTS_ENGINE=neural (operador) é que se usa o motor único (OpenAI). P14.4:
   // selectEngine embrulha-o num MultiSegmentEngine se a flag multilingualSegments estiver ON.
   const baseEngine =
-    config.ttsEngine === 'neural' ? createEngine(config, cache) : createPerUserEngine(config, cache);
+    config.ttsEngine === 'neural'
+      ? createEngine(config, cache)
+      : createPerUserEngine(config, cache);
   // Decoradores externos, de dentro para fora:
   //   selectEngine (multi-segmento) -> CloneEngine (voz clonada, premium) -> EffectEngine
   // O CloneEngine substitui a SÍNTESE quando req.cloneRef está presente (voz da pessoa);
@@ -105,12 +109,16 @@ async function main(): Promise<void> {
     cache.withNamespace('clone'),
     cloneCmd,
   );
-  log.info(`[index] clone de voz: ${cloneEngine.available ? 'motor detetado' : 'sem motor (voz normal)'}`);
+  log.info(
+    `[index] clone de voz: ${cloneEngine.available ? 'motor detetado' : 'sem motor (voz normal)'}`,
+  );
   // Pré-aquece o modelo de clone no arranque (~35s de GPU), para a 1.ª mensagem clonada
   // não pagar o cold-load. No-op sem motor; falha cai na voz normal.
   cloneEngine.prewarm();
   const engine = new EffectEngine(cloneEngine, cache.withNamespace('fx'));
-  log.info(`[index] motor TTS ativo: ${config.ttsEngine === 'neural' ? 'neural' : 'per-user (google+piper)'}`);
+  log.info(
+    `[index] motor TTS ativo: ${config.ttsEngine === 'neural' ? 'neural' : 'per-user (google+piper)'}`,
+  );
   if (config.multilingualSegments) {
     log.warn(
       '[index] MULTILINGUAL_SEGMENTS ON — sintese multi-lingua por-segmento EXPERIMENTAL ativa.',
@@ -287,7 +295,10 @@ async function main(): Promise<void> {
       stateFile: path.join(path.dirname(config.dbPath), 'commands-state.json'),
     });
   } catch (err) {
-    log.error('[index] falha ao sincronizar comandos (ignorado, arranco com os já registados)', err);
+    log.error(
+      '[index] falha ao sincronizar comandos (ignorado, arranco com os já registados)',
+      err,
+    );
   }
   await client.login(config.token);
 }

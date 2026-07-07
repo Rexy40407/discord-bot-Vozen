@@ -80,9 +80,8 @@ export function getGuildConfig(db: Database.Database, guildId: string): GuildCon
 }
 
 function loadGuildConfig(db: Database.Database, guildId: string): GuildConfig {
-  const row = db
-    .prepare('SELECT * FROM guild_config WHERE guild_id = ?')
-    .get(guildId) as GuildConfigRow | undefined;
+  const row = db.prepare('SELECT * FROM guild_config WHERE guild_id = ?').get(guildId) as
+    GuildConfigRow | undefined;
   if (!row) return { ...DEFAULTS };
   return {
     ttsChannelId: row.tts_channel_id,

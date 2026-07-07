@@ -265,9 +265,7 @@ export class GTTSEngine implements TTSEngine {
       retries: this.retries,
       sleep: this.sleep,
       onRetry: (err, attempt) =>
-        log.warn(
-          `[gtts] tentativa ${attempt + 1} falhou (${(err as Error).message}) — a repetir…`,
-        ),
+        log.warn(`[gtts] tentativa ${attempt + 1} falhou (${(err as Error).message}) — a repetir…`),
     });
   }
 

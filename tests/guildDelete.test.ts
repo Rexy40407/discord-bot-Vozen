@@ -70,7 +70,11 @@ describe('handleGuildDelete', () => {
 
   it('nao crasha se player.destroy() lancar; limiter ainda e removido', () => {
     const deps = fakeDeps();
-    const bad = { destroy: vi.fn(() => { throw new Error('boom'); }) } as unknown as GuildVoicePlayer;
+    const bad = {
+      destroy: vi.fn(() => {
+        throw new Error('boom');
+      }),
+    } as unknown as GuildVoicePlayer;
     deps.players.set('G', bad);
     deps.limiters.set('G', { limiter: new RateLimiter(5), perMin: 5 });
 

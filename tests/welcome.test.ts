@@ -17,11 +17,7 @@ function makeChannel(id: string, type: number, granted: bigint[]): unknown {
 
 // Guild fake: `me` e a referencia do bot; systemChannel e a cache (Collection-like
 // via array de canais) sao configuraveis.
-function makeGuild(opts: {
-  systemChannel?: unknown;
-  channels?: unknown[];
-  me?: unknown;
-}): unknown {
+function makeGuild(opts: { systemChannel?: unknown; channels?: unknown[]; me?: unknown }): unknown {
   // Distingue "me nao fornecido" (default = bot fake) de "me explicitamente null"
   // (bot ausente): usamos 'me' in opts em vez de ?? para nao colapsar o null.
   const me = 'me' in opts ? opts.me : { id: 'bot-1' };

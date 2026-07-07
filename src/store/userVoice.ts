@@ -20,11 +20,17 @@ export function getUserVoice(
 ): { model: string; speed: number; engine: UserEngine } | null {
   const row = cached(db, 'user_voice', keyOf(guildId, userId), () => {
     const r = db
-      .prepare('SELECT voice_model, speed, engine FROM user_voice WHERE guild_id = ? AND user_id = ?')
+      .prepare(
+        'SELECT voice_model, speed, engine FROM user_voice WHERE guild_id = ? AND user_id = ?',
+      )
       .get(guildId, userId) as UserVoiceRow | undefined;
     if (!r) return null;
     // Coluna NOT NULL DEFAULT 'google'; qualquer valor != 'piper' cai em 'google' (seguro).
-    return { model: r.voice_model, speed: r.speed, engine: r.engine === 'piper' ? 'piper' : 'google' } as {
+    return {
+      model: r.voice_model,
+      speed: r.speed,
+      engine: r.engine === 'piper' ? 'piper' : 'google',
+    } as {
       model: string;
       speed: number;
       engine: UserEngine;
@@ -50,11 +56,7 @@ export function setUserVoice(
   invalidate(db, 'user_voice', keyOf(guildId, userId));
 }
 
-export function resetUserVoice(
-  db: Database.Database,
-  guildId: string,
-  userId: string,
-): void {
+export function resetUserVoice(db: Database.Database, guildId: string, userId: string): void {
   db.prepare('DELETE FROM user_voice WHERE guild_id = ? AND user_id = ?').run(guildId, userId);
   invalidate(db, 'user_voice', keyOf(guildId, userId));
 }

@@ -49,13 +49,13 @@ Key excerpts (verify before editing):
 `src/tts/gtts.ts:200-206` — the serial loop this plan replaces:
 
 ```ts
-    // Um MP3 por pedaço; concatenam-se os bytes (frames MP3 do mesmo formato) e o
-    // ffmpeg demuxa o stream inteiro de uma vez.
-    const mp3s: Buffer[] = [];
-    for (const c of chunks) {
-      mp3s.push(await this.fetchChunk(c, lang));
-    }
-    const mp3 = Buffer.concat(mp3s);
+// Um MP3 por pedaço; concatenam-se os bytes (frames MP3 do mesmo formato) e o
+// ffmpeg demuxa o stream inteiro de uma vez.
+const mp3s: Buffer[] = [];
+for (const c of chunks) {
+  mp3s.push(await this.fetchChunk(c, lang));
+}
+const mp3 = Buffer.concat(mp3s);
 ```
 
 Order matters: `mp3s` must stay in chunk order — the buffers are concatenated
@@ -81,14 +81,14 @@ backoff; 403/other 4xx are hard failures; timeouts are NOT retried. This
 tagging is load-bearing and must remain exactly as-is:
 
 ```ts
-    if (!res.ok) {
-      // 429 = rate-limit da Google (o preço de um endpoint não-oficial); 5xx = erro do
-      // servidor. Ambos transitórios -> retry. 403/outros 4xx -> falha dura.
-      throw taggedError(
-        `gTTS: HTTP ${res.status} ${res.statusText} (429 = limite da Google)`,
-        isRetryableStatus(res.status),
-      );
-    }
+if (!res.ok) {
+  // 429 = rate-limit da Google (o preço de um endpoint não-oficial); 5xx = erro do
+  // servidor. Ambos transitórios -> retry. 403/outros 4xx -> falha dura.
+  throw taggedError(
+    `gTTS: HTTP ${res.status} ${res.statusText} (429 = limite da Google)`,
+    isRetryableStatus(res.status),
+  );
+}
 ```
 
 `src/tts/gtts.ts:166-186` — `GttsOptions` and the constructor (injection
@@ -116,6 +116,7 @@ export interface GttsOptions {
 
 `src/tts/factory.ts` — the three `GTTSEngine` construction sites that must
 pass the new option through:
+
 - line 29 (`createPerUserEngine`): `const gtts = new GTTSEngine(cache.withNamespace('gtts'));`
 - line 66 (`createEngine`, `ttsEngine === 'gtts'`): `return new GTTSEngine(cache.withNamespace('gtts'));`
 - line 75 (`createEngine`, `ttsEngine === 'router'`): `{ engine: new GTTSEngine(cache.withNamespace('gtts')), langs: null, label: 'gtts' },`
@@ -130,18 +131,19 @@ conditions.
 
 ## Commands you will need
 
-| Purpose   | Command                          | Expected on success        |
-|-----------|----------------------------------|----------------------------|
-| Install   | `npm install`                    | exit 0                     |
-| Typecheck | `npm run build`                  | exit 0 (tsc, no errors)    |
-| Tests (files) | `npx vitest run tests/gtts.test.ts tests/config.test.ts tests/factory.test.ts tests/circuitBreaker.test.ts` | all pass |
-| Tests (all)  | `npx vitest run`              | 114 files / 1298+ tests pass |
+| Purpose       | Command                                                                                                     | Expected on success          |
+| ------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Install       | `npm install`                                                                                               | exit 0                       |
+| Typecheck     | `npm run build`                                                                                             | exit 0 (tsc, no errors)      |
+| Tests (files) | `npx vitest run tests/gtts.test.ts tests/config.test.ts tests/factory.test.ts tests/circuitBreaker.test.ts` | all pass                     |
+| Tests (all)   | `npx vitest run`                                                                                            | 114 files / 1298+ tests pass |
 
 (Verified at `fb7f916`: `npx vitest run` → 1298 passed. No lint script.)
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `src/tts/gtts.ts`
 - `src/config/index.ts`
 - `src/tts/factory.ts`
@@ -150,6 +152,7 @@ conditions.
   extend, don't rewrite)
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `src/tts/circuitBreaker.ts` — the failure-cooldown decorator; its semantics
   must remain byte-identical.
 - `src/commands/prepareSpeech.ts` — the 2400-char cap is a deliberate
@@ -175,7 +178,7 @@ In `src/config/index.ts`:
    Portuguese comment explaining it caps simultaneous chunk fetches to Google):
 
 ```ts
-  gttsChunkConcurrency: number;
+gttsChunkConcurrency: number;
 ```
 
 2. In `loadConfig()`, next to the breaker lines (216-217):
@@ -217,6 +220,7 @@ export async function mapWithConcurrency<T, R>(
 ```
 
 Properties the implementation MUST have (however you phrase it):
+
 - results indexed by input position (order preserved regardless of completion order);
 - never more than `limit` invocations of `fn` in flight;
 - if any `fn` rejects, the returned promise rejects (Promise.all semantics);
@@ -244,29 +248,29 @@ Properties the implementation MUST have (however you phrase it):
 4. Replace the serial loop at lines 202-205 with:
 
 ```ts
-    // Fan-out LIMITADO (default 3): pedaços em paralelo, ordem preservada no array.
-    // O retry/backoff por pedaço (fetchChunk) fica intacto; um pedaço que falhe
-    // (esgotadas as tentativas) rejeita a síntese inteira — como no loop serial.
-    const mp3s = await mapWithConcurrency(chunks, this.chunkConcurrency, (c) =>
-      this.fetchChunk(c, lang),
-    );
-    const mp3 = Buffer.concat(mp3s);
+// Fan-out LIMITADO (default 3): pedaços em paralelo, ordem preservada no array.
+// O retry/backoff por pedaço (fetchChunk) fica intacto; um pedaço que falhe
+// (esgotadas as tentativas) rejeita a síntese inteira — como no loop serial.
+const mp3s = await mapWithConcurrency(chunks, this.chunkConcurrency, (c) =>
+  this.fetchChunk(c, lang),
+);
+const mp3 = Buffer.concat(mp3s);
 ```
 
 5. In `src/tts/factory.ts`, pass the config value at the three construction
    sites listed in Current state, e.g.:
 
 ```ts
-  const gtts = new GTTSEngine(cache.withNamespace('gtts'), {
-    chunkConcurrency: config.gttsChunkConcurrency,
-  });
+const gtts = new GTTSEngine(cache.withNamespace('gtts'), {
+  chunkConcurrency: config.gttsChunkConcurrency,
+});
 ```
 
-   Note: `tests/gtts.test.ts:218` builds a partial config
-   (`{ ttsEngine: 'gtts', openaiApiKey: undefined } as unknown as AppConfig`) —
-   `config.gttsChunkConcurrency` will be `undefined` there, which falls back to
-   the default 3 via `?? GTTS_DEFAULT_CHUNK_CONCURRENCY`. Confirm this
-   fallback chain works (i.e. the constructor default handles `undefined`).
+Note: `tests/gtts.test.ts:218` builds a partial config
+(`{ ttsEngine: 'gtts', openaiApiKey: undefined } as unknown as AppConfig`) —
+`config.gttsChunkConcurrency` will be `undefined` there, which falls back to
+the default 3 via `?? GTTS_DEFAULT_CHUNK_CONCURRENCY`. Confirm this
+fallback chain works (i.e. the constructor default handles `undefined`).
 
 **Verify**: `npm run build` → exit 0;
 `npx vitest run tests/gtts.test.ts tests/factory.test.ts` → all existing tests
@@ -364,7 +368,7 @@ Stop and report back (do not improvise) if:
 
 ## Maintenance notes
 
-- Concurrency 3 multiplies the *instantaneous* request rate to Google's
+- Concurrency 3 multiplies the _instantaneous_ request rate to Google's
   unofficial endpoint by up to 3 for long messages. If 429s become more
   frequent in production logs (`[gtts] tentativa ... falhou`) or the breaker
   opens more often (`[breaker] 'gtts' ABERTO`), lower `GTTS_CHUNK_CONCURRENCY`

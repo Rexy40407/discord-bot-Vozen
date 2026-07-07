@@ -28,7 +28,13 @@ function make(threshold = 3, cooldownMs = 60_000) {
     now: () => t,
     label: 'gtts',
   });
-  return { breaker, primary, fallback, advance: (ms: number) => (t += ms), setTime: (v: number) => (t = v) };
+  return {
+    breaker,
+    primary,
+    fallback,
+    advance: (ms: number) => (t += ms),
+    setTime: (v: number) => (t = v),
+  };
 }
 
 describe('CircuitBreakerEngine — cooldown do gTTS', () => {

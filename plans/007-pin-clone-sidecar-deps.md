@@ -53,23 +53,25 @@
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Venv exists? | `Test-Path tools\clone-venv\Scripts\python.exe` | `True` |
-| Read versions | (see Step 1 one-liner) | 4 lines `name version` |
-| List all venv packages | (see Step 1 one-liner) | package list printed |
-| Unpinned-install grep | `git grep -nE "pip install (torch|chatterbox)" -- tools/setup-clone.ps1` | no matches (after Step 3) |
-| PS syntax check | `powershell -NoProfile -Command "[scriptblock]::Create((Get-Content -Raw tools/setup-clone.ps1)) > $null; 'syntax ok'"` | prints `syntax ok` |
+| Purpose                | Command                                                                                                                 | Expected on success                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Venv exists?           | `Test-Path tools\clone-venv\Scripts\python.exe`                                                                         | `True`                                 |
+| Read versions          | (see Step 1 one-liner)                                                                                                  | 4 lines `name version`                 |
+| List all venv packages | (see Step 1 one-liner)                                                                                                  | package list printed                   |
+| Unpinned-install grep  | `git grep -nE "pip install (torch                                                                                       | chatterbox)" -- tools/setup-clone.ps1` | no matches (after Step 3) |
+| PS syntax check        | `powershell -NoProfile -Command "[scriptblock]::Create((Get-Content -Raw tools/setup-clone.ps1)) > $null; 'syntax ok'"` | prints `syntax ok`                     |
 
 (This plan runs on the operator's Windows machine; the venv only exists there.)
 
 ## Scope
 
 **In scope** (the only files you should create/modify):
+
 - `tools/requirements-clone.txt` (create)
 - `tools/setup-clone.ps1` (replace the two unpinned install lines)
 
 **Out of scope** (do NOT touch):
+
 - `tools/clone-venv/` — the live venv. Do NOT reinstall, upgrade, or "fix pip" in it; it is the known-good reference and the bot uses it in production on this machine.
 - `tools/clone_server.py` — the sidecar server; unrelated.
 - `.gitignore` — `tools/clone-venv/` must stay ignored; `requirements-clone.txt` is NOT ignored by any existing pattern (verified), so no change needed.
@@ -134,6 +136,7 @@ pillow==12.3.0
 ```
 
 Notes:
+
 - The `+cu124` local version suffix is required — those wheels only exist on the `https://download.pytorch.org/whl/cu124` index, which the script passes via `--index-url` (Step 3).
 - Keep the header comment in Portuguese (repo convention).
 
@@ -157,6 +160,7 @@ with:
 Keep line 27 (`pip install --upgrade pip`) and everything else unchanged. Rationale to preserve in a short Portuguese comment above the new line: torch/torchaudio resolve from the cu124 index, chatterbox-tts/pillow fall through to PyPI via `--extra-index-url`; exact `==` pins keep resolution deterministic. Also update the line-26 comment if you wish, but do not remove it.
 
 **Verify**:
+
 - `git grep -nE "pip install (torch|chatterbox)" -- tools/setup-clone.ps1` → no matches.
 - `git grep -n "requirements-clone.txt" -- tools/setup-clone.ps1` → 1 match.
 - Syntax check: `powershell -NoProfile -Command "[scriptblock]::Create((Get-Content -Raw tools/setup-clone.ps1)) > $null; 'syntax ok'"` → prints `syntax ok`.

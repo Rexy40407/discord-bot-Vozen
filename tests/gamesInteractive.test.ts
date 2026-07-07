@@ -70,7 +70,13 @@ describe('Reflexos', () => {
     await flush();
 
     // Antes do GO: uma mensagem e falsa partida (tooSoon), sem resolver a ronda.
-    mgr.handleMessage({ guildId: G, channelId: C, authorId: 'jumpy', authorName: 'J', content: 'já!' });
+    mgr.handleMessage({
+      guildId: G,
+      channelId: C,
+      authorId: 'jumpy',
+      authorName: 'J',
+      content: 'já!',
+    });
     await flush();
     expect(sentKeys(send)).toContain('game.reflexes.tooSoon');
 
@@ -78,14 +84,26 @@ describe('Reflexos', () => {
     clock.advance(6_000);
     await flush();
     expect(sentKeys(send)).toContain('game.reflexes.go');
-    mgr.handleMessage({ guildId: G, channelId: C, authorId: 'fast', authorName: 'Fast', content: 'aqui' });
+    mgr.handleMessage({
+      guildId: G,
+      channelId: C,
+      authorId: 'fast',
+      authorName: 'Fast',
+      content: 'aqui',
+    });
     await flush();
 
     // Ganha as restantes 2 rondas da mesma forma.
     for (let r = 0; r < 2; r++) {
       clock.advance(6_000);
       await flush();
-      mgr.handleMessage({ guildId: G, channelId: C, authorId: 'fast', authorName: 'Fast', content: 'x' });
+      mgr.handleMessage({
+        guildId: G,
+        channelId: C,
+        authorId: 'fast',
+        authorName: 'Fast',
+        content: 'x',
+      });
       await flush();
     }
     expect(persistScores).toHaveBeenCalledTimes(1);
@@ -104,14 +122,24 @@ describe('Vozen Diz', () => {
     let realObeyed = 0;
     for (let r = 0; r < 6; r++) {
       // Ultimo announce indica real vs trap; a palavra e o ultimo token do ctx.say.
-      const announce = [...send.mock.calls].reverse().find((c) =>
-        String(c[1]).startsWith('game.vozenSays.real') || String(c[1]).startsWith('game.vozenSays.trap'),
-      );
+      const announce = [...send.mock.calls]
+        .reverse()
+        .find(
+          (c) =>
+            String(c[1]).startsWith('game.vozenSays.real') ||
+            String(c[1]).startsWith('game.vozenSays.trap'),
+        );
       const isReal = String(announce![1]).startsWith('game.vozenSays.real');
       const spoken = (say.mock.calls[say.mock.calls.length - 1][0] as { text: string }).text;
       const word = spoken.split(' ').pop()!;
       const before = send.mock.calls.length;
-      mgr.handleMessage({ guildId: G, channelId: C, authorId: 'u', authorName: 'U', content: word });
+      mgr.handleMessage({
+        guildId: G,
+        channelId: C,
+        authorId: 'u',
+        authorName: 'U',
+        content: word,
+      });
       await flush();
       const newKeys = send.mock.calls.slice(before).map((c) => String(c[1]).split(' ')[0]);
       if (isReal) {

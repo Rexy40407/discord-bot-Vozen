@@ -95,19 +95,21 @@
 
 ## Commands you will need
 
-| Purpose | Command | Expected on success |
-|---------|---------|---------------------|
-| Install | `npm install` | exit 0 |
-| New test only | `npx vitest run tests/voiceSession.test.ts` | all pass |
-| Full suite | `npx vitest run` | all pass |
-| Build | `npm run build` | exit 0 (nothing in src/ changed) |
+| Purpose       | Command                                     | Expected on success              |
+| ------------- | ------------------------------------------- | -------------------------------- |
+| Install       | `npm install`                               | exit 0                           |
+| New test only | `npx vitest run tests/voiceSession.test.ts` | all pass                         |
+| Full suite    | `npx vitest run`                            | all pass                         |
+| Build         | `npm run build`                             | exit 0 (nothing in src/ changed) |
 
 ## Scope
 
 **In scope** (the only file you should create/modify):
+
 - `tests/voiceSession.test.ts` (create)
 
 **Out of scope** (do NOT touch):
+
 - `src/voice/session.ts` — this plan TESTS it; if the test reveals a genuine bug, that's a STOP-and-report, not a fix here.
 - `src/bot/deps.ts`, `src/voice/player.ts` — used as-is.
 - `tests/messageHandlerAutojoin.test.ts`, `tests/playerCrossKill.test.ts` — their coverage is complementary; don't refactor them.
@@ -142,7 +144,13 @@ Two mocks, both declared BEFORE importing the module under test (vitest hoists `
      GuildVoicePlayer: class {
        onIdle: () => void;
        destroy = vi.fn();
-       constructor(_conn: unknown, _engine: unknown, _cap: number, _idleMs: number, onIdle: () => void) {
+       constructor(
+         _conn: unknown,
+         _engine: unknown,
+         _cap: number,
+         _idleMs: number,
+         onIdle: () => void,
+       ) {
          this.onIdle = onIdle;
          captured.players.push(this);
        }
@@ -218,6 +226,7 @@ Do NOT attempt the stage-channel positive path — the module's own comment (`sr
 ### Step 5: Full gate
 
 **Verify**:
+
 - `npx vitest run` → full suite passes (previous count + new tests, no other file affected).
 - `npm run build` → exit 0.
 - `git status --short` → only `tests/voiceSession.test.ts`.

@@ -37,6 +37,6 @@ resume o essencial e **liga** para o detalhe; não repete os guias completos.
 
 ---
 
-**Privacidade e Termos:** revê **[PRIVACY.md](PRIVACY.md)** e **[TERMS.md](TERMS.md)** antes de ir público — são os URLs (`.../blob/main/PRIVACY.md` e `.../blob/main/TERMS.md`) a colar nos campos *Privacy Policy URL* / *Terms of Service URL* do Developer Portal.
+**Privacidade e Termos:** revê **[PRIVACY.md](PRIVACY.md)** e **[TERMS.md](TERMS.md)** antes de ir público — são os URLs (`.../blob/main/PRIVACY.md` e `.../blob/main/TERMS.md`) a colar nos campos _Privacy Policy URL_ / _Terms of Service URL_ do Developer Portal.
 
 **Dúvidas sobre comandos?** Corre **`/help`** no Discord para a lista completa.

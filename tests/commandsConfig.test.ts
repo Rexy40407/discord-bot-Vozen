@@ -215,7 +215,9 @@ describe('/config tts-channel — validacao de tipo e acesso', () => {
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     // Migrado PT->EN (P16.2): "Pick a text channel (not a voice channel or a category)."
-    expect(i.replies.some((r) => /text channel|voice channel|category|texto|voz|categoria/i.test(r))).toBe(true);
+    expect(
+      i.replies.some((r) => /text channel|voice channel|category|texto|voz|categoria/i.test(r)),
+    ).toBe(true);
     expect(getGuildConfig(db, GUILD).ttsChannelId).toBeNull();
   });
 

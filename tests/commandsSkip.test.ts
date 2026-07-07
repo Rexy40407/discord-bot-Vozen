@@ -45,7 +45,6 @@ describe('/skip — distingue "nada a tocar" de "saltei" (P18.3)', () => {
     const deps = makeDeps(player);
     const i = makeSkipInteraction();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleInteraction(i as any, deps);
 
     // t('skip.nothing','en') = "Nothing is playing right now."
@@ -62,7 +61,6 @@ describe('/skip — distingue "nada a tocar" de "saltei" (P18.3)', () => {
     const deps = makeDeps(player);
     const i = makeSkipInteraction();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleInteraction(i as any, deps);
 
     expect(skip).toHaveBeenCalledOnce();
@@ -77,7 +75,6 @@ describe('/skip — distingue "nada a tocar" de "saltei" (P18.3)', () => {
     const deps = makeDeps(); // sem player
     const i = makeSkipInteraction();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleInteraction(i as any, deps);
 
     const text = i.replies.join('\n');

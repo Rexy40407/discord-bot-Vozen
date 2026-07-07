@@ -103,7 +103,9 @@ class WordleGame implements Game {
   /** Grelha completa em ANSI (fallback sem tiles): células coloridas em code block. */
   private renderGridAnsi(): string {
     const rows = this.rows.map((r) =>
-      [...r.letters.toUpperCase()].map((ch, i) => `${ESC}[${SGR[r.states[i]]}m ${ch} ${ESC}[0m`).join(''),
+      [...r.letters.toUpperCase()]
+        .map((ch, i) => `${ESC}[${SGR[r.states[i]]}m ${ch} ${ESC}[0m`)
+        .join(''),
     );
     return '```ansi\n' + rows.join('\n') + '\n```';
   }
@@ -126,7 +128,10 @@ class WordleGame implements Game {
    */
   private keyboard(ctx: GameContext): string {
     const up = (set: Set<string>): string =>
-      [...set].sort().map((c) => c.toUpperCase()).join(' ');
+      [...set]
+        .sort()
+        .map((c) => c.toUpperCase())
+        .join(' ');
     const parts: string[] = [];
     if (this.present.size) parts.push(ctx.t('game.wordle.inWord', { letters: up(this.present) }));
     if (this.absent.size) parts.push(ctx.t('game.wordle.out', { letters: up(this.absent) }));

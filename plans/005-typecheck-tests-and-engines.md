@@ -84,9 +84,9 @@ The root `tsconfig.json` explicitly excludes `tests/`, and `vitest.config.ts` pe
 
   ```yaml
   # .github/workflows/ci.yml:25-27
-        - run: npm ci
-        - run: npm run build
-        - run: npx vitest run
+  - run: npm ci
+  - run: npm run build
+  - run: npx vitest run
   ```
 
 - Tests live flat in `tests/` (114 `*.test.ts` files) and import production code via relative paths like `../src/voice/player`. Many use `as unknown as BotDeps` casts on stub objects (see `tests/commandsJoin.test.ts:66-73`), which type-check fine; the risk is tests that got out of sync with `src/` types.
@@ -94,22 +94,24 @@ The root `tsconfig.json` explicitly excludes `tests/`, and `vitest.config.ts` pe
 
 ## Commands you will need
 
-| Purpose   | Command                | Expected on success |
-|-----------|------------------------|---------------------|
-| Install   | `npm install`          | exit 0              |
-| Build     | `npm run build`        | exit 0              |
-| Typecheck | `npm run typecheck`    | exit 0, no errors (after this plan) |
-| Tests     | `npx vitest run`       | all pass            |
+| Purpose   | Command             | Expected on success                 |
+| --------- | ------------------- | ----------------------------------- |
+| Install   | `npm install`       | exit 0                              |
+| Build     | `npm run build`     | exit 0                              |
+| Typecheck | `npm run typecheck` | exit 0, no errors (after this plan) |
+| Tests     | `npx vitest run`    | all pass                            |
 
 ## Scope
 
 **In scope** (the only files you should modify/create):
+
 - `tsconfig.test.json` (create)
 - `package.json` (add `typecheck` script + `engines` key only)
 - `.github/workflows/ci.yml` (add one step)
 - `tests/**/*.test.ts` — ONLY trivial type fixes surfaced by the new typecheck (wrong mock shapes, missing casts), and only within the limits in "STOP conditions"
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - Any file under `src/` — if a test type error can only be fixed by changing a `src/` type, that is a STOP condition, not a fix.
 - `tsconfig.json` (root) — the build config must not change; `dist/` output shape is load-bearing for `npm start` and `start:prod`.
 - `vitest.config.ts` — do not enable vitest's built-in `typecheck` mode; the plan uses a plain `tsc` pass instead (faster, no test re-run).
@@ -140,6 +142,7 @@ Create `tsconfig.test.json` at the repo root with exactly this content:
 ```
 
 Why each override exists (do not drop any):
+
 - `noEmit: true` — this config only checks; it must never write to `dist/` (the root config's `outDir: "dist"` is inherited but inert with `noEmit`).
 - `rootDir: "."` — the root's `rootDir: "src"` would reject every file under `tests/` with TS6059.
 - `exclude` — the root's inherited `exclude` contains `"tests"`, which would silently empty the `tests/**` include; overriding with `["node_modules", "dist"]` restores it.
@@ -176,6 +179,7 @@ In `package.json`:
 Do not touch anything else in the file — in particular the `"//overrides"`, `"overrides"` and `"allowScripts"` blocks.
 
 **Verify**:
+
 - `npm run typecheck` → exit 0.
 - `node -e "console.log(require('./package.json').engines.node)"` → prints `>=20`.
 - `node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('json ok')"` → prints `json ok`.
@@ -185,10 +189,10 @@ Do not touch anything else in the file — in particular the `"//overrides"`, `"
 In `.github/workflows/ci.yml`, add one step between `npm run build` and `npx vitest run`:
 
 ```yaml
-      - run: npm ci
-      - run: npm run build
-      - run: npm run typecheck
-      - run: npx vitest run
+- run: npm ci
+- run: npm run build
+- run: npm run typecheck
+- run: npx vitest run
 ```
 
 (Keep the existing comment block above `npm ci` untouched.)
@@ -200,6 +204,7 @@ In `.github/workflows/ci.yml`, add one step between `npm run build` and `npx vit
 Run the same gate CI will run.
 
 **Verify**:
+
 - `npm run build` → exit 0
 - `npm run typecheck` → exit 0
 - `npx vitest run` → all tests pass (same count as before this plan; typecheck adds no tests)

@@ -23,7 +23,7 @@
 
 ## Why this matters
 
-The voice-clone sidecar (`tools/clone_server.py`, driven by `src/tts/cloneEngine.ts`) is sent a `{warmup:true}` message on spawn, and every queued synthesis job waits for the `{ready:true}` reply before being written to the child. There is **no deadline on that reply**: the per-job `SYNTH_TIMEOUT_MS` timer is only armed *after* the ready gate. If the sidecar process stays alive but never becomes ready (GPU driver hang, model load deadlock, Python wedged), queued jobs stay pending forever, `synth()` never resolves, and — because `src/voice/player.ts` runs a single-worker FIFO per guild — the entire guild's TTS stalls behind the stuck clone request with no recovery and no fallback. A crash of the sidecar is already handled cleanly (child `exit`/`error` → `teardown()` → jobs reject → callers fall back to the normal voice); this plan makes the "alive but never ready" case behave exactly like the crash case, after a generous deadline.
+The voice-clone sidecar (`tools/clone_server.py`, driven by `src/tts/cloneEngine.ts`) is sent a `{warmup:true}` message on spawn, and every queued synthesis job waits for the `{ready:true}` reply before being written to the child. There is **no deadline on that reply**: the per-job `SYNTH_TIMEOUT_MS` timer is only armed _after_ the ready gate. If the sidecar process stays alive but never becomes ready (GPU driver hang, model load deadlock, Python wedged), queued jobs stay pending forever, `synth()` never resolves, and — because `src/voice/player.ts` runs a single-worker FIFO per guild — the entire guild's TTS stalls behind the stuck clone request with no recovery and no fallback. A crash of the sidecar is already handled cleanly (child `exit`/`error` → `teardown()` → jobs reject → callers fall back to the normal voice); this plan makes the "alive but never ready" case behave exactly like the crash case, after a generous deadline.
 
 ## Current state
 
@@ -128,29 +128,32 @@ private restart(): void {
 Fallback contract (`src/tts/cloneEngine.ts:101-103`): any rejection from `enqueue` is caught in `synth()` and falls back to `this.inner.synth(req)` — "NUNCA silêncio". The deadline only has to make jobs reject; the fallback already exists.
 
 Repo conventions that apply:
+
 - Code comments are **Portuguese** — write all new comments in Portuguese, matching the tone of the existing ones in this file.
 - Test-injectable dependencies are trailing constructor params with production defaults (see `spawnImpl` above and `fetchImpl` in `src/errorReporter.ts:53-56`). Follow the same pattern for the deadline.
 
 ## Commands you will need
 
-| Purpose   | Command                              | Expected on success |
-|-----------|--------------------------------------|---------------------|
-| Install   | `npm install`                        | exit 0              |
-| Typecheck | `npm run build`                      | exit 0 (tsc, no errors) |
-| Tests (this file) | `npx vitest run tests/cloneEngine.test.ts` | all pass |
-| Full test suite   | `npx vitest run`             | all pass            |
+| Purpose           | Command                                    | Expected on success     |
+| ----------------- | ------------------------------------------ | ----------------------- |
+| Install           | `npm install`                              | exit 0                  |
+| Typecheck         | `npm run build`                            | exit 0 (tsc, no errors) |
+| Tests (this file) | `npx vitest run tests/cloneEngine.test.ts` | all pass                |
+| Full test suite   | `npx vitest run`                           | all pass                |
 
 (There is no lint script in this repo.)
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `src/tts/cloneEngine.ts`
 - `tests/cloneEngine.test.ts`
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `tools/clone_server.py` — the Python sidecar itself; the fix is entirely on the Node side.
-- `src/voice/player.ts` — the FIFO stall is a *consequence*; fixing the deadline in the engine resolves it.
+- `src/voice/player.ts` — the FIFO stall is a _consequence_; fixing the deadline in the engine resolves it.
 - `src/config/index.ts` — do NOT add an env var for the deadline; it is a constructor param with a constant default only.
 - `SYNTH_TIMEOUT_MS` and the per-job timeout path — already correct; leave untouched.
 
@@ -232,7 +235,7 @@ if (msg.ready) {
   ...
 ```
 
-3. In `teardown()`, clear the timer as the first action (so a child `exit` during warmup also disarms it, and a stale timer can never fire against a *new* child spawned later):
+3. In `teardown()`, clear the timer as the first action (so a child `exit` during warmup also disarms it, and a stale timer can never fire against a _new_ child spawned later):
 
 ```ts
 private teardown(): void {
@@ -278,8 +281,11 @@ Test (a) — warmup never answered → jobs reject after the deadline and the in
 ```ts
 it('BUG-01: sidecar vivo mas nunca pronto -> deadline expira, job rejeita e cai na voz normal', async () => {
   const eng = new CloneEngine(
-    innerReturning('/normal.wav'), cache(), { exe: 'x', args: [] },
-    fakeSidecar('never-ready'), 30, // deadline curto para o teste
+    innerReturning('/normal.wav'),
+    cache(),
+    { exe: 'x', args: [] },
+    fakeSidecar('never-ready'),
+    30, // deadline curto para o teste
   );
   // Sem deadline isto ficava PENDENTE para sempre (era o bug).
   await expect(eng.synth(REQ({ cloneRef: '/ref.wav' }))).resolves.toBe('/normal.wav');
@@ -292,8 +298,11 @@ Test (b) — ready arrives in time → timer cleared, no spurious teardown/resta
 it('BUG-01: ready dentro do prazo -> timer limpo, SEM teardown espúrio (1 só spawn)', async () => {
   const counter = { spawns: 0 };
   const eng = new CloneEngine(
-    innerReturning('/normal.wav'), cache(), { exe: 'x', args: [] },
-    fakeSidecar('ok', counter), 50,
+    innerReturning('/normal.wav'),
+    cache(),
+    { exe: 'x', args: [] },
+    fakeSidecar('ok', counter),
+    50,
   );
   const a = await eng.synth(REQ({ text: 'um', cloneRef: '/ref.wav' }));
   expect(a).not.toBe('/normal.wav'); // veio do clone
@@ -340,4 +349,4 @@ Stop and report back (do not improvise) if:
 
 - If the sidecar model load ever gets slower than ~2 minutes (bigger model), `READY_TIMEOUT_MS` must be raised — the log line `[clone] sidecar não ficou pronto em ...ms` firing on healthy startups is the symptom.
 - Reviewer should scrutinize: the timer is cleared in **both** `onLine` (ready) and `teardown` — a missed clear either leaks a timer that kills a healthy new child, or leaves a wedged child alive.
-- Deferred on purpose: making the deadline env-configurable (no operator need today), and any watchdog for a sidecar that goes ready and *then* wedges mid-job (already covered by `SYNTH_TIMEOUT_MS`).
+- Deferred on purpose: making the deadline env-configurable (no operator need today), and any watchdog for a sidecar that goes ready and _then_ wedges mid-job (already covered by `SYNTH_TIMEOUT_MS`).

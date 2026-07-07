@@ -78,14 +78,16 @@ export function buildWelcomeEmbed(locale: string = DEFAULT_LOCALE): EmbedBuilder
   // que separa o Vozen do lider pago do mercado. Anexado a descricao para nao
   // colidir com o footer da marca ('welcome.footer').
   const description = `${t('welcome.description', locale, { setup: '`/setup`', help: '`/help`' })}\n\n${t('welcome.tagline', locale)}`;
-  return new EmbedBuilder()
-    .setColor(0x5865f2) // blurple — coerente com o embed do /help
-    .setTitle(t('welcome.title', locale))
-    .setDescription(description)
-    // Field com o fluxo em 3 passos para os MEMBROS: a descricao fica com o
-    // posicionamento (o que o Vozen faz + /setup + /help), o field da o "como usar"
-    // passo a passo. Field (nao descricao) para caber no cap de 1024 e nao colidir
-    // com o pointer para /help ja na descricao.
-    .addFields({ name: t('welcome.stepsTitle', locale), value: t('welcome.stepsBody', locale) })
-    .setFooter({ text: t('welcome.footer', locale) });
+  return (
+    new EmbedBuilder()
+      .setColor(0x5865f2) // blurple — coerente com o embed do /help
+      .setTitle(t('welcome.title', locale))
+      .setDescription(description)
+      // Field com o fluxo em 3 passos para os MEMBROS: a descricao fica com o
+      // posicionamento (o que o Vozen faz + /setup + /help), o field da o "como usar"
+      // passo a passo. Field (nao descricao) para caber no cap de 1024 e nao colidir
+      // com o pointer para /help ja na descricao.
+      .addFields({ name: t('welcome.stepsTitle', locale), value: t('welcome.stepsBody', locale) })
+      .setFooter({ text: t('welcome.footer', locale) })
+  );
 }

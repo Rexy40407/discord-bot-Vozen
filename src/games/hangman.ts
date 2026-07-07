@@ -64,16 +64,28 @@ class HangmanGame implements Game {
         this.win(ctx, msg);
         return;
       }
-      void ctx.send(this.render(ctx, ctx.t('game.hangman.hit', { user: msg.authorName, letter: g.toUpperCase() })));
+      void ctx.send(
+        this.render(
+          ctx,
+          ctx.t('game.hangman.hit', { user: msg.authorName, letter: g.toUpperCase() }),
+        ),
+      );
     } else {
       this.wrong.add(g);
       if (this.wrong.size >= MAX_WRONG) {
         this.over = true;
-        void ctx.send(this.render(ctx, ctx.t('game.hangman.lose', { word: this.word.toUpperCase() })));
+        void ctx.send(
+          this.render(ctx, ctx.t('game.hangman.lose', { word: this.word.toUpperCase() })),
+        );
         ctx.end();
         return;
       }
-      void ctx.send(this.render(ctx, ctx.t('game.hangman.miss', { user: msg.authorName, letter: g.toUpperCase() })));
+      void ctx.send(
+        this.render(
+          ctx,
+          ctx.t('game.hangman.miss', { user: msg.authorName, letter: g.toUpperCase() }),
+        ),
+      );
     }
   }
 
@@ -81,7 +93,12 @@ class HangmanGame implements Game {
     this.over = true;
     for (const ch of this.word) this.revealed.add(ch); // revela tudo no resumo
     ctx.award(msg.authorId, 1);
-    void ctx.send(this.render(ctx, ctx.t('game.hangman.win', { user: msg.authorName, word: this.word.toUpperCase() })));
+    void ctx.send(
+      this.render(
+        ctx,
+        ctx.t('game.hangman.win', { user: msg.authorName, word: this.word.toUpperCase() }),
+      ),
+    );
     announceWinner(ctx, msg.authorName);
     ctx.end();
   }

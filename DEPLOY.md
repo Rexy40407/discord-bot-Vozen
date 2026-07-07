@@ -17,20 +17,20 @@ container arranca e o Piper falha a carregar (`error while loading shared librar
 
 Builds do Piper (em https://github.com/rhasspy/piper/releases):
 
-| Máquina | Asset do Piper |
-|---|---|
+| Máquina                                        | Asset do Piper               |
+| ---------------------------------------------- | ---------------------------- |
 | Oracle Ampere / ARM64 (`uname -m` → `aarch64`) | `piper_linux_aarch64.tar.gz` |
-| VPS x86 / Intel/AMD (`uname -m` → `x86_64`) | `piper_linux_x86_64.tar.gz` |
+| VPS x86 / Intel/AMD (`uname -m` → `x86_64`)    | `piper_linux_x86_64.tar.gz`  |
 
 ---
 
 ## Opção A — Oracle Cloud free tier (€0, ARM64)
 
-As instâncias *Always Free* da Oracle costumam ser **Ampere ARM64 (aarch64)**.
+As instâncias _Always Free_ da Oracle costumam ser **Ampere ARM64 (aarch64)**.
 A imagem corre em ARM64, mas **o Piper tem de ser o build `aarch64`** — **não** o
 `x86_64` que o README §5.2 indica por defeito.
 
-1. Cria uma instância **Ampere (ARM64)** *Always Free* (shape `VM.Standard.A1.Flex`),
+1. Cria uma instância **Ampere (ARM64)** _Always Free_ (shape `VM.Standard.A1.Flex`),
    imagem Ubuntu. Abre acesso SSH.
 2. Instala o Docker + plugin compose v2:
    ```
@@ -126,10 +126,10 @@ Passos básicos:
 
 **Obrigatórias:**
 
-| Variável | O que pôr |
-|---|---|
-| `DISCORD_TOKEN` | Token do bot (Dev Portal → Bot → Reset Token) |
-| `CLIENT_ID` | Application ID (Dev Portal → General Information) |
+| Variável        | O que pôr                                         |
+| --------------- | ------------------------------------------------- |
+| `DISCORD_TOKEN` | Token do bot (Dev Portal → Bot → Reset Token)     |
+| `CLIENT_ID`     | Application ID (Dev Portal → General Information) |
 
 **Úteis (opcionais):** `DEFAULT_VOICE` (modelo presente em `./models/`),
 `DEFAULT_SPEED`, `INACTIVITY_MS`, `QUEUE_CAP`, `MAX_CHARS`, `RATE_PER_MIN`,
@@ -146,6 +146,7 @@ abaixo). Tabela completa: README §5.4.
 ```
 docker compose logs -f vozen
 ```
+
 Esperado: uma linha tipo `[client] online como <bot>#<tag>`. Os slash commands são
 registados automaticamente no arranque — não corras `npm run register`.
 
@@ -170,7 +171,7 @@ Detalhes e notas de segurança do endpoint: **[docs/GO-PUBLIC.md](docs/GO-PUBLIC
 
 O default é single-process (`npm start` / `node dist/index.js`) e serve confortavelmente
 até perto dos ~1000 guilds — não precisas de fazer nada. Para escalar além disso, o
-Discord exige múltiplos *gateway shards* (≈1 shard / 1000 guilds): define `BOT_SHARDS`
+Discord exige múltiplos _gateway shards_ (≈1 shard / 1000 guilds): define `BOT_SHARDS`
 (`auto`, ou um inteiro ≥ 2) e arranca com **`npm run start:sharded`** (`node dist/shard.js`),
 que faz spawn de um processo por shard. Com `BOT_SHARDS` vazio/ausente, `start:sharded`
 comporta-se como o arranque normal. O `npm start` continua single-process e ignora `BOT_SHARDS`.

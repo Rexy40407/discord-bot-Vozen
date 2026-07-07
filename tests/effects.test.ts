@@ -71,7 +71,6 @@ function fakeFfmpeg(behavior: 'ok' | 'fail' | 'error') {
       }
     });
     return child;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 }
 
@@ -95,13 +94,19 @@ describe('applyEffect — passo ffmpeg (spawn injetado)', () => {
 
   it('falha (code 1) -> rejeita', async () => {
     await expect(
-      applyEffect('/x/base.wav', 'badfilter', { ffmpegPath: '/fake/ffmpeg', spawnImpl: fakeFfmpeg('fail') }),
+      applyEffect('/x/base.wav', 'badfilter', {
+        ffmpegPath: '/fake/ffmpeg',
+        spawnImpl: fakeFfmpeg('fail'),
+      }),
     ).rejects.toThrow(/saiu com 1/);
   });
 
   it('erro a arrancar o ffmpeg -> rejeita', async () => {
     await expect(
-      applyEffect('/x/base.wav', 'aecho', { ffmpegPath: '/fake/ffmpeg', spawnImpl: fakeFfmpeg('error') }),
+      applyEffect('/x/base.wav', 'aecho', {
+        ffmpegPath: '/fake/ffmpeg',
+        spawnImpl: fakeFfmpeg('error'),
+      }),
     ).rejects.toThrow(/falha ao iniciar/);
   });
 });
@@ -121,7 +126,9 @@ describe('EffectEngine — decorador', () => {
   });
 
   it("efeito 'none'/ausente -> devolve o WAV base tal e qual (não chama ffmpeg)", async () => {
-    const eng = new EffectEngine(innerReturning('/base.wav'), cache(), { spawnImpl: fakeFfmpeg('fail') });
+    const eng = new EffectEngine(innerReturning('/base.wav'), cache(), {
+      spawnImpl: fakeFfmpeg('fail'),
+    });
     expect(await eng.synth({ ...REQ })).toBe('/base.wav');
     expect(await eng.synth({ ...REQ, effect: 'none' })).toBe('/base.wav');
   });

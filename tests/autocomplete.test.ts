@@ -41,7 +41,9 @@ describe('filterModelChoices (autocomplete)', () => {
   });
 
   it('e case-insensitive e ignora espacos', () => {
-    expect(filterModelChoices(models, '  ENGLISH ').map((c) => c.value)).toEqual(['en_US-amy-medium']);
+    expect(filterModelChoices(models, '  ENGLISH ').map((c) => c.value)).toEqual([
+      'en_US-amy-medium',
+    ]);
   });
 
   it('limita a 25 sugestoes (maximo do Discord)', () => {
@@ -54,9 +56,7 @@ describe('filterModelChoices (autocomplete)', () => {
     // tem um nome DISTINTO (ao contrario dos en_US-… que colapsam em "English (US)").
     // Baralhamos a entrada para provar que a ordenacao acontece antes do corte: se
     // o slice viesse antes do sort, o resultado nao seria o prefixo ordenado.
-    const ids = Array.from({ length: 30 }, (_, i) =>
-      `zz_ZZ-v${String(i).padStart(2, '0')}-medium`,
-    );
+    const ids = Array.from({ length: 30 }, (_, i) => `zz_ZZ-v${String(i).padStart(2, '0')}-medium`);
     const shuffled = [...ids].reverse(); // ordem de entrada != ordem final
     const out = filterModelChoices(shuffled, '');
     expect(out.length).toBe(25);
@@ -73,7 +73,12 @@ describe('filterModelChoices (autocomplete)', () => {
 // Pedido do Diogo: os nomes das línguas no picker do /voice set aparecem NA LÍNGUA DO
 // UTILIZADOR (o locale do cliente Discord), via Intl.DisplayNames. Sem locale -> autónimo.
 describe('filterModelChoices — nomes das línguas no locale do utilizador', () => {
-  const models = ['pt_PT-tugao-medium', 'en_US-amy-medium', 'fr_FR-siwis-medium', 'de_DE-thorsten-medium'];
+  const models = [
+    'pt_PT-tugao-medium',
+    'en_US-amy-medium',
+    'fr_FR-siwis-medium',
+    'de_DE-thorsten-medium',
+  ];
 
   it('locale pt-BR -> nomes em português', () => {
     const names = filterModelChoices(models, '', 'pt-BR').map((c) => c.name);

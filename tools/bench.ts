@@ -161,10 +161,14 @@ async function main(): Promise<void> {
     log('');
     const spawnDurs: number[] = [];
     for (let i = 0; i < 10; i++) {
-      spawnDurs.push(await timed(() => engine.synth({ text: `${i} ola`, model: voiceEn, speed: 1 })));
+      spawnDurs.push(
+        await timed(() => engine.synth({ text: `${i} ola`, model: voiceEn, speed: 1 })),
+      );
     }
     const ss = stats(spawnDurs);
-    log(`- p50 **${ss.p50.toFixed(0)} ms**, p95 ${ss.p95.toFixed(0)} ms (piso ≈ spawn + síntese mínima).`);
+    log(
+      `- p50 **${ss.p50.toFixed(0)} ms**, p95 ${ss.p95.toFixed(0)} ms (piso ≈ spawn + síntese mínima).`,
+    );
     log('');
 
     // ── Hit-rate da cache num replay sintético (chat: mistura de repetições) ──
@@ -184,17 +188,25 @@ async function main(): Promise<void> {
       total++;
       await engine.synth(req);
     }
-    log(`- ${hits}/${total} hits = **${((hits / total) * 100).toFixed(0)}%** neste replay (repetições típicas de chat).`);
-    log('> Se baixo em produção real (mensagens quase sempre únicas), a cache dá pouco — T2.3 decide com números.');
+    log(
+      `- ${hits}/${total} hits = **${((hits / total) * 100).toFixed(0)}%** neste replay (repetições típicas de chat).`,
+    );
+    log(
+      '> Se baixo em produção real (mensagens quase sempre únicas), a cache dá pouco — T2.3 decide com números.',
+    );
     log('');
 
     const rssAfter = process.memoryUsage().rss;
     log('## Recursos');
     log('');
-    log(`- RSS antes: ${(rssBefore / 1024 / 1024).toFixed(0)} MB · depois: ${(rssAfter / 1024 / 1024).toFixed(0)} MB`);
+    log(
+      `- RSS antes: ${(rssBefore / 1024 / 1024).toFixed(0)} MB · depois: ${(rssAfter / 1024 / 1024).toFixed(0)} MB`,
+    );
     log('');
     log('---');
-    log('_Baseline ANTES das otimizações da Fase 2 (pool/streaming). Re-correr no fecho (T5.1) para a tabela ANTES/DEPOIS._');
+    log(
+      '_Baseline ANTES das otimizações da Fase 2 (pool/streaming). Re-correr no fecho (T5.1) para a tabela ANTES/DEPOIS._',
+    );
 
     writeFileSync(join(process.cwd(), 'BENCHMARKS.md'), lines.join('\n') + '\n');
     console.log(`\n✅ BENCHMARKS.md escrito (${models.length} modelos, cap ${cap}).`);

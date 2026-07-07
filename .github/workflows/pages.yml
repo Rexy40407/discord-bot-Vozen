@@ -9,9 +9,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "site/**"
-      - "tools/minify-site.mjs"
-      - ".github/workflows/pages.yml"
+      - 'site/**'
+      - 'tools/minify-site.mjs'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:

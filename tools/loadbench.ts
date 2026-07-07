@@ -20,40 +20,58 @@ import type { SynthRequest } from '../src/tts/engine';
 
 function discoverModels(dir: string): string[] {
   if (!existsSync(dir)) return [];
-  return readdirSync(dir).filter((f) => f.endsWith('.onnx')).map((f) => basename(f, '.onnx')).sort();
+  return readdirSync(dir)
+    .filter((f) => f.endsWith('.onnx'))
+    .map((f) => basename(f, '.onnx'))
+    .sort();
 }
 function countPiperProcs(): number {
   // Windows: tasklist. Conta instâncias vivas de piper.exe.
   try {
-    const out = spawnSync('tasklist', ['/FI', 'IMAGENAME eq piper.exe', '/NH'], {
-      encoding: 'utf8',
-      timeout: 5000,
-    }).stdout || '';
+    const out =
+      spawnSync('tasklist', ['/FI', 'IMAGENAME eq piper.exe', '/NH'], {
+        encoding: 'utf8',
+        timeout: 5000,
+      }).stdout || '';
     return (out.match(/piper\.exe/gi) || []).length;
   } catch {
     return -1; // desconhecido (não-Windows)
   }
 }
 const wordsOf = (n: number) =>
-  Array.from({ length: n }, (_, i) => ['a', 'nossa', 'cidade', 'tem', 'tempo', 'agradavel'][i % 6]).join(' ');
+  Array.from(
+    { length: n },
+    (_, i) => ['a', 'nossa', 'cidade', 'tem', 'tempo', 'agradavel'][i % 6],
+  ).join(' ');
 
 async function main(): Promise<void> {
   const config = loadConfig();
   const models = discoverModels(config.modelsDir);
   const lines: string[] = [];
-  const log = (s = '') => { lines.push(s); console.log(s); };
+  const log = (s = '') => {
+    lines.push(s);
+    console.log(s);
+  };
 
   log('# BENCHMARKS — carga + soak (T4.1/T4.2)');
   log('');
-  log(`- Cap concorrência: **${resolvePiperConcurrency()}** · WARM_VOICES: ${process.env.PIPER_WARM_VOICES ?? '3 (default)'} · persistente: ${process.env.PIPER_PERSISTENT === '0' ? 'OFF' : 'ON'}`);
+  log(
+    `- Cap concorrência: **${resolvePiperConcurrency()}** · WARM_VOICES: ${process.env.PIPER_WARM_VOICES ?? '3 (default)'} · persistente: ${process.env.PIPER_PERSISTENT === '0' ? 'OFF' : 'ON'}`,
+  );
   log('');
-  if (models.length === 0) { log('> ⚠️ Sem modelos — abortado.'); writeFileSync('BENCHMARKS-load.md', lines.join('\n')); return; }
+  if (models.length === 0) {
+    log('> ⚠️ Sem modelos — abortado.');
+    writeFileSync('BENCHMARKS-load.md', lines.join('\n'));
+    return;
+  }
 
   const pick = (...p: string[]) => p.find((x) => models.includes(x)) ?? models[0];
   const voices = [pick('en_US-amy-medium'), pick('pt_PT-tugao-medium', 'pt_PT-tugão-medium')];
   const cacheDir = mkdtempSync(join(tmpdir(), 'vozen-load-'));
   const engine = new PiperEngine(config.piperPath, config.modelsDir, new AudioCache(cacheDir, 0), {
-    noiseScale: config.noiseScale, noiseW: config.noiseW, sentenceSilence: config.sentenceSilence,
+    noiseScale: config.noiseScale,
+    noiseW: config.noiseW,
+    sentenceSilence: config.sentenceSilence,
   });
 
   let counter = 0;
@@ -93,13 +111,19 @@ async function main(): Promise<void> {
     const livePiper = countPiperProcs();
     const warm = process.env.PIPER_WARM_VOICES ? Number(process.env.PIPER_WARM_VOICES) : 3;
     log(`- ${soakOk}/${SOAK} sínteses ok.`);
-    log(`- RSS: ${(rssBefore / 2 ** 20).toFixed(0)}MB → ${(rssAfter / 2 ** 20).toFixed(0)}MB (Δ ${((rssAfter - rssBefore) / 2 ** 20).toFixed(1)}MB).`);
-    log(`- piper.exe vivos no fim: **${livePiper}** (esperado ≤ WARM_VOICES=${warm}; -1 = não-Windows).`);
+    log(
+      `- RSS: ${(rssBefore / 2 ** 20).toFixed(0)}MB → ${(rssAfter / 2 ** 20).toFixed(0)}MB (Δ ${((rssAfter - rssBefore) / 2 ** 20).toFixed(1)}MB).`,
+    );
+    log(
+      `- piper.exe vivos no fim: **${livePiper}** (esperado ≤ WARM_VOICES=${warm}; -1 = não-Windows).`,
+    );
     const leak = livePiper > warm + 1;
     log(`- Fuga de processos: ${leak ? '⚠️ POSSÍVEL' : '✅ não'} .`);
     log('');
     log('---');
-    log('_Após shutdownPiperPool() os processos quentes são fechados (o supervisor de produção fá-lo no shutdown central)._');
+    log(
+      '_Após shutdownPiperPool() os processos quentes são fechados (o supervisor de produção fá-lo no shutdown central)._',
+    );
 
     writeFileSync(join(process.cwd(), 'BENCHMARKS-load.md'), lines.join('\n') + '\n');
     console.log('\n✅ BENCHMARKS-load.md escrito.');
@@ -109,4 +133,8 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e) => { console.error('loadbench falhou:', e); shutdownPiperPool(); process.exit(1); });
+main().catch((e) => {
+  console.error('loadbench falhou:', e);
+  shutdownPiperPool();
+  process.exit(1);
+});

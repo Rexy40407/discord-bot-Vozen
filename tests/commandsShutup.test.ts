@@ -36,7 +36,7 @@ function makeShutupInteraction() {
 describe('/shutup — cala tudo, distingue "nada a tocar" de "calei"', () => {
   it('sem player -> shutup.notInVoice, nunca chama silence()', async () => {
     const i = makeShutupInteraction();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     await handleInteraction(i as any, makeDeps());
     expect(i.replies.some((r) => /voice channel/i.test(r))).toBe(true);
   });
@@ -45,7 +45,7 @@ describe('/shutup — cala tudo, distingue "nada a tocar" de "calei"', () => {
     const silence = vi.fn();
     const player = { isActive: () => false, silence };
     const i = makeShutupInteraction();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     await handleInteraction(i as any, makeDeps(player));
     expect(i.replies.some((r) => /nothing/i.test(r))).toBe(true);
     expect(silence).not.toHaveBeenCalled();
@@ -55,7 +55,7 @@ describe('/shutup — cala tudo, distingue "nada a tocar" de "calei"', () => {
     const silence = vi.fn();
     const player = { isActive: () => true, silence };
     const i = makeShutupInteraction();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     await handleInteraction(i as any, makeDeps(player));
     expect(silence).toHaveBeenCalledTimes(1);
     // t('shutup.done','en') tem o emoji 🤐 e "cleared".

@@ -126,7 +126,9 @@ describe('GTTSEngine.synth — envia o texto SEM todo-maiúsculas à Google', ()
       fetchImpl: fetchImpl as unknown as typeof fetch,
       sleepImpl: noSleep,
     });
-    await engine.synth({ text: 'olá VOLTEI', model: 'es_ES-davefx-medium', speed: 1 }).catch(() => {});
+    await engine
+      .synth({ text: 'olá VOLTEI', model: 'es_ES-davefx-medium', speed: 1 })
+      .catch(() => {});
     // O parâmetro q (já descodificado por URLSearchParams) tem a palavra em minúsculas.
     const q = new URL(capturedUrl).searchParams.get('q');
     expect(q).toBe('olá voltei');
@@ -187,10 +189,18 @@ describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', ()
     let calls = 0;
     const fetchImpl = vi.fn(async () => {
       calls++;
-      if (calls === 1) return { ok: false, status: 503, statusText: 'Service Unavailable' } as Response;
-      return { ok: true, status: 200, arrayBuffer: async () => new Uint8Array([1, 2, 3, 4]).buffer } as Response;
+      if (calls === 1)
+        return { ok: false, status: 503, statusText: 'Service Unavailable' } as Response;
+      return {
+        ok: true,
+        status: 200,
+        arrayBuffer: async () => new Uint8Array([1, 2, 3, 4]).buffer,
+      } as Response;
     });
-    const engine = new GTTSEngine(new AudioCache(dir), { fetchImpl: fetchImpl as unknown as typeof fetch, sleepImpl: noSleep });
+    const engine = new GTTSEngine(new AudioCache(dir), {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      sleepImpl: noSleep,
+    });
     // synth chama fetchChunk; com 1 pedaço curto, o ffmpeg converte os bytes. Aqui só
     // exercitamos que NÃO rebenta no 503 e que o fetch foi chamado 2x (recuperou).
     await engine.synth({ text: 'ola', model: 'pt_BR-cadu-medium', speed: 1 }).catch(() => {});
@@ -199,8 +209,13 @@ describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', ()
 
   it('um 403 (bloqueio) NÃO é repetido — falha dura', async () => {
     dir = mkdtempSync(join(tmpdir(), 'gtts-403-'));
-    const fetchImpl = vi.fn(async () => ({ ok: false, status: 403, statusText: 'Forbidden' }) as Response);
-    const engine = new GTTSEngine(new AudioCache(dir), { fetchImpl: fetchImpl as unknown as typeof fetch, sleepImpl: noSleep });
+    const fetchImpl = vi.fn(
+      async () => ({ ok: false, status: 403, statusText: 'Forbidden' }) as Response,
+    );
+    const engine = new GTTSEngine(new AudioCache(dir), {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      sleepImpl: noSleep,
+    });
     await expect(
       engine.synth({ text: 'ola', model: 'pt_BR-cadu-medium', speed: 1 }),
     ).rejects.toThrow(/403/);
@@ -212,8 +227,18 @@ describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', ()
     // 3 "palavras" de ~150 chars -> 3 pedaços (cap 200, palavra não parte).
     const text = `${'a'.repeat(150)} ${'b'.repeat(150)} ${'c'.repeat(150)}`;
     expect(chunkText(deCapsForGoogle(text), 200).length).toBe(3);
-    const fetchImpl = vi.fn(async () => ({ ok: true, status: 200, arrayBuffer: async () => new Uint8Array([1, 2, 3, 4]).buffer }) as Response);
-    const engine = new GTTSEngine(new AudioCache(dir), { fetchImpl: fetchImpl as unknown as typeof fetch, sleepImpl: noSleep });
+    const fetchImpl = vi.fn(
+      async () =>
+        ({
+          ok: true,
+          status: 200,
+          arrayBuffer: async () => new Uint8Array([1, 2, 3, 4]).buffer,
+        }) as Response,
+    );
+    const engine = new GTTSEngine(new AudioCache(dir), {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      sleepImpl: noSleep,
+    });
     // ffmpeg dos bytes falsos pode falhar — só nos importa o nº de fetches (1 por pedaço).
     await engine.synth({ text, model: 'pt_BR-cadu-medium', speed: 1 }).catch(() => {});
     expect(fetchImpl).toHaveBeenCalledTimes(3);
@@ -226,10 +251,19 @@ describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', ()
     const fetchImpl = vi.fn(async () => {
       n++;
       if (n === 2) return { ok: false, status: 403, statusText: 'Forbidden' } as Response;
-      return { ok: true, status: 200, arrayBuffer: async () => new Uint8Array([1]).buffer } as Response;
+      return {
+        ok: true,
+        status: 200,
+        arrayBuffer: async () => new Uint8Array([1]).buffer,
+      } as Response;
     });
-    const engine = new GTTSEngine(new AudioCache(dir), { fetchImpl: fetchImpl as unknown as typeof fetch, sleepImpl: noSleep });
-    await expect(engine.synth({ text, model: 'pt_BR-cadu-medium', speed: 1 })).rejects.toThrow(/403/);
+    const engine = new GTTSEngine(new AudioCache(dir), {
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      sleepImpl: noSleep,
+    });
+    await expect(engine.synth({ text, model: 'pt_BR-cadu-medium', speed: 1 })).rejects.toThrow(
+      /403/,
+    );
   });
 });
 

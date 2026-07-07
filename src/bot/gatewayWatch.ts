@@ -80,7 +80,9 @@ export function bindGatewayWatch(deps: GatewayWatchDeps): { stop: () => void } {
   // ── Listeners de shard: tornam o gateway VISÍVEL no log ──────────────────────
   client.on(Events.ShardDisconnect, (event, id) => {
     // event.code é o código de fecho do WebSocket — a pista mais importante.
-    logWarn(`[gateway] shard ${id} desligou (código ${event?.code ?? '?'}) — o discord.js vai reconectar.`);
+    logWarn(
+      `[gateway] shard ${id} desligou (código ${event?.code ?? '?'}) — o discord.js vai reconectar.`,
+    );
   });
   client.on(Events.ShardReconnecting, (id) => logWarn(`[gateway] shard ${id} a reconectar…`));
   client.on(Events.ShardResume, (id, replayed) =>
@@ -111,9 +113,13 @@ export function bindGatewayWatch(deps: GatewayWatchDeps): { stop: () => void } {
       return;
     }
     healthyTicks = 0;
-    logWarn(`[gateway] NÃO-Ready (status ${client.ws.status}) há ${Math.round(decision.downMs / 1000)}s.`);
+    logWarn(
+      `[gateway] NÃO-Ready (status ${client.ws.status}) há ${Math.round(decision.downMs / 1000)}s.`,
+    );
     if (decision.shouldRestart) {
-      logError('[gateway] gateway em baixo além do limite — a SAIR para o supervisor reiniciar limpo.');
+      logError(
+        '[gateway] gateway em baixo além do limite — a SAIR para o supervisor reiniciar limpo.',
+      );
       exit();
     }
   }, checkMs);

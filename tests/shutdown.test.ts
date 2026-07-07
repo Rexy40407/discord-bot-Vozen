@@ -62,7 +62,11 @@ describe('shutdown', () => {
   });
 
   it('continua a fechar a DB mesmo que um player.destroy() lance', () => {
-    const bad = { destroy: vi.fn(() => { throw new Error('boom'); }) } as unknown as GuildVoicePlayer;
+    const bad = {
+      destroy: vi.fn(() => {
+        throw new Error('boom');
+      }),
+    } as unknown as GuildVoicePlayer;
     const good = fakePlayer();
     const players = new Map<string, GuildVoicePlayer>([
       ['g1', bad],
@@ -88,9 +92,7 @@ describe('installSignalHandlers — idempotencia', () => {
   });
 
   it('dois SIGINT: shutdown corre 2x mas db.close() no MAXIMO 1x e nao lanca', () => {
-    const exitSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation((() => undefined) as never);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
 
     const p1 = fakePlayer();
     const players = new Map<string, GuildVoicePlayer>([['g1', p1]]);
@@ -118,9 +120,7 @@ describe('installSignalHandlers — idempotencia', () => {
   });
 
   it('dois SIGTERM: mesmo contrato idempotente (db.close <=1x, sem throw)', () => {
-    const exitSpy = vi
-      .spyOn(process, 'exit')
-      .mockImplementation((() => undefined) as never);
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
 
     const p1 = fakePlayer();
     const players = new Map<string, GuildVoicePlayer>([['g1', p1]]);

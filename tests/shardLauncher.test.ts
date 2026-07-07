@@ -66,7 +66,10 @@ describe('runShardLauncher — escolha manager vs single-process', () => {
     const { runShardLauncher } = await import('../src/shard.js');
     runShardLauncher();
     expect(shardingManagerCtor).toHaveBeenCalledTimes(1);
-    const [file, opts] = shardingManagerCtor.mock.calls[0] as [string, { token: string; totalShards: unknown }];
+    const [file, opts] = shardingManagerCtor.mock.calls[0] as [
+      string,
+      { token: string; totalShards: unknown },
+    ];
     expect(file).toMatch(/index\.js$/);
     expect(opts.totalShards).toBe(2);
     expect(opts.token).toBe('tok-xyz');

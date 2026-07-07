@@ -13,6 +13,8 @@ describe('rmDirSafe — limpeza de temp dir que NUNCA lança', () => {
   });
 
   it('não lança num caminho inexistente (o perigo do finally: não mascarar o erro real)', () => {
-    expect(() => rmDirSafe(join(tmpdir(), `nao-existe-${process.pid}-${Date.now()}`))).not.toThrow();
+    expect(() =>
+      rmDirSafe(join(tmpdir(), `nao-existe-${process.pid}-${Date.now()}`)),
+    ).not.toThrow();
   });
 });

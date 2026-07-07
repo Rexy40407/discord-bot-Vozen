@@ -66,7 +66,13 @@ class MathGame extends QuizGame {
     const opWord = ctx.t(`game.math.${p.op}`);
     return {
       speak: { text: `${p.a} ${opWord} ${p.b}` },
-      announce: ctx.t('game.math.round', { n: index + 1, total: ROUNDS, a: p.a, op: p.sym, b: p.b }),
+      announce: ctx.t('game.math.round', {
+        n: index + 1,
+        total: ROUNDS,
+        a: p.a,
+        op: p.sym,
+        b: p.b,
+      }),
       accept: (raw) => firstInteger(raw) === p.result,
       onCorrect: (user) => ctx.t('game.math.correct', { user, answer: p.result }),
       onTimeout: () => ctx.t('game.math.timeout', { answer: p.result }),

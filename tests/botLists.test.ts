@@ -6,8 +6,10 @@ import { postTopggStats, startBotListUpdater } from '../src/botLists';
 // forma que o teste lê (method+headers+body).
 function okFetch() {
   return vi.fn(
-    async (_url: string, _opts: { method: string; headers: { Authorization: string }; body: string }) =>
-      ({ ok: true, status: 200 }) as Response,
+    async (
+      _url: string,
+      _opts: { method: string; headers: { Authorization: string }; body: string },
+    ) => ({ ok: true, status: 200 }) as Response,
   );
 }
 

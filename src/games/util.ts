@@ -43,7 +43,7 @@ export function localizedLanguageName(base: string, locale: string): string {
 
 /** Gerador xorshift de 32 bits a partir de uma semente (nunca 0). Interno. */
 function xorshift(seed: number): () => number {
-  let state = (Math.floor(seed) | 0) || 0x9e3779b9;
+  let state = Math.floor(seed) | 0 || 0x9e3779b9;
   return () => {
     state ^= state << 13;
     state ^= state >> 17;

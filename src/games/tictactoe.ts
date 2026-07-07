@@ -5,9 +5,14 @@ import { firstInteger } from './util';
 const IDLE_MS = 180_000;
 type Mark = 'X' | 'O';
 const LINES = [
-  [0, 1, 2], [3, 4, 5], [6, 7, 8], // linhas
-  [0, 3, 6], [1, 4, 7], [2, 5, 8], // colunas
-  [0, 4, 8], [2, 4, 6], // diagonais
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8], // linhas
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8], // colunas
+  [0, 4, 8],
+  [2, 4, 6], // diagonais
 ];
 
 /**
@@ -85,7 +90,9 @@ class TicTacToeGame implements Game {
       this.over = true;
       const uid = mark === 'X' ? this.xId! : this.oId!;
       ctx.award(uid, 1);
-      void ctx.send(`${ctx.t('game.tictactoe.win', { user: this.names[uid], mark })}\n${this.render(ctx)}`);
+      void ctx.send(
+        `${ctx.t('game.tictactoe.win', { user: this.names[uid], mark })}\n${this.render(ctx)}`,
+      );
       announceWinner(ctx, this.names[uid]);
       ctx.end();
       return;

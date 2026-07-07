@@ -123,6 +123,7 @@ await i.editReply(speakOutcomeMessage(outcome, locale));
 Ephemerality: the handleGame doc comment (lines 2304-2307) states play/stop respond EPHEMERAL. Deferring with `{ flags: MessageFlags.Ephemeral }` preserves that (the defer fixes visibility; `editReply` inherits it).
 
 Facts needed for the test (verified):
+
 - `handleInteraction` is exported from `src/commands/index.ts` and is how `tests/commandsConfig.test.ts` drives handlers with a fake interaction object (see its `makeConfigInteraction()` helper and the `vi.mock('@discordjs/voice', ...)` at the top — copy both patterns).
 - A free, no-voice game to use in tests: `tictactoe` (`src/games/tictactoe.ts:128-131`: `id: 'tictactoe'`, `needsVoice: false`, no `premium` flag), so the player/premium gates are skipped.
 - `deps.games` needs only `{ active(guildId): boolean; channelOf(guildId): string | null; start(...): 'started' | 'already-active' }` for this branch (`src/games/manager.ts:44` `export type StartResult = 'started' | 'already-active';`).
@@ -133,22 +134,24 @@ Repo conventions: code comments in **Portuguese**; tests use vitest + hand-rolle
 
 ## Commands you will need
 
-| Purpose   | Command                                        | Expected on success |
-|-----------|------------------------------------------------|---------------------|
-| Install   | `npm install`                                  | exit 0              |
-| Typecheck | `npm run build`                                | exit 0 (tsc)        |
-| New tests | `npx vitest run tests/commandsGamePlay.test.ts` | all pass           |
-| Full suite | `npx vitest run`                              | all pass            |
+| Purpose    | Command                                         | Expected on success |
+| ---------- | ----------------------------------------------- | ------------------- |
+| Install    | `npm install`                                   | exit 0              |
+| Typecheck  | `npm run build`                                 | exit 0 (tsc)        |
+| New tests  | `npx vitest run tests/commandsGamePlay.test.ts` | all pass            |
+| Full suite | `npx vitest run`                                | all pass            |
 
 (There is no lint script in this repo.)
 
 ## Scope
 
 **In scope** (the only files you should modify/create):
+
 - `src/commands/index.ts` — ONLY the `play` branch of `handleGame` (lines ~2320-2385)
 - `tests/commandsGamePlay.test.ts` (create)
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - The `stop` / `list` / `leaderboard` branches of `handleGame` — fast, no REST call before replying; leave on `reply()`/`i.reply`.
 - The shared `reply()` helper (792-794) — other handlers depend on it as-is; do NOT add an editReply variant to it.
 - The outer catch (2806-2820) — already correct for deferred interactions; verify, don't modify.
@@ -181,7 +184,7 @@ await i.deferReply({ flags: MessageFlags.Ephemeral });
    - 2338: `await reply(i, t('game.start.premiumLocked', locale, { game: t(def.nameKey, locale) }));` → same content via `i.editReply`
    - 2347: `await reply(i, t('game.start.alreadyActive', locale, { channel: ch }));` → same via `i.editReply`
    - 2375: the second `alreadyActive` (race-loss path) → same via `i.editReply`
-   
+
    And the final success response (2378-2383): replace the `await reply(i, threadId ? ... : ...)` wrapper with `await i.editReply(threadId ? ... : ...)` keeping the ternary exactly as-is.
 
 3. Leave everything else in the branch byte-identical (lock check order, `createGameThread` call, `deps.games.start(...)` args, `deleteChannelSafe` race cleanup).
@@ -196,7 +199,7 @@ Read `src/commands/index.ts:2806-2820` and confirm it matches the excerpt in "Cu
 
 ### Step 3: Create `tests/commandsGamePlay.test.ts`
 
-Model on `tests/commandsConfig.test.ts` (same `vi.mock('@discordjs/voice', ...)` header, same fake-interaction style, `initDb(':memory:')`). The fake interaction needs `deferReply`/`editReply` and an order log so the tests can assert *defer happens before the REST call*. Suggested skeleton (comments in Portuguese; adapt freely but keep the listed assertions):
+Model on `tests/commandsConfig.test.ts` (same `vi.mock('@discordjs/voice', ...)` header, same fake-interaction style, `initDb(':memory:')`). The fake interaction needs `deferReply`/`editReply` and an order log so the tests can assert _defer happens before the REST call_. Suggested skeleton (comments in Portuguese; adapt freely but keep the listed assertions):
 
 ```ts
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

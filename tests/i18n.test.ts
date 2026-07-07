@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  t,
-  SUPPORTED_LOCALES,
-  DEFAULT_LOCALE,
-  LOCALE_DISPLAY_NAMES,
-} from '../src/i18n/index';
+import { t, SUPPORTED_LOCALES, DEFAULT_LOCALE, LOCALE_DISPLAY_NAMES } from '../src/i18n/index';
 import { locales } from '../src/i18n/locales/index';
 
 describe('i18n — t(key, locale, params)', () => {
@@ -30,7 +25,10 @@ describe('i18n — t(key, locale, params)', () => {
   it('game.wordle.guess tem VERBO explícito (não se lê como derrota, mesmo com nick "Perdeste")', () => {
     // Regressão do bug reportado: com o nick "Perdeste", "**Perdeste** — faltam 4" lia-se
     // como resultado. O copy TEM de ter um verbo (tentou/guessed) entre o nome e o resto.
-    for (const [loc, verb] of [['pt', 'tentou'], ['en', 'guessed']] as const) {
+    for (const [loc, verb] of [
+      ['pt', 'tentou'],
+      ['en', 'guessed'],
+    ] as const) {
       const s = t('game.wordle.guess', loc, { user: 'Perdeste', left: 4 });
       expect(s).toContain(verb);
       expect(s).toContain('Perdeste');
@@ -94,9 +92,41 @@ describe('i18n — t(key, locale, params)', () => {
 
 describe('i18n — SUPPORTED_LOCALES + endonimos (35 linguas de voz)', () => {
   const EXPECTED = [
-    'en', 'pt', 'es', 'fr', 'de', 'nl', 'pl', 'tr', 'cs', 'sv', 'fi', 'da',
-    'ro', 'hu', 'cy', 'is', 'lb', 'lv', 'sk', 'sl', 'sw', 'vi', 'ca', 'it',
-    'el', 'ru', 'uk', 'kk', 'sr', 'ar', 'fa', 'ka', 'ne', 'zh', 'ja',
+    'en',
+    'pt',
+    'es',
+    'fr',
+    'de',
+    'nl',
+    'pl',
+    'tr',
+    'cs',
+    'sv',
+    'fi',
+    'da',
+    'ro',
+    'hu',
+    'cy',
+    'is',
+    'lb',
+    'lv',
+    'sk',
+    'sl',
+    'sw',
+    'vi',
+    'ca',
+    'it',
+    'el',
+    'ru',
+    'uk',
+    'kk',
+    'sr',
+    'ar',
+    'fa',
+    'ka',
+    'ne',
+    'zh',
+    'ja',
   ];
 
   it('SUPPORTED_LOCALES tem exatamente as 35 linguas de voz', () => {

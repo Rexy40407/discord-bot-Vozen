@@ -43,7 +43,6 @@ describe('handleInteraction — catch com interacao deferida', () => {
       db: {},
     } as unknown as BotDeps;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleInteraction(i as any, deps);
 
     expect(i.deferReply).toHaveBeenCalled();
@@ -78,7 +77,6 @@ describe('handleInteraction — catch com interacao deferida', () => {
       },
     } as unknown as BotDeps;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handleInteraction(i as any, deps);
 
     expect(i.reply).toHaveBeenCalledTimes(1);

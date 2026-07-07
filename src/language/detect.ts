@@ -2,7 +2,10 @@ import franc from 'franc';
 import { lookupShortLang } from './greetings';
 
 /** Acesso a `franc.all` (ranking [lang, score]) — nao tipado no default export. */
-type FrancAll = (text: string, opts?: { minLength?: number; only?: string[] }) => [string, number][];
+type FrancAll = (
+  text: string,
+  opts?: { minLength?: number; only?: string[] },
+) => [string, number][];
 const francAll = (franc as unknown as { all: FrancAll }).all;
 
 /**

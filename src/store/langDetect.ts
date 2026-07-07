@@ -21,11 +21,7 @@ const keyOf = (guildId: string, userId: string): string => `${guildId}:${userId}
  * `/voice detection on`. O store grava so uma linha para esses (uma linha => ON; sem
  * linha => OFF). Espelha o padrao do optout mas com o sinal INVERTIDO.
  */
-export function isDetectionOn(
-  db: Database.Database,
-  guildId: string,
-  userId: string,
-): boolean {
+export function isDetectionOn(db: Database.Database, guildId: string, userId: string): boolean {
   return cached(db, 'tts_lang_detect_on', keyOf(guildId, userId), () => {
     const row = db
       .prepare('SELECT COUNT(*) AS n FROM tts_lang_detect_on WHERE guild_id = ? AND user_id = ?')

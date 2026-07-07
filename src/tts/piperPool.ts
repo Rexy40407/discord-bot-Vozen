@@ -192,7 +192,13 @@ export class PiperPool {
    * spawna um novo (evictando a LRU se necessario). Marca `key` como
    * most-recently-used, reinicia o timer de idle e delega no processo.
    */
-  synth(key: string, args: string[], text: string, outPath: string, timeoutMs: number): Promise<void> {
+  synth(
+    key: string,
+    args: string[],
+    text: string,
+    outPath: string,
+    timeoutMs: number,
+  ): Promise<void> {
     let entry = this.map.get(key);
     if (!entry || entry.proc.dead) {
       if (entry) this.remove(key, entry); // limpa a entrada morta

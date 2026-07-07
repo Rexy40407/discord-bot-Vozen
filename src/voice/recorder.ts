@@ -236,7 +236,11 @@ export interface PcmToWavDeps {
  * do motor de cloning — e grava-o em `outPath` (cria o diretório). Mesmo padrão de
  * runner ffmpeg do resto do pipeline: temp dir, timeout+kill, cleanup best-effort.
  */
-export function pcmToWavFile(pcm: Buffer, outPath: string, deps: PcmToWavDeps = {}): Promise<string> {
+export function pcmToWavFile(
+  pcm: Buffer,
+  outPath: string,
+  deps: PcmToWavDeps = {},
+): Promise<string> {
   const ff = (deps.ffmpegPath ?? (ffmpegStatic as unknown as string | null)) as string | null;
   const spawnImpl = deps.spawnImpl ?? spawn;
   if (!ff) return Promise.reject(new Error('recorder: ffmpeg-static não encontrado'));
@@ -251,9 +255,27 @@ export function pcmToWavFile(pcm: Buffer, outPath: string, deps: PcmToWavDeps = 
     throw err;
   }
   const args = [
-    '-hide_banner', '-loglevel', 'error',
-    '-f', 's16le', '-ar', '48000', '-ac', '2', '-i', rawPath,
-    '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', '-f', 'wav', wavPath, '-y',
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-f',
+    's16le',
+    '-ar',
+    '48000',
+    '-ac',
+    '2',
+    '-i',
+    rawPath,
+    '-ar',
+    '24000',
+    '-ac',
+    '1',
+    '-c:a',
+    'pcm_s16le',
+    '-f',
+    'wav',
+    wavPath,
+    '-y',
   ];
 
   return new Promise<string>((resolve, reject) => {

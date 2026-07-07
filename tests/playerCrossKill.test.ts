@@ -115,14 +115,13 @@ describe('GuildVoicePlayer — cross-player-kill (player morto nao derruba o sub
       removePlayer(deps, GUILD);
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const connA = makeConnection() as any;
     connA.destroy = vi.fn();
     const playerA = new GuildVoicePlayer(connA, engine, 20, 60_000, onIdleA);
     players.set(GUILD, playerA);
 
     // B — o substituto instalado pelo /join. So precisamos de espiar o seu destroy.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const playerB = { destroy: vi.fn() } as any as GuildVoicePlayer;
 
     // Interpoe o /join DENTRO da janela de reconexao: na 1a tentativa de rejoin de A,
@@ -155,9 +154,8 @@ describe('GuildVoicePlayer — cross-player-kill (player morto nao derruba o sub
     const players = new Map<string, GuildVoicePlayer>();
     const deps = { players } as unknown as BotDeps;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const a = { destroy: vi.fn() } as any as GuildVoicePlayer;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const b = { destroy: vi.fn() } as any as GuildVoicePlayer;
 
     // Replica EXATA da closure passada ao new GuildVoicePlayer em joinUserVoice,

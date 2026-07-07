@@ -91,7 +91,8 @@ describe('NeuralEngine.synth — caminhos de erro (fetch mockado)', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
-        arrayBuffer: async () => fakeWav.buffer.slice(fakeWav.byteOffset, fakeWav.byteOffset + fakeWav.byteLength),
+        arrayBuffer: async () =>
+          fakeWav.buffer.slice(fakeWav.byteOffset, fakeWav.byteOffset + fakeWav.byteLength),
       })),
     );
 

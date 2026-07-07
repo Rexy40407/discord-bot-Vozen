@@ -203,11 +203,7 @@ export class GuildVoicePlayer {
     // sintese, portanto esperar aqui aproxima-se de max(ready, synth) em vez de
     // os somar.
     try {
-      await entersState(
-        this.connection,
-        VoiceConnectionStatus.Ready,
-        CONNECTION_READY_TIMEOUT_MS,
-      );
+      await entersState(this.connection, VoiceConnectionStatus.Ready, CONNECTION_READY_TIMEOUT_MS);
     } catch (err) {
       // A rejeicao pode ter sido causada por destroy() (que destroi a ligacao).
       if (this.destroyed) return;

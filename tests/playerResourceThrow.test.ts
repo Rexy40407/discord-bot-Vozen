@@ -72,7 +72,7 @@ describe('GuildVoicePlayer — throw em createAudioResource nao trava a fila', (
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     let onIdleCalls = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {
       onIdleCalls++;

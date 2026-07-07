@@ -35,8 +35,7 @@ export function getClone(db: Database.Database, userId: string): CloneRow | null
           'SELECT sample_path, consent_at, enabled, target_id FROM user_clone WHERE user_id = ?',
         )
         .get(userId) as
-        | { sample_path: string; consent_at: number; enabled: number; target_id: string }
-        | undefined;
+        { sample_path: string; consent_at: number; enabled: number; target_id: string } | undefined;
       if (!row) return null;
       return {
         samplePath: row.sample_path,

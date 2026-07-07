@@ -41,7 +41,9 @@ export function bumpTalk(db: Database.Database, guildId: string, userId: string,
   const today = dateKey(now);
   const yesterday = prevDateKey(now);
   const row = db
-    .prepare('SELECT spoken_count, streak, best_streak, last_date FROM talk_stats WHERE guild_id = ? AND user_id = ?')
+    .prepare(
+      'SELECT spoken_count, streak, best_streak, last_date FROM talk_stats WHERE guild_id = ? AND user_id = ?',
+    )
     .get(guildId, userId) as Omit<DbRow, 'user_id'> | undefined;
 
   if (!row) {
@@ -53,8 +55,10 @@ export function bumpTalk(db: Database.Database, guildId: string, userId: string,
   }
 
   let streak: number;
-  if (row.last_date === today) streak = row.streak; // já contou hoje
-  else if (row.last_date === yesterday) streak = row.streak + 1; // dia seguido
+  if (row.last_date === today)
+    streak = row.streak; // já contou hoje
+  else if (row.last_date === yesterday)
+    streak = row.streak + 1; // dia seguido
   else streak = 1; // houve um intervalo (ou datas do futuro) -> recomeça
   const best = Math.max(row.best_streak, streak);
 

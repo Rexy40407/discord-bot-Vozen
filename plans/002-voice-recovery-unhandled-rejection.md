@@ -77,29 +77,32 @@ import {
 Why the helper-extraction approach (not a direct inline `.catch()` only): unit-testing `entersState` on a real discord.js connection is not feasible cheaply, and the existing player tests (`tests/playerReconnect.test.ts`) mock `@discordjs/voice` entirely via `vi.mock`. Extracting the race into a tiny pure helper lets us unit-test the "no unhandledRejection" property directly with plain promises, with no discord.js involved. The player tests then cover the integration path unchanged.
 
 Repo conventions that apply:
+
 - Code comments are **Portuguese** — write new comments in Portuguese.
 - Small pure, dependency-free modules with their own test file are the house pattern (e.g. `src/vote.ts` pure handler + `tests/vote.test.ts`).
 
 ## Commands you will need
 
-| Purpose   | Command                                   | Expected on success |
-|-----------|-------------------------------------------|---------------------|
-| Install   | `npm install`                             | exit 0              |
-| Typecheck | `npm run build`                           | exit 0 (tsc)        |
-| New tests | `npx vitest run tests/raceStates.test.ts` | all pass            |
-| Player tests | `npx vitest run tests/playerReconnect.test.ts` | all pass     |
-| Full suite | `npx vitest run`                         | all pass            |
+| Purpose      | Command                                        | Expected on success |
+| ------------ | ---------------------------------------------- | ------------------- |
+| Install      | `npm install`                                  | exit 0              |
+| Typecheck    | `npm run build`                                | exit 0 (tsc)        |
+| New tests    | `npx vitest run tests/raceStates.test.ts`      | all pass            |
+| Player tests | `npx vitest run tests/playerReconnect.test.ts` | all pass            |
+| Full suite   | `npx vitest run`                               | all pass            |
 
 (There is no lint script in this repo.)
 
 ## Scope
 
 **In scope** (the only files you should modify/create):
+
 - `src/voice/raceStates.ts` (create)
 - `src/voice/player.ts` (replace the `Promise.race` at lines 302-305 with the helper; no other change)
 - `tests/raceStates.test.ts` (create)
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `src/bot/client.ts` — the global handler is correct; the fix is at the source.
 - `tests/playerReconnect.test.ts` — must keep passing UNCHANGED (that is part of the "zero behavior change" proof).
 - The `await entersState(..., Ready, 20_000)` at player.ts:307 and the ones in `tryRejoin` — single awaits, no race, no orphan rejection; leave them alone.
@@ -217,7 +220,7 @@ describe('raceStates — Promise.race sem unhandledRejection da perdedora', () =
 });
 ```
 
-Caveat: if the first test proves flaky because vitest intercepts `unhandledRejection` before the listener (vitest normally *fails* a test file on unhandled rejections — which means simply having the second test pass without the file erroring is itself evidence), keep the structure but rely on vitest's own unhandled-rejection failure as the assertion: with the helper in place the file passes; with plain `Promise.race` it would be flagged. Note this in a Portuguese comment if you go that route.
+Caveat: if the first test proves flaky because vitest intercepts `unhandledRejection` before the listener (vitest normally _fails_ a test file on unhandled rejections — which means simply having the second test pass without the file erroring is itself evidence), keep the structure but rely on vitest's own unhandled-rejection failure as the assertion: with the helper in place the file passes; with plain `Promise.race` it would be flagged. Note this in a Portuguese comment if you go that route.
 
 **Verify**: `npx vitest run tests/raceStates.test.ts` → all pass.
 

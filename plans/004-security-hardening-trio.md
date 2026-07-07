@@ -32,6 +32,7 @@ Three small, independent hardenings (SEC-01/02/03), grouped because each is a fe
 ## Current state
 
 Files and roles:
+
 - `src/vote.ts` — top.gg webhook; `startVoteWebhookServer` (lines 149-223) currently warns-and-continues without a secret.
 - `src/config/index.ts` — env parsing; `AppConfig` interface (lines 7-73), webhook envs parsed at lines 200-201, bool helper `boolEnvDefaultOn` at 138-142.
 - `src/commands/index.ts` — `handleRedeem` at 1250-1269; the permission re-check exemplar is `handleConfig` at 1883-1889.
@@ -153,26 +154,28 @@ Repo conventions: code comments in **Portuguese**; env parsing helpers live in `
 
 ## Commands you will need
 
-| Purpose   | Command                                                                 | Expected on success |
-|-----------|-------------------------------------------------------------------------|---------------------|
-| Install   | `npm install`                                                           | exit 0              |
-| Typecheck | `npm run build`                                                         | exit 0 (tsc)        |
-| Step-1 tests | `npx vitest run tests/vote.test.ts tests/config.test.ts`             | all pass            |
-| Step-2 tests | `npx vitest run tests/premium.test.ts tests/commandsRedeem.test.ts tests/i18n.test.ts` | all pass |
-| Step-3 tests | `npx vitest run tests/errorReporter.test.ts`                         | all pass            |
-| Full suite | `npx vitest run`                                                       | all pass            |
+| Purpose      | Command                                                                                | Expected on success |
+| ------------ | -------------------------------------------------------------------------------------- | ------------------- |
+| Install      | `npm install`                                                                          | exit 0              |
+| Typecheck    | `npm run build`                                                                        | exit 0 (tsc)        |
+| Step-1 tests | `npx vitest run tests/vote.test.ts tests/config.test.ts`                               | all pass            |
+| Step-2 tests | `npx vitest run tests/premium.test.ts tests/commandsRedeem.test.ts tests/i18n.test.ts` | all pass            |
+| Step-3 tests | `npx vitest run tests/errorReporter.test.ts`                                           | all pass            |
+| Full suite   | `npx vitest run`                                                                       | all pass            |
 
 (There is no lint script in this repo.)
 
 ## Scope
 
 **In scope** (the only files you should modify/create):
+
 - `src/vote.ts`, `src/config/index.ts` (step 1)
 - `src/commands/index.ts` (only `handleRedeem`), `src/store/premium.ts` (add one read-only function), `src/i18n/catalog.ts` (one new key) (step 2)
 - `src/errorReporter.ts` (step 3)
 - Tests: `tests/vote.test.ts`, `tests/config.test.ts`, `tests/premium.test.ts`, `tests/commandsRedeem.test.ts` (create), `tests/errorReporter.test.ts`
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - `handleVoteWebhook` (the pure handler in `src/vote.ts:96-135`) and its constant-time auth — already correct.
 - The `redeemCode` transaction body in `src/store/premium.ts` — the permission gate lives in the command layer; the store stays policy-free (code kind is immutable, so a pre-check has no TOCTOU race).
 - Entitlements (`src/store/entitlements*`, Discord Premium Apps) — separate purchase path, no redeem codes.
@@ -266,8 +269,7 @@ Repo conventions: code comments in **Portuguese**; env parsing helpers live in `
     */
    export function peekRedeemCodeKind(db: Database.Database, code: string): PremiumKind | null {
      const row = db.prepare('SELECT kind FROM redeem_code WHERE code = ?').get(code) as
-       | { kind: string }
-       | undefined;
+       { kind: string } | undefined;
      if (!row) return null;
      return row.kind === 'guild' ? 'guild' : 'user';
    }

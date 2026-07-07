@@ -102,23 +102,23 @@ defensive mapping (each column has its own null-fallback rule — the descriptor
 must encode these):
 
 ```ts
-  if (!row) return { ...DEFAULTS };
-  return {
-    ttsChannelId: row.tts_channel_id,
-    autoread: row.autoread === 1,
-    defaultVoice: row.default_voice,
-    maxChars: row.max_chars,
-    ratePerMin: row.rate_per_min,
-    enabled: row.enabled === 1,
-    ttsRoleId: row.tts_role_id,
-    locale: row.locale ?? DEFAULT_LOCALE,
-    xsaid: row.xsaid == null ? DEFAULTS.xsaid : row.xsaid === 1,
-    autojoin: row.autojoin == null ? DEFAULTS.autojoin : row.autojoin === 1,
-    readBots: row.read_bots == null ? DEFAULTS.readBots : row.read_bots === 1,
-    textInVoice: row.text_in_voice == null ? DEFAULTS.textInVoice : row.text_in_voice === 1,
-    greetOnJoin: row.greet_on_join == null ? DEFAULTS.greetOnJoin : row.greet_on_join === 1,
-    greetLocale: row.greet_locale ?? DEFAULTS.greetLocale,
-  };
+if (!row) return { ...DEFAULTS };
+return {
+  ttsChannelId: row.tts_channel_id,
+  autoread: row.autoread === 1,
+  defaultVoice: row.default_voice,
+  maxChars: row.max_chars,
+  ratePerMin: row.rate_per_min,
+  enabled: row.enabled === 1,
+  ttsRoleId: row.tts_role_id,
+  locale: row.locale ?? DEFAULT_LOCALE,
+  xsaid: row.xsaid == null ? DEFAULTS.xsaid : row.xsaid === 1,
+  autojoin: row.autojoin == null ? DEFAULTS.autojoin : row.autojoin === 1,
+  readBots: row.read_bots == null ? DEFAULTS.readBots : row.read_bots === 1,
+  textInVoice: row.text_in_voice == null ? DEFAULTS.textInVoice : row.text_in_voice === 1,
+  greetOnJoin: row.greet_on_join == null ? DEFAULTS.greetOnJoin : row.greet_on_join === 1,
+  greetLocale: row.greet_locale ?? DEFAULTS.greetLocale,
+};
 ```
 
 `src/store/guildConfig.ts:105-148` — `setGuildConfig`: read-merge, then the
@@ -138,24 +138,26 @@ Conventions: comments in Portuguese; `DEFAULT_LOCALE` imported from
 
 ## Commands you will need
 
-| Purpose   | Command                          | Expected on success        |
-|-----------|----------------------------------|----------------------------|
-| Install   | `npm install`                    | exit 0                     |
-| Typecheck | `npm run build`                  | exit 0 (tsc, no errors)    |
-| Behavior pin (BEFORE refactor) | `npx vitest run tests/store.test.ts` | all pass — record the count |
-| Tests (all)  | `npx vitest run`              | 114 files / 1298+ tests pass |
+| Purpose                        | Command                              | Expected on success          |
+| ------------------------------ | ------------------------------------ | ---------------------------- |
+| Install                        | `npm install`                        | exit 0                       |
+| Typecheck                      | `npm run build`                      | exit 0 (tsc, no errors)      |
+| Behavior pin (BEFORE refactor) | `npx vitest run tests/store.test.ts` | all pass — record the count  |
+| Tests (all)                    | `npx vitest run`                     | 114 files / 1298+ tests pass |
 
 (Verified at `fb7f916`: full suite → 1298 passed. No lint script.)
 
 ## Scope
 
 **In scope** (the only files you should modify):
+
 - `src/store/guildConfig.ts`
 - `src/store/db.ts` (ONLY the guild_config ALTER-migration block, lines
   184-227; and optionally importing the descriptor)
 - `tests/store.test.ts` (add tests; do not delete existing ones)
 
 **Out of scope** (do NOT touch, even though they look related):
+
 - The CREATE TABLE literal in `src/store/db.ts` — keep handwritten; parity is
   enforced by a test, not by generation (generating DDL at runtime is a bigger
   behavior risk than this plan accepts).
@@ -218,22 +220,22 @@ export const GUILD_CONFIG_COLUMNS: GuildConfigColumn[] = [ ... ];
 Fill the array with the FIFTEEN non-derived entries, one per column except
 `guild_id` (the PK is handled separately). Encode today's exact semantics:
 
-| prop | column | sqlType | toDb | fromDb |
-|---|---|---|---|---|
-| ttsChannelId | tts_channel_id | `TEXT` | identity | identity (null stays null) |
-| autoread | autoread | `INTEGER NOT NULL DEFAULT 0` | `v ? 1 : 0` | `raw === 1` |
-| defaultVoice | default_voice | `TEXT NOT NULL DEFAULT 'en_US-amy-medium'` | identity | identity |
-| maxChars | max_chars | `INTEGER NOT NULL DEFAULT 300` | identity | identity |
-| ratePerMin | rate_per_min | `INTEGER NOT NULL DEFAULT 5` | identity | identity |
-| enabled | enabled | `INTEGER NOT NULL DEFAULT 1` | `v ? 1 : 0` | `raw === 1` |
-| ttsRoleId | tts_role_id | `TEXT` | identity | identity |
-| locale | locale | `TEXT NOT NULL DEFAULT 'en'` | identity | `raw ?? DEFAULT_LOCALE` |
-| xsaid | xsaid | `INTEGER NOT NULL DEFAULT 1` | `v ? 1 : 0` | `raw == null ? DEFAULTS.xsaid : raw === 1` |
-| autojoin | autojoin | `INTEGER NOT NULL DEFAULT 0` | `v ? 1 : 0` | `raw == null ? DEFAULTS.autojoin : raw === 1` |
-| readBots | read_bots | `INTEGER NOT NULL DEFAULT 0` | `v ? 1 : 0` | `raw == null ? DEFAULTS.readBots : raw === 1` |
-| textInVoice | text_in_voice | `INTEGER NOT NULL DEFAULT 0` | `v ? 1 : 0` | `raw == null ? DEFAULTS.textInVoice : raw === 1` |
-| greetOnJoin | greet_on_join | `INTEGER NOT NULL DEFAULT 1` | `v ? 1 : 0` | `raw == null ? DEFAULTS.greetOnJoin : raw === 1` |
-| greetLocale | greet_locale | `TEXT NOT NULL DEFAULT 'en'` | identity | `raw ?? DEFAULTS.greetLocale` |
+| prop         | column         | sqlType                                    | toDb        | fromDb                                           |
+| ------------ | -------------- | ------------------------------------------ | ----------- | ------------------------------------------------ |
+| ttsChannelId | tts_channel_id | `TEXT`                                     | identity    | identity (null stays null)                       |
+| autoread     | autoread       | `INTEGER NOT NULL DEFAULT 0`               | `v ? 1 : 0` | `raw === 1`                                      |
+| defaultVoice | default_voice  | `TEXT NOT NULL DEFAULT 'en_US-amy-medium'` | identity    | identity                                         |
+| maxChars     | max_chars      | `INTEGER NOT NULL DEFAULT 300`             | identity    | identity                                         |
+| ratePerMin   | rate_per_min   | `INTEGER NOT NULL DEFAULT 5`               | identity    | identity                                         |
+| enabled      | enabled        | `INTEGER NOT NULL DEFAULT 1`               | `v ? 1 : 0` | `raw === 1`                                      |
+| ttsRoleId    | tts_role_id    | `TEXT`                                     | identity    | identity                                         |
+| locale       | locale         | `TEXT NOT NULL DEFAULT 'en'`               | identity    | `raw ?? DEFAULT_LOCALE`                          |
+| xsaid        | xsaid          | `INTEGER NOT NULL DEFAULT 1`               | `v ? 1 : 0` | `raw == null ? DEFAULTS.xsaid : raw === 1`       |
+| autojoin     | autojoin       | `INTEGER NOT NULL DEFAULT 0`               | `v ? 1 : 0` | `raw == null ? DEFAULTS.autojoin : raw === 1`    |
+| readBots     | read_bots      | `INTEGER NOT NULL DEFAULT 0`               | `v ? 1 : 0` | `raw == null ? DEFAULTS.readBots : raw === 1`    |
+| textInVoice  | text_in_voice  | `INTEGER NOT NULL DEFAULT 0`               | `v ? 1 : 0` | `raw == null ? DEFAULTS.textInVoice : raw === 1` |
+| greetOnJoin  | greet_on_join  | `INTEGER NOT NULL DEFAULT 1`               | `v ? 1 : 0` | `raw == null ? DEFAULTS.greetOnJoin : raw === 1` |
+| greetLocale  | greet_locale   | `TEXT NOT NULL DEFAULT 'en'`               | identity    | `raw ?? DEFAULTS.greetLocale`                    |
 
 (That's 14 — plus NOTHING else; `guild_id` is the 15th column and is not in
 the array.) TypeScript note: with `prop: keyof GuildConfig` the per-entry
@@ -249,12 +251,12 @@ generics; a small `as` inside the two mapping functions is acceptable here.
 Replace the hand-rolled literal (lines 79-98) with:
 
 ```ts
-  if (!row) return { ...DEFAULTS };
-  const out = {} as Record<string, unknown>;
-  for (const col of GUILD_CONFIG_COLUMNS) {
-    out[col.prop] = col.fromDb((row as unknown as Record<string, unknown>)[col.column]);
-  }
-  return out as unknown as GuildConfig;
+if (!row) return { ...DEFAULTS };
+const out = {} as Record<string, unknown>;
+for (const col of GUILD_CONFIG_COLUMNS) {
+  out[col.prop] = col.fromDb((row as unknown as Record<string, unknown>)[col.column]);
+}
+return out as unknown as GuildConfig;
 ```
 
 Keep the surrounding `SELECT * FROM guild_config WHERE guild_id = ?` query and
@@ -287,12 +289,9 @@ const UPSERT_SQL = (() => {
 And in `setGuildConfig`:
 
 ```ts
-  const current = getGuildConfig(db, guildId);
-  const next: GuildConfig = { ...current, ...patch };
-  db.prepare(UPSERT_SQL).run(
-    guildId,
-    ...GUILD_CONFIG_COLUMNS.map((c) => c.toDb(next[c.prop])),
-  );
+const current = getGuildConfig(db, guildId);
+const next: GuildConfig = { ...current, ...patch };
+db.prepare(UPSERT_SQL).run(guildId, ...GUILD_CONFIG_COLUMNS.map((c) => c.toDb(next[c.prop])));
 ```
 
 Semantics that MUST hold (they are what "byte-identical" means here): every
@@ -313,18 +312,19 @@ Import the descriptor and replace ONLY the seven guild_config `if (!cols.some(..
 blocks (db.ts lines 184-227) with:
 
 ```ts
-    // Migracoes idempotentes de guild_config guiadas pelo descritor: qualquer coluna
-    // do descritor que falte numa DB antiga e adicionada com o MESMO tipo/default do
-    // CREATE TABLE (backfill via DEFAULT constante, como antes). No-op em DBs novas.
-    const cols = db.pragma('table_info(guild_config)') as Array<{ name: string }>;
-    for (const col of GUILD_CONFIG_COLUMNS) {
-      if (!cols.some((c) => c.name === col.column)) {
-        db.exec(`ALTER TABLE guild_config ADD COLUMN ${col.column} ${col.sqlType}`);
-      }
-    }
+// Migracoes idempotentes de guild_config guiadas pelo descritor: qualquer coluna
+// do descritor que falte numa DB antiga e adicionada com o MESMO tipo/default do
+// CREATE TABLE (backfill via DEFAULT constante, como antes). No-op em DBs novas.
+const cols = db.pragma('table_info(guild_config)') as Array<{ name: string }>;
+for (const col of GUILD_CONFIG_COLUMNS) {
+  if (!cols.some((c) => c.name === col.column)) {
+    db.exec(`ALTER TABLE guild_config ADD COLUMN ${col.column} ${col.sqlType}`);
+  }
+}
 ```
 
 Two subtleties:
+
 1. Today only SEVEN columns have ALTERs (the original eight from the first
    CREATE never needed one). Looping ALL descriptor columns is a strict
    superset and is safe: on any DB created by any historical version, the
@@ -396,8 +396,7 @@ Machine-checkable. ALL must hold:
       tests unchanged and green)
 - [ ] `grep -n "GUILD_CONFIG_COLUMNS" src/store/guildConfig.ts src/store/db.ts tests/store.test.ts`
       → matches in all three files
-- [ ] `grep -c "ADD COLUMN" src/store/db.ts` → exactly 3 (the descriptor loop
-      + user_voice.engine + user_clone.target_id; today it is 9)
+- [ ] `grep -c "ADD COLUMN" src/store/db.ts` → exactly 3 (the descriptor loop + user_voice.engine + user_clone.target_id; today it is 9)
 - [ ] `grep -n "excluded.tts_channel_id" src/store/guildConfig.ts` returns no
       match (the handwritten SET list is gone, generated instead)
 - [ ] If plan 010 landed: `grep -n "invalidate(" src/store/guildConfig.ts`

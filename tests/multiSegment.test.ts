@@ -72,8 +72,7 @@ describe('MultiSegmentEngine — flag ON (caminho por-segmento)', () => {
     const { engine: base, calls } = makeBase();
     const eng = new MultiSegmentEngine(base, AVAILABLE, cache);
     const en = 'good morning to all the members of this server i hope you are doing well';
-    const ru =
-      'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
+    const ru = 'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
     const req: SynthRequest = { text: `${en}. ${ru}`, model: 'de_DE-thorsten-medium', speed: 1 };
 
     const outPath = eng.synth(req);
@@ -100,8 +99,7 @@ describe('MultiSegmentEngine — flag ON (caminho por-segmento)', () => {
     const { engine: base, calls } = makeBase();
     const eng = new MultiSegmentEngine(base, AVAILABLE, cache);
     const en = 'good morning to all the members of this server i hope you are doing well';
-    const ru =
-      'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
+    const ru = 'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
     // Texto MULTI-SCRIPT (EN + RU) que normalmente SERIA partido, mas singleVoice
     // desliga o split: e a voz deliberadamente escolhida (ex. /voice preview, /joke)
     // que tem de ser honrada verbatim, incl. leadSilenceMs.
@@ -147,8 +145,7 @@ describe('MultiSegmentEngine — flag ON (caminho por-segmento)', () => {
     // Sem modelos disponiveis -> os segmentos caem todos no fallback req.model.
     const eng = new MultiSegmentEngine(base, [], cache);
     const en = 'good morning to all the members of this server i hope you are doing well';
-    const ru =
-      'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
+    const ru = 'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
     const req: SynthRequest = { text: `${en}. ${ru}`, model: 'de_DE-thorsten-medium', speed: 1 };
 
     await eng.synth(req);
@@ -177,8 +174,7 @@ describe('MultiSegmentEngine — flag ON (caminho por-segmento)', () => {
     };
     const eng = new MultiSegmentEngine(base, AVAILABLE, cache);
     const en = 'good morning to all the members of this server i hope you are doing well';
-    const ru =
-      'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
+    const ru = 'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
     const req: SynthRequest = { text: `${en}. ${ru}`, model: 'de_DE-thorsten-medium', speed: 1 };
 
     const resolved = await eng.synth(req);

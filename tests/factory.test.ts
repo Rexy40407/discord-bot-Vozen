@@ -93,7 +93,12 @@ describe('selectEngine (flag MULTILINGUAL_SEGMENTS)', () => {
   });
 
   it('flag OFF (forcada via env) -> devolve o motor base TAL E QUAL (identidade ===)', () => {
-    const engine = selectEngine(base, baseConfig({ multilingualSegments: false }), AVAILABLE, cache);
+    const engine = selectEngine(
+      base,
+      baseConfig({ multilingualSegments: false }),
+      AVAILABLE,
+      cache,
+    );
     expect(engine).toBe(base);
   });
 

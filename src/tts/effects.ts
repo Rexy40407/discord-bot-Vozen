@@ -15,15 +15,7 @@ import { log } from '../logging/logger';
 // silêncio (crítico: uma síntese que lança faz o player SALTAR o item).
 
 export type VoiceEffect =
-  | 'none'
-  | 'robot'
-  | 'echo'
-  | 'deep'
-  | 'chipmunk'
-  | 'radio'
-  | 'phone'
-  | 'underwater'
-  | 'demon';
+  'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'radio' | 'phone' | 'underwater' | 'demon';
 
 // Ambos os motores (Piper nativo, gTTS via mp3ToWav) produzem WAV 22050Hz mono, por isso
 // os filtros de pitch (asetrate) usam 22050 com segurança. Só filtros CORE do ffmpeg
@@ -45,7 +37,15 @@ export const FREE_EFFECTS: readonly VoiceEffect[] = ['none', 'robot', 'echo'];
 
 /** Todos os efeitos (ordem das choices do /voice effect). */
 export const VOICE_EFFECTS: readonly VoiceEffect[] = [
-  'none', 'robot', 'echo', 'deep', 'chipmunk', 'radio', 'phone', 'underwater', 'demon',
+  'none',
+  'robot',
+  'echo',
+  'deep',
+  'chipmunk',
+  'radio',
+  'phone',
+  'underwater',
+  'demon',
 ];
 
 export function isVoiceEffect(s: string): s is VoiceEffect {
@@ -102,7 +102,11 @@ export interface ApplyEffectDeps {
  * do runner do gtts: timeout+kill, cleanup best-effort, latch `settled` para nunca deixar a
  * Promise pendente. Rejeita em erro (o chamador — EffectEngine — apanha e cai na voz limpa).
  */
-export function applyEffect(inputWav: string, filter: string, deps: ApplyEffectDeps = {}): Promise<string> {
+export function applyEffect(
+  inputWav: string,
+  filter: string,
+  deps: ApplyEffectDeps = {},
+): Promise<string> {
   const ff = (deps.ffmpegPath ?? (ffmpegStatic as unknown as string | null)) as string | null;
   const spawnImpl = deps.spawnImpl ?? spawn;
   if (!ff) return Promise.reject(new Error('fx: ffmpeg-static não encontrado'));
@@ -110,8 +114,23 @@ export function applyEffect(inputWav: string, filter: string, deps: ApplyEffectD
   const workDir = mkdtempSync(join(tmpdir(), 'vozen-fx-'));
   const outPath = join(workDir, 'out.wav');
   const args = [
-    '-hide_banner', '-loglevel', 'error', '-i', inputWav,
-    '-af', filter, '-ar', '22050', '-ac', '1', '-c:a', 'pcm_s16le', '-f', 'wav', outPath, '-y',
+    '-hide_banner',
+    '-loglevel',
+    'error',
+    '-i',
+    inputWav,
+    '-af',
+    filter,
+    '-ar',
+    '22050',
+    '-ac',
+    '1',
+    '-c:a',
+    'pcm_s16le',
+    '-f',
+    'wav',
+    outPath,
+    '-y',
   ];
 
   return new Promise<string>((resolve, reject) => {

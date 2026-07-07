@@ -21,7 +21,11 @@ interface RegisterState {
  * true se o registo pode ser SALTADO: o estado gravado bate certo com o fingerprint
  * atual (mesma app, mesmos comandos). Qualquer erro de leitura => false (regista).
  */
-export function shouldSkipRegister(stateFile: string, clientId: string, fingerprint: string): boolean {
+export function shouldSkipRegister(
+  stateFile: string,
+  clientId: string,
+  fingerprint: string,
+): boolean {
   try {
     const prev = JSON.parse(readFileSync(stateFile, 'utf8')) as RegisterState;
     return prev.clientId === clientId && prev.fingerprint === fingerprint;
@@ -34,9 +38,19 @@ export function shouldSkipRegister(stateFile: string, clientId: string, fingerpr
 export function saveRegisterState(stateFile: string, clientId: string, fingerprint: string): void {
   try {
     mkdirSync(dirname(stateFile), { recursive: true });
-    writeFileSync(stateFile, JSON.stringify({ clientId, fingerprint, at: new Date().toISOString() } satisfies RegisterState));
+    writeFileSync(
+      stateFile,
+      JSON.stringify({
+        clientId,
+        fingerprint,
+        at: new Date().toISOString(),
+      } satisfies RegisterState),
+    );
   } catch (err) {
-    log.warn('[register] não consegui gravar o estado do registo (re-registará no próximo arranque)', err);
+    log.warn(
+      '[register] não consegui gravar o estado do registo (re-registará no próximo arranque)',
+      err,
+    );
   }
 }
 
@@ -56,7 +70,11 @@ export async function registerCommands(
   opts: { stateFile?: string } = {},
 ): Promise<boolean> {
   const fingerprint = commandsFingerprint(commandDefs);
-  if (opts.stateFile && process.env.FORCE_REGISTER !== '1' && shouldSkipRegister(opts.stateFile, clientId, fingerprint)) {
+  if (
+    opts.stateFile &&
+    process.env.FORCE_REGISTER !== '1' &&
+    shouldSkipRegister(opts.stateFile, clientId, fingerprint)
+  ) {
     log.info(`[register] comandos inalterados (${fingerprint.slice(0, 8)}) — PUT global saltado.`);
     return false;
   }

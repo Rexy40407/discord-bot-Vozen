@@ -75,19 +75,21 @@ function makeDepsNoPlayer(db: Database.Database): BotDeps {
  * Mensagem base: autor humano, no canal CHAN, com conteúdo "ola mundo".
  * opts permitem sobrescrever qualquer campo.
  */
-function makeMessage(opts: {
-  bot?: boolean;
-  guild?: unknown;
-  guildId?: string | null;
-  channelId?: string;
-  content?: string;
-  mention?: boolean;
-  replyToBot?: boolean;
-  attachments?: Array<{ contentType?: string | null; name?: string | null }>;
-  displayName?: string;
-  authorId?: string;
-  botVoiceChannelId?: string;
-} = {}): any {
+function makeMessage(
+  opts: {
+    bot?: boolean;
+    guild?: unknown;
+    guildId?: string | null;
+    channelId?: string;
+    content?: string;
+    mention?: boolean;
+    replyToBot?: boolean;
+    attachments?: Array<{ contentType?: string | null; name?: string | null }>;
+    displayName?: string;
+    authorId?: string;
+    botVoiceChannelId?: string;
+  } = {},
+): any {
   const mention = opts.mention ?? false;
   const replyToBot = opts.replyToBot ?? false;
 
@@ -151,7 +153,9 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     // Espia o db a partir daqui: na 2.ª mensagem o guild_config vem da cache.
     const spy = vi.spyOn(db, 'prepare');
     await handleMessage(makeMessage({ content: 'segunda' }), deps);
-    const guildConfigSelects = spy.mock.calls.filter((c) => String(c[0]).includes('FROM guild_config'));
+    const guildConfigSelects = spy.mock.calls.filter((c) =>
+      String(c[0]).includes('FROM guild_config'),
+    );
     expect(guildConfigSelects).toHaveLength(0); // servido da cache, sem SQL
     expect(say).toHaveBeenCalledTimes(2); // ambas foram lidas
     spy.mockRestore();
@@ -331,7 +335,6 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     await handleMessage(makeMessage({ content: 'spam' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
-
 
   // ── 12. Caminho feliz ─────────────────────────────────────────────────────
   it('caminho feliz (autoread + tudo ok) → player.say chamado com texto limpo', async () => {

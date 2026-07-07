@@ -7,11 +7,7 @@ vi.mock('@discordjs/voice', () => ({
   getVoiceConnection: () => undefined,
 }));
 
-import {
-  localeForUser,
-  filterLocaleChoices,
-  handleInteraction,
-} from '../src/commands/index';
+import { localeForUser, filterLocaleChoices, handleInteraction } from '../src/commands/index';
 import type { BotDeps } from '../src/bot/deps';
 import { initDb } from '../src/store/db';
 import { setGuildConfig } from '../src/store/guildConfig';
@@ -102,7 +98,7 @@ describe('localeForUser — mapeia interaction.locale para o nosso locale', () =
   });
 
   it('nunca lanca (interaction sem guildId nem locale)', () => {
-    expect(() => localeForUser(makeDeps(db), { } as any)).not.toThrow();
+    expect(() => localeForUser(makeDeps(db), {} as any)).not.toThrow();
     expect(localeForUser(makeDeps(db), {} as any)).toBe('en');
   });
 });

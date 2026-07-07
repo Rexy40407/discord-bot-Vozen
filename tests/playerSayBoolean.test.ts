@@ -58,7 +58,7 @@ const req = (text: string): SynthRequest => ({ text, model: 'm', speed: 1 });
 describe('GuildVoicePlayer.say() — devolve boolean (P18.1)', () => {
   it('caso normal: resolve true quando enfileira', async () => {
     const engine: TTSEngine = { synth: async (r: SynthRequest) => r.text };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
 
@@ -72,7 +72,7 @@ describe('GuildVoicePlayer.say() — devolve boolean (P18.1)', () => {
     // preso em playNext (in-flight) e NAO liberta a fila. Assim conseguimos enche-la
     // ate ao cap de forma deterministica, sem vi.waitFor — o boolean e imediato.
     const engine: TTSEngine = { synth: () => new Promise<string>(() => {}) };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     // queueCap = 1: com um worker in-flight, cabem (1 in-flight + 1 na fila) = 2 a
     // true; o 3o say() ja nao cabe -> false.
@@ -90,7 +90,7 @@ describe('GuildVoicePlayer.say() — devolve boolean (P18.1)', () => {
 
   it('player destruido: resolve false', async () => {
     const engine: TTSEngine = { synth: async (r: SynthRequest) => r.text };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
     player.destroy();

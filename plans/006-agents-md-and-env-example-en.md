@@ -57,19 +57,21 @@ The repo has no agent-facing guidance file: every AI coding session rediscovers 
 
 ## Commands you will need
 
-| Purpose        | Command                                   | Expected on success |
-|----------------|-------------------------------------------|---------------------|
-| Tests (sanity) | `npx vitest run`                          | all pass (unchanged) |
-| PT-leftover grep | `git grep -nE "defeito|utilizador|necessari|arranc|VAZIO|proposito|lingua" -- .env.example` | no matches, exit 1 |
-| Diff scope     | `git diff --stat`                         | only the two in-scope files |
+| Purpose          | Command                | Expected on success         |
+| ---------------- | ---------------------- | --------------------------- |
+| Tests (sanity)   | `npx vitest run`       | all pass (unchanged)        |
+| PT-leftover grep | `git grep -nE "defeito | utilizador                  | necessari | arranc | VAZIO | proposito | lingua" -- .env.example` | no matches, exit 1 |
+| Diff scope       | `git diff --stat`      | only the two in-scope files |
 
 ## Scope
 
 **In scope** (the only files you should create/modify):
+
 - `CLAUDE.md` (create, repo root)
 - `.env.example` (translate comments only)
 
 **Out of scope** (do NOT touch):
+
 - `.env` — never open or edit it; it contains real secrets.
 - Variable NAMES and VALUES in `.env.example` — comments only. `PIPER_PATH=piper`, `DEFAULT_VOICE=en_US-amy-medium`, etc. must survive byte-identical.
 - `README.md`, `docs/**` — already handled by the English pass in `fb7f916`.
@@ -222,6 +224,7 @@ MULTILINGUAL_SEGMENTS=
 ```
 
 **Verify** (all three):
+
 - `git grep -nE "defeito|utilizador|necessari|arranc|VAZIO|proposito|lingua" -- .env.example` → no matches (exit code 1).
 - `git diff .env.example | grep "^-" | grep -v "^---" | grep -v "^-#"` → no output (only comment lines were removed; every removed line starts with `#`).
 - `git diff .env.example | grep -E "^\+[A-Z_]+="` → no output (no variable line was added/changed).
@@ -229,6 +232,7 @@ MULTILINGUAL_SEGMENTS=
 ### Step 3: Confirm nothing else changed and the suite still passes
 
 **Verify**:
+
 - `git diff --stat` → exactly two entries: `CLAUDE.md` (new) and `.env.example`.
 - `npx vitest run` → all tests pass (documentation-only change; count unchanged).
 

@@ -24,7 +24,11 @@ export function isBirthdayToday(bd: Birthday, now: Date): boolean {
   return bd.month === now.getMonth() + 1 && bd.day === now.getDate();
 }
 
-export function getBirthday(db: Database.Database, guildId: string, userId: string): Birthday | null {
+export function getBirthday(
+  db: Database.Database,
+  guildId: string,
+  userId: string,
+): Birthday | null {
   const row = db
     .prepare('SELECT month, day FROM user_birthday WHERE guild_id = ? AND user_id = ?')
     .get(guildId, userId) as { month: number; day: number } | undefined;

@@ -78,9 +78,11 @@ describe('Semaphore', () => {
 
   it('run liberta o permit mesmo quando fn rejeita', async () => {
     const sem = new Semaphore(1);
-    await expect(sem.run(async () => {
-      throw new Error('boom');
-    })).rejects.toThrow('boom');
+    await expect(
+      sem.run(async () => {
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
     // Permit devolvido apesar do erro.
     expect(sem.available).toBe(1);
   });

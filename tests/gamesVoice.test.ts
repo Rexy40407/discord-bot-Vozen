@@ -102,15 +102,27 @@ describe('Matemática Falada — acerto', () => {
     // Responde certo a cada ronda: o resultado sai dos params do announce (a op b).
     for (let r = 0; r < 5; r++) {
       // Ultimo announce = game.math.round {"n":..,"a":..,"op":"+","b":..}
-      const roundMsg = [...send.mock.calls].reverse().find((c) => String(c[1]).startsWith('game.math.round'));
+      const roundMsg = [...send.mock.calls]
+        .reverse()
+        .find((c) => String(c[1]).startsWith('game.math.round'));
       const params = JSON.parse(String(roundMsg![1]).slice('game.math.round '.length)) as {
         a: number;
         op: string;
         b: number;
       };
       const result =
-        params.op === '+' ? params.a + params.b : params.op === '−' ? params.a - params.b : params.a * params.b;
-      mgr.handleMessage({ guildId: G, channelId: C, authorId: 'u', authorName: 'U', content: `${result}` });
+        params.op === '+'
+          ? params.a + params.b
+          : params.op === '−'
+            ? params.a - params.b
+            : params.a * params.b;
+      mgr.handleMessage({
+        guildId: G,
+        channelId: C,
+        authorId: 'u',
+        authorName: 'U',
+        content: `${result}`,
+      });
       await flush();
     }
     expect(persistScores).toHaveBeenCalledTimes(1);
@@ -118,7 +130,9 @@ describe('Matemática Falada — acerto', () => {
     expect(points.get('u')).toBe(5);
     // On-brand: o Vozen anuncia o vencedor em VOZ ALTA no fim.
     expect(
-      say.mock.calls.some((c) => String((c[0] as { text: string }).text).startsWith('game.finish.winnerVoice')),
+      say.mock.calls.some((c) =>
+        String((c[0] as { text: string }).text).startsWith('game.finish.winnerVoice'),
+      ),
     ).toBe(true);
   });
 });
@@ -131,7 +145,13 @@ describe('Ditado — acerto', () => {
     await flush();
     for (let r = 0; r < 5; r++) {
       const word = lastSayText(say); // o que o bot disse = a palavra a escrever
-      mgr.handleMessage({ guildId: G, channelId: C, authorId: 'u', authorName: 'U', content: word });
+      mgr.handleMessage({
+        guildId: G,
+        channelId: C,
+        authorId: 'u',
+        authorName: 'U',
+        content: word,
+      });
       await flush();
     }
     expect(persistScores).toHaveBeenCalledTimes(1);

@@ -78,7 +78,7 @@ export const catalog: Record<string, Entry> = {
     pt: 'Não está nada a tocar de momento.',
   },
   'shutup.done': {
-    en: '🤐 Okay, I\'ll stop — cleared everything in the queue.',
+    en: "🤐 Okay, I'll stop — cleared everything in the queue.",
     pt: '🤐 Está bem, calo-me — limpei tudo o que estava na fila.',
   },
   // Partilhada por /tts, /joke e /laugh ("sem player" -> bot fora da voz). Guia o
@@ -92,11 +92,11 @@ export const catalog: Record<string, Entry> = {
     pt: 'Nao ha nada para ler — manda-me algum texto para eu dizer.',
   },
   'tts.nothingAfterClean': {
-    en: "After tidying that up there was nothing left to read — try some normal text (letters or words).",
+    en: 'After tidying that up there was nothing left to read — try some normal text (letters or words).',
     pt: 'Depois da limpeza nao sobrou nada para ler — tenta texto normal (letras ou palavras).',
   },
   'tts.tooFast': {
-    en: "Whoa, slow down a little — try again in a moment.",
+    en: 'Whoa, slow down a little — try again in a moment.',
     pt: 'Calma, vai com mais calma — tenta daqui a um instante.',
   },
   'tts.blocked': {
@@ -165,7 +165,7 @@ export const catalog: Record<string, Entry> = {
     pt: '✅ Apelido falado removido — o Vozen vai usar o teu nome do servidor.',
   },
   'voice.nickname.invalid': {
-    en: "That name has nothing readable to say out loud. Try letters or numbers.",
+    en: 'That name has nothing readable to say out loud. Try letters or numbers.',
     pt: 'Esse nome não tem nada legível para dizer em voz alta. Usa letras ou números.',
   },
   // /voice effect — efeito de voz (premium, 2 amostras grátis).
@@ -195,7 +195,7 @@ export const catalog: Record<string, Entry> = {
     pt: '🎙️ **A gravar a tua voz** — continua a falar até parar sozinho (~{target}s de fala, as pausas não contam), ou carrega em **⏹️ Parar** quando quiseres. Só guardo o TEU áudio.',
   },
   'clone.recordingOther': {
-    en: '🎙️ **Recording {who}** — they should keep talking until it stops on its own (~{target}s of speech, pauses don\'t count), or press **⏹️ Stop** to finish.',
+    en: "🎙️ **Recording {who}** — they should keep talking until it stops on its own (~{target}s of speech, pauses don't count), or press **⏹️ Stop** to finish.",
     pt: '🎙️ **A gravar {who}** — deve continuar a falar até parar sozinho (~{target}s de fala, as pausas não contam), ou carrega em **⏹️ Parar** para terminar.',
   },
   'clone.recordingProgress': {
@@ -308,7 +308,7 @@ export const catalog: Record<string, Entry> = {
     pt: '✅ Deteção por-língua **ligada** — cada língua é lida pela sua voz nativa, por isso o locutor pode mudar entre línguas.',
   },
   'voice.detection.off': {
-    en: "✅ Per-language detection is **off** (default) — one single voice reads everything, in every language. Pick it with `/voice set`.",
+    en: '✅ Per-language detection is **off** (default) — one single voice reads everything, in every language. Pick it with `/voice set`.',
     pt: '✅ Deteção por-língua **desligada** (padrão) — uma só voz lê tudo, em qualquer língua. Escolhe-a com `/voice set`.',
   },
   // Confirma a troca de MOTOR feita a partir do /voice detection (mesmo motor do /voice set).
@@ -477,7 +477,7 @@ export const catalog: Record<string, Entry> = {
     pt: 'As tuas abreviaturas pessoais ({count}/{cap} usadas):',
   },
   'voice.abbrev.listEmpty': {
-    en: "(none yet — add one with /voice abbrev add)",
+    en: '(none yet — add one with /voice abbrev add)',
     pt: '(nenhuma ainda — cria uma com /voice abbrev add)',
   },
   'voice.abbrev.capReached': {
@@ -617,7 +617,7 @@ export const catalog: Record<string, Entry> = {
     pt: 'O Vozen **ignora** outros bots e webhooks (só lê pessoas reais).',
   },
   'config.textInVoiceOn': {
-    en: "✅ Vozen will also read the **text chat inside its voice channel**.",
+    en: '✅ Vozen will also read the **text chat inside its voice channel**.',
     pt: '✅ O Vozen também vai ler o **chat de texto dentro do canal de voz** onde está.',
   },
   'config.textInVoiceOff': {
@@ -640,7 +640,7 @@ export const catalog: Record<string, Entry> = {
   // id cru ({model}) subtil/copy-pasteavel. Usada quando o utilizador nao tem voz
   // propria, por isso e a voz que os membros vao ouvir por defeito.
   'config.defaultVoiceSet': {
-    en: "✅ Server default voice set to **{name}**. Members without their own voice will hear this one. (id: `{model}`)",
+    en: '✅ Server default voice set to **{name}**. Members without their own voice will hear this one. (id: `{model}`)',
     pt: '✅ Voz default do servidor: **{name}**. Os membros sem voz própria vão ouvir esta. (id: `{model}`)',
   },
   'config.reset': {
@@ -742,7 +742,7 @@ export const catalog: Record<string, Entry> = {
 
   // ── /setup ────────────────────────────────────────────────────────────────
   'setup.noChannel': {
-    en: "I couldn't tell which channel to use. Pass a text channel in the \"channel\" option.",
+    en: 'I couldn\'t tell which channel to use. Pass a text channel in the "channel" option.',
     pt: 'Nao consegui identificar o canal. Indica um canal de texto na opcao "canal".',
   },
   'setup.channelWrongType': {
@@ -887,7 +887,7 @@ export const catalog: Record<string, Entry> = {
 
   // ── context-menu "Speak" ──────────────────────────────────────────────────
   'speak.emptyMessage': {
-    en: "That message has no text to read out loud.",
+    en: 'That message has no text to read out loud.',
     pt: 'Essa mensagem não tem texto para ler em voz alta.',
   },
 
@@ -1118,11 +1118,11 @@ export const catalog: Record<string, Entry> = {
   // Chrome do comando (arranque, paragem, leaderboard, lista) + cada jogo. `en` e a
   // fonte de verdade; `pt` traduzido. As outras 32 linguas caem em `en` via t().
   'game.start.needVoice': {
-    en: "This is a **voice game** — hop into a voice channel and run /join first, then start it.",
+    en: 'This is a **voice game** — hop into a voice channel and run /join first, then start it.',
     pt: 'Este é um **jogo de voz** — entra num canal de voz e corre /join primeiro, depois começa.',
   },
   'game.start.alreadyActive': {
-    en: "A game is already running in <#{channel}>. Finish it (or use `/game stop`) before starting another.",
+    en: 'A game is already running in <#{channel}>. Finish it (or use `/game stop`) before starting another.',
     pt: 'Já há um jogo a decorrer em <#{channel}>. Termina-o (ou usa `/game stop`) antes de começar outro.',
   },
   'game.start.premiumLocked': {
@@ -1189,7 +1189,7 @@ export const catalog: Record<string, Entry> = {
     pt: '{rank} **{user}** — {points}',
   },
   'game.finish.noScores': {
-    en: "🏁 Game over — nobody scored this time. Next time!",
+    en: '🏁 Game over — nobody scored this time. Next time!',
     pt: '🏁 Fim de jogo — ninguém pontuou desta vez. Para a próxima!',
   },
   // FALADO (na voz da guild): o Vozen anuncia o vencedor em voz alta no fim.
@@ -1220,7 +1220,7 @@ export const catalog: Record<string, Entry> = {
     pt: '✅ **{user}** acertou — era **{language}**!',
   },
   'game.guessLanguage.timeout': {
-    en: "⏱️ Time! That was **{language}**.",
+    en: '⏱️ Time! That was **{language}**.',
     pt: '⏱️ Tempo! Era **{language}**.',
   },
   'game.guessLanguage.noLanguages': {
@@ -1238,9 +1238,18 @@ export const catalog: Record<string, Entry> = {
     en: '🔢 **Mental Math** — {rounds} sums. Listen and type the answer as fast as you can!',
     pt: '🔢 **Matemática Falada** — {rounds} contas. Ouve e escreve o resultado o mais rápido que conseguires!',
   },
-  'game.math.round': { en: '🧮 Round {n}/{total} — **{a} {op} {b} = ?**', pt: '🧮 Ronda {n}/{total} — **{a} {op} {b} = ?**' },
-  'game.math.correct': { en: '✅ **{user}** nailed it — the answer was **{answer}**!', pt: '✅ **{user}** acertou — o resultado era **{answer}**!' },
-  'game.math.timeout': { en: '⏱️ Time! The answer was **{answer}**.', pt: '⏱️ Tempo! O resultado era **{answer}**.' },
+  'game.math.round': {
+    en: '🧮 Round {n}/{total} — **{a} {op} {b} = ?**',
+    pt: '🧮 Ronda {n}/{total} — **{a} {op} {b} = ?**',
+  },
+  'game.math.correct': {
+    en: '✅ **{user}** nailed it — the answer was **{answer}**!',
+    pt: '✅ **{user}** acertou — o resultado era **{answer}**!',
+  },
+  'game.math.timeout': {
+    en: '⏱️ Time! The answer was **{answer}**.',
+    pt: '⏱️ Tempo! O resultado era **{answer}**.',
+  },
   // Palavras dos operadores — FALADAS (na voz da guild), por isso texto simples.
   'game.math.plus': { en: 'plus', pt: 'mais' },
   'game.math.minus': { en: 'minus', pt: 'menos' },
@@ -1256,9 +1265,18 @@ export const catalog: Record<string, Entry> = {
     en: '🔢 **Missing Number** — I count, but I skip one. Type the missing number! ({rounds} rounds)',
     pt: '🔢 **Contagem Sabotada** — eu conto, mas salto um número. Escreve o que faltou! ({rounds} rondas)',
   },
-  'game.skipCount.round': { en: '👂 Round {n}/{total} — which number did I skip?', pt: '👂 Ronda {n}/{total} — que número saltei?' },
-  'game.skipCount.correct': { en: '✅ **{user}** caught it — I skipped **{answer}**!', pt: '✅ **{user}** apanhou — saltei o **{answer}**!' },
-  'game.skipCount.timeout': { en: '⏱️ Time! I skipped **{answer}**.', pt: '⏱️ Tempo! Saltei o **{answer}**.' },
+  'game.skipCount.round': {
+    en: '👂 Round {n}/{total} — which number did I skip?',
+    pt: '👂 Ronda {n}/{total} — que número saltei?',
+  },
+  'game.skipCount.correct': {
+    en: '✅ **{user}** caught it — I skipped **{answer}**!',
+    pt: '✅ **{user}** apanhou — saltei o **{answer}**!',
+  },
+  'game.skipCount.timeout': {
+    en: '⏱️ Time! I skipped **{answer}**.',
+    pt: '⏱️ Tempo! Saltei o **{answer}**.',
+  },
 
   // ── Ditado ────────────────────────────────────────────────────────────────
   'game.spelling.name': { en: 'Spelling Bee', pt: 'Ditado' },
@@ -1270,9 +1288,18 @@ export const catalog: Record<string, Entry> = {
     en: "✍️ **Spelling Bee** — I'll say {rounds} words. Type each one spelled correctly!",
     pt: '✍️ **Ditado** — vou dizer {rounds} palavras. Escreve cada uma corretamente!',
   },
-  'game.spelling.round': { en: '🗣️ Round {n}/{total} — write the word I say…', pt: '🗣️ Ronda {n}/{total} — escreve a palavra que eu disser…' },
-  'game.spelling.correct': { en: '✅ **{user}** spelled **{word}** right!', pt: '✅ **{user}** escreveu **{word}** corretamente!' },
-  'game.spelling.timeout': { en: '⏱️ Time! The word was **{word}**.', pt: '⏱️ Tempo! A palavra era **{word}**.' },
+  'game.spelling.round': {
+    en: '🗣️ Round {n}/{total} — write the word I say…',
+    pt: '🗣️ Ronda {n}/{total} — escreve a palavra que eu disser…',
+  },
+  'game.spelling.correct': {
+    en: '✅ **{user}** spelled **{word}** right!',
+    pt: '✅ **{user}** escreveu **{word}** corretamente!',
+  },
+  'game.spelling.timeout': {
+    en: '⏱️ Time! The word was **{word}**.',
+    pt: '⏱️ Tempo! A palavra era **{word}**.',
+  },
   'game.spelling.empty': {
     en: "I don't have a word list for this server's voice language yet.",
     pt: 'Ainda não tenho uma lista de palavras para a língua da voz deste servidor.',
@@ -1288,9 +1315,18 @@ export const catalog: Record<string, Entry> = {
     en: '🔡 **Unscramble the Spelling** — I spell {rounds} words letter by letter. Type the full word!',
     pt: '🔡 **Soletrado ao Contrário** — soletro {rounds} palavras letra a letra. Escreve a palavra completa!',
   },
-  'game.spellOut.round': { en: '🔤 Round {n}/{total} — listen to the letters…', pt: '🔤 Ronda {n}/{total} — ouve as letras…' },
-  'game.spellOut.correct': { en: '✅ **{user}** got it — **{word}**!', pt: '✅ **{user}** acertou — **{word}**!' },
-  'game.spellOut.timeout': { en: '⏱️ Time! It spelled **{word}**.', pt: '⏱️ Tempo! Soletrava **{word}**.' },
+  'game.spellOut.round': {
+    en: '🔤 Round {n}/{total} — listen to the letters…',
+    pt: '🔤 Ronda {n}/{total} — ouve as letras…',
+  },
+  'game.spellOut.correct': {
+    en: '✅ **{user}** got it — **{word}**!',
+    pt: '✅ **{user}** acertou — **{word}**!',
+  },
+  'game.spellOut.timeout': {
+    en: '⏱️ Time! It spelled **{word}**.',
+    pt: '⏱️ Tempo! Soletrava **{word}**.',
+  },
 
   // ── Velocidade Estúpida ───────────────────────────────────────────────────
   'game.fastSpeech.name': { en: 'Fast Talk', pt: 'Velocidade Estúpida' },
@@ -1302,8 +1338,14 @@ export const catalog: Record<string, Entry> = {
     en: '💨 **Fast Talk** — {rounds} sentences at ludicrous speed. Type what you hear!',
     pt: '💨 **Velocidade Estúpida** — {rounds} frases a uma velocidade ridícula. Escreve o que ouvires!',
   },
-  'game.fastSpeech.round': { en: '⚡ Round {n}/{total} — here it comes, fast!', pt: '⚡ Ronda {n}/{total} — aí vai, depressa!' },
-  'game.fastSpeech.correct': { en: '✅ **{user}** decoded it: “{phrase}”', pt: '✅ **{user}** decifrou: “{phrase}”' },
+  'game.fastSpeech.round': {
+    en: '⚡ Round {n}/{total} — here it comes, fast!',
+    pt: '⚡ Ronda {n}/{total} — aí vai, depressa!',
+  },
+  'game.fastSpeech.correct': {
+    en: '✅ **{user}** decoded it: “{phrase}”',
+    pt: '✅ **{user}** decifrou: “{phrase}”',
+  },
   'game.fastSpeech.timeout': { en: '⏱️ Time! It was: “{phrase}”', pt: '⏱️ Tempo! Era: “{phrase}”' },
   'game.fastSpeech.empty': {
     en: "I don't have phrases for this server's voice language yet.",
@@ -1320,9 +1362,18 @@ export const catalog: Record<string, Entry> = {
     en: '🎭 **Funny Accent** — {rounds} words said with the wrong accent. Type the word!',
     pt: '🎭 **Sotaque Trocado** — {rounds} palavras ditas com o sotaque errado. Escreve a palavra!',
   },
-  'game.accentSwap.round': { en: '🌍 Round {n}/{total} — what word am I trying to say?', pt: '🌍 Ronda {n}/{total} — que palavra estou a tentar dizer?' },
-  'game.accentSwap.correct': { en: '✅ **{user}** got it — **{word}**!', pt: '✅ **{user}** acertou — **{word}**!' },
-  'game.accentSwap.timeout': { en: '⏱️ Time! The word was **{word}**.', pt: '⏱️ Tempo! A palavra era **{word}**.' },
+  'game.accentSwap.round': {
+    en: '🌍 Round {n}/{total} — what word am I trying to say?',
+    pt: '🌍 Ronda {n}/{total} — que palavra estou a tentar dizer?',
+  },
+  'game.accentSwap.correct': {
+    en: '✅ **{user}** got it — **{word}**!',
+    pt: '✅ **{user}** acertou — **{word}**!',
+  },
+  'game.accentSwap.timeout': {
+    en: '⏱️ Time! The word was **{word}**.',
+    pt: '⏱️ Tempo! A palavra era **{word}**.',
+  },
 
   // ── Reflexos ──────────────────────────────────────────────────────────────
   'game.reflexes.name': { en: 'Reflexes', pt: 'Reflexos' },
@@ -1334,14 +1385,26 @@ export const catalog: Record<string, Entry> = {
     en: "⚡ **Reflexes** — {rounds} rounds. When I shout **GO**, type anything as fast as you can. Type before GO and it's a false start!",
     pt: '⚡ **Reflexos** — {rounds} rondas. Quando eu gritar **JÁ**, escreve o que for o mais rápido possível. Escreveres antes do JÁ é falsa partida!',
   },
-  'game.reflexes.ready': { en: '🚦 Round {n}/{total} — get ready…', pt: '🚦 Ronda {n}/{total} — preparados…' },
+  'game.reflexes.ready': {
+    en: '🚦 Round {n}/{total} — get ready…',
+    pt: '🚦 Ronda {n}/{total} — preparados…',
+  },
   // FALADO (na voz da guild): a contagem decrescente.
   'game.reflexes.countdown': { en: 'three… two… one…', pt: 'três… dois… um…' },
   'game.reflexes.go': { en: '🟢 **GO!!!**', pt: '🟢 **JÁ!!!**' },
   'game.reflexes.goVoice': { en: 'Go!', pt: 'Já!' },
-  'game.reflexes.tooSoon': { en: '🔴 **{user}** jumped the gun — too soon!', pt: '🔴 **{user}** precipitou-se — cedo demais!' },
-  'game.reflexes.win': { en: '⚡ **{user}** is the fastest! Point!', pt: '⚡ **{user}** foi o mais rápido! Ponto!' },
-  'game.reflexes.tooSlow': { en: '😴 Nobody reacted in time. Next!', pt: '😴 Ninguém reagiu a tempo. Próxima!' },
+  'game.reflexes.tooSoon': {
+    en: '🔴 **{user}** jumped the gun — too soon!',
+    pt: '🔴 **{user}** precipitou-se — cedo demais!',
+  },
+  'game.reflexes.win': {
+    en: '⚡ **{user}** is the fastest! Point!',
+    pt: '⚡ **{user}** foi o mais rápido! Ponto!',
+  },
+  'game.reflexes.tooSlow': {
+    en: '😴 Nobody reacted in time. Next!',
+    pt: '😴 Ninguém reagiu a tempo. Próxima!',
+  },
 
   // ── Vozen Diz (Simon Says) ─────────────────────────────────────────────────
   'game.vozenSays.name': { en: 'Vozen Says', pt: 'Vozen Diz' },
@@ -1356,12 +1419,30 @@ export const catalog: Record<string, Entry> = {
   // FALADOS (na voz da guild): o prefixo da ordem e o verbo.
   'game.vozenSays.prefix': { en: 'Vozen says', pt: 'Vozen diz' },
   'game.vozenSays.verb': { en: 'type', pt: 'escrevam' },
-  'game.vozenSays.real': { en: '🗣️ Round {n}/{total} — “{command}”', pt: '🗣️ Ronda {n}/{total} — «{command}»' },
-  'game.vozenSays.trap': { en: '🗣️ Round {n}/{total} — “{command}”', pt: '🗣️ Ronda {n}/{total} — «{command}»' },
-  'game.vozenSays.obeyed': { en: '✅ **{user}** obeyed first — point!', pt: '✅ **{user}** obedeceu primeiro — ponto!' },
-  'game.vozenSays.caught': { en: "🔴 **{user}** — I didn't say Vozen says! Caught!", pt: '🔴 **{user}** — eu não disse Vozen diz! Apanhado!' },
-  'game.vozenSays.nobody': { en: '😴 Nobody obeyed **{word}** in time. Next!', pt: '😴 Ninguém obedeceu a **{word}** a tempo. Próxima!' },
-  'game.vozenSays.trapCleared': { en: '😌 It was a trap — well spotted, nobody fell for **{word}**.', pt: '😌 Era uma ratoeira — bem visto, ninguém caiu em **{word}**.' },
+  'game.vozenSays.real': {
+    en: '🗣️ Round {n}/{total} — “{command}”',
+    pt: '🗣️ Ronda {n}/{total} — «{command}»',
+  },
+  'game.vozenSays.trap': {
+    en: '🗣️ Round {n}/{total} — “{command}”',
+    pt: '🗣️ Ronda {n}/{total} — «{command}»',
+  },
+  'game.vozenSays.obeyed': {
+    en: '✅ **{user}** obeyed first — point!',
+    pt: '✅ **{user}** obedeceu primeiro — ponto!',
+  },
+  'game.vozenSays.caught': {
+    en: "🔴 **{user}** — I didn't say Vozen says! Caught!",
+    pt: '🔴 **{user}** — eu não disse Vozen diz! Apanhado!',
+  },
+  'game.vozenSays.nobody': {
+    en: '😴 Nobody obeyed **{word}** in time. Next!',
+    pt: '😴 Ninguém obedeceu a **{word}** a tempo. Próxima!',
+  },
+  'game.vozenSays.trapCleared': {
+    en: '😌 It was a trap — well spotted, nobody fell for **{word}**.',
+    pt: '😌 Era uma ratoeira — bem visto, ninguém caiu em **{word}**.',
+  },
 
   // ── Roleta (Verdade ou Consequência) ──────────────────────────────────────
   'game.roulette.name': { en: 'Truth or Dare Roulette', pt: 'Roleta (Verdade ou Consequência)' },
@@ -1381,12 +1462,27 @@ export const catalog: Record<string, Entry> = {
     en: '🪢 **Hangman** — type one letter at a time to guess the word. You can also type the whole word!',
     pt: '🪢 **Forca** — escreve uma letra de cada vez para adivinhar a palavra. Também podes tentar a palavra inteira!',
   },
-  'game.hangman.hit': { en: '🟢 **{user}** found **{letter}**!', pt: '🟢 **{user}** encontrou o **{letter}**!' },
-  'game.hangman.miss': { en: '🔴 **{user}** — no **{letter}**.', pt: '🔴 **{user}** — não há **{letter}**.' },
+  'game.hangman.hit': {
+    en: '🟢 **{user}** found **{letter}**!',
+    pt: '🟢 **{user}** encontrou o **{letter}**!',
+  },
+  'game.hangman.miss': {
+    en: '🔴 **{user}** — no **{letter}**.',
+    pt: '🔴 **{user}** — não há **{letter}**.',
+  },
   'game.hangman.wrongLetters': { en: 'Wrong: {letters}', pt: 'Erradas: {letters}' },
-  'game.hangman.win': { en: '🎉 **{user}** solved it — **{word}**!', pt: '🎉 **{user}** resolveu — **{word}**!' },
-  'game.hangman.lose': { en: '💀 Out of tries! The word was **{word}**.', pt: '💀 Sem tentativas! A palavra era **{word}**.' },
-  'game.hangman.idle': { en: '🕹️ Game paused (nobody playing). The word was **{word}**.', pt: '🕹️ Jogo terminado (ninguém a jogar). A palavra era **{word}**.' },
+  'game.hangman.win': {
+    en: '🎉 **{user}** solved it — **{word}**!',
+    pt: '🎉 **{user}** resolveu — **{word}**!',
+  },
+  'game.hangman.lose': {
+    en: '💀 Out of tries! The word was **{word}**.',
+    pt: '💀 Sem tentativas! A palavra era **{word}**.',
+  },
+  'game.hangman.idle': {
+    en: '🕹️ Game paused (nobody playing). The word was **{word}**.',
+    pt: '🕹️ Jogo terminado (ninguém a jogar). A palavra era **{word}**.',
+  },
 
   // ── Termo/Wordle ──────────────────────────────────────────────────────────
   'game.wordle.name': { en: 'Wordle', pt: 'Termo' },
@@ -1407,9 +1503,18 @@ export const catalog: Record<string, Entry> = {
   // "Teclado" de estado: letras na palavra / descartadas (riscadas).
   'game.wordle.inWord': { en: '🟢 in word: {letters}', pt: '🟢 na palavra: {letters}' },
   'game.wordle.out': { en: '🚫 out: ~~{letters}~~', pt: '🚫 fora: ~~{letters}~~' },
-  'game.wordle.win': { en: '🎉 **{user}** got it in {n} — **{word}**!', pt: '🎉 **{user}** acertou em {n} — **{word}**!' },
-  'game.wordle.lose': { en: '💀 Out of guesses! The word was **{word}**.', pt: '💀 Sem tentativas! A palavra era **{word}**.' },
-  'game.wordle.idle': { en: '🕹️ Game paused (nobody playing). The word was **{word}**.', pt: '🕹️ Jogo terminado (ninguém a jogar). A palavra era **{word}**.' },
+  'game.wordle.win': {
+    en: '🎉 **{user}** got it in {n} — **{word}**!',
+    pt: '🎉 **{user}** acertou em {n} — **{word}**!',
+  },
+  'game.wordle.lose': {
+    en: '💀 Out of guesses! The word was **{word}**.',
+    pt: '💀 Sem tentativas! A palavra era **{word}**.',
+  },
+  'game.wordle.idle': {
+    en: '🕹️ Game paused (nobody playing). The word was **{word}**.',
+    pt: '🕹️ Jogo terminado (ninguém a jogar). A palavra era **{word}**.',
+  },
 
   // ── Galo (tic-tac-toe) ────────────────────────────────────────────────────
   'game.tictactoe.name': { en: 'Tic-Tac-Toe', pt: 'Jogo do Galo' },
@@ -1422,11 +1527,23 @@ export const catalog: Record<string, Entry> = {
     pt: '⭕ **Jogo do Galo** — os dois primeiros a jogar são ❌ e ⭕ (❌ começa). Escreve um número 1-9 para jogar na casa.',
   },
   'game.tictactoe.turn': { en: 'Turn: **{mark}**', pt: 'Vez de: **{mark}**' },
-  'game.tictactoe.notYourTurn': { en: '⏳ **{user}**, it’s **{mark}**’s turn.', pt: '⏳ **{user}**, é a vez do **{mark}**.' },
-  'game.tictactoe.taken': { en: '🚫 Cell {cell} is taken — pick another.', pt: '🚫 A casa {cell} está ocupada — escolhe outra.' },
-  'game.tictactoe.win': { en: '🎉 **{user}** ({mark}) wins!', pt: '🎉 **{user}** ({mark}) ganhou!' },
+  'game.tictactoe.notYourTurn': {
+    en: '⏳ **{user}**, it’s **{mark}**’s turn.',
+    pt: '⏳ **{user}**, é a vez do **{mark}**.',
+  },
+  'game.tictactoe.taken': {
+    en: '🚫 Cell {cell} is taken — pick another.',
+    pt: '🚫 A casa {cell} está ocupada — escolhe outra.',
+  },
+  'game.tictactoe.win': {
+    en: '🎉 **{user}** ({mark}) wins!',
+    pt: '🎉 **{user}** ({mark}) ganhou!',
+  },
   'game.tictactoe.draw': { en: '🤝 It’s a draw!', pt: '🤝 Empate!' },
-  'game.tictactoe.idle': { en: '🕹️ Game ended (nobody playing).', pt: '🕹️ Jogo terminado (ninguém a jogar).' },
+  'game.tictactoe.idle': {
+    en: '🕹️ Game ended (nobody playing).',
+    pt: '🕹️ Jogo terminado (ninguém a jogar).',
+  },
 
   // ── Xadrez (💎 Premium) ────────────────────────────────────────────────────
   'game.chess.name': { en: 'Chess', pt: 'Xadrez' },
@@ -1440,15 +1557,33 @@ export const catalog: Record<string, Entry> = {
   },
   'game.chess.white': { en: 'White', pt: 'brancas' },
   'game.chess.black': { en: 'Black', pt: 'pretas' },
-  'game.chess.seats': { en: '⚪ White: **{white}** · ⚫ Black: **{black}**', pt: '⚪ Brancas: **{white}** · ⚫ Pretas: **{black}**' },
+  'game.chess.seats': {
+    en: '⚪ White: **{white}** · ⚫ Black: **{black}**',
+    pt: '⚪ Brancas: **{white}** · ⚫ Pretas: **{black}**',
+  },
   'game.chess.turn': { en: '{move} — turn: **{color}**', pt: '{move} — vez de: **{color}**' },
   'game.chess.check': { en: '♟️ Check!', pt: '♟️ Xeque!' },
-  'game.chess.notYourTurn': { en: '⏳ **{user}**, it’s **{color}**’s turn.', pt: '⏳ **{user}**, é a vez das **{color}**.' },
-  'game.chess.illegalMove': { en: '🚫 "{move}" isn’t a legal move — try again.', pt: '🚫 "{move}" não é uma jogada válida — tenta outra vez.' },
-  'game.chess.checkmate': { en: '🏆 Checkmate ({move})! **{user}** wins!', pt: '🏆 Xeque-mate ({move})! **{user}** ganhou!' },
+  'game.chess.notYourTurn': {
+    en: '⏳ **{user}**, it’s **{color}**’s turn.',
+    pt: '⏳ **{user}**, é a vez das **{color}**.',
+  },
+  'game.chess.illegalMove': {
+    en: '🚫 "{move}" isn’t a legal move — try again.',
+    pt: '🚫 "{move}" não é uma jogada válida — tenta outra vez.',
+  },
+  'game.chess.checkmate': {
+    en: '🏆 Checkmate ({move})! **{user}** wins!',
+    pt: '🏆 Xeque-mate ({move})! **{user}** ganhou!',
+  },
   'game.chess.draw': { en: '🤝 It’s a draw ({move})!', pt: '🤝 Empate ({move})!' },
-  'game.chess.resigned': { en: '🏳️ **{user}** resigned — **{winner}** wins!', pt: '🏳️ **{user}** desistiu — **{winner}** ganhou!' },
-  'game.chess.idle': { en: '🕹️ Game ended (nobody playing).', pt: '🕹️ Jogo terminado (ninguém a jogar).' },
+  'game.chess.resigned': {
+    en: '🏳️ **{user}** resigned — **{winner}** wins!',
+    pt: '🏳️ **{user}** desistiu — **{winner}** ganhou!',
+  },
+  'game.chess.idle': {
+    en: '🕹️ Game ended (nobody playing).',
+    pt: '🕹️ Jogo terminado (ninguém a jogar).',
+  },
 
   // ── word-chain (cadeia de palavras) ───────────────────────────────────────
   'game.wordChain.name': { en: 'Word Chain', pt: 'Cadeia de Palavras' },
@@ -1480,14 +1615,35 @@ export const catalog: Record<string, Entry> = {
     en: '✅ **{word}** — next letter: **{letter}**',
     pt: '✅ **{word}** — próxima letra: **{letter}**',
   },
-  'game.wordChain.bad.letter': { en: '↪️ It must start with **{letter}**.', pt: '↪️ Tem de começar por **{letter}**.' },
-  'game.wordChain.bad.short': { en: '📏 Too short — at least **{min}** letters.', pt: '📏 Curta demais — pelo menos **{min}** letras.' },
-  'game.wordChain.bad.repeated': { en: '🔁 That word was already used.', pt: '🔁 Essa palavra já foi usada.' },
-  'game.wordChain.bad.word': { en: "📖 That's not in the dictionary.", pt: '📖 Não está no dicionário.' },
-  'game.wordChain.bad.latin': { en: '🔤 Only letters A–Z count.', pt: '🔤 Só contam letras de A a Z.' },
-  'game.wordChain.timeout': { en: "⏰ **{name}** ran out of time! {hearts} left.", pt: '⏰ **{name}** ficou sem tempo! Restam {hearts}.' },
+  'game.wordChain.bad.letter': {
+    en: '↪️ It must start with **{letter}**.',
+    pt: '↪️ Tem de começar por **{letter}**.',
+  },
+  'game.wordChain.bad.short': {
+    en: '📏 Too short — at least **{min}** letters.',
+    pt: '📏 Curta demais — pelo menos **{min}** letras.',
+  },
+  'game.wordChain.bad.repeated': {
+    en: '🔁 That word was already used.',
+    pt: '🔁 Essa palavra já foi usada.',
+  },
+  'game.wordChain.bad.word': {
+    en: "📖 That's not in the dictionary.",
+    pt: '📖 Não está no dicionário.',
+  },
+  'game.wordChain.bad.latin': {
+    en: '🔤 Only letters A–Z count.',
+    pt: '🔤 Só contam letras de A a Z.',
+  },
+  'game.wordChain.timeout': {
+    en: '⏰ **{name}** ran out of time! {hearts} left.',
+    pt: '⏰ **{name}** ficou sem tempo! Restam {hearts}.',
+  },
   'game.wordChain.eliminated': { en: '💀 **{name}** is out!', pt: '💀 **{name}** está fora!' },
-  'game.wordChain.winner': { en: '🏆 **{name}** wins the chain! ({chain} words)', pt: '🏆 **{name}** vence a cadeia! ({chain} palavras)' },
+  'game.wordChain.winner': {
+    en: '🏆 **{name}** wins the chain! ({chain} words)',
+    pt: '🏆 **{name}** vence a cadeia! ({chain} palavras)',
+  },
 
   // ── /game stats (por-utilizador) ──────────────────────────────────────────
   'game.stats.none': {
