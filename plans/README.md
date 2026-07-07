@@ -27,7 +27,7 @@ Repo verification baseline at planning time: `npm run build` (tsc) exit 0;
 | 012  | `createVoiceSession` tests (onIdle identity guard)                                         | P2       | M      | —             | DONE   |
 | 013  | Lint/format toolchain (ESLint flat + Prettier + editorconfig + CI)                         | P2       | M      | —             | DONE   |
 | 014  | `guild_config` descriptor-driven store (kill the 10-edit lockstep)                         | P2       | M      | 010           | DONE   |
-| 015  | Split `commands/index.ts` (2821 lines → handler modules)                                   | P3       | L      | 003, 004, 013 | TODO   |
+| 015  | Split `commands/index.ts` (2821 lines → handler modules)                                   | P3       | L      | 003, 004, 013 | DONE   |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
