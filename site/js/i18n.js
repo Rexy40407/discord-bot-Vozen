@@ -15,7 +15,7 @@ window.VOZEN_I18N = {
     "hero.title1": "Type it.",
     "hero.title2": "Hear it.",
     "hero.sub": "Vozen reads your Discord chat out loud with natural neural voices — in 35 languages, with games, laughter and a core that's free forever.",
-    "hero.mini": "35 languages · 38 voices · 14 minigames · free core",
+    "hero.mini": "35 languages · 38 voices · 15 minigames · free core",
 
     "hear.eyebrow": "Hear it",
     "hear.title": "Press play. That's a real Vozen voice.",
@@ -36,7 +36,7 @@ window.VOZEN_I18N = {
     "feat.2.d": "Every member picks their own voice from 35 languages — Google or a local neural engine.",
     "feat.3.t": "Speaks like a human",
     "feat.3.d": "Detects the language of each message, mixes voices inside one sentence, and gets louder when you use ! or CAPS.",
-    "feat.4.t": "14 voice minigames",
+    "feat.4.t": "15 voice minigames",
     "feat.4.d": "Guess the language, spelling bees, Wordle, reflex duels — with a server leaderboard.",
     "feat.5.t": "Personality included",
     "feat.5.d": "Greets people who join, wishes happy birthday, tells jokes, answers the magic 8-ball — and tracks your server's top speakers.",
@@ -58,7 +58,7 @@ window.VOZEN_I18N = {
 
     "games.eyebrow": "Minigames",
     "games.title": "Play it out loud.",
-    "games.sub": "14 minigames built for voice: guess the spoken language, decode super-fast speech, spelling bees, reflex duels, plus Wordle, hangman, tic-tac-toe and chess played on real graphical boards. First to answer wins, and every server keeps a leaderboard.",
+    "games.sub": "15 minigames built for voice: a turn-based word chain in your language (Vozen reads each word aloud), guess the spoken language, decode super-fast speech, spelling bees, reflex duels, plus Wordle, hangman, tic-tac-toe and chess on real graphical boards. Every server keeps a leaderboard.",
     "games.t1": "Voice + text games, first-to-answer",
     "games.t2": "Server leaderboard & personal stats",
     "games.t3": "Vozen announces the winner out loud",
@@ -86,7 +86,7 @@ window.VOZEN_I18N = {
     "price.free.price": "€0",
     "price.free.per": "forever",
     "price.free.1": "All 38 voices in 35 languages",
-    "price.free.2": "Auto-read, 14 games, jokes & greetings",
+    "price.free.2": "Auto-read, 15 games, jokes & greetings",
     "price.free.3": "Robot & Echo voice effects",
     "price.free.4": "Every admin control & weekly leaderboard",
     "price.plus.badge": "PERSONAL",
@@ -137,7 +137,7 @@ window.VOZEN_I18N = {
     "hero.title1": "Escreve.",
     "hero.title2": "Ouve.",
     "hero.sub": "O Vozen lê o teu chat do Discord em voz alta com vozes neurais naturais — em 35 línguas, com jogos, risos e um essencial grátis para sempre.",
-    "hero.mini": "35 línguas · 38 vozes · 14 minijogos · essencial grátis",
+    "hero.mini": "35 línguas · 38 vozes · 15 minijogos · essencial grátis",
 
     "hear.eyebrow": "Ouve",
     "hear.title": "Carrega em play. É mesmo a voz do Vozen.",
@@ -158,7 +158,7 @@ window.VOZEN_I18N = {
     "feat.2.d": "Cada membro escolhe a sua voz de 35 línguas — motor Google ou neural local.",
     "feat.3.t": "Fala como um humano",
     "feat.3.d": "Deteta a língua de cada mensagem, mistura vozes na mesma frase e fala mais alto quando usas ! ou MAIÚSCULAS.",
-    "feat.4.t": "14 minijogos de voz",
+    "feat.4.t": "15 minijogos de voz",
     "feat.4.d": "Adivinha a língua, ditados, Wordle, duelos de reflexos — com leaderboard do servidor.",
     "feat.5.t": "Personalidade incluída",
     "feat.5.d": "Cumprimenta quem entra, dá os parabéns no teu dia, conta piadas, responde à bola 8 — e mostra os tagarelas do servidor.",
@@ -180,7 +180,7 @@ window.VOZEN_I18N = {
 
     "games.eyebrow": "Minijogos",
     "games.title": "Joga em voz alta.",
-    "games.sub": "14 minijogos feitos para voz: adivinha a língua falada, decifra fala super-rápida, ditados, duelos de reflexos, e ainda Wordle, forca, galo e xadrez em tabuleiros gráficos com peças reais. O 1º a acertar ganha, e cada servidor tem leaderboard.",
+    "games.sub": "15 minijogos feitos para voz: uma cadeia de palavras por turnos na tua língua (o Vozen lê cada palavra em voz alta), adivinha a língua falada, decifra fala super-rápida, ditados, duelos de reflexos, e ainda Wordle, forca, galo e xadrez em tabuleiros gráficos. Cada servidor tem leaderboard.",
     "games.t1": "Jogos de voz + texto, 1º a acertar",
     "games.t2": "Leaderboard do servidor e stats pessoais",
     "games.t3": "O Vozen anuncia o vencedor em voz alta",
@@ -208,7 +208,7 @@ window.VOZEN_I18N = {
     "price.free.price": "€0",
     "price.free.per": "para sempre",
     "price.free.1": "As 38 vozes em 35 línguas",
-    "price.free.2": "Leitura automática, 14 jogos, piadas e saudações",
+    "price.free.2": "Leitura automática, 15 jogos, piadas e saudações",
     "price.free.3": "Efeitos de voz Robot e Echo",
     "price.free.4": "Todos os controlos de admin e leaderboard semanal",
     "price.plus.badge": "PESSOAL",
@@ -273,7 +273,7 @@ window.VOZEN_COMMANDS = {
     ["/voice optout", { en: "Stop being auto-read", pt: "Deixa de ser lido automaticamente" }],
   ],
   fun: [
-    ["/game play", { en: "Start one of 14 minigames", pt: "Começa 1 dos 14 minijogos" }],
+    ["/game play", { en: "Start one of 15 minigames", pt: "Começa 1 dos 15 minijogos" }],
     ["/game leaderboard", { en: "Top players on the server", pt: "Melhores jogadores do servidor" }],
     ["/game stats", { en: "Your points, wins & rank", pt: "Os teus pontos, vitórias e posição" }],
     ["/joke", { en: "A short joke in any language", pt: "Uma piada curta em qualquer língua" }],
@@ -297,7 +297,7 @@ window.VOZEN_COMMANDS = {
 window.VOZEN_FAQ = [
   [
     { en: "Is Vozen really free?", pt: "O Vozen é mesmo grátis?" },
-    { en: "Yes — everything Vozen does today is free and stays free: all voices, all 14 games, greetings, admin tools. Vozen Premium (€4/month per server) only adds optional extras like the full voice-effect pack. Nothing you use ever moves behind a paywall.", pt: "Sim — tudo o que o Vozen faz hoje é grátis e continua grátis: todas as vozes, os 14 jogos, saudações, ferramentas de admin. O Vozen Premium (€4/mês por servidor) só acrescenta extras opcionais, como o pack completo de efeitos de voz. Nada do que usas passa para trás de um paywall." },
+    { en: "Yes — everything Vozen does today is free and stays free: all voices, all 15 games, greetings, admin tools. Vozen Premium (€4/month per server) only adds optional extras like the full voice-effect pack. Nothing you use ever moves behind a paywall.", pt: "Sim — tudo o que o Vozen faz hoje é grátis e continua grátis: todas as vozes, os 15 jogos, saudações, ferramentas de admin. O Vozen Premium (€4/mês por servidor) só acrescenta extras opcionais, como o pack completo de efeitos de voz. Nada do que usas passa para trás de um paywall." },
   ],
   [
     { en: "What does Premium include?", pt: "O que inclui o Premium?" },

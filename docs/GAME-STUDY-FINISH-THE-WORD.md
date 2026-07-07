@@ -161,3 +161,27 @@ O Vozen tem uma vantagem que o Roblox não tem: **a voz**. A adaptação natural
 4. Timer inicial/floor (proposta: 15s → -1s por volta, floor 6s)?
 5. Multiplayer por turnos no texto, ou versão "corrida" (1º a responder ganha o turno)
    como os jogos de voz atuais?
+
+---
+
+## 11. Estado: IMPLEMENTADO ✅ (15.º jogo, id `word-chain`)
+
+Decisões finais tomadas com o Diogo e implementadas:
+
+| Decisão | Escolha |
+|---|---|
+| Formato | **Por turnos** em ordem fixa (não corrida) |
+| Vidas | **2** (falhar o tempo tira 1; a 0 sai) |
+| Palavras | **Qualquer** palavra do dicionário |
+| Acentos | **Normalizados** (fold de diacríticos → a-z) |
+| Línguas | **UMA por partida**, escolhida no `/game play language:…` (motor de voz = Google default) |
+| Voz | boas-vindas faladas na língua + **cada palavra aceite lida em voz alta** na voz nativa + letra seguinte |
+| Timer | 15s, −0.4s por palavra aceite, piso 6s; mínimo 3→4→5 letras às 8/16 palavras |
+
+Línguas na v1: **PT, EN, ES, FR** (mecânica pronta para as ~24 latinas; o modo
+multilíngue-em-união fica como variante futura — ver §10, se existir).
+
+Ficheiros: `src/games/wordchain/core.ts` (motor puro), `dict.ts` (loader),
+`src/games/wordChain.ts` (jogo), `assets/wordlists/{lang}.txt` (dados,
+`tools/build-wordlists.mjs`), i18n `game.wordChain.*`. Testes: `tests/wordchainCore.test.ts`,
+`tests/wordChain.test.ts`.
