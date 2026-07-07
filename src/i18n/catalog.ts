@@ -1380,7 +1380,12 @@ export const catalog: Record<string, Entry> = {
     en: '🟩 **Wordle** — type a 5-letter word. You share {max} guesses. 🟩 right spot · 🟨 wrong spot · ⬛ not in word.',
     pt: '🟩 **Termo** — escreve uma palavra de 5 letras. Partilham {max} tentativas. 🟩 sítio certo · 🟨 sítio errado · ⬛ não existe.',
   },
-  'game.wordle.guess': { en: '**{user}** — {left} left', pt: '**{user}** — faltam {left}' },
+  // Palpite errado (não-final): VERBO explícito para nunca se ler como derrota — se
+  // alguém tiver o nick "Perdeste", "**Perdeste** — faltam 4" lia-se como resultado.
+  'game.wordle.guess': {
+    en: '🔤 **{user}** guessed — **{left}** guesses left',
+    pt: '🔤 **{user}** tentou — faltam **{left}** tentativas',
+  },
   // "Teclado" de estado: letras na palavra / descartadas (riscadas).
   'game.wordle.inWord': { en: '🟢 in word: {letters}', pt: '🟢 na palavra: {letters}' },
   'game.wordle.out': { en: '🚫 out: ~~{letters}~~', pt: '🚫 fora: ~~{letters}~~' },

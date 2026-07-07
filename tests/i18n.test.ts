@@ -27,6 +27,19 @@ describe('i18n — t(key, locale, params)', () => {
     expect(pt).toBe('Primeiros passos');
   });
 
+  it('game.wordle.guess tem VERBO explícito (não se lê como derrota, mesmo com nick "Perdeste")', () => {
+    // Regressão do bug reportado: com o nick "Perdeste", "**Perdeste** — faltam 4" lia-se
+    // como resultado. O copy TEM de ter um verbo (tentou/guessed) entre o nome e o resto.
+    for (const [loc, verb] of [['pt', 'tentou'], ['en', 'guessed']] as const) {
+      const s = t('game.wordle.guess', loc, { user: 'Perdeste', left: 4 });
+      expect(s).toContain(verb);
+      expect(s).toContain('Perdeste');
+      expect(s).toContain('4');
+      // O nome nunca fica colado a "faltam/left" sem o verbo pelo meio.
+      expect(s).not.toMatch(/Perdeste\*?\*? — (faltam|4)/);
+    }
+  });
+
   it('faz fallback para EN quando a chave falta no locale pedido', () => {
     // help.title so tem EN (pt parcial); pedir em pt devolve o valor EN.
     expect(t('help.title', 'pt')).toBe(t('help.title', 'en'));

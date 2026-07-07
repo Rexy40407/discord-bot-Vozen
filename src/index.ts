@@ -1,7 +1,7 @@
 import { readdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { getVoiceConnection } from '@discordjs/voice';
-import { Events } from 'discord.js';
+import { Events, Routes } from 'discord.js';
 import { loadConfig } from './config/index';
 import { startBotListUpdater } from './botLists';
 import { log } from './logging/logger';
@@ -220,6 +220,28 @@ async function main(): Promise<void> {
   // Arranca no ClientReady para que guilds.cache.size já esteja preenchido. try/catch
   // defensivo: nunca impedir/derrubar o arranque. O timer é unref'd (não segura o processo).
   client.once(Events.ClientReady, () => {
+    // Diagnóstico de arranque (1x por boot, sem spam): confirma que a app está bem
+    // configurada — a identidade (token == CLIENT_ID) e o "Interactions Endpoint URL"
+    // do Developer Portal, que, se estiver preenchido, ROUBA todas as interações do
+    // gateway (o bot fica online mas não recebe comandos). Lê a config via REST
+    // autenticado do próprio bot (não imprime o token). Best-effort.
+    void (async () => {
+      try {
+        const app = (await client.rest.get(Routes.currentApplication())) as {
+          id?: string;
+          interactions_endpoint_url?: string | null;
+        };
+        const idOk = client.user?.id === config.clientId;
+        const endpoint = app.interactions_endpoint_url;
+        log.info(
+          `[diag] app: identidade ${idOk ? 'OK ✓' : '⚠️ token != CLIENT_ID'} · ` +
+            `Interactions Endpoint URL ${endpoint ? '⚠️ DEFINIDO (' + endpoint + ') — apaga-o no portal' : 'vazio ✓'} · ` +
+            `${client.guilds.cache.size} servidor(es)`,
+        );
+      } catch (err) {
+        log.warn('[diag] não consegui ler a config da app (ignorado)', err);
+      }
+    })();
     try {
       startBotListUpdater({
         botId: config.clientId,
