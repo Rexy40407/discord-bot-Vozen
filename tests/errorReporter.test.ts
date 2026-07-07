@@ -18,6 +18,26 @@ describe('formatErrorMessage', () => {
     const msg = formatErrorMessage(big, 'ctx');
     expect(msg.length).toBeLessThanOrEqual(1900);
   });
+
+  it('SEC-03: redige um token com forma de token do Discord', () => {
+    // Token SINTÉTICO (nunca um real): 3 blocos base64url com os comprimentos típicos.
+    const fake = `${'A'.repeat(24)}.${'B'.repeat(6)}.${'C'.repeat(27)}`;
+    const msg = formatErrorMessage(new Error(`401 ao usar ${fake}`), 'ctx');
+    expect(msg).not.toContain(fake);
+    expect(msg).toContain('[token-redigido]');
+  });
+
+  it('SEC-03: redige credenciais Bearer', () => {
+    const msg = formatErrorMessage(new Error('Authorization: Bearer abc.def-123'), 'ctx');
+    expect(msg).not.toContain('abc.def-123');
+    expect(msg).toContain('Bearer [redigido]');
+  });
+
+  it('SEC-03: corpo limitado a 1500 chars antes do invólucro', () => {
+    const msg = formatErrorMessage(new Error('x'.repeat(5000)), 'ctx');
+    // corpo = 1500; invólucro (cabeçalho + code fences) é pequeno e fixo
+    expect(msg.length).toBeLessThanOrEqual(1500 + 100);
+  });
 });
 
 describe('createErrorReporter', () => {

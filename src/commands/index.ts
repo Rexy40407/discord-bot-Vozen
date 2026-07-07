@@ -35,6 +35,7 @@ import { getBirthday, setBirthday, clearBirthday, isValidBirthday } from '../sto
 import { getTopSpeakers } from '../store/talkStats';
 import {
   redeemCode,
+  peekRedeemCodeKind,
   getGuildPremiumExpiry,
   getUserPremiumExpiry,
   isGuildPremium,
@@ -1250,6 +1251,17 @@ async function handlePremium(i: ChatInputCommandInteraction, deps: BotDeps): Pro
 async function handleRedeem(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const code = i.options.getString('code', true).trim().toUpperCase();
+  // SEC-02: um código de SERVIDOR é um artefacto pago — um membro qualquer não o
+  // pode gastar (o redeem marca-o usado numa transação, irreversível). Espreita o
+  // tipo SEM consumir e exige Gerir Servidor só para 'guild' (re-check server-side,
+  // como no handleConfig). Códigos 'user' (Plus) continuam abertos a todos.
+  if (peekRedeemCodeKind(deps.db, code) === 'guild') {
+    const member = i.member as GuildMember;
+    if (!member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
+      await reply(i, t('redeem.needManageGuild', locale));
+      return;
+    }
+  }
   const res = redeemCode(
     deps.db,
     code,

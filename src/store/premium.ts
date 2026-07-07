@@ -202,6 +202,20 @@ export function createRedeemCode(
 }
 
 /**
+ * Espreita o TIPO de um código SEM o consumir — para o /redeem poder exigir
+ * permissão de gestão ANTES de gastar um código 'guild'. O tipo de um código é
+ * imutável, por isso este pre-check não tem corrida com o redeemCode.
+ * Devolve null se o código não existir.
+ */
+export function peekRedeemCodeKind(db: Database.Database, code: string): PremiumKind | null {
+  const row = db.prepare('SELECT kind FROM redeem_code WHERE code = ?').get(code) as
+    | { kind: string }
+    | undefined;
+  if (!row) return null;
+  return row.kind === 'guild' ? 'guild' : 'user';
+}
+
+/**
  * Resgata um código: verifica-e-marca-usado + concede premium NUMA ÚNICA TRANSAÇÃO — sem
  * isto um crash a meio consumia o código sem conceder, ou dois /redeem simultâneos do
  * mesmo código passavam ambos o check de "não usado". Um código 'guild' concede à guild

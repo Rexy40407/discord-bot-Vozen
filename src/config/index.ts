@@ -27,6 +27,10 @@ export interface AppConfig {
   // Secret ausente => webhook sem auth (inseguro; recomenda-se sempre defini-lo).
   topggWebhookPort?: number;
   topggWebhookSecret?: string;
+  // SEC-01 — opt-in EXPLÍCITO para correr o webhook top.gg SEM secret (inseguro:
+  // qualquer um que descubra a porta forja votos). Default false => sem secret,
+  // o listener NÃO arranca. Env: TOPGG_WEBHOOK_ALLOW_INSECURE=true.
+  topggWebhookAllowInsecure: boolean;
   // Vaga 3 — auto-post da contagem de servidores para o top.gg (ranking/descoberta).
   // Token da API do top.gg (TOPGG_TOKEN). Ausente => o updater NAO arranca (opt-in).
   topggToken?: string;
@@ -142,6 +146,17 @@ function boolEnvDefaultOn(name: string): boolean {
 }
 
 /**
+ * Flag booleana OPT-IN (default `false`): a feature está DESLIGADA a menos que a
+ * env a ligue EXPLICITAMENTE com o valor exato 'true' (case-insensitive). Espelho
+ * do boolEnvDefaultOn, para opt-ins perigosos que nunca devem ligar por typo.
+ */
+function boolEnvDefaultOff(name: string): boolean {
+  const raw = process.env[name];
+  if (raw === undefined) return false;
+  return raw.trim().toLowerCase() === 'true';
+}
+
+/**
  * Le TTS_ENGINE. Default 'piper'. Valor invalido (que nao 'piper'/'neural')
  * cai em 'piper' com um aviso no stderr — o Piper e o default seguro e nunca
  * precisa de API key, por isso degradar para ele e preferivel a crashar o
@@ -199,6 +214,7 @@ export function loadConfig(): AppConfig {
     // dedicada, separada do HEALTH_PORT de proposito.
     topggWebhookPort: numEnvOptional('TOPGG_WEBHOOK_PORT'),
     topggWebhookSecret: strEnv('TOPGG_WEBHOOK_SECRET', '') || undefined,
+    topggWebhookAllowInsecure: boolEnvDefaultOff('TOPGG_WEBHOOK_ALLOW_INSECURE'),
     topggToken: strEnv('TOPGG_TOKEN', '') || undefined,
     errorWebhookUrl: strEnv('ERROR_WEBHOOK_URL', '') || undefined,
     // Sintese multi-lingua por-segmento — LIGADA por defeito: sem esta env (ou com

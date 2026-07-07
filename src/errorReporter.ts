@@ -30,11 +30,31 @@ function hashError(error: unknown): string {
   return createHash('sha1').update(String(key).slice(0, 1000)).digest('hex');
 }
 
+/** Corpo máximo encaminhado (antes do invólucro cabeçalho+code block). */
+const MAX_BODY = 1500;
+// Forma de um token de bot do Discord (3 blocos base64url separados por '.').
+const DISCORD_TOKEN_RE = /[\w-]{23,28}\.[\w-]{6,7}\.[\w-]{27,}/g;
+// Credencial "Bearer xxx" (headers HTTP ecoados em mensagens de erro).
+const BEARER_RE = /Bearer\s+[\w.~+/=-]+/gi;
+
+/**
+ * SEC-03: o texto de um erro pode ecoar credenciais (token do bot num erro do
+ * discord.js, header Authorization num erro HTTP). Redige-as ANTES do envio para
+ * o webhook (que é um canal de chat) e limita o tamanho — redigir primeiro,
+ * cortar depois, para um corte nunca deixar meio token visível.
+ */
+function scrub(text: string): string {
+  return text
+    .replace(DISCORD_TOKEN_RE, '[token-redigido]')
+    .replace(BEARER_RE, 'Bearer [redigido]')
+    .slice(0, MAX_BODY);
+}
+
 /** Formata o erro como content de webhook (cabeçalho + stack num code block, truncado). */
 export function formatErrorMessage(error: unknown, context: string): string {
   const e = error as { stack?: string; message?: string };
   const head = `⚠️ **Vozen** — erro em \`${context}\``;
-  const body = e?.stack || e?.message || String(error);
+  const body = scrub(String(e?.stack || e?.message || String(error)));
   const full = `${head}\n\`\`\`\n${body}\n\`\`\``;
   if (full.length <= MAX_CONTENT) return full;
   return `${full.slice(0, MAX_CONTENT - 4)}\n\`\`\``;

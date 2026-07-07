@@ -9,6 +9,7 @@ import {
   grantUserPremium,
   createRedeemCode,
   redeemCode,
+  peekRedeemCodeKind,
 } from '../src/store/premium';
 
 const G = 'guild-1';
@@ -106,5 +107,16 @@ describe('premium — códigos de resgate', () => {
     expect(res.status).toBe('invalid');
     // e o código NÃO foi consumido (continua resgatável com uma guild)
     expect(redeemCode(db, 'VOZEN-DDDD', { guildId: G, userId: U }, now).status).toBe('ok');
+  });
+
+  it('SEC-02: peekRedeemCodeKind devolve o tipo, null para inexistente, e NÃO consome', () => {
+    const now = 1_000_000;
+    createRedeemCode(db, 'VOZEN-GK', 'guild', 30, now);
+    createRedeemCode(db, 'VOZEN-UK', 'user', 30, now);
+    expect(peekRedeemCodeKind(db, 'VOZEN-GK')).toBe('guild');
+    expect(peekRedeemCodeKind(db, 'VOZEN-UK')).toBe('user');
+    expect(peekRedeemCodeKind(db, 'VOZEN-NOPE')).toBeNull();
+    // espreitar NÃO consome: o resgate a seguir ainda funciona.
+    expect(redeemCode(db, 'VOZEN-GK', { guildId: G, userId: U }, now).status).toBe('ok');
   });
 });

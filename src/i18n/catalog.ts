@@ -450,6 +450,10 @@ export const catalog: Record<string, Entry> = {
     en: 'That code has already been used.',
     pt: 'Esse código já foi usado.',
   },
+  'redeem.needManageGuild': {
+    en: 'This code grants **server** Premium — only members with the **Manage Server** permission can redeem it here. Ask an admin, or redeem a personal (Plus) code instead.',
+    pt: 'Este código dá Premium de **servidor** — só membros com a permissão **Gerir Servidor** o podem resgatar aqui. Pede a um admin, ou resgata antes um código pessoal (Plus).',
+  },
   'redeem.targetServer': {
     en: 'This server',
     pt: 'Este servidor',

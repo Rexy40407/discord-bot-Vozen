@@ -35,6 +35,7 @@ describe('loadConfig', () => {
       HEALTH_PORT: undefined,
       TOPGG_WEBHOOK_PORT: undefined,
       TOPGG_WEBHOOK_SECRET: undefined,
+      TOPGG_WEBHOOK_ALLOW_INSECURE: undefined,
       BOT_SHARDS: undefined,
       MULTILINGUAL_SEGMENTS: undefined,
       NOISE_SCALE: undefined,
@@ -65,6 +66,20 @@ describe('loadConfig', () => {
     const cfg = loadConfig();
     expect(cfg.token).toBe('tok-123');
     expect(cfg.clientId).toBe('client-123');
+  });
+
+  it('SEC-01: TOPGG_WEBHOOK_ALLOW_INSECURE — só "true" (case-insensitive) liga (opt-in)', () => {
+    setEnv(REQUIRED); // ausente => default false
+    expect(loadConfig().topggWebhookAllowInsecure).toBe(false);
+    setEnv({ ...REQUIRED, TOPGG_WEBHOOK_ALLOW_INSECURE: 'true' });
+    expect(loadConfig().topggWebhookAllowInsecure).toBe(true);
+    setEnv({ ...REQUIRED, TOPGG_WEBHOOK_ALLOW_INSECURE: 'TRUE' }); // case-insensitive
+    expect(loadConfig().topggWebhookAllowInsecure).toBe(true);
+    // "quase-true" NÃO liga (evita ligar por typo).
+    for (const v of ['yes', '1', 'on', '']) {
+      setEnv({ ...REQUIRED, TOPGG_WEBHOOK_ALLOW_INSECURE: v });
+      expect(loadConfig().topggWebhookAllowInsecure, `valor=${v}`).toBe(false);
+    }
   });
 
   it('applies string defaults when optionals missing', () => {

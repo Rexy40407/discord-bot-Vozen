@@ -4,9 +4,13 @@ import { handleVoteWebhook, startVoteWebhookServer } from '../src/vote';
 import { metrics } from '../src/metrics';
 import type { AppConfig } from '../src/config/index';
 
-// Helper: AppConfig minima — so as 2 vars de webhook interessam ao server.
-function cfg(topggWebhookPort?: number, topggWebhookSecret?: string): AppConfig {
-  return { topggWebhookPort, topggWebhookSecret } as unknown as AppConfig;
+// Helper: AppConfig minima — so as 3 vars de webhook interessam ao server.
+function cfg(
+  topggWebhookPort?: number,
+  topggWebhookSecret?: string,
+  topggWebhookAllowInsecure = false,
+): AppConfig {
+  return { topggWebhookPort, topggWebhookSecret, topggWebhookAllowInsecure } as unknown as AppConfig;
 }
 
 const SECRET = 's3cr3t';
@@ -133,6 +137,27 @@ describe('startVoteWebhookServer — arranque opcional', () => {
   it('NAO arranca servidor quando topggWebhookPort e undefined', () => {
     server = startVoteWebhookServer(cfg(undefined, SECRET));
     expect(server).toBeUndefined();
+  });
+
+  it('SEC-01: porta definida SEM secret e sem opt-in => NAO arranca', () => {
+    // Default seguro: sem TOPGG_WEBHOOK_SECRET o listener recusa arrancar.
+    server = startVoteWebhookServer(cfg(0, undefined, false));
+    expect(server).toBeUndefined();
+  });
+
+  it('SEC-01: sem secret MAS com allowInsecure=true => arranca e aceita POST sem auth', async () => {
+    server = startVoteWebhookServer(cfg(0, undefined, true));
+    expect(server).toBeDefined();
+    await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
+    const addr = server!.address();
+    if (addr === null || typeof addr === 'string') throw new Error('endereco inesperado');
+    const res = await fetch(`http://127.0.0.1:${addr.port}/webhook/topgg`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }, // SEM Authorization
+      body: UPVOTE,
+    });
+    expect(res.status).toBe(200);
+    expect(metrics.snapshot().votes).toBe(1);
   });
 
   it('arranca e aceita um POST real com secret correto (porta efemera) e conta o voto', async () => {

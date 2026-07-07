@@ -20,8 +20,9 @@
 //    authMatches(). top.gg permite webhooks sem auth, mas e inseguro — por isso
 //    recomendamos sempre definir TOPGG_WEBHOOK_SECRET (ver .env.example e o
 //    aviso de arranque em startVoteWebhookServer).
-//  - Sem `secret` configurado, a verificacao de auth NAO corre e o pedido e
-//    aceite (leitura literal do contrato B1). Use por sua conta e risco.
+//  - Sem `secret` configurado, o webhook por defeito NAO arranca (SEC-01) — sem
+//    auth, qualquer um que descubra a porta forja votos. Para arrancar mesmo assim
+//    (sem auth), e preciso o opt-in explicito TOPGG_WEBHOOK_ALLOW_INSECURE=true.
 //
 // O payload do top.gg (POST JSON) tem, entre outros, estes campos:
 //   { bot: "<id>", user: "<id de quem votou>", type: "upvote" | "test", ... }
@@ -147,18 +148,26 @@ export function handleVoteWebhook(input: VoteWebhookInput): VoteWebhookResult {
  * autenticado.
  */
 export function startVoteWebhookServer(
-  config: Pick<AppConfig, 'topggWebhookPort' | 'topggWebhookSecret'>,
+  config: Pick<AppConfig, 'topggWebhookPort' | 'topggWebhookSecret' | 'topggWebhookAllowInsecure'>,
 ): Server | undefined {
   const port = config.topggWebhookPort;
   if (port === undefined) return undefined;
 
   const secret = config.topggWebhookSecret;
   if (secret === undefined || secret === '') {
-    // top.gg aceita webhooks sem auth, mas e inseguro — qualquer um que descubra
-    // a porta pode forjar votos. Avisamos mas nao bloqueamos (decisao do dono).
+    if (!config.topggWebhookAllowInsecure) {
+      // SEC-01: sem secret, qualquer um que descubra a porta forja votos. Recusar
+      // arrancar é o default seguro; o opt-in explícito fica para quem sabe o risco.
+      log.error(
+        `[vote] TOPGG_WEBHOOK_PORT definido (${port}) mas TOPGG_WEBHOOK_SECRET vazio — ` +
+          'o webhook NÃO vai arrancar. Define TOPGG_WEBHOOK_SECRET, ou (por tua conta e ' +
+          'risco) TOPGG_WEBHOOK_ALLOW_INSECURE=true para arrancar sem autenticação.',
+      );
+      return undefined;
+    }
     log.warn(
-      `[vote] TOPGG_WEBHOOK_PORT definido (${port}) mas TOPGG_WEBHOOK_SECRET vazio — ` +
-        'o webhook fica SEM autenticacao. Define TOPGG_WEBHOOK_SECRET (recomendado).',
+      `[vote] TOPGG_WEBHOOK_PORT definido (${port}) sem TOPGG_WEBHOOK_SECRET e com ` +
+        'TOPGG_WEBHOOK_ALLOW_INSECURE=true — webhook SEM autenticação (inseguro).',
     );
   }
 
