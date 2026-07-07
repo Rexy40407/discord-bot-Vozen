@@ -18,6 +18,7 @@ import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createWriteStream, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { decideOnExit, prewarmNative, STABLE_RESET_MS } from './supervisorPolicy.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -100,21 +101,12 @@ function acquireSingleInstanceLock() {
 
 /** Pré-aquece o davey até carregar OK (anti-Smart App Control). */
 function prewarmDavey() {
-  for (let i = 1; i <= 5; i++) {
-    const r = spawnSync(process.execPath, ['-e', "require('@snazzah/davey')"], {
+  const tryLoad = () =>
+    spawnSync(process.execPath, ['-e', "require('@snazzah/davey')"], {
       cwd: ROOT,
       stdio: 'ignore',
-    });
-    if (r.status === 0) {
-      log(`voz (davey) pronta (tentativa ${i}).`);
-      return true;
-    }
-    log(`davey bloqueado/indisponível (tentativa ${i}/5) — a repetir…`);
-  }
-  log('AVISO: davey não carregou em 5 tentativas. Pode ser bloqueio persistente do');
-  log('Smart App Control. Arranco na mesma; se o bot crashar no arranque com');
-  log('ERR_DLOPEN_FAILED, vê docs/HOSPEDAR.md (secção Smart App Control).');
-  return false;
+    }).status === 0;
+  return prewarmNative(tryLoad, log);
 }
 
 let stopping = false;
@@ -148,16 +140,17 @@ function startOnce() {
       clearTimeout(resetTimer);
       resetTimer = null;
     }
-    if (stopping) return;
-    if (code === 0) {
+    // Decisão (política pura, testada em tests/startProd.test.ts): ignorar se
+    // estamos a parar, parar de vez no código 0, senão reiniciar com backoff.
+    const d = decideOnExit(code, stopping, attempt);
+    if (d.action === 'ignore') return;
+    if (d.action === 'stop') {
       log('bot terminou de forma limpa (código 0) — não reinicio.');
       return;
     }
-    // Backoff exponencial limitado a 60s.
-    const delayMs = Math.min(60000, 2000 * 2 ** attempt);
-    attempt++;
-    log(`bot caiu (código ${code ?? 'null'}, sinal ${signal ?? 'null'}) — reinício #${attempt} em ${delayMs / 1000}s.`);
-    setTimeout(startOnce, delayMs);
+    attempt = d.nextAttempt;
+    log(`bot caiu (código ${code ?? 'null'}, sinal ${signal ?? 'null'}) — reinício #${attempt} em ${d.delayMs / 1000}s.`);
+    setTimeout(startOnce, d.delayMs);
   });
 
   // Um arranque que dure >60s conta como saudável → limpa o backoff. Guardamos o
@@ -165,7 +158,7 @@ function startOnce() {
   resetTimer = setTimeout(() => {
     resetTimer = null;
     if (!stopping) attempt = 0;
-  }, 60000);
+  }, STABLE_RESET_MS);
 }
 
 // Encaminha o sinal para o FILHO e só sai depois de ele morrer. Sem isto, o

@@ -35,6 +35,7 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     sentenceSilence: 0.2,
     gttsBreakerThreshold: 3,
     gttsBreakerCooldownMs: 60_000,
+    gttsChunkConcurrency: 3,
     supportUrl: 'https://discord.gg/V6PZYZmhcQ',
     ...overrides,
   };
