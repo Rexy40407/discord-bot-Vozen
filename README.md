@@ -10,84 +10,84 @@
 ![Docker ready](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![made with Piper](https://img.shields.io/badge/made%20with-Piper-5a4fcf)
 
-**Pronto para ir live? Ver [GO-LIVE.md](GO-LIVE.md).**
+**Ready to go live? See [GO-LIVE.md](GO-LIVE.md).**
 
-**Voz neural (não robótica) que não cai do canal — e cuja qualidade nunca fica atrás de paywall.** O Vozen é um bot de Text-to-Speech para Discord que lê texto em canais de voz com voz **neural** (Piper): comando `/tts`, auto-leitura de um canal configurado e leitura de menções/replies ao bot. Deteta a língua de cada mensagem e escolhe a voz sozinho, e cada utilizador pode fixar a sua própria voz.
+**Neural (not robotic) voice that doesn't drop out of the channel — and whose quality is never locked behind a paywall.** Vozen is a Text-to-Speech bot for Discord that reads text out loud in voice channels with a **neural** voice (Piper): the `/tts` command, auto-reading of a configured channel, and reading mentions/replies to the bot. It detects the language of each message and picks the voice on its own, and every user can pin their own voice.
 
-A maioria dos bots de TTS força-te a escolher: ou é grátis-mas-robótico, ou natural-mas-atrás de paywall — e o líder de mercado "desconecta durante horas". O Vozen tem tudo o que o líder tem (auto-leitura, `/setup` de um comando, deteta a língua sozinho) — e ainda os **dois** trunfos que o líder não reúne para línguas ocidentais (PT/EN/europeu):
+Most TTS bots force you to choose: either free-but-robotic, or natural-but-behind-a-paywall — and the market leader "disconnects for hours." Vozen has everything the leader has (auto-read, one-command `/setup`, automatic language detection) — plus the **two** advantages the leader doesn't combine for Western languages (PT/EN/European):
 
-- **Voz neural genuinamente natural, grátis** — Piper, não a voz robótica do gTTS/eSpeak do plano gratuito.
-- **Qualidade NUNCA atrás de paywall** — sem vozes premium pagas, sem "vota para desbloquear". O líder esconde as boas vozes atrás de ~€5/mês; aqui a melhor voz é a de fábrica.
-- **Não cai do canal de voz** — auto-reconexão à voz (mata o "desconecta durante horas" do líder).
+- **Genuinely natural neural voice, free** — Piper, not the robotic gTTS/eSpeak voice of the free tier.
+- **Quality NEVER behind a paywall** — no paid premium voices, no "vote to unlock." The leader hides the good voices behind ~€5/month; here the best voice is the default.
+- **Doesn't drop out of the voice channel** — automatic voice reconnection (kills the leader's "disconnects for hours").
 
-Estes dois (voz neural grátis + fiabilidade) são o que distingue o Vozen. O resto é **paridade** — o líder também o faz, mas o Vozen não fica atrás: auto-leitura sem prefixo (lê um canal configurado e menções/replies, configurável em um passo com `/setup`) e deteção automática de língua por mensagem em PT, EN e línguas europeias.
+These two (free neural voice + reliability) are what set Vozen apart. The rest is **parity** — the leader does it too, but Vozen doesn't fall behind: prefix-free auto-read (reads a configured channel plus mentions/replies, set up in one step with `/setup`) and automatic per-message language detection in PT, EN and European languages.
 
-A par disto: moderação (blocklist, rate-limit, limite de chars, gating por canal), fila FIFO com `/skip`, auto-saída por inatividade e cache de áudio.
+Alongside that: moderation (blocklist, rate-limit, char limit, per-channel gating), a FIFO queue with `/skip`, auto-leave on inactivity and an audio cache.
 
-> Estado: **v0** (núcleo competitivo). Motor neural pago, streaming e monetização estão **fora** deste v0. O Vozen é **self-host**: corre no teu PC ou podes **alojá-lo tu** num VPS via Docker (continua a exigir setup — não é um bot já alojado que se convida) — ver secção **Deploy em VPS (Docker)** no fim.
+> Status: **v0** (competitive core). Paid neural engine, streaming and monetization are **out** of this v0. Vozen is **self-host**: it runs on your PC, or you can **host it yourself** on a VPS via Docker (still requires setup — it is not an already-hosted bot you just invite) — see the **Deploy on a VPS (Docker)** section at the end.
 
 ---
 
-## Instalação em 3 linhas (quickstart)
+## 3-line install (quickstart)
 
-Já tens o Node (>= 20), o binário do Piper e pelo menos um modelo de voz `.onnx`? Então o mínimo para arrancar é:
+Already have Node (>= 20), the Piper binary and at least one `.onnx` voice model? Then the minimum to get going is:
 
 ```bash
 git clone https://github.com/diogoshk3/discord-bot-Vozen.git vozen && cd vozen
-npm install                       # deps + bindings nativos
-cp .env.example .env              # edita: DISCORD_TOKEN, CLIENT_ID, PIPER_PATH, MODELS_DIR; depois: npm run register && npm run dev
+npm install                       # deps + native bindings
+cp .env.example .env              # edit: DISCORD_TOKEN, CLIENT_ID, PIPER_PATH, MODELS_DIR; then: npm run register && npm run dev
 ```
 
-Este é só o resumo. Para o passo-a-passo (binário do Piper, modelos de voz, todas as variáveis do `.env`), **[ver setup completo →](#1-pré-requisitos)**.
+This is just the summary. For the step-by-step (Piper binary, voice models, all the `.env` variables), **[see full setup →](#1-prerequisites)**.
 
-## Níveis: Easy · Normal · Hard
+## Levels: Easy · Normal · Hard
 
-Três caminhos para o mesmo bot — escolhe pelo controlo/esforço que queres, não há um "mais fácil que convidar". Self-host exige sempre setup.
+Three paths to the same bot — pick by the control/effort you want; there is no "easier than inviting." Self-host always requires setup.
 
-| Nível | Para quem | Como | Secção |
+| Level | For whom | How | Section |
 |---|---|---|---|
-| **Easy** | Quem quer o bot sempre online sem instalar Node à mão | Alojas tu numa VPS Linux com `docker compose` | [§5 Deploy em VPS (Docker)](#5-deploy-em-vps-docker) |
-| **Normal** | Quem corre no próprio PC para testar ou usar pontualmente | Node + Piper local, `npm install` → `npm run dev` | [§1 Pré-requisitos](#1-pré-requisitos) e [§2 Setup](#2-setup) |
-| **Hard** | Quem quer afinar vozes/motor ou experimentar TTS neural por API | Motor neural (`TTS_ENGINE=neural` + OpenAI) e tweaks de modelos/locale | [§1.5 Modelos](#15-modelos-de-voz-línguas) e [§5.4 `.env`](#54-ficheiro-env) |
+| **Easy** | Those who want the bot always online without installing Node by hand | You host it on a Linux VPS with `docker compose` | [§5 Deploy on a VPS (Docker)](#5-deploy-on-a-vps-docker) |
+| **Normal** | Those who run it on their own PC to test or use occasionally | Local Node + Piper, `npm install` → `npm run dev` | [§1 Prerequisites](#1-prerequisites) and [§2 Setup](#2-setup) |
+| **Hard** | Those who want to tune voices/engine or try neural TTS via API | Neural engine (`TTS_ENGINE=neural` + OpenAI) and model/locale tweaks | [§1.5 Models](#15-voice-models-languages) and [§5.4 `.env`](#54-env-file) |
 
 ## Demo
 
-<!-- TODO: GIF demo — gravar ~10s a mostrar /tts a ler uma frase PT e uma EN com voz Piper, e colocar o GIF aqui (ex.: docs/demo.gif). -->
+<!-- TODO: GIF demo — record ~10s showing /tts reading a PT sentence and an EN one with the Piper voice, and place the GIF here (e.g. docs/demo.gif). -->
 
-_(demo em breve — GIF de ~10s a ler PT + EN com voz neural Piper.)_
+_(demo coming soon — a ~10s GIF reading PT + EN with the Piper neural voice.)_
 
 ---
 
-## 1. Pré-requisitos
+## 1. Prerequisites
 
 ### 1.1 Software
 
-- **Node.js LTS** (>= 20). Verifica com:
+- **Node.js LTS** (>= 20). Check with:
   ```
   node -v
   npm -v
   ```
-- **ffmpeg** — já vem incluído via `ffmpeg-static` (dependência npm). Não precisas de instalar nada à mão.
-- **Sistema**: Windows (alvo principal). Em Windows certifica-te que tens as **Build Tools** para compilar `better-sqlite3`/`sodium-native` se o npm pedir (normalmente os prebuilds bastam).
+- **ffmpeg** — already bundled via `ffmpeg-static` (an npm dependency). You don't need to install anything by hand.
+- **System**: Windows (primary target). On Windows, make sure you have the **Build Tools** to compile `better-sqlite3`/`sodium-native` if npm asks (usually the prebuilds are enough).
 
-### 1.2 Binário do Piper
+### 1.2 Piper binary
 
-1. Vai a https://github.com/rhasspy/piper/releases e descarrega o build para **Windows** (`piper_windows_amd64.zip` ou equivalente).
-2. Extrai para uma pasta tua, por exemplo `C:\piper\`. Confirma que existe `C:\piper\piper.exe`.
-3. Esse caminho é o que vais pôr em `PIPER_PATH` no `.env`.
+1. Go to https://github.com/rhasspy/piper/releases and download the build for **Windows** (`piper_windows_amd64.zip` or equivalent).
+2. Extract it to a folder of yours, for example `C:\piper\`. Confirm that `C:\piper\piper.exe` exists.
+3. That path is what you'll put in `PIPER_PATH` in the `.env`.
 
-### 1.3 Modelos de voz (.onnx)
+### 1.3 Voice models (.onnx)
 
-O Piper precisa de **modelos de voz**. Cada modelo são 2 ficheiros: `<voz>.onnx` e `<voz>.onnx.json`.
+Piper needs **voice models**. Each model is 2 files: `<voice>.onnx` and `<voice>.onnx.json`.
 
-1. Cria a pasta `models/` na raiz do projeto:
+1. Create the `models/` folder at the project root:
    ```
    mkdir models
    ```
-2. Descarrega **1 ou 2 vozes** de https://huggingface.co/rhasspy/piper-voices (ou dos releases do Piper). Sugestão para começar:
-   - Português: `pt_PT-tugão-medium` (ou `pt_BR-faber-medium`)
-   - Inglês: `en_US-amy-medium`
-3. Coloca **ambos** os ficheiros de cada voz dentro de `models/`. Exemplo:
+2. Download **1 or 2 voices** from https://huggingface.co/rhasspy/piper-voices (or from the Piper releases). Suggestion to start:
+   - Portuguese: `pt_PT-tugão-medium` (or `pt_BR-faber-medium`)
+   - English: `en_US-amy-medium`
+3. Place **both** files of each voice inside `models/`. Example:
    ```
    models/
      en_US-amy-medium.onnx
@@ -95,58 +95,58 @@ O Piper precisa de **modelos de voz**. Cada modelo são 2 ficheiros: `<voz>.onnx
      pt_PT-tugão-medium.onnx
      pt_PT-tugão-medium.onnx.json
    ```
-4. O nome do modelo (sem extensão) — p.ex. `en_US-amy-medium` — é o que usas como `DEFAULT_VOICE` e em `/voice set`.
+4. The model name (without extension) — e.g. `en_US-amy-medium` — is what you use as `DEFAULT_VOICE` and in `/voice set`.
 
-### 1.4 Ficheiro de ambiente
+### 1.4 Environment file
 
-Copia o exemplo e preenche:
+Copy the example and fill it in:
 
 ```
 copy .env.example .env
 ```
 
-Edita `.env`:
+Edit `.env`:
 
-| Variável | O que pôr |
+| Variable | What to put |
 |---|---|
-| `DISCORD_TOKEN` | Token do bot (Discord Dev Portal → Bot → Reset Token) |
+| `DISCORD_TOKEN` | Bot token (Discord Dev Portal → Bot → Reset Token) |
 | `CLIENT_ID` | Application ID (Dev Portal → General Information) |
-| `PIPER_PATH` | Caminho para o executável, p.ex. `C:\piper\piper.exe` |
-| `MODELS_DIR` | Caminho para a pasta de modelos, p.ex. `./models` |
-| `DB_PATH` | Caminho do SQLite, p.ex. `./tts.db` |
-| `DEFAULT_VOICE` | Nome de um modelo presente em `models/`, p.ex. `en_US-amy-medium` |
-| `DEFAULT_SPEED` | Velocidade base, p.ex. `1.0` |
-| `INACTIVITY_MS` | Auto-saída por inatividade em ms, p.ex. `300000` (5 min) |
-| `QUEUE_CAP` | Tamanho máximo da fila, p.ex. `20` |
-| `MAX_CHARS` | Máximo de caracteres por mensagem, p.ex. `300` |
-| `RATE_PER_MIN` | Mensagens por minuto por utilizador, p.ex. `5` |
+| `PIPER_PATH` | Path to the executable, e.g. `C:\piper\piper.exe` |
+| `MODELS_DIR` | Path to the models folder, e.g. `./models` |
+| `DB_PATH` | SQLite path, e.g. `./tts.db` |
+| `DEFAULT_VOICE` | Name of a model present in `models/`, e.g. `en_US-amy-medium` |
+| `DEFAULT_SPEED` | Base speed, e.g. `1.0` |
+| `INACTIVITY_MS` | Auto-leave on inactivity in ms, e.g. `300000` (5 min) |
+| `QUEUE_CAP` | Maximum queue size, e.g. `20` |
+| `MAX_CHARS` | Max characters per message, e.g. `300` |
+| `RATE_PER_MIN` | Messages per minute per user, e.g. `5` |
 
-### 1.5 Modelos de voz (línguas)
+### 1.5 Voice models (languages)
 
-O Vozen **deteta a língua de cada mensagem** e escolhe automaticamente um modelo cujo nome começa pelo **prefixo de locale** dessa língua. Basta colocares o modelo certo em `models/`.
+Vozen **detects the language of each message** and automatically picks a model whose name starts with that language's **locale prefix**. You just drop the right model into `models/`.
 
-**Onde obter modelos.** Todos os modelos Piper vivem em **https://huggingface.co/rhasspy/piper-voices** (pasta por língua/país/voz). Cada voz são sempre **2 ficheiros**: `<voz>.onnx` + `<voz>.onnx.json`. Descarrega **ambos** e põe-nos em `models/`.
+**Where to get models.** All Piper models live at **https://huggingface.co/rhasspy/piper-voices** (a folder per language/country/voice). Each voice is always **2 files**: `<voice>.onnx` + `<voice>.onnx.json`. Download **both** and put them in `models/`.
 
-**Como o nome do ficheiro mapeia para a deteção.** O Vozen olha apenas para o **prefixo de locale** no início do nome do ficheiro (`pt_`, `en_`, `es_`, ...). Por isso `pt_PT-tugão-medium` **e** `pt_BR-faber-medium` contam ambos como Português — se só tiveres um, é esse que toca; se tiveres os dois, toca o primeiro por ordem. Se não houver nenhum modelo da língua detetada, o Vozen cai no `DEFAULT_VOICE`.
+**How the file name maps to detection.** Vozen looks only at the **locale prefix** at the start of the file name (`pt_`, `en_`, `es_`, ...). So `pt_PT-tugão-medium` **and** `pt_BR-faber-medium` both count as Portuguese — if you only have one, that's the one that plays; if you have both, the first one by order plays. If there is no model for the detected language, Vozen falls back to `DEFAULT_VOICE`.
 
-Línguas mapeadas (código de deteção → prefixo do nome de ficheiro):
+Mapped languages (detection code → file-name prefix):
 
-| Língua | Prefixo | Exemplo de modelo |
+| Language | Prefix | Example model |
 |---|---|---|
-| Português (PT **e** BR) | `pt_` | `pt_PT-tugão-medium`, `pt_BR-faber-medium` |
-| Inglês | `en_` | `en_US-amy-medium`, `en_GB-alan-low` |
-| Espanhol | `es_` | `es_ES-davefx-medium` |
-| Francês | `fr_` | `fr_FR-siwis-medium` |
-| Alemão | `de_` | `de_DE-thorsten-medium` |
-| Italiano | `it_` | `it_IT-riccardo-x_low` |
-| Neerlandês | `nl_` | `nl_NL-mls-medium` |
-| Russo | `ru_` | `ru_RU-dmitri-medium` |
-| Polaco · Ucraniano · Turco · Checo · Catalão | `pl_` · `uk_` · `tr_` · `cs_` · `ca_` | — |
-| Sueco · Finlandês · Dinamarquês · Romeno · Grego · Húngaro | `sv_` · `fi_` · `da_` · `ro_` · `el_` · `hu_` | — |
+| Portuguese (PT **and** BR) | `pt_` | `pt_PT-tugão-medium`, `pt_BR-faber-medium` |
+| English | `en_` | `en_US-amy-medium`, `en_GB-alan-low` |
+| Spanish | `es_` | `es_ES-davefx-medium` |
+| French | `fr_` | `fr_FR-siwis-medium` |
+| German | `de_` | `de_DE-thorsten-medium` |
+| Italian | `it_` | `it_IT-riccardo-x_low` |
+| Dutch | `nl_` | `nl_NL-mls-medium` |
+| Russian | `ru_` | `ru_RU-dmitri-medium` |
+| Polish · Ukrainian · Turkish · Czech · Catalan | `pl_` · `uk_` · `tr_` · `cs_` · `ca_` | — |
+| Swedish · Finnish · Danish · Romanian · Greek · Hungarian | `sv_` · `fi_` · `da_` · `ro_` · `el_` · `hu_` | — |
 
-> Não precisas de **todas** as línguas: põe só os modelos que queres servir. As que não tiverem modelo caem no `DEFAULT_VOICE`.
+> You don't need **every** language: put in only the models you want to serve. Those without a model fall back to `DEFAULT_VOICE`.
 
-**`DEFAULT_VOICE` regional.** O default de fábrica é `en_US-amy-medium`, mas podes pôr **qualquer** modelo presente em `models/` — incluindo um regional — diretamente no `.env`. Exemplos: `DEFAULT_VOICE=pt_PT-tugão-medium`, `pt_BR-faber-medium`, `es_ES-davefx-medium`, `fr_FR-siwis-medium`, `de_DE-thorsten-medium`. É a voz usada quando a língua detetada não tem modelo correspondente (e o ponto de partida para servidores maioritariamente PT/europeus).
+**Regional `DEFAULT_VOICE`.** The factory default is `en_US-amy-medium`, but you can set **any** model present in `models/` — including a regional one — directly in the `.env`. Examples: `DEFAULT_VOICE=pt_PT-tugão-medium`, `pt_BR-faber-medium`, `es_ES-davefx-medium`, `fr_FR-siwis-medium`, `de_DE-thorsten-medium`. It is the voice used when the detected language has no matching model (and the starting point for mostly-PT/European servers).
 
 ---
 
@@ -158,211 +158,211 @@ npm run register
 npm run dev
 ```
 
-- `npm install` — instala dependências e compila os bindings nativos.
-- `npm run register` — regista os slash commands na aplicação Discord (usa `DISCORD_TOKEN` + `CLIENT_ID`). Corre isto **uma vez** e sempre que mudares definições de comandos.
-- `npm run dev` — arranca o bot. Esperado no terminal: `[client] online como <nome-do-bot>#0000`.
+- `npm install` — installs dependencies and compiles the native bindings.
+- `npm run register` — registers the slash commands on the Discord application (uses `DISCORD_TOKEN` + `CLIENT_ID`). Run this **once** and whenever you change command definitions.
+- `npm run dev` — starts the bot. Expected in the terminal: `[client] online como <bot-name>#0000`.
 
-Para build de produção: `npm run build` e depois `npm start` (ou `node dist/index.js`).
+For a production build: `npm run build` and then `npm start` (or `node dist/index.js`).
 
 ---
 
-## 3. Checklist de teste manual (ao vivo)
+## 3. Manual test checklist (live)
 
-Faz esta checklist com o bot a correr (`npm run dev`) e tu num servidor Discord de testes onde és admin. Marca cada item.
+Run this checklist with the bot running (`npm run dev`) and you in a test Discord server where you are admin. Check off each item.
 
-### 3.1 Criar e configurar a aplicação Discord
+### 3.1 Create and configure the Discord application
 
-- [ ] Em https://discord.com/developers/applications → **New Application** → dá o nome **Vozen** (recomendado para consistência de marca).
-- [ ] Separador **Bot** → **Reset Token** → copia o token para `DISCORD_TOKEN` no `.env`.
-- [ ] **General Information** → copia o **Application ID** para `CLIENT_ID` no `.env`.
-- [ ] Separador **Bot** → secção **Privileged Gateway Intents** → ativa:
-  - [ ] **MESSAGE CONTENT INTENT** (obrigatório para ler texto das mensagens e autoread).
-  - [ ] **SERVER MEMBERS INTENT** (para resolver nomes de menções).
+- [ ] At https://discord.com/developers/applications → **New Application** → name it **Vozen** (recommended for brand consistency).
+- [ ] **Bot** tab → **Reset Token** → copy the token into `DISCORD_TOKEN` in the `.env`.
+- [ ] **General Information** → copy the **Application ID** into `CLIENT_ID` in the `.env`.
+- [ ] **Bot** tab → **Privileged Gateway Intents** section → enable:
+  - [ ] **MESSAGE CONTENT INTENT** (required to read message text and autoread).
+  - [ ] **SERVER MEMBERS INTENT** (to resolve mention names).
 - [ ] **Save Changes**.
 
-### 3.2 Convidar o bot
+### 3.2 Invite the bot
 
 - [ ] **OAuth2 → URL Generator** → scopes: `bot` + `applications.commands`.
 - [ ] Bot Permissions: `Connect`, `Speak`, `Send Messages`, `Read Message History`, `View Channels`.
-- [ ] Abre o URL gerado, escolhe o teu servidor de testes, autoriza.
-- [ ] Confirma que o bot aparece **offline** na lista de membros (vai ficar online no passo 3.3).
+- [ ] Open the generated URL, pick your test server, authorize.
+- [ ] Confirm the bot appears **offline** in the member list (it will come online in step 3.3).
 
-### 3.3 Arranque
+### 3.3 Startup
 
-- [ ] `npm run register` correu sem erros (esperado: `[register] N comandos registados globalmente.`).
-- [ ] `npm run dev` mostra `[client] online como ...` e o bot aparece **online** no servidor.
+- [ ] `npm run register` ran without errors (expected: `[register] N comandos registados globalmente.`).
+- [ ] `npm run dev` shows `[client] online como ...` and the bot appears **online** in the server.
 
-### 3.4 Voz básica
+### 3.4 Basic voice
 
-- [ ] Entra num canal de voz do servidor.
-- [ ] Escreve `/join` num canal de texto. Esperado: o bot entra no teu canal de voz e confirma.
-- [ ] Escreve `/tts texto:ola`. Esperado: ouves "ola" sintetizado pelo Piper.
-- [ ] Escreve `/leave`. Esperado: o bot sai do canal de voz.
+- [ ] Join a voice channel in the server.
+- [ ] Type `/join` in a text channel. Expected: the bot joins your voice channel and confirms.
+- [ ] Type `/tts texto:ola`. Expected: you hear "ola" synthesized by Piper.
+- [ ] Type `/leave`. Expected: the bot leaves the voice channel.
 
 ### 3.5 Autoread
 
-- [ ] `/join` outra vez.
-- [ ] Configura o canal de autoread: `/config tts-channel canal:#geral` e `/config autoread ativo:true`.
-- [ ] Escreve uma frase normal nesse canal (sem comando). Esperado: o bot lê a frase em voz.
-- [ ] Escreve uma frase noutro canal **não** configurado. Esperado: o bot **não** lê.
+- [ ] `/join` again.
+- [ ] Configure the autoread channel: `/config tts-channel canal:#geral` and `/config autoread ativo:true`.
+- [ ] Type a normal sentence in that channel (no command). Expected: the bot reads the sentence out loud.
+- [ ] Type a sentence in another **non**-configured channel. Expected: the bot does **not** read it.
 
-### 3.6 Limpeza de texto
+### 3.6 Text cleaning
 
-Com autoread ligado, escreve cada um e confirma o comportamento ouvido:
+With autoread on, type each of these and confirm the behavior you hear:
 
-- [ ] **Emoji**: `ola 😀 mundo` → ouves "ola mundo" (emoji saltado, sem ler o nome).
-- [ ] **URL**: `vê isto https://exemplo.com agora` → ouves "vê isto link agora".
-- [ ] **Menção a user**: `olá @TeuNome` → ouves "olá " seguido do **nome** (não do ID numérico).
-- [ ] **Menção a canal**: `vai a #geral` → ouves "vai a geral" (nome do canal).
-- [ ] **Code block**: uma mensagem com ` ```bloco``` ` → o bloco de código é removido, não é lido.
-- [ ] **Repetições**: `aaaaaaaaaa` → colapsado (não ouves 10 "a").
-- [ ] **Mensagem longa**: escreve um texto acima de `MAX_CHARS` → é truncado, o bot não bloqueia.
+- [ ] **Emoji**: `ola 😀 mundo` → you hear "ola mundo" (emoji skipped, its name not read).
+- [ ] **URL**: `vê isto https://exemplo.com agora` → you hear "vê isto link agora".
+- [ ] **User mention**: `olá @YourName` → you hear "olá " followed by the **name** (not the numeric ID).
+- [ ] **Channel mention**: `vai a #geral` → you hear "vai a geral" (channel name).
+- [ ] **Code block**: a message with ` ```block``` ` → the code block is stripped, not read.
+- [ ] **Repetitions**: `aaaaaaaaaa` → collapsed (you don't hear 10 "a"s).
+- [ ] **Long message**: type text above `MAX_CHARS` → it is truncated, the bot doesn't lock up.
 
-### 3.7 Menções e replies ao bot
+### 3.7 Mentions and replies to the bot
 
-- [ ] Faz `@NomeDoBot olá` num canal qualquer. Esperado: o bot lê "olá".
-- [ ] Faz **reply** a uma mensagem do bot com texto. Esperado: o bot lê o teu texto.
+- [ ] Do `@BotName olá` in any channel. Expected: the bot reads "olá".
+- [ ] **Reply** to a message from the bot with text. Expected: the bot reads your text.
 
-### 3.8 Deteção de língua e voz por-utilizador
+### 3.8 Language detection and per-user voice
 
-- [ ] Escreve uma frase claramente em **inglês** → ouves uma voz EN (se tiveres modelo EN).
-- [ ] Escreve uma frase claramente em **português** → ouves uma voz PT (se tiveres modelo PT).
-- [ ] `/voice set model:en_US-amy-medium speed:1.0` (usa um modelo que tens em `models/`). Esperado: confirmação de voz guardada.
-- [ ] Escreve agora **em português** → ouves a voz EN que fixaste (a voz do utilizador tem **prioridade** sobre a deteção de língua).
-- [ ] `/voice reset` → volta ao comportamento por deteção de língua.
+- [ ] Type a sentence clearly in **English** → you hear an EN voice (if you have an EN model).
+- [ ] Type a sentence clearly in **Portuguese** → you hear a PT voice (if you have a PT model).
+- [ ] `/voice set model:en_US-amy-medium speed:1.0` (use a model you have in `models/`). Expected: confirmation that the voice was saved.
+- [ ] Now type **in Portuguese** → you hear the EN voice you pinned (the user's voice takes **priority** over language detection).
+- [ ] `/voice reset` → back to the language-detection behavior.
 
-### 3.9 Fila e skip
+### 3.9 Queue and skip
 
-- [ ] Cola **várias** mensagens seguidas rapidamente (ou vários `/tts`). Esperado: tocam por ordem (FIFO), uma de cada vez.
-- [ ] Durante uma leitura longa, escreve `/skip`. Esperado: salta para o item seguinte da fila imediatamente.
-- [ ] Enche a fila acima de `QUEUE_CAP`. Esperado: novas entradas são recusadas com aviso, o bot **não** crasha.
+- [ ] Paste **several** messages in quick succession (or several `/tts`). Expected: they play in order (FIFO), one at a time.
+- [ ] During a long read, type `/skip`. Expected: it jumps to the next item in the queue immediately.
+- [ ] Fill the queue above `QUEUE_CAP`. Expected: new entries are refused with a warning, the bot does **not** crash.
 
-### 3.10 Moderação
+### 3.10 Moderation
 
-- [ ] Adiciona uma blockword: `/config blockword add palavra:palavrao`.
-- [ ] Escreve uma frase que contém essa palavra (ou faz `/tts texto:palavrao`). Esperado: **não** é sintetizada (filtrada antes do TTS, tanto em autoread como em `/tts`).
-- [ ] `/config blockword remove palavra:palavrao` → a frase volta a ser lida.
-- [ ] Envia mensagens muito rápido (mais de `RATE_PER_MIN` num minuto). Esperado: a partir do limite, as extra são ignoradas/avisadas (rate-limit por-utilizador).
+- [ ] Add a blockword: `/config blockword add palavra:palavrao`.
+- [ ] Type a sentence containing that word (or do `/tts texto:palavrao`). Expected: it is **not** synthesized (filtered before TTS, both in autoread and `/tts`).
+- [ ] `/config blockword remove palavra:palavrao` → the sentence is read again.
+- [ ] Send messages very fast (more than `RATE_PER_MIN` in a minute). Expected: past the limit, the extras are ignored/warned (per-user rate-limit).
 
 ### 3.11 Cache
 
-- [ ] `/tts texto:teste de cache` → repara no tempo até ouvir.
-- [ ] Repete **exatamente** `/tts texto:teste de cache` com a mesma voz. Esperado: toca mais depressa (servido da cache por hash de texto+voz, sem re-sintetizar).
+- [ ] `/tts texto:teste de cache` → note the time until you hear it.
+- [ ] Repeat **exactly** `/tts texto:teste de cache` with the same voice. Expected: it plays faster (served from the cache by a text+voice hash, without re-synthesizing).
 
-### 3.12 Fiabilidade — reconexão e inatividade
+### 3.12 Reliability — reconnection and inactivity
 
-- [ ] Com o bot a tocar, **desconecta-o à força**: clica com o botão direito no bot no canal de voz → **Disconnect** (ou move-o para outro canal). Esperado: o bot **reconecta-se automaticamente** ao canal e retoma, sem crashar.
-- [ ] Deixa o bot em silêncio (sem leituras) por mais de `INACTIVITY_MS`. Esperado: o bot sai sozinho do canal de voz por inatividade.
-- [ ] Ao longo de toda a sessão: confirma no terminal que **não houve crash** (sem stack trace que mate o processo). Erros pontuais devem ser apanhados e registados, mas o bot continua vivo.
-
----
-
-## 4. Resolução de problemas
-
-- **O bot não lê texto / autoread não funciona**: confirma **MESSAGE CONTENT INTENT** ativado no Dev Portal.
-- **Menções saem como IDs**: confirma **SERVER MEMBERS INTENT** e que o bot vê os membros do servidor.
-- **`piper` não encontrado / erro a sintetizar**: confirma `PIPER_PATH` aponta para o `.exe` certo e que os `.onnx`/`.onnx.json` estão em `MODELS_DIR`.
-- **Comandos não aparecem**: corre `npm run register` outra vez; comandos globais podem demorar a propagar.
-- **Sem áudio**: confirma que o bot tem permissões `Connect` e `Speak` no canal de voz.
+- [ ] With the bot playing, **force-disconnect it**: right-click the bot in the voice channel → **Disconnect** (or move it to another channel). Expected: the bot **reconnects automatically** to the channel and resumes, without crashing.
+- [ ] Leave the bot silent (no reads) for longer than `INACTIVITY_MS`. Expected: the bot leaves the voice channel on its own due to inactivity.
+- [ ] Throughout the whole session: confirm in the terminal that there was **no crash** (no stack trace killing the process). Occasional errors should be caught and logged, but the bot stays alive.
 
 ---
 
-## 5. Deploy em VPS (Docker)
+## 4. Troubleshooting
 
-Caminho **self-host alojado** (alojas tu numa VPS): corres o Vozen numa VPS Linux com `docker compose`, sem instalar Node nem build tools à mão. O bot é um cliente websocket de saída — **não** expõe portas nem precisa de domínio/reverse-proxy.
+- **The bot doesn't read text / autoread doesn't work**: confirm **MESSAGE CONTENT INTENT** is enabled in the Dev Portal.
+- **Mentions come out as IDs**: confirm **SERVER MEMBERS INTENT** and that the bot can see the server members.
+- **`piper` not found / error synthesizing**: confirm `PIPER_PATH` points to the right `.exe` and that the `.onnx`/`.onnx.json` files are in `MODELS_DIR`.
+- **Commands don't appear**: run `npm run register` again; global commands can take a while to propagate.
+- **No audio**: confirm the bot has `Connect` and `Speak` permissions in the voice channel.
 
-> Estado: o build da imagem e a síntese real do Piper são **(verificação ao vivo pendente)** — não foram corridos neste ambiente.
+---
 
-### 5.1 Pré-requisitos
+## 5. Deploy on a VPS (Docker)
 
-- Uma VPS Linux (ex.: Ubuntu/Debian) com **Docker** e o plugin **docker compose v2** instalados (`docker --version`, `docker compose version`).
-- O código do projeto na VPS (ex.: `git clone` do repositório).
+The **self-hosted-hosted** path (you host it on a VPS): you run Vozen on a Linux VPS with `docker compose`, without installing Node or build tools by hand. The bot is an outbound websocket client — it does **not** expose ports and needs no domain/reverse-proxy.
 
-### 5.2 Binário do Piper (Linux)
+> Status: the image build and real Piper synthesis are **(live verification pending)** — they were not run in this environment.
 
-O Piper para Linux **não** é um executável solto: é uma pasta com o binário **mais** bibliotecas partilhadas (`libonnxruntime`, `libespeak-ng`, etc.) e a pasta `espeak-ng-data/`. Tens de montar a **pasta inteira** e apontar `PIPER_PATH` para o binário lá dentro.
+### 5.1 Prerequisites
 
-1. Vai a https://github.com/rhasspy/piper/releases e descarrega o build **Linux x86_64** (ex.: `piper_linux_x86_64.tar.gz`).
-2. Extrai para `./piper/` na raiz do projeto (ao lado do `docker-compose.yml`). Deve ficar:
+- A Linux VPS (e.g. Ubuntu/Debian) with **Docker** and the **docker compose v2** plugin installed (`docker --version`, `docker compose version`).
+- The project code on the VPS (e.g. `git clone` of the repository).
+
+### 5.2 Piper binary (Linux)
+
+Piper for Linux is **not** a standalone executable: it is a folder with the binary **plus** shared libraries (`libonnxruntime`, `libespeak-ng`, etc.) and the `espeak-ng-data/` folder. You have to mount the **whole folder** and point `PIPER_PATH` at the binary inside it.
+
+1. Go to https://github.com/rhasspy/piper/releases and download the **Linux x86_64** build (e.g. `piper_linux_x86_64.tar.gz`).
+2. Extract it to `./piper/` at the project root (next to `docker-compose.yml`). It should look like:
    ```
    piper/
-     piper                  # o binário (sem extensão em Linux)
-     libpiper_phonemize.so* # + outras .so
+     piper                  # the binary (no extension on Linux)
+     libpiper_phonemize.so* # + other .so
      espeak-ng-data/
    ```
-   O `docker-compose.yml` monta `./piper` em `/opt/piper` (read-only) e define `PIPER_PATH=/opt/piper/piper`.
+   The `docker-compose.yml` mounts `./piper` at `/opt/piper` (read-only) and sets `PIPER_PATH=/opt/piper/piper`.
 
-### 5.3 Modelos de voz (.onnx)
+### 5.3 Voice models (.onnx)
 
-1. Cria a pasta `./models/` na raiz do projeto.
-2. Coloca lá **pelo menos uma** voz — cada voz são 2 ficheiros (`<voz>.onnx` + `<voz>.onnx.json`), de https://huggingface.co/rhasspy/piper-voices. Sugestão para começar: `en_US-amy-medium`.
+1. Create the `./models/` folder at the project root.
+2. Put **at least one** voice there — each voice is 2 files (`<voice>.onnx` + `<voice>.onnx.json`), from https://huggingface.co/rhasspy/piper-voices. Suggestion to start: `en_US-amy-medium`.
    ```
    models/
      en_US-amy-medium.onnx
      en_US-amy-medium.onnx.json
    ```
-   O `docker-compose.yml` monta `./models` em `/models` (read-only) e define `MODELS_DIR=/models`.
-3. Garante que `DEFAULT_VOICE` no `.env` corresponde a um modelo presente em `./models/`.
+   The `docker-compose.yml` mounts `./models` at `/models` (read-only) and sets `MODELS_DIR=/models`.
+3. Make sure `DEFAULT_VOICE` in the `.env` matches a model present in `./models/`.
 
-### 5.4 Ficheiro `.env`
+### 5.4 `.env` file
 
 ```
 cp .env.example .env
 ```
 
-Preenche **apenas** os segredos e tunables — **não** definas `DB_PATH`, `MODELS_DIR` nem `PIPER_PATH` no `.env`: esses vêm já fixos do `docker-compose.yml` com os caminhos do container (`/data/tts.db`, `/models`, `/opt/piper/piper`).
+Fill in **only** the secrets and tunables — do **not** set `DB_PATH`, `MODELS_DIR` or `PIPER_PATH` in the `.env`: those come fixed from `docker-compose.yml` with the container paths (`/data/tts.db`, `/models`, `/opt/piper/piper`).
 
-| Variável | Obrigatória? | O que pôr |
+| Variable | Required? | What to put |
 |---|---|---|
-| `DISCORD_TOKEN` | **Sim** | Token do bot (Dev Portal → Bot → Reset Token) |
-| `CLIENT_ID` | **Sim** | Application ID (Dev Portal → General Information) |
-| `DEFAULT_VOICE` | Não | Modelo presente em `./models/`, p.ex. `en_US-amy-medium` |
-| `DEFAULT_SPEED` | Não | Velocidade base (default `1.0`) |
-| `INACTIVITY_MS` | Não | Auto-saída por inatividade em ms (default `300000`) |
-| `QUEUE_CAP` | Não | Tamanho máximo da fila (default `20`) |
-| `MAX_CHARS` | Não | Máx. de caracteres por mensagem (default `300`) |
-| `RATE_PER_MIN` | Não | Mensagens por minuto por utilizador (default `5`) |
-| `LOG_LEVEL` | Não | `debug` \| `info` \| `warn` \| `error` (default `info`) |
-| `TTS_ENGINE` | Não | `piper` (default) ou `neural` |
-| `OPENAI_API_KEY` | Só se `TTS_ENGINE=neural` | Chave da API OpenAI |
+| `DISCORD_TOKEN` | **Yes** | Bot token (Dev Portal → Bot → Reset Token) |
+| `CLIENT_ID` | **Yes** | Application ID (Dev Portal → General Information) |
+| `DEFAULT_VOICE` | No | Model present in `./models/`, e.g. `en_US-amy-medium` |
+| `DEFAULT_SPEED` | No | Base speed (default `1.0`) |
+| `INACTIVITY_MS` | No | Auto-leave on inactivity in ms (default `300000`) |
+| `QUEUE_CAP` | No | Maximum queue size (default `20`) |
+| `MAX_CHARS` | No | Max characters per message (default `300`) |
+| `RATE_PER_MIN` | No | Messages per minute per user (default `5`) |
+| `LOG_LEVEL` | No | `debug` \| `info` \| `warn` \| `error` (default `info`) |
+| `TTS_ENGINE` | No | `piper` (default) or `neural` |
+| `OPENAI_API_KEY` | Only if `TTS_ENGINE=neural` | OpenAI API key |
 
-### 5.5 Arranque
+### 5.5 Startup
 
 ```
-docker compose up -d --build   # constrói a imagem e arranca em background
-docker compose logs -f vozen    # segue os logs (esperado: [client] online como ...)
-docker compose down            # pára e remove o container (os dados persistem no volume)
+docker compose up -d --build   # builds the image and starts in the background
+docker compose logs -f vozen    # follow the logs (expected: [client] online como ...)
+docker compose down            # stops and removes the container (data persists in the volume)
 ```
 
-- Os **slash commands são registados automaticamente** no arranque — **não** precisas de correr `npm run register` no deploy Docker.
-- A base de dados, o WAL/SHM e a cache de áudio vivem no volume nomeado `data` (`/data` no container) e **persistem** entre `up`/`down`. Para apagar também os dados: `docker compose down -v`.
-- Atualizar para uma versão nova: `git pull` e `docker compose up -d --build`.
+- The **slash commands are registered automatically** on startup — you do **not** need to run `npm run register` in the Docker deploy.
+- The database, the WAL/SHM and the audio cache live in the named volume `data` (`/data` in the container) and **persist** across `up`/`down`. To also wipe the data: `docker compose down -v`.
+- To update to a new version: `git pull` and `docker compose up -d --build`.
 
-### 5.6 Resolução de problemas (Docker)
+### 5.6 Troubleshooting (Docker)
 
-- **`Missing required env var: DISCORD_TOKEN` / `CLIENT_ID`**: preenche-os no `.env` (secção 5.4).
-- **Piper falha a arrancar / erro a carregar bibliotecas (`error while loading shared libraries` ou similar)**: confirma que montaste a **pasta inteira** do Piper (não só o binário). Se faltarem libs de sistema do runtime, instala-as na imagem (ex.: `apt-get install -y libgomp1 libstdc++6`) — a base `-slim` pode não as trazer.
-- **`/voice list` vazio / sem áudio**: confirma que há `.onnx` (+ `.onnx.json`) em `./models/` e que `DEFAULT_VOICE` corresponde a um deles.
+- **`Missing required env var: DISCORD_TOKEN` / `CLIENT_ID`**: fill them in the `.env` (section 5.4).
+- **Piper fails to start / error loading libraries (`error while loading shared libraries` or similar)**: confirm you mounted the **whole** Piper folder (not just the binary). If system runtime libs are missing, install them in the image (e.g. `apt-get install -y libgomp1 libstdc++6`) — the `-slim` base may not include them.
+- **`/voice list` empty / no audio**: confirm there is a `.onnx` (+ `.onnx.json`) in `./models/` and that `DEFAULT_VOICE` matches one of them.
 
 ---
 
-## 6. Privacidade e Termos
+## 6. Privacy and Terms
 
-- [**Política de Privacidade** (`PRIVACY.md`)](PRIVACY.md) — que dados a instância guarda (apenas IDs do Discord + preferências/config), o que acontece ao conteúdo das mensagens, retenção e apagamento, e terceiros (Discord; **Google Translate TTS** se `TTS_ENGINE=gtts`/`router`; OpenAI se `TTS_ENGINE=neural`).
-- [**Termos de Serviço** (`TERMS.md`)](TERMS.md) — uso aceitável, ausência de garantias, limitação de responsabilidade e licença (AGPL-3.0).
+- [**Privacy Policy** (`PRIVACY.md`)](PRIVACY.md) — what data the instance stores (only Discord IDs + preferences/config), what happens to message content, retention and deletion, and third parties (Discord; **Google Translate TTS** if `TTS_ENGINE=gtts`/`router`; OpenAI if `TTS_ENGINE=neural`).
+- [**Terms of Service** (`TERMS.md`)](TERMS.md) — acceptable use, absence of warranties, limitation of liability and license (AGPL-3.0).
 
-> **Nota para o registo/verificação no Discord.** O Discord Developer Portal pede um **Privacy Policy URL** e um **Terms of Service URL** (ex.: para *Public Bot* / verificação). Quando este repositório for **público**, os URLs a colar nesses campos são os ficheiros aqui no repo:
+> **Note for Discord registration/verification.** The Discord Developer Portal asks for a **Privacy Policy URL** and a **Terms of Service URL** (e.g. for *Public Bot* / verification). When this repository is **public**, the URLs to paste into those fields are the files here in the repo:
 >
 > - Privacy Policy URL: `https://github.com/diogoshk3/discord-bot-Vozen/blob/main/PRIVACY.md`
 > - Terms of Service URL: `https://github.com/diogoshk3/discord-bot-Vozen/blob/main/TERMS.md`
 >
-> O repositório está **privado** por agora, por isso estes links só ficam acessíveis (e válidos para o Discord) depois de o tornares público. Antes de publicar, preenche o campo de contacto/responsável no fim de `PRIVACY.md`.
+> The repository is **private** for now, so these links only become accessible (and valid for Discord) once you make it public. Before publishing, fill in the contact/responsible-party field at the end of `PRIVACY.md`.
 
 ---
 
 ## GitHub Topics
 
-Topics a aplicar ao repositório (para descoberta no GitHub), quando for público:
+Topics to apply to the repository (for discovery on GitHub), once it is public:
 
 <!-- topics: discord-tts-bot tts text-to-speech piper piper-tts self-hosted neural-tts -->
 
@@ -370,16 +370,16 @@ Topics a aplicar ao repositório (para descoberta no GitHub), quando for públic
 
 ---
 
-## Licença
+## License
 
 Copyright (C) 2026 Diogo Cabral.
 
-O Vozen é software livre: podes redistribuí-lo e/ou modificá-lo nos termos da **GNU Affero
-General Public License, versão 3** (AGPL-3.0), conforme publicada pela Free Software
-Foundation. Ver o ficheiro [`LICENSE`](LICENSE) para o texto completo.
+Vozen is free software: you can redistribute it and/or modify it under the terms of the **GNU Affero
+General Public License, version 3** (AGPL-3.0), as published by the Free Software
+Foundation. See the [`LICENSE`](LICENSE) file for the full text.
 
-A AGPL-3.0 acrescenta ao GPL uma condição-chave: **quem correr uma versão modificada do
-Vozen acessível pela rede tem de disponibilizar o código-fonte dessa versão aos
-utilizadores**. Isto mantém o Vozen aberto mesmo quando corrido como serviço.
+AGPL-3.0 adds one key condition to the GPL: **anyone who runs a modified version of
+Vozen accessible over a network must make that version's source code available to its
+users**. This keeps Vozen open even when run as a service.
 
-O Vozen é fornecido SEM QUALQUER GARANTIA; ver a secção 15 da licença.
+Vozen is provided WITH NO WARRANTY; see section 15 of the license.

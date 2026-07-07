@@ -1,77 +1,77 @@
-# Termos de Serviço — Vozen
+# Terms of Service — Vozen
 
 > _type it, hear it._
 
-**Última atualização:** 2026-07-07
+**Last updated:** 2026-07-07
 
-O Vozen é um bot de Text-to-Speech (TTS) para Discord, **open-source** e **self-host**: cada instância é corrida por um **operador** independente. Ao usar uma instância do Vozen, concordas com estes Termos. Como o software é self-host, o **operador da instância** é o responsável pelo seu funcionamento e pelo cumprimento das regras aplicáveis.
-
----
-
-## 1. Idade mínima
-
-Tens de ter pelo menos **13 anos**, ou a idade mínima superior exigida pela legislação do teu país, para usar o Discord e, por extensão, o Vozen. O Vozen não se destina a menores dessa idade.
+Vozen is an **open-source**, **self-hosted** Text-to-Speech (TTS) bot for Discord: each instance is run by an independent **operator**. By using a Vozen instance, you agree to these Terms. Because the software is self-hosted, the **instance operator** is responsible for its operation and for compliance with the applicable rules.
 
 ---
 
-## 2. Uso aceitável
+## 1. Minimum age
 
-Ao usar o Vozen concordas em **não**:
-
-- Usar o bot para **assédio**, intimidação, discurso de ódio ou para visar pessoas.
-- Enviar **spam** ou abusar do serviço (ex.: contornar os limites de mensagens/caracteres, sobrecarregar a instância de propósito).
-- Sintetizar ou difundir **conteúdo ilegal**, ou qualquer conteúdo que viole leis aplicáveis.
-- Usar o **clone de voz** para te fazeres passar por alguém ou para gravar a voz de outra pessoa sem o consentimento explícito dela (ver secção 3).
-- Violar os [Termos de Serviço do Discord](https://discord.com/terms) ou as [Diretrizes da Comunidade do Discord](https://discord.com/guidelines).
-
-O operador da instância e os administradores de cada servidor podem aplicar regras adicionais (blocklist, limites, restrição por role, kill-switch) e podem remover o acesso ao bot.
+You must be at least **13 years old**, or the higher minimum age required by the laws of your country, to use Discord and, by extension, Vozen. Vozen is not directed at children under that age.
 
 ---
 
-## 3. Clone de voz
+## 2. Acceptable use
 
-O clone de voz (`/voice clone`) pode ser usado para gravar a **tua própria** voz, ou a voz de **outra pessoa apenas com o consentimento explícito dela**, dado através do botão "Permitir" que aparece no momento da gravação. Não o uses para te fazeres passar por alguém nem para gravar uma voz que não tens o direito de usar. És o único responsável por qualquer amostra de voz que crias. Ver a [Política de Privacidade](PRIVACY.md) para como os dados do clone são guardados e apagados.
+By using Vozen you agree **not** to:
 
----
+- Use the bot for **harassment**, intimidation, hate speech, or to target people.
+- Send **spam** or abuse the service (e.g. circumventing message/character limits, deliberately overloading the instance).
+- Synthesize or broadcast **illegal content**, or any content that violates applicable laws.
+- Use **voice cloning** to impersonate someone or to record another person's voice without their explicit consent (see section 3).
+- Violate the [Discord Terms of Service](https://discord.com/terms) or the [Discord Community Guidelines](https://discord.com/guidelines).
 
-## 4. Reportar problemas
-
-Para reportar um problema, abuso ou uma violação destes Termos ou da Política de Desenvolvedor do Discord envolvendo o Vozen, usa o **[servidor de suporte](https://discord.gg/V6PZYZmhcQ)** (`discord.gg/V6PZYZmhcQ`). Os relatórios são analisados e são tomadas as medidas adequadas.
-
----
-
-## 5. Sem garantias
-
-O Vozen é fornecido **"tal como está" ("as is")**, sem garantias de qualquer tipo, expressas ou implícitas, incluindo (mas não limitado a) garantias de comerciabilidade, adequação a um fim específico, disponibilidade, ou ausência de erros. Sendo self-host, **não há qualquer garantia de disponibilidade (uptime)**, de qualidade da síntese de voz, nem de preservação de dados — o serviço depende inteiramente da instância que cada operador corre.
+The instance operator and the administrators of each server may enforce additional rules (blocklist, limits, role restriction, kill-switch) and may remove access to the bot.
 
 ---
 
-## 6. Limitação de responsabilidade
+## 3. Voice cloning
 
-Na medida máxima permitida por lei, **os autores do projeto Vozen não são responsáveis** por quaisquer danos diretos, indiretos, incidentais ou consequentes resultantes do uso ou da impossibilidade de uso do software, nem pelo conteúdo gerado, processado ou difundido por qualquer instância. O **operador de cada instância** é o único responsável pela forma como a corre, pelos dados que processa e pelo cumprimento das leis e dos termos de terceiros (Discord e, se aplicável, OpenAI).
-
----
-
-## 7. Responsabilidade do operador
-
-Quem corre uma instância do Vozen (o **operador**) é responsável por:
-
-- Cumprir os Termos de Serviço e a Política de Programador do Discord.
-- Garantir o tratamento adequado dos dados que a instância guarda (ver [PRIVACY.md](PRIVACY.md)).
-- Cumprir os termos de terceiros que ative — em particular os da **Google** se usar `TTS_ENGINE=gtts` ou `router` (o texto a ler é enviado ao Google Translate TTS), e os da **OpenAI** se usar `TTS_ENGINE=neural`.
-- Disponibilizar um contacto e responder a pedidos razoáveis dos utilizadores sobre os seus dados.
+Voice cloning (`/voice clone`) may be used to record **your own** voice, or another person's voice **only with their explicit consent**, given through the "Allow" button that appears at the time of recording. Do not use it to impersonate anyone or to record a voice you do not have the right to use. You are solely responsible for any voice sample you create. See the [Privacy Policy](PRIVACY.md) for how clone data is stored and deleted.
 
 ---
 
-## 8. Licença
+## 4. Reporting problems
 
-O Vozen é software livre distribuído sob a licença **GNU AGPL-3.0** (ficheiro [`LICENSE`](LICENSE); declarada no campo `license` do `package.json`). O uso, cópia, modificação e distribuição do código-fonte regem-se por essa licença. Em particular, a AGPL exige que quem **corra uma versão modificada acessível pela rede** disponibilize o respetivo código-fonte aos utilizadores.
+To report a problem, abuse, or a violation of these Terms or of the Discord Developer Policy involving Vozen, use the **[support server](https://discord.gg/V6PZYZmhcQ)** (`discord.gg/V6PZYZmhcQ`). Reports are reviewed and appropriate action is taken.
 
 ---
 
-## 9. Alterações
+## 5. No warranty
 
-Estes Termos podem ser atualizados. A versão em vigor é a presente neste repositório. O uso continuado do bot após alterações implica a aceitação dos novos Termos.
+Vozen is provided **"as is"**, without warranties of any kind, express or implied, including (but not limited to) warranties of merchantability, fitness for a particular purpose, availability, or freedom from errors. Being self-hosted, **there is no guarantee of availability (uptime)**, of speech synthesis quality, nor of data preservation — the service depends entirely on the instance each operator runs.
+
+---
+
+## 6. Limitation of liability
+
+To the maximum extent permitted by law, **the Vozen project authors are not liable** for any direct, indirect, incidental, or consequential damages arising from the use or inability to use the software, nor for content generated, processed, or broadcast by any instance. The **operator of each instance** is solely responsible for how they run it, for the data they process, and for compliance with the laws and terms of third parties (Discord and, where applicable, OpenAI).
+
+---
+
+## 7. Operator responsibility
+
+Whoever runs a Vozen instance (the **operator**) is responsible for:
+
+- Complying with the Discord Terms of Service and Developer Policy.
+- Ensuring the proper handling of the data the instance stores (see [PRIVACY.md](PRIVACY.md)).
+- Complying with the terms of any third parties they enable — in particular those of **Google** if using `TTS_ENGINE=gtts` or `router` (the text to be read is sent to Google Translate TTS), and those of **OpenAI** if using `TTS_ENGINE=neural`.
+- Providing a point of contact and responding to reasonable user requests about their data.
+
+---
+
+## 8. License
+
+Vozen is free software distributed under the **GNU AGPL-3.0** license (file [`LICENSE`](LICENSE); declared in the `license` field of `package.json`). The use, copying, modification, and distribution of the source code are governed by that license. In particular, the AGPL requires that anyone who **runs a modified version accessible over a network** make the corresponding source code available to users.
+
+---
+
+## 9. Changes
+
+These Terms may be updated. The version in force is the one present in this repository. Continued use of the bot after changes implies acceptance of the new Terms.
 
 ---
 
