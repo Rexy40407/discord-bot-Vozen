@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-tools/clone_server.py — sidecar de CLONE DE VOZ do Voxi (Chatterbox, MIT).
+tools/clone_server.py — sidecar de CLONE DE VOZ do Vozi (Chatterbox, MIT).
 
 Protocolo JSON-lines em stdin/stdout (1 pedido de cada vez — GPU):
   -> {"text": "...", "ref": "C:/.../user.wav", "out": "C:/.../out.wav", "lang": "pt"}
