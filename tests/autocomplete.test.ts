@@ -3,6 +3,7 @@ import {
   filterModelChoices,
   filterLocaleChoices,
   handleAutocomplete,
+  sanitizeAutocompleteChoices,
   commandDefs,
 } from '../src/commands/index';
 import { modelDisplayName } from '../src/language/voiceMap';
@@ -166,6 +167,56 @@ describe('handleAutocomplete', () => {
     await handleAutocomplete(i, deps);
     const arg = respond.mock.calls[0][0] as unknown[];
     expect(arg.length).toBe(25);
+  });
+
+  // Endurecimento anti-"Falha ao carregar opções" (bug intermitente reportado):
+  // o autocomplete nao pode ser deferido e o token morre ~3s apos o keystroke.
+
+  it('interacao que chega >2.5s atrasada e IGNORADA (token quase morto; responder daria 10062)', async () => {
+    const respond = vi.fn();
+    const i = {
+      commandName: 'game',
+      createdTimestamp: Date.now() - 3000, // 3s de atraso gateway->bot
+      options: { getFocused: () => ({ name: 'game', value: '' }) },
+      respond,
+    } as any;
+    await handleAutocomplete(i, deps);
+    expect(respond).not.toHaveBeenCalled();
+  });
+
+  it('respond que rebenta com 10062 (resposta tardia) nao propaga nem rebenta', async () => {
+    const err = Object.assign(new Error('Unknown interaction'), { code: 10062 });
+    const i = {
+      commandName: 'voice',
+      createdTimestamp: Date.now(),
+      options: { getFocused: () => ({ name: 'model', value: '' }) },
+      respond: vi.fn().mockRejectedValue(err),
+    } as any;
+    await expect(handleAutocomplete(i, deps)).resolves.toBeUndefined();
+  });
+});
+
+describe('sanitizeAutocompleteChoices — limites do Discord (1 entrada invalida = payload inteiro rejeitado)', () => {
+  it('corta a 25 entradas', () => {
+    const many = Array.from({ length: 40 }, (_, k) => ({ name: `n${k}`, value: `v${k}` }));
+    expect(sanitizeAutocompleteChoices(many).length).toBe(25);
+  });
+
+  it('trunca name e value a 100 chars', () => {
+    const out = sanitizeAutocompleteChoices([{ name: 'x'.repeat(150), value: 'y'.repeat(150) }]);
+    expect(out[0].name.length).toBe(100);
+    expect(out[0].value.length).toBe(100);
+  });
+
+  it('name vazio/so-espacos vira placeholder (name de 0 chars e 400 da API)', () => {
+    const out = sanitizeAutocompleteChoices([{ name: '   ', value: 'v' }]);
+    expect(out[0].name).toBe('—');
+    expect(out[0].value).toBe('v');
+  });
+
+  it('entradas validas passam intactas', () => {
+    const input = [{ name: 'Português', value: 'pt' }];
+    expect(sanitizeAutocompleteChoices(input)).toEqual(input);
   });
 });
 

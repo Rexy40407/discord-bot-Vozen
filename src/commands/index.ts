@@ -2581,59 +2581,107 @@ export function filterLocaleChoices(query: string): { name: string; value: strin
  * linguas suportadas para o utilizador escolher de uma lista, em vez de escrever o
  * nome à mão. Beginner-friendly. Qualquer outra opção -> [] (sem sugestões).
  */
+/**
+ * Sanitiza choices de autocomplete para os limites do Discord: máx. 25 entradas,
+ * `name` 1–100 chars, `value` ≤100 chars. UMA entrada inválida faz a API rejeitar o
+ * payload INTEIRO com 400 → o cliente mostra "Falha ao carregar opções". Este é o
+ * único ponto de passagem antes do respond(), por isso a garantia é estrutural.
+ */
+export function sanitizeAutocompleteChoices(
+  choices: { name: string; value: string }[],
+): { name: string; value: string }[] {
+  return choices.slice(0, 25).map((c) => ({
+    name: (String(c.name).trim() || '—').slice(0, 100),
+    value: String(c.value).slice(0, 100),
+  }));
+}
+
+/** Calcula as choices de UMA interação de autocomplete. Síncrono e sem I/O — o
+ *  orçamento de ~3s do autocomplete (sem defer possível) gasta-se na REDE, não aqui. */
+function computeAutocompleteChoices(
+  i: AutocompleteInteraction,
+  deps: BotDeps,
+  focused: { name: string; value: string },
+): { name: string; value: string }[] {
+  if (focused.name === 'model') {
+    // i.locale = locale do cliente Discord de quem escreve -> nomes das línguas
+    // escritos NA LÍNGUA DELE (ex.: "Alemão" para PT, "Allemand" para FR).
+    return filterModelChoices(deps.availableModels, focused.value, i.locale);
+  }
+  if (focused.name === 'language') {
+    // A opção `language` existe em DOIS comandos: /joke (~34 línguas) e /game play
+    // word-chain (só as 4 línguas latinas com wordlist). Roteamos por comando.
+    if (i.commandName === 'game') return filterWordChainLanguages(focused.value);
+    return filterJokeLanguages(focused.value);
+  }
+  // /config language: a opcao chama-se `locale` (NAO `language` — essa e do /joke).
+  // 34 linguas > 25 choices estaticas do Discord, por isso e autocomplete.
+  if (focused.name === 'locale') {
+    return filterLocaleChoices(focused.value);
+  }
+  // /game play: nomes dos jogos na LINGUA do utilizador. filterGameChoices espera o
+  // codigo base ('pt', 'fr'); normalizamos o i.locale do Discord ('pt-BR' -> 'pt').
+  if (focused.name === 'game') {
+    const base = (i.locale || '').split('-')[0].toLowerCase() || 'en';
+    return filterGameChoices(focused.value, base);
+  }
+  // /voice clone record `user`: lista quem está na call COM o bot (os únicos alvos
+  // válidos — gravar exige estar no canal do bot). Fora de uma call, lista vazia.
+  if (focused.name === 'user') {
+    const botChannel = i.guild?.members.me?.voice?.channel ?? null;
+    const q = focused.value.trim().toLowerCase();
+    return botChannel
+      ? [...botChannel.members.values()]
+          .filter((m) => !m.user.bot)
+          .filter((m) => !q || m.displayName.toLowerCase().includes(q) || m.user.username.toLowerCase().includes(q))
+          .slice(0, 25)
+          .map((m) => ({ name: m.displayName, value: m.id }))
+      : [];
+  }
+  return [];
+}
+
 export async function handleAutocomplete(
   i: AutocompleteInteraction,
   deps: BotDeps,
 ): Promise<void> {
+  // Instrumentação anti-"Falha ao carregar opções". O autocomplete NÃO pode ser
+  // deferido e o token morre ~3s depois de o utilizador escrever; o orçamento
+  // divide-se em: entrega gateway->bot (age), handler (síncrono, ~0ms) e o POST
+  // REST da resposta. Medimos cada troço para que, quando falhar, o log diga QUAL
+  // troço comeu o tempo — sem isto o sintoma é invisível e "recorrente".
+  const t0 = Date.now();
+  const age = t0 - (i.createdTimestamp ?? t0); // atraso JÁ gasto antes de chegarmos a correr
+  let focusedName = '?';
   try {
     const focused = i.options.getFocused(true);
-    if (focused.name === 'model') {
-      // i.locale = locale do cliente Discord de quem escreve -> nomes das línguas
-      // escritos NA LÍNGUA DELE (ex.: "Alemão" para PT, "Allemand" para FR).
-      await i.respond(filterModelChoices(deps.availableModels, focused.value, i.locale));
+    focusedName = focused.name;
+    if (age > 2500) {
+      // O token está (quase) morto à chegada: responder só geraria um 10062. A causa
+      // é a MONTANTE do handler — gateway/rede/CPU da máquina — e fica registada.
+      log.warn(
+        `[autocomplete] interação "${i.commandName}:${focusedName}" chegou ${age}ms atrasada — resposta já impossível (gateway/rede/CPU saturados).`,
+      );
       return;
     }
-    if (focused.name === 'language') {
-      // A opção `language` existe em DOIS comandos: /joke (~34 línguas) e /game play
-      // word-chain (só as 4 línguas latinas com wordlist). Roteamos por comando.
-      if (i.commandName === 'game') {
-        await i.respond(filterWordChainLanguages(focused.value));
-        return;
-      }
-      await i.respond(filterJokeLanguages(focused.value));
-      return;
+    await i.respond(sanitizeAutocompleteChoices(computeAutocompleteChoices(i, deps, focused)));
+    const restMs = Date.now() - t0;
+    if (age + restMs > 1500) {
+      log.warn(
+        `[autocomplete] lento (respondeu, mas perto do limite): "${i.commandName}:${focusedName}" entrega=${age}ms resposta=${restMs}ms.`,
+      );
     }
-    // /config language: a opcao chama-se `locale` (NAO `language` — essa e do /joke).
-    // 34 linguas > 25 choices estaticas do Discord, por isso e autocomplete.
-    if (focused.name === 'locale') {
-      await i.respond(filterLocaleChoices(focused.value));
-      return;
-    }
-    // /game play: nomes dos jogos na LINGUA do utilizador. filterGameChoices espera o
-    // codigo base ('pt', 'fr'); normalizamos o i.locale do Discord ('pt-BR' -> 'pt').
-    if (focused.name === 'game') {
-      const base = (i.locale || '').split('-')[0].toLowerCase() || 'en';
-      await i.respond(filterGameChoices(focused.value, base));
-      return;
-    }
-    // /voice clone record `user`: lista quem está na call COM o bot (os únicos alvos
-    // válidos — gravar exige estar no canal do bot). Fora de uma call, lista vazia.
-    if (focused.name === 'user') {
-      const botChannel = i.guild?.members.me?.voice?.channel ?? null;
-      const q = focused.value.trim().toLowerCase();
-      const choices = botChannel
-        ? [...botChannel.members.values()]
-            .filter((m) => !m.user.bot)
-            .filter((m) => !q || m.displayName.toLowerCase().includes(q) || m.user.username.toLowerCase().includes(q))
-            .slice(0, 25)
-            .map((m) => ({ name: m.displayName.slice(0, 100), value: m.id }))
-        : [];
-      await i.respond(choices);
-      return;
-    }
-    await i.respond([]);
   } catch (err) {
-    log.error('[autocomplete] erro', err);
+    // 10062 = a resposta chegou ao Discord depois do token expirar. Não é bug do
+    // handler (que é síncrono): é latência de rede/CPU — classificado à parte para
+    // o diagnóstico do "Falha ao carregar opções" recorrente.
+    if ((err as { code?: number }).code === 10062) {
+      log.warn(
+        `[autocomplete] resposta tardia (10062): "${i.commandName}:${focusedName}" entrega=${age}ms total=${Date.now() - t0}ms.`,
+      );
+      return;
+    }
+    log.error(`[autocomplete] erro em "${i.commandName}:${focusedName}"`, err);
   }
 }
 

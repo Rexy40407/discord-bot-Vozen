@@ -25,6 +25,7 @@ import { registerCommands } from './bot/registerCommands';
 import { installSignalHandlers } from './bot/shutdown';
 import { startHealthServer } from './health';
 import { checkFfmpeg } from './health/ffmpeg';
+import { startLoopLagMonitor } from './health/loopLag';
 import { startVoteWebhookServer } from './vote';
 
 function discoverModels(modelsDir: string): string[] {
@@ -37,6 +38,9 @@ function discoverModels(modelsDir: string): string[] {
 
 async function main(): Promise<void> {
   const config = loadConfig();
+  // Vigia de bloqueios do event-loop (diagnóstico do "Falha ao carregar opções"):
+  // stalls ficam no log + metrics.loopStalls. Timer unref'd — nunca segura o processo.
+  startLoopLagMonitor();
   const db = initDb(config.dbPath);
   const cache = new AudioCache(path.join(path.dirname(config.dbPath), 'audio-cache'));
 
@@ -236,7 +240,11 @@ async function main(): Promise<void> {
   // supervisor, entrava em crash-loop a re-disparar o PUT rate-limited (queimando a
   // quota diária de comandos globais e prolongando a falha).
   try {
-    await registerCommands(config.token, config.clientId);
+    // stateFile ao lado da DB: o PUT global só acontece quando os comandos MUDAM
+    // (fingerprint) — menos rate-limit e menos churn de cache do cliente pós-restart.
+    await registerCommands(config.token, config.clientId, {
+      stateFile: path.join(path.dirname(config.dbPath), 'commands-state.json'),
+    });
   } catch (err) {
     log.error('[index] falha ao sincronizar comandos (ignorado, arranco com os já registados)', err);
   }

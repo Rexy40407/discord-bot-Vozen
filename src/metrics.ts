@@ -13,6 +13,9 @@ export interface MetricsSnapshot {
   // Votos top.gg (P11.5): upvotes validos recebidos via webhook. Pings de "test"
   // do dashboard top.gg NAO contam (so type === "upvote").
   votes: number;
+  // Bloqueios do event-loop detetados (health/loopLag). Um loop bloqueado >~400ms
+  // atrasa TUDO — em especial o autocomplete, que tem ~3s de orcamento sem defer.
+  loopStalls: number;
   // Latencia de sintese (T0.2): nº total de sinteses medidas + p50/p95 (ms) das
   // ULTIMAS N amostras (janela deslizante). p50/p95 = 0 se ainda nao ha amostras.
   synthCount: number;
@@ -38,6 +41,7 @@ class Metrics {
   voiceDrops = 0;
   voiceReconnects = 0;
   votes = 0;
+  loopStalls = 0;
   // Latencia: contador total + janela deslizante das ultimas amostras (ms).
   synthCount = 0;
   private synthMs: number[] = [];
@@ -69,6 +73,7 @@ class Metrics {
       voiceDrops: this.voiceDrops,
       voiceReconnects: this.voiceReconnects,
       votes: this.votes,
+      loopStalls: this.loopStalls,
       synthCount: this.synthCount,
       synthP50Ms: Math.round(percentileOf(sorted, 50)),
       synthP95Ms: Math.round(percentileOf(sorted, 95)),
@@ -84,6 +89,7 @@ class Metrics {
     this.voiceDrops = 0;
     this.voiceReconnects = 0;
     this.votes = 0;
+    this.loopStalls = 0;
     this.synthCount = 0;
     this.synthMs = [];
   }
