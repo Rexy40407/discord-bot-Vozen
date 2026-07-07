@@ -21,6 +21,7 @@ import { buildPresence } from './presence';
 import { pickWelcomeChannel, buildWelcomeEmbed } from './welcome';
 import { DEFAULT_LOCALE } from '../i18n/index';
 import { createErrorReporter } from '../errorReporter';
+import { bindGatewayWatch } from './gatewayWatch';
 import { log } from '../logging/logger';
 
 export function createClient(): Client {
@@ -167,6 +168,20 @@ export function bindEvents(deps: BotDeps): void {
   client.on(Events.Error, (err) => {
     log.error('[client] erro do gateway', err);
     void errorReporter.report(err, 'gateway');
+  });
+
+  // Observabilidade + recuperação do GATEWAY (fix do "Falha ao carregar opções"
+  // recorrente: o bot ficava online mas sem RECEBER interações — gateway zombie,
+  // invisível no log). Liga os listeners de shard e um watchdog que reinicia limpo
+  // se o gateway ficar em baixo. process.exit(1) => o supervisor (start-prod.mjs)
+  // reinicia com sessão nova.
+  bindGatewayWatch({
+    client,
+    logInfo: (m) => log.info(m),
+    logWarn: (m) => log.warn(m),
+    logError: (m, e) => log.error(m, e),
+    reportError: (e, ctx) => void errorReporter.report(e, ctx),
+    exit: () => process.exit(1),
   });
 
   process.on('unhandledRejection', (reason) => {
