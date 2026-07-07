@@ -15,3 +15,6 @@ voice-clones/
 # Logs de produção (supervisor start-prod.mjs) + estado do registo de comandos
 logs/
 commands-state.json
+
+# Saída da minificação do site (gerada por `npm run build:site`; publicada só em CI)
+site-dist/

@@ -11,7 +11,8 @@
     "start:prod": "npm run build && node scripts/start-prod.mjs",
     "start:sharded": "node dist/shard.js",
     "test": "vitest run",
-    "register": "tsx src/bot/registerCommands.ts"
+    "register": "tsx src/bot/registerCommands.ts",
+    "build:site": "node tools/minify-site.mjs"
   },
   "dependencies": {
     "@discordjs/opus": "^0.10.0",
@@ -27,6 +28,9 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.13.1",
+    "clean-css": "^5.3.3",
+    "html-minifier-terser": "^7.2.0",
+    "terser": "^5.48.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"

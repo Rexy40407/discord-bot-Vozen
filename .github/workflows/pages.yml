@@ -1,15 +1,16 @@
 name: Deploy site to GitHub Pages
 
-# Publica a pasta site/ como um site estatico em GitHub Pages.
-# O passo configure-pages (enablement: true) LIGA o Pages sozinho na 1a corrida,
-# por isso nao e preciso mexer em Settings -> Pages. Cada push a main que altere
-# site/ redeploya automaticamente.
+# Publica o site em GitHub Pages, MINIFICADO. O passo build:site gera site-dist/ a
+# partir de site/ (index.html + css/js minificados; privacy/terms ficam legiveis) e e
+# essa pasta que se publica. O configure-pages (enablement: true) LIGA o Pages sozinho
+# na 1a corrida. Cada push a main que altere site/ ou o script de build redeploya.
 
 on:
   push:
     branches: [main]
     paths:
       - "site/**"
+      - "tools/minify-site.mjs"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -31,11 +32,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build minified site (site/ -> site-dist/)
+        run: npm run build:site
       - uses: actions/configure-pages@v5
         with:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: site-dist
       - id: deployment
         uses: actions/deploy-pages@v4
