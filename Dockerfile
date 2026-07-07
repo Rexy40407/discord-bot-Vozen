@@ -1,4 +1,4 @@
-# Voxi — type it, hear it.
+# Vozi — type it, hear it.
 # Imagem Docker multi-stage para deploy hosted (invite-and-go) numa VPS Linux.
 #
 # Notas importantes:

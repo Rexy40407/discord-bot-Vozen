@@ -4,7 +4,7 @@
 
 > type it, hear it.
 
-[![CI](https://github.com/diogoshk3/discord-bot-Voxi/actions/workflows/ci.yml/badge.svg)](https://github.com/diogoshk3/discord-bot-Voxi/actions/workflows/ci.yml)
+[![CI](https://github.com/diogoshk3/discord-bot-Vozi/actions/workflows/ci.yml/badge.svg)](https://github.com/diogoshk3/discord-bot-Vozi/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 ![Docker ready](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
@@ -33,7 +33,7 @@ A par disto: moderação (blocklist, rate-limit, limite de chars, gating por can
 Já tens o Node (>= 20), o binário do Piper e pelo menos um modelo de voz `.onnx`? Então o mínimo para arrancar é:
 
 ```bash
-git clone https://github.com/diogoshk3/discord-bot-Voxi.git vozi && cd vozi
+git clone https://github.com/diogoshk3/discord-bot-Vozi.git vozi && cd vozi
 npm install                       # deps + bindings nativos
 cp .env.example .env              # edita: DISCORD_TOKEN, CLIENT_ID, PIPER_PATH, MODELS_DIR; depois: npm run register && npm run dev
 ```
@@ -353,8 +353,8 @@ docker compose down            # pára e remove o container (os dados persistem 
 
 > **Nota para o registo/verificação no Discord.** O Discord Developer Portal pede um **Privacy Policy URL** e um **Terms of Service URL** (ex.: para *Public Bot* / verificação). Quando este repositório for **público**, os URLs a colar nesses campos são os ficheiros aqui no repo:
 >
-> - Privacy Policy URL: `https://github.com/diogoshk3/discord-bot-Voxi/blob/main/PRIVACY.md`
-> - Terms of Service URL: `https://github.com/diogoshk3/discord-bot-Voxi/blob/main/TERMS.md`
+> - Privacy Policy URL: `https://github.com/diogoshk3/discord-bot-Vozi/blob/main/PRIVACY.md`
+> - Terms of Service URL: `https://github.com/diogoshk3/discord-bot-Vozi/blob/main/TERMS.md`
 >
 > O repositório está **privado** por agora, por isso estes links só ficam acessíveis (e válidos para o Discord) depois de o tornares público. Antes de publicar, preenche o campo de contacto/responsável no fim de `PRIVACY.md`.
 
