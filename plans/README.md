@@ -19,7 +19,7 @@ Repo verification baseline at planning time: `npm run build` (tsc) exit 0;
 | 004 | Security hardening trio (vote webhook secret · gate guild `/redeem` · scrub error webhook) | P1 | S | 003* | DONE |
 | 005 | Typecheck the test suite + `engines` field | P1 | S | — | DONE |
 | 006 | `CLAUDE.md` + `.env.example` in English | P2 | S | — | DONE |
-| 007 | Pin the Python clone-sidecar dependencies | P2 | S | — | TODO |
+| 007 | Pin the Python clone-sidecar dependencies | P2 | S | — | DONE |
 | 008 | AudioCache: size counter instead of per-synthesis directory scan | P2 | S | — | TODO |
 | 009 | gTTS: bounded-concurrency chunk fetch (cap 3) | P2 | S-M | — | TODO |
 | 010 | Hot-path store cache (~10 SQLite reads/message → memory) | P1 | M | — | TODO |

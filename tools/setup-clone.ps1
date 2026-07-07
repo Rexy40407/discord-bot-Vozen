@@ -25,8 +25,10 @@ if (-not (Test-Path $py)) {
 
 # 3) deps (torch CUDA 12.4 para a RTX 4070 + chatterbox + pillow p/ og-image)
 & $py -m pip install --upgrade pip
-& $py -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
-& $py -m pip install chatterbox-tts pillow
+# Versões PINADAS no ficheiro de requirements: torch/torchaudio resolvem do índice
+# cu124; chatterbox-tts/pillow caem no PyPI via --extra-index-url. Os pins `==`
+# mantêm a resolução determinística (falha alto se um wheel desaparecer).
+& $py -m pip install -r (Join-Path $PSScriptRoot "requirements-clone.txt") --index-url https://download.pytorch.org/whl/cu124 --extra-index-url https://pypi.org/simple
 
 # 4) verificação
 & $py -c "import torch; print('torch', torch.__version__, 'cuda:', torch.cuda.is_available())"
