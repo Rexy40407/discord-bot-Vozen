@@ -90,6 +90,16 @@ export interface Game {
   onMessage(ctx: GameContext, msg: GameMessage): void | Promise<void>;
 }
 
+/**
+ * Opcoes escolhidas no /game play e passadas ao create() do jogo. Bag OPCIONAL: os 14
+ * jogos existentes ignoram-no (create() sem parametros continua a satisfazer a
+ * interface). So o word-chain usa `language` (a lingua da partida).
+ */
+export interface GameStartOptions {
+  /** Codigo de lingua base ('pt'|'en'|'es'|'fr') para jogos multilingues (word-chain). */
+  language?: string;
+}
+
 /** Metadados + fabrica de um jogo, para o registo e o autocomplete do /game. */
 export interface GameDefinition {
   readonly id: string;
@@ -101,8 +111,10 @@ export interface GameDefinition {
   readonly needsVoice: boolean;
   /** Exige Premium (Plus do proprio OU Premium do servidor) para iniciar? Ausente/false = gratis. */
   readonly premium?: boolean;
-  /** Cria uma instancia NOVA da partida. */
-  create(): Game;
+  /** Usa a opcao `language` do /game play? So o word-chain — mostra/filtra o autocomplete. */
+  readonly usesLanguage?: boolean;
+  /** Cria uma instancia NOVA da partida. `opts` vem do /game play (ignorado por quase todos). */
+  create(opts?: GameStartOptions): Game;
 }
 
 /**

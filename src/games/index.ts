@@ -14,6 +14,8 @@ import { hangmanDef } from './hangman';
 import { wordleDef } from './wordle';
 import { tictactoeDef } from './tictactoe';
 import { chessDef } from './chess';
+import { wordChainDef } from './wordChain';
+import { WORDCHAIN_LANGS } from './wordchain/core';
 
 /**
  * Registo de todos os minijogos do /game. Adicionar um jogo novo = criar o ficheiro
@@ -35,7 +37,28 @@ export const GAME_DEFS: readonly GameDefinition[] = [
   wordleDef,
   tictactoeDef,
   chessDef,
+  wordChainDef,
 ];
+
+/** Nome amigável (autónimo) de cada língua jogável do word-chain. */
+const WORDCHAIN_LANG_NAMES: Record<string, string> = {
+  pt: 'Português',
+  en: 'English',
+  es: 'Español',
+  fr: 'Français',
+};
+
+/**
+ * Choices do autocomplete da opção `language` do /game play (só o word-chain a usa).
+ * Lista as línguas latinas suportadas; filtra pelo que o utilizador escreve (nome OU
+ * código). PURA/testável.
+ */
+export function filterWordChainLanguages(query: string): { name: string; value: string }[] {
+  const q = query.trim().toLowerCase();
+  return WORDCHAIN_LANGS.map((code) => ({ name: WORDCHAIN_LANG_NAMES[code] ?? code, value: code }))
+    .filter((c) => c.name.toLowerCase().includes(q) || c.value.includes(q))
+    .slice(0, 25);
+}
 
 /** Procura um jogo pelo id (o value do autocomplete). undefined se nao existir. */
 export function gameById(id: string): GameDefinition | undefined {

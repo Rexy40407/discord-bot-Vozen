@@ -1416,6 +1416,45 @@ export const catalog: Record<string, Entry> = {
   'game.chess.resigned': { en: '🏳️ **{user}** resigned — **{winner}** wins!', pt: '🏳️ **{user}** desistiu — **{winner}** ganhou!' },
   'game.chess.idle': { en: '🕹️ Game ended (nobody playing).', pt: '🕹️ Jogo terminado (ninguém a jogar).' },
 
+  // ── word-chain (cadeia de palavras) ───────────────────────────────────────
+  'game.wordChain.name': { en: 'Word Chain', pt: 'Cadeia de Palavras' },
+  'game.wordChain.descr': {
+    en: 'Turn-based word chain in one language: say a word starting with the last letter of the previous one. 2 lives, no repeats, the clock speeds up. Pick the language with the `language` option.',
+    pt: 'Cadeia de palavras por turnos numa língua: diz uma palavra que comece na última letra da anterior. 2 vidas, sem repetir, e o relógio acelera. Escolhe a língua na opção `language`.',
+  },
+  'game.wordChain.unavailable': {
+    en: "⚠️ Word Chain isn't available in **{lang}** right now (missing word list).",
+    pt: '⚠️ A Cadeia de Palavras não está disponível em **{lang}** de momento (falta a lista de palavras).',
+  },
+  'game.wordChain.lobby': {
+    en: '🔗 **Word Chain** in **{lang}**! Type anything in this channel within **{seconds}s** to join.',
+    pt: '🔗 **Cadeia de Palavras** em **{lang}**! Escreve qualquer coisa neste canal nos próximos **{seconds}s** para entrar.',
+  },
+  'game.wordChain.notEnough': {
+    en: '😴 Not enough players joined (need at least 2). Game cancelled.',
+    pt: '😴 Não entraram jogadores suficientes (mínimo 2). Jogo cancelado.',
+  },
+  'game.wordChain.begin': {
+    en: '🚀 Starting! Players: {players}. Each word must start with the last letter of the one before.',
+    pt: '🚀 A começar! Jogadores: {players}. Cada palavra tem de começar na última letra da anterior.',
+  },
+  'game.wordChain.turn': {
+    en: '**{name}**, your turn! A **{lang}** word starting with **{letter}** — {hearts} · ⏱️ {seconds}s',
+    pt: '**{name}**, é a tua vez! Uma palavra começada por **{letter}** — {hearts} · ⏱️ {seconds}s',
+  },
+  'game.wordChain.accepted': {
+    en: '✅ **{word}** — next letter: **{letter}**',
+    pt: '✅ **{word}** — próxima letra: **{letter}**',
+  },
+  'game.wordChain.bad.letter': { en: '↪️ It must start with **{letter}**.', pt: '↪️ Tem de começar por **{letter}**.' },
+  'game.wordChain.bad.short': { en: '📏 Too short — at least **{min}** letters.', pt: '📏 Curta demais — pelo menos **{min}** letras.' },
+  'game.wordChain.bad.repeated': { en: '🔁 That word was already used.', pt: '🔁 Essa palavra já foi usada.' },
+  'game.wordChain.bad.word': { en: "📖 That's not in the dictionary.", pt: '📖 Não está no dicionário.' },
+  'game.wordChain.bad.latin': { en: '🔤 Only letters A–Z count.', pt: '🔤 Só contam letras de A a Z.' },
+  'game.wordChain.timeout': { en: "⏰ **{name}** ran out of time! {hearts} left.", pt: '⏰ **{name}** ficou sem tempo! Restam {hearts}.' },
+  'game.wordChain.eliminated': { en: '💀 **{name}** is out!', pt: '💀 **{name}** está fora!' },
+  'game.wordChain.winner': { en: '🏆 **{name}** wins the chain! ({chain} words)', pt: '🏆 **{name}** vence a cadeia! ({chain} palavras)' },
+
   // ── /game stats (por-utilizador) ──────────────────────────────────────────
   'game.stats.none': {
     en: "You haven't played any games yet. Try `/game play`!",

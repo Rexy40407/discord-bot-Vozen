@@ -70,7 +70,7 @@ import {
   pickWyr,
   type FunLocale,
 } from '../content/microfun';
-import { GAME_DEFS, gameById, filterGameChoices } from '../games/index';
+import { GAME_DEFS, gameById, filterGameChoices, filterWordChainLanguages } from '../games/index';
 import { getLeaderboard, getUserScore, getUserRank } from '../store/gameScore';
 import { GREET_LANGUAGE_CHOICES, GREET_LOCALES } from '../voice/greeting';
 import { log } from '../logging/logger';
@@ -738,6 +738,14 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             .setNameLocalizations({ 'pt-BR': 'jogo' })
             .setDescription('Which game to play')
             .setRequired(true)
+            .setAutocomplete(true),
+        )
+        .addStringOption((o) =>
+          o
+            .setName('language')
+            .setNameLocalizations({ 'pt-BR': 'idioma' })
+            .setDescription('Language for Word Chain (ignored by other games)')
+            .setRequired(false)
             .setAutocomplete(true),
         ),
     )
@@ -2299,7 +2307,17 @@ async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promis
     }
     // Locale do jogo = o de QUEM inicia (localeForUser), não o da guild — assim um
     // servidor sem /config language joga na língua de quem clicou (ex.: PT).
-    const res = deps.games.start(i.guildId!, i.channelId, def.create(), def.needsVoice, locale);
+    // A opção `language` só é usada pelo word-chain; se omitida, cai no locale de quem
+    // inicia (o resolveLang do jogo mapeia línguas não-suportadas para inglês). Os
+    // outros jogos ignoram opts (create() sem parâmetros continua válido).
+    const chosenLang = i.options.getString('language') ?? undefined;
+    const res = deps.games.start(
+      i.guildId!,
+      i.channelId,
+      def.create({ language: chosenLang ?? locale }),
+      def.needsVoice,
+      locale,
+    );
     if (res === 'already-active') {
       const ch = deps.games.channelOf(i.guildId!) ?? i.channelId;
       await reply(i, t('game.start.alreadyActive', locale, { channel: ch }));
@@ -2576,6 +2594,12 @@ export async function handleAutocomplete(
       return;
     }
     if (focused.name === 'language') {
+      // A opção `language` existe em DOIS comandos: /joke (~34 línguas) e /game play
+      // word-chain (só as 4 línguas latinas com wordlist). Roteamos por comando.
+      if (i.commandName === 'game') {
+        await i.respond(filterWordChainLanguages(focused.value));
+        return;
+      }
       await i.respond(filterJokeLanguages(focused.value));
       return;
     }
