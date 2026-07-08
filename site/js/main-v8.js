@@ -150,13 +150,18 @@
   counters.forEach((c) => cio.observe(c));
 
   /* ── language marquee ────────────────────────────────── */
+  // Vitrina de línguas (marquee): cada uma NA SUA PRÓPRIA LÍNGUA (autónimo). ~35, a par
+  // do "35 languages" anunciado no site. É só showcase — não é a lista funcional do bot.
   const LANGS = [
-    ["🇵🇹", "Português"], ["🇬🇧", "English"], ["🇪🇸", "Español"], ["🇫🇷", "Français"],
+    ["🇬🇧", "English"], ["🇵🇹", "Português"], ["🇪🇸", "Español"], ["🇫🇷", "Français"],
     ["🇩🇪", "Deutsch"], ["🇮🇹", "Italiano"], ["🇳🇱", "Nederlands"], ["🇵🇱", "Polski"],
     ["🇷🇺", "Русский"], ["🇺🇦", "Українська"], ["🇹🇷", "Türkçe"], ["🇸🇪", "Svenska"],
-    ["🇯🇵", "日本語"], ["🇨🇳", "中文"], ["🇸🇦", "العربية"], ["🇬🇷", "Ελληνικά"],
-    ["🇨🇿", "Čeština"], ["🇩🇰", "Dansk"], ["🇫🇮", "Suomi"], ["🇷🇴", "Română"],
-    ["🇭🇺", "Magyar"], ["🇻🇳", "Tiếng Việt"], ["🇮🇸", "Íslenska"], ["🇬🇪", "ქართული"],
+    ["🇯🇵", "日本語"], ["🇰🇷", "한국어"], ["🇨🇳", "中文"], ["🇸🇦", "العربية"],
+    ["🇬🇷", "Ελληνικά"], ["🇨🇿", "Čeština"], ["🇩🇰", "Dansk"], ["🇫🇮", "Suomi"],
+    ["🇷🇴", "Română"], ["🇭🇺", "Magyar"], ["🇻🇳", "Tiếng Việt"], ["🇮🇸", "Íslenska"],
+    ["🇬🇪", "ქართული"], ["🇮🇷", "فارسی"], ["🇮🇳", "हिन्दी"], ["🇹🇭", "ไทย"],
+    ["🇮🇩", "Bahasa Indonesia"], ["🇷🇸", "Српски"], ["🇸🇰", "Slovenčina"], ["🇸🇮", "Slovenščina"],
+    ["🇱🇻", "Latviešu"], ["🇰🇿", "Қазақ тілі"], ["🇧🇬", "Български"],
   ];
   const track = $("#marqueeTrack");
   if (track) {
