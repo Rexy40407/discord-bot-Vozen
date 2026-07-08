@@ -5,6 +5,16 @@
    oscilloscope waveform in the hero.
    ═══════════════════════════════════════════════════════════ */
 
+/* Bandeiras cross-platform: o Windows não tem glifos de bandeira no font de emoji
+   (🇵🇹 aparece como "PT"). Este font só cobre os regional-indicators (U+1F1E6–1F1FF),
+   por isso é usado SÓ para as bandeiras — o resto do texto nunca lhe toca. */
+@font-face {
+  font-family: "Twemoji Country Flags";
+  src: url("../assets/fonts/TwemojiCountryFlags.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+1F1E6-1F1FF;
+}
+
 :root {
   --bg-0: #05060f;
   --bg-1: #0a0c1a;
@@ -30,7 +40,10 @@
   --text-2: #6b7192;
 
   --f-display: "Unbounded", system-ui, sans-serif;
-  --f-body: "Outfit", system-ui, sans-serif;
+  /* "Twemoji Country Flags" primeiro: o Windows não desenha emojis de bandeira
+     (mostra o código "PT"/"GB"). Este font (unicode-range só dos regional-indicators)
+     fornece os glifos das bandeiras; TODO o resto do texto cai no Outfit. Seguro. */
+  --f-body: "Twemoji Country Flags", "Outfit", system-ui, sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --wrap: 1160px;
