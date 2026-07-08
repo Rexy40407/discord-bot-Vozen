@@ -9,9 +9,10 @@ import {
   mapKofiToGrant,
   PREMIUM_PASS_SEATS,
 } from '../src/premium/kofi';
-import { applyKofiGrant } from '../src/premium/kofiWebhook';
+import { applyKofiGrant, resolveKofiDiscordId } from '../src/premium/kofiWebhook';
 
 const DID = '123456789012345678'; // 18 dígitos
+const EMAIL = 'buyer@example.com';
 
 function kofiJson(over: Record<string, unknown>): string {
   return JSON.stringify({
@@ -20,6 +21,7 @@ function kofiJson(over: Record<string, unknown>): string {
     message: `Discord: ${DID}`,
     is_subscription_payment: true,
     tier_name: 'Vozen Premium — Monthly',
+    email: EMAIL,
     ...over,
   });
 }
@@ -128,5 +130,48 @@ describe('kofi — aplicação do grant no store', () => {
     expect(g.discordId).toBeNull();
     expect(applyKofiGrant(db, g, now)).toBeNull();
     expect(getPremiumPass(db, DID)).toBeNull();
+  });
+});
+
+describe('kofi — renovações (email -> Discord ID)', () => {
+  let db: Database.Database;
+  const now = 1_000_000;
+  beforeEach(() => {
+    db = initDb(':memory:');
+  });
+  afterEach(() => {
+    db.close();
+  });
+
+  it('parse traz o email do comprador', () => {
+    expect(parseKofiPayload(kofiJson({}))?.email).toBe(EMAIL);
+  });
+
+  it('1.ª compra: Discord ID da mensagem é memorizado por email', () => {
+    const e = parseKofiPayload(kofiJson({}))!;
+    const g = mapKofiToGrant(e, now)!;
+    expect(resolveKofiDiscordId(db, e, g, now)).toBe(DID);
+  });
+
+  it('renovação SEM mensagem: reencontra o Discord ID pelo email', () => {
+    // 1.ª compra memoriza
+    const e1 = parseKofiPayload(kofiJson({}))!;
+    resolveKofiDiscordId(db, e1, mapKofiToGrant(e1, now)!, now);
+    // renovação: sem Discord ID na mensagem, mesmo email
+    const e2 = parseKofiPayload(kofiJson({ message: 'Renewal' }))!;
+    const g2 = mapKofiToGrant(e2, now)!;
+    expect(g2.discordId).toBeNull(); // a mensagem já não o traz
+    const resolvedId = resolveKofiDiscordId(db, e2, g2, now);
+    expect(resolvedId).toBe(DID); // ...mas o email reencontra-o
+    // e o grant aplica-se e estende o passe
+    const exp = applyKofiGrant(db, { ...g2, discordId: resolvedId }, now + 30 * 86_400_000);
+    expect(exp).not.toBeNull();
+    expect(getPremiumPass(db, DID)).not.toBeNull();
+  });
+
+  it('renovação de email desconhecido -> null (cai no grant manual)', () => {
+    const e = parseKofiPayload(kofiJson({ message: 'no id', email: 'stranger@x.com' }))!;
+    const g = mapKofiToGrant(e, now)!;
+    expect(resolveKofiDiscordId(db, e, g, now)).toBeNull();
   });
 });

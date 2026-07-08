@@ -6,8 +6,19 @@
 
 import { createServer, type Server } from 'node:http';
 import type Database from 'better-sqlite3';
-import { grantGuildPass, grantUserPremium } from '../store/premium';
-import { parseKofiPayload, verifyKofiToken, mapKofiToGrant, type KofiGrant } from './kofi';
+import {
+  grantGuildPass,
+  grantUserPremium,
+  rememberKofiSupporter,
+  lookupKofiSupporter,
+} from '../store/premium';
+import {
+  parseKofiPayload,
+  verifyKofiToken,
+  mapKofiToGrant,
+  type KofiEvent,
+  type KofiGrant,
+} from './kofi';
 
 export interface KofiWebhookDeps {
   db: Database.Database;
@@ -31,6 +42,23 @@ export function applyKofiGrant(
   return grant.plan === 'plus'
     ? grantUserPremium(db, grant.discordId, grant.days, 'kofi', now)
     : grantGuildPass(db, grant.discordId, grant.seats, grant.days, 'kofi', now);
+}
+
+/**
+ * Resolve o Discord ID de um evento: da MENSAGEM (1.ª compra) — e memoriza-o por email —
+ * ou, se a mensagem não o trouxer (RENOVAÇÕES não reenviam a nota), pelo EMAIL guardado.
+ */
+export function resolveKofiDiscordId(
+  db: Database.Database,
+  event: KofiEvent,
+  grant: KofiGrant,
+  now: number,
+): string | null {
+  if (grant.discordId) {
+    if (event.email) rememberKofiSupporter(db, event.email, grant.discordId, now);
+    return grant.discordId;
+  }
+  return event.email ? lookupKofiSupporter(db, event.email) : null;
 }
 
 /** Arranca o servidor de webhook (ou no-op se não houver token). Devolve o Server ou null. */
@@ -75,7 +103,12 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
           res.writeHead(200).end('ok');
           return;
         }
-        const exp = applyKofiGrant(db, grant, now());
+        // Discord ID: da mensagem (1.ª compra, memorizada por email) ou pelo email (renovação).
+        const resolved: KofiGrant = {
+          ...grant,
+          discordId: resolveKofiDiscordId(db, event, grant, now()),
+        };
+        const exp = applyKofiGrant(db, resolved, now());
         if (exp == null) {
           // Comprou mas não pôs (ou pôs mal) o Discord ID → resolve-se à mão com /vozengrant.
           logError(
@@ -85,7 +118,7 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
           );
         } else {
           logInfo(
-            `[kofi] grant ${grant.plan} ${grant.days}d -> ${grant.discordId} (fim ${new Date(exp).toISOString()}).`,
+            `[kofi] grant ${resolved.plan} ${resolved.days}d -> ${resolved.discordId} (fim ${new Date(exp).toISOString()}).`,
           );
         }
         res.writeHead(200).end('ok');

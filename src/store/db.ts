@@ -193,6 +193,15 @@ export function initDb(path: string): Database.Database {
       );
       CREATE INDEX IF NOT EXISTS idx_pass_activation_guild
         ON premium_pass_activation (guild_id);
+
+      -- Mapa email->Discord ID para o webhook do Ko-fi. O comprador escreve o Discord ID na
+      -- 1.ª compra (é guardado aqui); nas RENOVAÇÕES o Ko-fi já não reenvia a mensagem, por
+      -- isso reencontramos o Discord ID pelo email do pagamento. Só o mais recente por email.
+      CREATE TABLE IF NOT EXISTS kofi_supporter (
+        email      TEXT PRIMARY KEY,
+        discord_id TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
     `);
 
     // Migracoes idempotentes de guild_config GUIADAS PELO DESCRITOR

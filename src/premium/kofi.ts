@@ -23,6 +23,8 @@ export interface KofiEvent {
   /** Nomes/códigos dos itens de loja concatenados, para casar palavras-chave (anual, plus…). */
   shopItemsText: string;
   fromName: string | null;
+  /** Email do comprador (do Ko-fi). Chave para reencontrar o Discord ID nas renovações. */
+  email: string | null;
   amount: string | null;
   transactionId: string | null;
 }
@@ -64,6 +66,7 @@ export function parseKofiPayload(raw: string): KofiEvent | null {
       tierName: o.tier_name == null ? null : String(o.tier_name),
       shopItemsText,
       fromName: o.from_name == null ? null : String(o.from_name),
+      email: o.email == null ? null : String(o.email),
       amount: o.amount == null ? null : String(o.amount),
       transactionId: o.kofi_transaction_id == null ? null : String(o.kofi_transaction_id),
     };
