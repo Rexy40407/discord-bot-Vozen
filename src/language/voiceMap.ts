@@ -153,7 +153,7 @@ export const LOCALE_NAMES: Record<string, string> = {
   no_NO: 'Norsk',
   pl_PL: 'Polski',
   pt_BR: 'Português', // pedido do Diogo: a única voz PT (Brasil) mostra-se como "Português"
-  pt_PT: 'Português (Portugal)', // filtrado do availableModels (ver EXCLUDED_MODELS em index.ts)
+  pt_PT: 'Português (Portugal)', // reposto 2026-07-08 (ver EXCLUDED_MODELS vazio em index.ts)
   ro_RO: 'Română',
   ru_RU: 'Русский',
   sk_SK: 'Slovenčina',

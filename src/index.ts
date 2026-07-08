@@ -46,10 +46,12 @@ async function main(): Promise<void> {
   const db = initDb(config.dbPath);
   const cache = new AudioCache(path.join(path.dirname(config.dbPath), 'audio-cache'));
 
-  // Modelos DELIBERADAMENTE excluidos das opcoes/deteccao. Pedido do Diogo: uma so
-  // voz portuguesa — a do Brasil (rotulada "Português"). O .onnx fica no disco, por
-  // isso e REVERSIVEL: basta remover a entrada daqui para o europeu (tugao) voltar.
-  const EXCLUDED_MODELS = new Set(['pt_PT-tugao-medium']);
+  // Modelos DELIBERADAMENTE excluidos das opcoes/deteccao. VAZIO desde 2026-07-08:
+  // o Diogo pediu para REPOR o Português europeu (pt_PT-tugao-medium), por isso deixa
+  // de estar escondido — passa a aparecer como "Português (Portugal)" a par do
+  // "Português" (Brasil). O mecanismo fica de pe: basta juntar um id a este Set para
+  // voltar a esconder um modelo das opcoes (o .onnx continua sempre no disco).
+  const EXCLUDED_MODELS = new Set<string>();
   const piperModels = discoverModels(config.modelsDir).filter((m) => !EXCLUDED_MODELS.has(m));
   if (piperModels.length === 0) {
     log.warn(
