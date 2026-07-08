@@ -2,19 +2,12 @@ import type Database from 'better-sqlite3';
 
 // Vozen Premium / Plus: assinaturas baseadas em EXPIRY (unix ms). Sem linha ou expirado =>
 // Free. As features NOVAS (efeitos completos, soundboard, etc.) consultam isGuildPremium/
-// isUserPremium; nada do que já é grátis passa a pago. Códigos de resgate (Ko-fi/Patreon)
-// são gerados offline (tools/premium-codes.ts) e resgatados 1x com /redeem.
+// isUserPremium; nada do que já é grátis passa a pago. As compras chegam pelo webhook do
+// Ko-fi (source 'kofi'); o dono também pode conceder à mão com /vozengrant (source 'manual').
 
 export type PremiumKind = 'guild' | 'user';
 
 const DAY_MS = 86_400_000;
-
-export interface RedeemResult {
-  status: 'ok' | 'invalid' | 'used';
-  kind?: PremiumKind;
-  days?: number;
-  expiresAt?: number;
-}
 
 export function isGuildPremium(db: Database.Database, guildId: string, now: number): boolean {
   // Premium DIRETO do servidor (redeem/discord/manual)...
@@ -327,73 +320,6 @@ export function syncDiscordEntitlements(
       usersActive: activeUsers.size,
       revoked: staleGuilds.length + staleUsers.length,
     };
-  });
-  return tx();
-}
-
-/** Cria um código de resgate (gerado offline). Lança se o código já existir (PK). */
-export function createRedeemCode(
-  db: Database.Database,
-  code: string,
-  kind: PremiumKind,
-  days: number,
-  now: number,
-): void {
-  db.prepare(
-    `INSERT INTO redeem_code (code, kind, days, used_by, used_at, created_at)
-     VALUES (?, ?, ?, NULL, NULL, ?)`,
-  ).run(code, kind, days, now);
-}
-
-/**
- * Espreita o TIPO de um código SEM o consumir — para o /redeem poder exigir
- * permissão de gestão ANTES de gastar um código 'guild'. O tipo de um código é
- * imutável, por isso este pre-check não tem corrida com o redeemCode.
- * Devolve null se o código não existir.
- */
-export function peekRedeemCodeKind(db: Database.Database, code: string): PremiumKind | null {
-  const row = db.prepare('SELECT kind FROM redeem_code WHERE code = ?').get(code) as
-    { kind: string } | undefined;
-  if (!row) return null;
-  return row.kind === 'guild' ? 'guild' : 'user';
-}
-
-/**
- * Resgata um código: verifica-e-marca-usado + concede premium NUMA ÚNICA TRANSAÇÃO — sem
- * isto um crash a meio consumia o código sem conceder, ou dois /redeem simultâneos do
- * mesmo código passavam ambos o check de "não usado". Um código 'guild' concede à guild
- * (target.guildId); 'user' concede ao invocador (target.userId). Devolve o resultado.
- */
-export function redeemCode(
-  db: Database.Database,
-  code: string,
-  target: { guildId?: string; userId: string },
-  now: number,
-): RedeemResult {
-  const tx = db.transaction((): RedeemResult => {
-    const row = db
-      .prepare('SELECT kind, days, used_by FROM redeem_code WHERE code = ?')
-      .get(code) as { kind: string; days: number; used_by: string | null } | undefined;
-    if (!row) return { status: 'invalid' };
-    if (row.used_by) return { status: 'used' };
-
-    const kind: PremiumKind = row.kind === 'guild' ? 'guild' : 'user';
-    // Código 'guild' precisa de uma guild-alvo; se faltar (ex. resgatado fora de servidor),
-    // trata-se como inválido em vez de rebentar (o /redeem é guild-only, por isso raro).
-    if (kind === 'guild' && !target.guildId) return { status: 'invalid' };
-
-    const usedBy = kind === 'guild' ? (target.guildId as string) : target.userId;
-    db.prepare('UPDATE redeem_code SET used_by = ?, used_at = ? WHERE code = ?').run(
-      usedBy,
-      now,
-      code,
-    );
-
-    const expiresAt =
-      kind === 'guild'
-        ? grantGuildPremium(db, target.guildId as string, row.days, 'redeem', now)
-        : grantUserPremium(db, target.userId, row.days, 'redeem', now);
-    return { status: 'ok', kind, days: row.days, expiresAt };
   });
   return tx();
 }

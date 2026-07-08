@@ -85,7 +85,7 @@
     "price.plus.2": "Clonez votre propre voix avec /voice clone",
     "price.plus.3": "Vos avantages vous suivent sur tous les serveurs",
     "price.plus.4": "File de synthèse prioritaire",
-    "price.plus.note": "€19.90/an (2 mois offerts) · à activer avec /redeem",
+    "price.plus.note": "€18.99/an (2 mois offerts) · à activer avec /premium activate",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
     "price.pro.per": "/ mois · 2 serveurs",
@@ -94,7 +94,7 @@
     "price.pro.2": "Clonage de voix pour tout le serveur",
     "price.pro.3": "24/7 dans le salon vocal (bientôt disponible)",
     "price.pro.4": "Limites plus élevées et file prioritaire",
-    "price.pro.note": "€40/an (2 mois offerts) · à activer sur Discord avec /redeem",
+    "price.pro.note": "€37.99/an (2 mois offerts) · à activer sur Discord avec /premium activate",
     "faq.eyebrow": "FAQ",
     "faq.title": "Vos questions, nos réponses",
     "finale.title": "Donnez une voix à votre serveur.",
@@ -120,8 +120,7 @@
       ["/invite", "Obtenir le lien d'invitation"],
       ["/vote", "Voter pour Vozen sur top.gg"],
       ["/uptime", "Depuis combien de temps Vozen est en ligne"],
-      ["/premium", "Le statut Premium de votre serveur et le vôtre"],
-      ["/redeem", "Activer un code Premium"]
+      ["/premium", "Le statut Premium de votre serveur et le vôtre"]
     ],
     "voice": [
       ["/voice set", "Choisir votre voix, langue et moteur"],
@@ -160,7 +159,7 @@
     ],
     [
       "Que comprend Premium ?",
-      "Les 8 effets de voix (grave, démon, radio, sous l'eau…), avec des voix neuronales premium et le mode 24/7 en appel bientôt disponible. €3.99/mois ou €40/an par serveur, ou Vozen Plus (€1.99/mois) pour des avantages personnels qui vous suivent d'un serveur à l'autre. Activez vos codes avec /redeem."
+      "Les 8 effets de voix (grave, démon, radio, sous l'eau…), avec des voix neuronales premium et le mode 24/7 en appel bientôt disponible. €3.99/mois ou €37.99/an par serveur, ou Vozen Plus (€1.99/mois) pour des avantages personnels qui vous suivent d'un serveur à l'autre. Activez vos codes avec /premium activate."
     ],
     [
       "Comment ajouter Vozen à mon serveur ?",

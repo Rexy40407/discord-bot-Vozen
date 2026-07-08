@@ -85,7 +85,7 @@
     "price.plus.2": "Klone deine eigene Stimme mit /voice clone",
     "price.plus.3": "Deine Vorteile folgen dir auf jeden Server",
     "price.plus.4": "Priorität in der Synthese-Warteschlange",
-    "price.plus.note": "€19.90/Jahr (2 Monate gratis) · einlösen mit /redeem",
+    "price.plus.note": "€18.99/Jahr (2 Monate gratis) · einlösen mit /premium activate",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
     "price.pro.per": "/ Monat · 2 Server",
@@ -94,7 +94,7 @@
     "price.pro.2": "Stimmenklon für den ganzen Server",
     "price.pro.3": "24/7 im Sprachkanal (bald verfügbar)",
     "price.pro.4": "Höhere Limits & Priorität in der Warteschlange",
-    "price.pro.note": "€40/Jahr (2 Monate gratis) · in Discord einlösen mit /redeem",
+    "price.pro.note": "€37.99/Jahr (2 Monate gratis) · in Discord einlösen mit /premium activate",
     "faq.eyebrow": "FAQ",
     "faq.title": "Fragen, beantwortet",
     "finale.title": "Gib deinem Server eine Stimme.",
@@ -120,8 +120,7 @@
       ["/invite", "Den Einladungslink holen"],
       ["/vote", "Für Vozen auf top.gg abstimmen"],
       ["/uptime", "Wie lange Vozen schon online ist"],
-      ["/premium", "Premium-Status deines Servers & von dir"],
-      ["/redeem", "Einen Premium-Code einlösen"]
+      ["/premium", "Premium-Status deines Servers & von dir"]
     ],
     "voice": [
       ["/voice set", "Stimme, Sprache & Engine wählen"],
@@ -160,7 +159,7 @@
     ],
     [
       "Was ist in Premium enthalten?",
-      "Alle 8 Stimmeneffekte (tief, Dämon, Radio, unter Wasser …), dazu Premium-Neuronalstimmen und 24/7-Modus im Call in Kürze. €3.99/Monat oder €40/Jahr pro Server, oder Vozen Plus (€1.99/Monat) für persönliche Vorteile, die dir über Server hinweg folgen. Codes einlösen mit /redeem."
+      "Alle 8 Stimmeneffekte (tief, Dämon, Radio, unter Wasser …), dazu Premium-Neuronalstimmen und 24/7-Modus im Call in Kürze. €3.99/Monat oder €37.99/Jahr pro Server, oder Vozen Plus (€1.99/Monat) für persönliche Vorteile, die dir über Server hinweg folgen. Codes einlösen mit /premium activate."
     ],
     [
       "Wie füge ich Vozen zu meinem Server hinzu?",

@@ -33,7 +33,6 @@ import {
   handleBotstats,
   handleTopSpeakers,
   handlePremium,
-  handleRedeem,
   handleVozenGrant,
 } from './handlers/meta';
 import { localeFor } from './helpers';
@@ -171,7 +170,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .setName('topspeakers')
     .setDescription('See who Vozen has read the most — and daily streaks')
     .toJSON(),
-  // /premium — estado/montra + gerir licenças do passe. /redeem — resgatar um código.
+  // /premium — estado/montra + gerir licenças do passe (info/activate/deactivate).
   new SlashCommandBuilder()
     .setName('premium')
     .setDescription('Vozen Premium: your status, or use/free a licence on this server')
@@ -187,18 +186,6 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       s
         .setName('deactivate')
         .setDescription('Free this server’s Premium licence to use it elsewhere'),
-    )
-    .toJSON(),
-  new SlashCommandBuilder()
-    .setName('redeem')
-    .setDescription('Redeem a Vozen Premium/Plus code')
-    .addStringOption((o) =>
-      o
-        .setName('code')
-        .setNameLocalizations({ 'pt-BR': 'codigo' })
-        .setDescription('Your redeem code (VOZEN-XXXX-XXXX-XXXX)')
-        .setRequired(true)
-        .setMaxLength(40),
     )
     .toJSON(),
   new SlashCommandBuilder()
@@ -963,8 +950,6 @@ export async function handleInteraction(
         return await handlePremium(i, deps);
       case 'vozengrant':
         return await handleVozenGrant(i, deps);
-      case 'redeem':
-        return await handleRedeem(i, deps);
       case 'game':
         return await handleGame(i, deps);
       case 'voice':

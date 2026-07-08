@@ -85,7 +85,7 @@
     "price.plus.2": "/voice clone ile kendi sesini klonla",
     "price.plus.3": "Ayrıcalıkların her sunucuda seninle gelir",
     "price.plus.4": "Öncelikli sentez kuyruğu",
-    "price.plus.note": "€19.90/yıl (2 ay ücretsiz) · /redeem ile kullan",
+    "price.plus.note": "€18.99/yıl (2 ay ücretsiz) · /premium activate ile kullan",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
     "price.pro.per": "/ ay · 2 sunucu",
@@ -94,7 +94,7 @@
     "price.pro.2": "Tüm sunucu için ses klonlama",
     "price.pro.3": "Ses kanalında 7/24 (yakında)",
     "price.pro.4": "Daha yüksek limitler ve öncelikli kuyruk",
-    "price.pro.note": "€40/yıl (2 ay ücretsiz) · Discord'da /redeem ile kullan",
+    "price.pro.note": "€37.99/yıl (2 ay ücretsiz) · Discord'da /premium activate ile kullan",
     "faq.eyebrow": "SSS",
     "faq.title": "Sorular, yanıtlandı",
     "finale.title": "Sunucuna bir ses ver.",
@@ -120,8 +120,7 @@
       ["/invite", "Davet bağlantısını al"],
       ["/vote", "top.gg'de Vozen'e oy ver"],
       ["/uptime", "Vozen ne kadardır çevrimiçi"],
-      ["/premium", "Sunucunun ve senin Premium durumun"],
-      ["/redeem", "Bir Premium kodu kullan"]
+      ["/premium", "Sunucunun ve senin Premium durumun"]
     ],
     "voice": [
       ["/voice set", "Sesini, dilini ve motorunu seç"],
@@ -160,7 +159,7 @@
     ],
     [
       "Premium neleri içerir?",
-      "8 ses efektinin tamamı (kalın, iblis, radyo, su altı…), premium nöral seslerle ve yolda olan 7/24 arama içi mod. Sunucu başına €3.99/ay ya da €40/yıl veya sunucular arasında seninle gelen kişisel ayrıcalıklar için Vozen Plus (€1.99/ay). Kodları /redeem ile kullan."
+      "8 ses efektinin tamamı (kalın, iblis, radyo, su altı…), premium nöral seslerle ve yolda olan 7/24 arama içi mod. Sunucu başına €3.99/ay ya da €37.99/yıl veya sunucular arasında seninle gelen kişisel ayrıcalıklar için Vozen Plus (€1.99/ay). Kodları /premium activate ile kullan."
     ],
     [
       "Vozen'i sunucuma nasıl eklerim?",

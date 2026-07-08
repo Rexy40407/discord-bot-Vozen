@@ -520,31 +520,6 @@ export const catalog: Record<string, Entry> = {
     en: '✅ Granted <@{user}> **Vozen Plus** for **{days}** days — expires {date}.',
     pt: '✅ Concedido a <@{user}> o **Vozen Plus** por **{days}** dias — termina {date}.',
   },
-  'redeem.ok': {
-    en: '✅ Code redeemed! **{target}** now has Vozen Premium until {date}.',
-    pt: '✅ Código resgatado! **{target}** tem agora Vozen Premium até {date}.',
-  },
-  'redeem.invalid': {
-    en: "That code doesn't exist. Check for typos (format: VOZEN-XXXX-XXXX-XXXX).",
-    pt: 'Esse código não existe. Verifica se está bem escrito (formato: VOZEN-XXXX-XXXX-XXXX).',
-  },
-  'redeem.used': {
-    en: 'That code has already been used.',
-    pt: 'Esse código já foi usado.',
-  },
-  'redeem.needManageGuild': {
-    en: 'This code grants **server** Premium — only members with the **Manage Server** permission can redeem it here. Ask an admin, or redeem a personal (Plus) code instead.',
-    pt: 'Este código dá Premium de **servidor** — só membros com a permissão **Gerir Servidor** o podem resgatar aqui. Pede a um admin, ou resgata antes um código pessoal (Plus).',
-  },
-  'redeem.targetServer': {
-    en: 'This server',
-    pt: 'Este servidor',
-  },
-  'redeem.targetYou': {
-    en: 'You',
-    pt: 'Tu',
-  },
-
   // ── /voice abbrev (abreviaturas pessoais, globais) ─────────────────────────
   'voice.abbrev.added': {
     en: 'Got it — {term} will be read as {replacement}.',

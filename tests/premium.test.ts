@@ -7,9 +7,6 @@ import {
   getGuildPremiumExpiry,
   grantGuildPremium,
   grantUserPremium,
-  createRedeemCode,
-  redeemCode,
-  peekRedeemCodeKind,
 } from '../src/store/premium';
 
 const G = 'guild-1';
@@ -59,64 +56,5 @@ describe('premium — estado por expiry', () => {
     grantUserPremium(db, U, 30, 'test', now);
     expect(isUserPremium(db, U, now + 1)).toBe(true);
     expect(isGuildPremium(db, G, now + 1)).toBe(false);
-  });
-});
-
-describe('premium — códigos de resgate', () => {
-  let db: Database.Database;
-  beforeEach(() => {
-    db = initDb(':memory:');
-  });
-  afterEach(() => {
-    db.close();
-  });
-
-  it('código de guild: resgata, concede à guild e marca-se usado', () => {
-    const now = 1_000_000;
-    createRedeemCode(db, 'VOZEN-AAAA', 'guild', 30, now);
-    const res = redeemCode(db, 'VOZEN-AAAA', { guildId: G, userId: U }, now);
-    expect(res).toEqual({ status: 'ok', kind: 'guild', days: 30, expiresAt: now + 30 * DAY });
-    expect(isGuildPremium(db, G, now + 1)).toBe(true);
-  });
-
-  it('código de user: concede ao invocador, não à guild', () => {
-    const now = 1_000_000;
-    createRedeemCode(db, 'VOZEN-BBBB', 'user', 30, now);
-    const res = redeemCode(db, 'VOZEN-BBBB', { guildId: G, userId: U }, now);
-    expect(res.status).toBe('ok');
-    expect(res.kind).toBe('user');
-    expect(isUserPremium(db, U, now + 1)).toBe(true);
-    expect(isGuildPremium(db, G, now + 1)).toBe(false);
-  });
-
-  it('código inexistente -> invalid', () => {
-    expect(redeemCode(db, 'VOZEN-NOPE', { guildId: G, userId: U }, 1).status).toBe('invalid');
-  });
-
-  it('segundo resgate do MESMO código -> used (check-and-set numa transação)', () => {
-    const now = 1_000_000;
-    createRedeemCode(db, 'VOZEN-CCCC', 'guild', 30, now);
-    expect(redeemCode(db, 'VOZEN-CCCC', { guildId: G, userId: U }, now).status).toBe('ok');
-    expect(redeemCode(db, 'VOZEN-CCCC', { guildId: G, userId: U }, now).status).toBe('used');
-  });
-
-  it('código de guild sem guild-alvo -> invalid (não rebenta)', () => {
-    const now = 1_000_000;
-    createRedeemCode(db, 'VOZEN-DDDD', 'guild', 30, now);
-    const res = redeemCode(db, 'VOZEN-DDDD', { userId: U }, now);
-    expect(res.status).toBe('invalid');
-    // e o código NÃO foi consumido (continua resgatável com uma guild)
-    expect(redeemCode(db, 'VOZEN-DDDD', { guildId: G, userId: U }, now).status).toBe('ok');
-  });
-
-  it('SEC-02: peekRedeemCodeKind devolve o tipo, null para inexistente, e NÃO consome', () => {
-    const now = 1_000_000;
-    createRedeemCode(db, 'VOZEN-GK', 'guild', 30, now);
-    createRedeemCode(db, 'VOZEN-UK', 'user', 30, now);
-    expect(peekRedeemCodeKind(db, 'VOZEN-GK')).toBe('guild');
-    expect(peekRedeemCodeKind(db, 'VOZEN-UK')).toBe('user');
-    expect(peekRedeemCodeKind(db, 'VOZEN-NOPE')).toBeNull();
-    // espreitar NÃO consome: o resgate a seguir ainda funciona.
-    expect(redeemCode(db, 'VOZEN-GK', { guildId: G, userId: U }, now).status).toBe('ok');
   });
 });

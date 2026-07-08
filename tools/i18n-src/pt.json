@@ -85,7 +85,7 @@
     "price.plus.2": "Clona a tua própria voz com /voice clone",
     "price.plus.3": "As tuas vantagens seguem-te em todos os servidores",
     "price.plus.4": "Fila de síntese prioritária",
-    "price.plus.note": "€19,90/ano (2 meses grátis) · resgata com /redeem",
+    "price.plus.note": "€18,99/ano (poupa ~20%) · compra no Ko-fi",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
     "price.pro.per": "/ mês · 2 servidores",
@@ -94,7 +94,7 @@
     "price.pro.2": "Clone de voz para todo o servidor",
     "price.pro.3": "24/7 no canal de voz (em breve)",
     "price.pro.4": "Limites maiores e fila prioritária",
-    "price.pro.note": "€40/ano (2 meses grátis) · resgata no Discord com /redeem",
+    "price.pro.note": "€37,99/ano (poupa ~20%) · compra no Ko-fi",
     "faq.eyebrow": "FAQ",
     "faq.title": "Perguntas, respondidas",
     "finale.title": "Dá uma voz ao teu servidor.",
@@ -120,8 +120,7 @@
       ["/invite", "Obtém o link de convite"],
       ["/vote", "Vota no Vozen no top.gg"],
       ["/uptime", "Há quanto tempo o Vozen está online"],
-      ["/premium", "Estado Premium do servidor e teu"],
-      ["/redeem", "Resgata um código Premium"]
+      ["/premium", "Estado Premium do servidor e teu"]
     ],
     "voice": [
       ["/voice set", "Escolhe a tua voz, língua e motor"],
@@ -160,7 +159,7 @@
     ],
     [
       "O que inclui o Premium?",
-      "Os 8 efeitos de voz (grave, demónio, rádio, debaixo de água…), com vozes neurais premium e modo 24/7 na call a caminho. €3,99/mês ou €40/ano por servidor, ou Vozen Plus (€1,99/mês) para vantagens pessoais que te seguem entre servidores. Resgata códigos com /redeem."
+      "Os 8 efeitos de voz (grave, demónio, rádio, debaixo de água…), com vozes neurais premium e modo 24/7 na call a caminho. €3,99/mês ou €37.99/ano por servidor, ou Vozen Plus (€1,99/mês) para vantagens pessoais que te seguem entre servidores. Resgata códigos com /premium activate."
     ],
     [
       "Como adiciono o Vozen ao meu servidor?",

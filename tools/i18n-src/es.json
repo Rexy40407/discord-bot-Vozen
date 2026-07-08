@@ -85,7 +85,7 @@
     "price.plus.2": "Clona tu propia voz con /voice clone",
     "price.plus.3": "Tus ventajas te acompañan en cada servidor",
     "price.plus.4": "Cola de síntesis prioritaria",
-    "price.plus.note": "€19.90/año (2 meses gratis) · canjea con /redeem",
+    "price.plus.note": "€18.99/año (2 meses gratis) · canjea con /premium activate",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
     "price.pro.per": "/ mes · 2 servidores",
@@ -94,7 +94,7 @@
     "price.pro.2": "Clonación de voz para todo el servidor",
     "price.pro.3": "24/7 en el canal de voz (próximamente)",
     "price.pro.4": "Límites más altos y cola prioritaria",
-    "price.pro.note": "€40/año (2 meses gratis) · canjea en Discord con /redeem",
+    "price.pro.note": "€37.99/año (2 meses gratis) · canjea en Discord con /premium activate",
     "faq.eyebrow": "Preguntas frecuentes",
     "faq.title": "Preguntas, respondidas",
     "finale.title": "Dale voz a tu servidor.",
@@ -120,8 +120,7 @@
       ["/invite", "Consigue el enlace de invitación"],
       ["/vote", "Vota por Vozen en top.gg"],
       ["/uptime", "Cuánto tiempo lleva Vozen en línea"],
-      ["/premium", "Estado Premium de tu servidor y el tuyo"],
-      ["/redeem", "Canjea un código Premium"]
+      ["/premium", "Estado Premium de tu servidor y el tuyo"]
     ],
     "voice": [
       ["/voice set", "Elige tu voz, idioma y motor"],
@@ -160,7 +159,7 @@
     ],
     [
       "¿Qué incluye Premium?",
-      "Los 8 efectos de voz (grave, demonio, radio, bajo el agua…), con voces neuronales premium y el modo 24/7 en la llamada en camino. €3.99/mes o €40/año por servidor, o Vozen Plus (€1.99/mes) para ventajas personales que te acompañan entre servidores. Canjea códigos con /redeem."
+      "Los 8 efectos de voz (grave, demonio, radio, bajo el agua…), con voces neuronales premium y el modo 24/7 en la llamada en camino. €3.99/mes o €37.99/año por servidor, o Vozen Plus (€1.99/mes) para ventajas personales que te acompañan entre servidores. Canjea códigos con /premium activate."
     ],
     [
       "¿Cómo añado Vozen a mi servidor?",

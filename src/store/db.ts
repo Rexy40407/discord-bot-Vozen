@@ -168,17 +168,6 @@ export function initDb(path: string): Database.Database {
         target_id   TEXT NOT NULL DEFAULT ''
       );
 
-      -- Códigos de resgate (Ko-fi/Patreon): gerados offline, resgatados 1x com /redeem.
-      -- kind = 'guild'|'user'; days = duração; used_by/used_at NULL enquanto por usar.
-      CREATE TABLE IF NOT EXISTS redeem_code (
-        code       TEXT PRIMARY KEY,
-        kind       TEXT NOT NULL,
-        days       INTEGER NOT NULL,
-        used_by    TEXT,
-        used_at    INTEGER,
-        created_at INTEGER NOT NULL
-      );
-
       -- PASSE Vozen Premium por-UTILIZADOR: uma compra de Premium (guild) dá à pessoa um
       -- passe com N "licenças" (seats) e uma DATA DE FIM ABSOLUTA (expires_at, unix ms). O
       -- relógio corre no passe: ativar/desativar um servidor não pausa nem estende a data.

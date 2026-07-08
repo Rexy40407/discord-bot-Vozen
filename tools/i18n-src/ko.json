@@ -85,7 +85,7 @@
     "price.plus.2": "/voice clone으로 나만의 음성 복제",
     "price.plus.3": "혜택이 모든 서버에서 나를 따라옵니다",
     "price.plus.4": "우선 음성 합성 대기열",
-    "price.plus.note": "연 €19.90 (2개월 무료) · /redeem으로 사용",
+    "price.plus.note": "연 €18.99 (2개월 무료) · /premium activate으로 사용",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
     "price.pro.per": "/ 월 · 2개 서버",
@@ -94,7 +94,7 @@
     "price.pro.2": "서버 전체를 위한 음성 복제",
     "price.pro.3": "음성 채널에서 24/7 상주 (곧 출시)",
     "price.pro.4": "더 높은 한도와 우선 대기열",
-    "price.pro.note": "연 €40 (2개월 무료) · Discord에서 /redeem으로 사용",
+    "price.pro.note": "연 €37.99 (2개월 무료) · Discord에서 /premium activate으로 사용",
     "faq.eyebrow": "자주 묻는 질문",
     "faq.title": "궁금증, 해결해 드립니다",
     "finale.title": "서버에 목소리를 더하세요.",
@@ -120,8 +120,7 @@
       ["/invite", "초대 링크 받기"],
       ["/vote", "top.gg에서 Vozen에 투표"],
       ["/uptime", "Vozen이 온라인 상태인 시간"],
-      ["/premium", "서버와 나의 Premium 상태"],
-      ["/redeem", "Premium 코드 사용하기"]
+      ["/premium", "서버와 나의 Premium 상태"]
     ],
     "voice": [
       ["/voice set", "음성, 언어, 엔진 선택"],
@@ -160,7 +159,7 @@
     ],
     [
       "Premium에는 무엇이 포함되나요?",
-      "8가지 음성 효과 전부 (저음, 악마, 라디오, 수중…), 프리미엄 뉴럴 음성과 곧 출시될 24/7 통화 상주 모드까지. 서버당 월 €3.99 또는 연 €40, 아니면 서버를 넘나들며 따라오는 개인 혜택을 위한 Vozen Plus (월 €1.99). 코드는 /redeem으로 사용하세요."
+      "8가지 음성 효과 전부 (저음, 악마, 라디오, 수중…), 프리미엄 뉴럴 음성과 곧 출시될 24/7 통화 상주 모드까지. 서버당 월 €3.99 또는 연 €37.99, 아니면 서버를 넘나들며 따라오는 개인 혜택을 위한 Vozen Plus (월 €1.99). 코드는 /premium activate으로 사용하세요."
     ],
     [
       "서버에 Vozen을 어떻게 추가하나요?",

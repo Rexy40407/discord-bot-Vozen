@@ -85,7 +85,7 @@
     "price.plus.2": "Clone your own voice with /voice clone",
     "price.plus.3": "Your perks follow you to every server",
     "price.plus.4": "Priority synthesis queue",
-    "price.plus.note": "€19.90/year (2 months free) · redeem with /redeem",
+    "price.plus.note": "€18.99/year (save ~20%) · buy on Ko-fi",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
     "price.pro.per": "/ month · 2 servers",
@@ -94,7 +94,7 @@
     "price.pro.2": "Voice cloning for the whole server",
     "price.pro.3": "24/7 in the voice channel (coming soon)",
     "price.pro.4": "Higher limits & priority queue",
-    "price.pro.note": "€40/year (2 months free) · redeem in Discord with /redeem",
+    "price.pro.note": "€37.99/year (save ~20%) · buy on Ko-fi",
     "faq.eyebrow": "FAQ",
     "faq.title": "Questions, answered",
     "finale.title": "Give your server a voice.",
@@ -120,8 +120,7 @@
       ["/invite", "Get the invite link"],
       ["/vote", "Vote for Vozen on top.gg"],
       ["/uptime", "How long Vozen's been online"],
-      ["/premium", "Your server's & your Premium status"],
-      ["/redeem", "Redeem a Premium code"]
+      ["/premium", "Your server's & your Premium status"]
     ],
     "voice": [
       ["/voice set", "Pick your voice, language & engine"],
@@ -160,7 +159,7 @@
     ],
     [
       "What does Premium include?",
-      "All 8 voice effects (deep, demon, radio, underwater…), with premium neural voices and 24/7 in-call mode on the way. €3.99/month or €40/year per server, or Vozen Plus (€1.99/month) for personal perks that follow you across servers. Redeem codes with /redeem."
+      "All 8 voice effects (deep, demon, radio, underwater…), with premium neural voices and 24/7 in-call mode on the way. €3.99/month or €37.99/year per server, or Vozen Plus (€1.99/month) for personal perks that follow you across servers. Redeem codes with /premium activate."
     ],
     [
       "How do I add Vozen to my server?",

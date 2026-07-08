@@ -1,4 +1,4 @@
-// src/commands/handlers/meta.ts — handlers informativos/de crescimento: /help, /invite, /vote, /uptime, /botstats, /topspeakers, /premium, /redeem (extraídos de index.ts, plano 015).
+// src/commands/handlers/meta.ts — handlers informativos/de crescimento: /help, /invite, /vote, /uptime, /botstats, /topspeakers, /premium, /vozengrant (extraídos de index.ts, plano 015).
 import {
   ChatInputCommandInteraction,
   GuildMember,
@@ -15,8 +15,6 @@ import { metrics } from '../../metrics';
 import { brandEmbed } from '../../ui/theme';
 import { getTopSpeakers } from '../../store/talkStats';
 import {
-  redeemCode,
-  peekRedeemCodeKind,
   getUserPremiumExpiry,
   isGuildPremium,
   effectiveGuildPremiumExpiry,
@@ -253,43 +251,6 @@ export async function handleVozenGrant(
       t('grant.okPremium', locale, { user: target.id, days, seats, date: stampDate(exp) }),
     );
   }
-}
-
-/** /redeem <code> — resgata um código de Premium (servidor) ou Plus (utilizador). */
-export async function handleRedeem(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
-  const locale = localeForUser(deps, i);
-  const code = i.options.getString('code', true).trim().toUpperCase();
-  // SEC-02: um código de SERVIDOR é um artefacto pago — um membro qualquer não o
-  // pode gastar (o redeem marca-o usado numa transação, irreversível). Espreita o
-  // tipo SEM consumir e exige Gerir Servidor só para 'guild' (re-check server-side,
-  // como no handleConfig). Códigos 'user' (Plus) continuam abertos a todos.
-  if (peekRedeemCodeKind(deps.db, code) === 'guild') {
-    const member = i.member as GuildMember;
-    if (!member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
-      await reply(i, t('redeem.needManageGuild', locale));
-      return;
-    }
-  }
-  const res = redeemCode(
-    deps.db,
-    code,
-    { guildId: i.guildId ?? undefined, userId: i.user.id },
-    Date.now(),
-  );
-  if (res.status === 'invalid') {
-    await reply(i, t('redeem.invalid', locale));
-    return;
-  }
-  if (res.status === 'used') {
-    await reply(i, t('redeem.used', locale));
-    return;
-  }
-  const target =
-    res.kind === 'guild' ? t('redeem.targetServer', locale) : t('redeem.targetYou', locale);
-  await reply(
-    i,
-    t('redeem.ok', locale, { target, date: `<t:${Math.floor(res.expiresAt! / 1000)}:D>` }),
-  );
 }
 
 /** /uptime — PÚBLICO: há quanto tempo o Vozen está online. */
