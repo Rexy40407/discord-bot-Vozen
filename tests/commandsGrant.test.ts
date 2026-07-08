@@ -75,12 +75,12 @@ describe('/vozengrant — OWNER-ONLY (defesa em profundidade, camada 2)', () => 
     expect(getPremiumPass(db, TARGET)).toBeNull();
   });
 
-  it('dono + premium -> concede passe de 2 licenças', async () => {
+  it('dono + premium -> concede passe de 3 licenças', async () => {
     const i = makeGrantInteraction({ callerId: OWNER, plan: 'premium', days: 30 });
     await handleInteraction(i as any, makeDeps(db, new Set([OWNER])));
     const pass = getPremiumPass(db, TARGET);
     expect(pass).not.toBeNull();
-    expect(pass!.seats).toBe(2);
+    expect(pass!.seats).toBe(3);
     expect(i.replies.join('\n')).toMatch(/Premium/);
   });
 

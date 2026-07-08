@@ -117,7 +117,7 @@ describe('kofi — aplicação do grant no store', () => {
     const exp = applyKofiGrant(db, g, now);
     expect(exp).toBe(now + 30 * 86_400_000);
     const pass = getPremiumPass(db, DID)!;
-    expect(pass.seats).toBe(2);
+    expect(pass.seats).toBe(3);
     expect(pass.source).toBe('kofi');
   });
   it('plus -> Vozen Plus no utilizador', () => {

@@ -88,8 +88,8 @@
     "price.plus.note": "€18.99/Jahr (2 Monate gratis) · einlösen mit /premium activate",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
-    "price.pro.per": "/ Monat · 2 Server",
-    "price.pro.deal": "🎁 Zahl für 1, bekomm 2 — ein Abo deckt 2 Server ab",
+    "price.pro.per": "/ Monat · 3 Server",
+    "price.pro.deal": "🎁 Zahl für 1, bekomm 3 — ein Abo deckt 3 Server ab",
     "price.pro.1": "Alle 8 Stimmeneffekte (tief, Dämon, Radio …)",
     "price.pro.2": "Stimmenklon für den ganzen Server",
     "price.pro.3": "24/7 im Sprachkanal (bald verfügbar)",
@@ -108,154 +108,52 @@
     "foot.terms": "AGB",
     "foot.legal": "Nicht mit Discord verbunden.",
     "price.plus.perYear": "/ Jahr · pro Nutzer",
-    "price.pro.perYear": "/ Jahr · 2 Server",
+    "price.pro.perYear": "/ Jahr · 3 Server",
     "price.billMonthly": "Monatlich",
     "price.billYearly": "Jährlich"
   },
   "commands": {
     "general": [
-      [
-        "/help",
-        "Vozens Befehlsliste anzeigen"
-      ],
-      [
-        "/join",
-        "Deinem Sprachkanal beitreten"
-      ],
-      [
-        "/leave",
-        "Den Sprachkanal verlassen"
-      ],
-      [
-        "/tts",
-        "Einen Text laut vorlesen"
-      ],
-      [
-        "/skip",
-        "Das aktuelle Audio überspringen"
-      ],
-      [
-        "/shutup",
-        "Vozen sofort verstummen lassen (leert die Warteschlange)"
-      ],
-      [
-        "/setup",
-        "Geführtes Ein-Schritt-Setup"
-      ],
-      [
-        "/invite",
-        "Den Einladungslink holen"
-      ],
-      [
-        "/vote",
-        "Für Vozen auf top.gg abstimmen"
-      ],
-      [
-        "/uptime",
-        "Wie lange Vozen schon online ist"
-      ],
-      [
-        "/premium",
-        "Premium-Status deines Servers & von dir"
-      ]
+      ["/help", "Vozens Befehlsliste anzeigen"],
+      ["/join", "Deinem Sprachkanal beitreten"],
+      ["/leave", "Den Sprachkanal verlassen"],
+      ["/tts", "Einen Text laut vorlesen"],
+      ["/skip", "Das aktuelle Audio überspringen"],
+      ["/shutup", "Vozen sofort verstummen lassen (leert die Warteschlange)"],
+      ["/setup", "Geführtes Ein-Schritt-Setup"],
+      ["/invite", "Den Einladungslink holen"],
+      ["/vote", "Für Vozen auf top.gg abstimmen"],
+      ["/uptime", "Wie lange Vozen schon online ist"],
+      ["/premium", "Premium-Status deines Servers & von dir"]
     ],
     "voice": [
-      [
-        "/voice set",
-        "Stimme, Sprache & Engine wählen"
-      ],
-      [
-        "/voice list",
-        "Alle Stimmen durchstöbern"
-      ],
-      [
-        "/voice preview",
-        "Eine Stimmenprobe anhören"
-      ],
-      [
-        "/voice clone",
-        "Deine eigene Stimme klonen (Premium)"
-      ],
-      [
-        "/voice effect",
-        "Roboter, Echo, Dämon … Stimmeneffekte"
-      ],
-      [
-        "/voice detection",
-        "Native Stimme pro Sprache"
-      ],
-      [
-        "/voice nickname",
-        "Wie Vozen dich laut anspricht"
-      ],
-      [
-        "/voice optout",
-        "Nicht mehr automatisch vorgelesen werden"
-      ]
+      ["/voice set", "Stimme, Sprache & Engine wählen"],
+      ["/voice list", "Alle Stimmen durchstöbern"],
+      ["/voice preview", "Eine Stimmenprobe anhören"],
+      ["/voice clone", "Deine eigene Stimme klonen (Premium)"],
+      ["/voice effect", "Roboter, Echo, Dämon … Stimmeneffekte"],
+      ["/voice detection", "Native Stimme pro Sprache"],
+      ["/voice nickname", "Wie Vozen dich laut anspricht"],
+      ["/voice optout", "Nicht mehr automatisch vorgelesen werden"]
     ],
     "fun": [
-      [
-        "/game play",
-        "Eines von 15 Minispielen starten"
-      ],
-      [
-        "/game leaderboard",
-        "Top-Spieler auf dem Server"
-      ],
-      [
-        "/game stats",
-        "Deine Punkte, Siege & Rang"
-      ],
-      [
-        "/joke",
-        "Ein kurzer Witz in jeder Sprache"
-      ],
-      [
-        "/laugh",
-        "Vozen lacht in deiner Stimme"
-      ],
-      [
-        "/8ball",
-        "Frag die Magic 8-Ball, laut"
-      ],
-      [
-        "/fact · /fortune · /wyr",
-        "Fun Facts, Wahrsagungen & Dilemmata"
-      ],
-      [
-        "/birthday set",
-        "Vozen singt an deinem Geburtstag"
-      ],
-      [
-        "/topspeakers",
-        "Wer am meisten redet + Serien"
-      ]
+      ["/game play", "Eines von 15 Minispielen starten"],
+      ["/game leaderboard", "Top-Spieler auf dem Server"],
+      ["/game stats", "Deine Punkte, Siege & Rang"],
+      ["/joke", "Ein kurzer Witz in jeder Sprache"],
+      ["/laugh", "Vozen lacht in deiner Stimme"],
+      ["/8ball", "Frag die Magic 8-Ball, laut"],
+      ["/fact · /fortune · /wyr", "Fun Facts, Wahrsagungen & Dilemmata"],
+      ["/birthday set", "Vozen singt an deinem Geburtstag"],
+      ["/topspeakers", "Wer am meisten redet + Serien"]
     ],
     "admin": [
-      [
-        "/config greet",
-        "Begrüße Leute, die dem Call beitreten"
-      ],
-      [
-        "/config language",
-        "Die Oberflächensprache festlegen"
-      ],
-      [
-        "/config default-voice",
-        "Die Standardstimme des Servers festlegen"
-      ],
-      [
-        "/config autoread",
-        "Auto-Vorlesen ein-/ausschalten"
-      ],
-      [
-        "/config blockword",
-        "Die Sperrliste verwalten"
-      ],
-      [
-        "/config pronunciation",
-        "Eigene Aussprachen"
-      ]
+      ["/config greet", "Begrüße Leute, die dem Call beitreten"],
+      ["/config language", "Die Oberflächensprache festlegen"],
+      ["/config default-voice", "Die Standardstimme des Servers festlegen"],
+      ["/config autoread", "Auto-Vorlesen ein-/ausschalten"],
+      ["/config blockword", "Die Sperrliste verwalten"],
+      ["/config pronunciation", "Eigene Aussprachen"]
     ]
   },
   "faq": [

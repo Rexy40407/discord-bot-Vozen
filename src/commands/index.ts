@@ -717,7 +717,7 @@ export const ownerCommandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setDescription('What to grant')
         .setRequired(true)
         .addChoices(
-          { name: 'Premium (server pass, 2 licences)', value: 'premium' },
+          { name: 'Premium (server pass, 3 licences)', value: 'premium' },
           { name: 'Plus (personal, follows the user)', value: 'plus' },
         ),
     )
@@ -731,7 +731,7 @@ export const ownerCommandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addIntegerOption((o) =>
       o
         .setName('seats')
-        .setDescription('Premium only: number of server licences (default 2)')
+        .setDescription('Premium only: number of server licences (default 3)')
         .setMinValue(1)
         .setMaxValue(50),
     )

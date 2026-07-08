@@ -554,7 +554,9 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
   display: flex; flex-direction: column;
 }
 .price-card h3 { font-family: var(--f-body); font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-.price-card__price { display: flex; align-items: baseline; gap: 10px; margin: 4px 0 24px; }
+/* Coluna: número grande em cima, período ("/ mês · por utilizador") numa linha PRÓPRIA por
+   baixo — antes ficava ao lado e partia em duas linhas. */
+.price-card__price { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 4px 0 24px; }
 .price-card__price b { font-family: var(--f-display); font-weight: 800; font-size: 46px; color: var(--text-0); line-height: 1; }
 .price-card__price span { color: var(--text-2); font-size: 14px; }
 .price-card .ticks { gap: 12px; }

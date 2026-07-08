@@ -244,7 +244,7 @@ export async function handleVozenGrant(
     const exp = grantUserPremium(deps.db, target.id, days, 'manual', now);
     await reply(i, t('grant.okPlus', locale, { user: target.id, days, date: stampDate(exp) }));
   } else {
-    const seats = i.options.getInteger('seats') ?? 2;
+    const seats = i.options.getInteger('seats') ?? 3;
     const exp = grantGuildPass(deps.db, target.id, seats, days, 'manual', now);
     await reply(
       i,

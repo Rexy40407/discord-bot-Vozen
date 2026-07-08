@@ -8,8 +8,8 @@
 // Campos que usamos: verification_token, type, message (onde o comprador põe o Discord ID),
 // is_subscription_payment, tier_name (memberships) e shop_items (compras únicas → anual).
 
-/** Nº de licenças (servidores) de um passe de Premium. Decisão de produto: paga 1, usa 2. */
-export const PREMIUM_PASS_SEATS = 2;
+/** Nº de licenças (servidores) de um passe de Premium. Decisão de produto: paga 1, usa 3. */
+export const PREMIUM_PASS_SEATS = 3;
 
 export type KofiPlan = 'premium' | 'plus';
 
