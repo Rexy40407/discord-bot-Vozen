@@ -516,6 +516,29 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 .cmd span { color: var(--text-1); font-size: 15px; }
 
 /* ── pricing ────────────────────────────────────────────── */
+/* Toggle Mês/Ano: default mensal; ao carregar em "Anual" a grelha ganha .is-annual e os
+   preços/períodos trocam (spans .amt--m/.amt--y e .per--m/.per--y). Só visual — os botões
+   de compra vão à mesma página do Ko-fi (que já tem os 4 produtos). */
+.bill-toggle {
+  display: flex; width: fit-content; margin: 0 auto clamp(28px, 4vw, 40px); padding: 4px;
+  border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line);
+}
+.bill-toggle__btn {
+  display: inline-flex; align-items: center; gap: 7px; border: 0; cursor: pointer;
+  font-family: var(--f-body); font-weight: 650; font-size: 14px; color: var(--text-1);
+  background: transparent; padding: 8px 18px; border-radius: 999px;
+  transition: color 0.2s, background 0.2s;
+}
+.bill-toggle__btn:hover { color: var(--text-0); }
+.bill-toggle__btn.is-active { color: #fff; background: var(--blurple); }
+.bill-toggle__save {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  color: #1a1500; background: var(--amber); padding: 2px 7px; border-radius: 999px;
+}
+.amt--y, .per--y { display: none; }
+.pricing.is-annual .amt--m, .pricing.is-annual .per--m { display: none; }
+.pricing.is-annual .amt--y, .pricing.is-annual .per--y { display: inline; }
+
 .pricing { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; max-width: 1180px; margin: 0 auto; }
 .price-card {
   position: relative; padding: 38px 34px; border-radius: var(--radius);

@@ -185,6 +185,17 @@
   }
   buildLangMenu();
 
+  /* ── toggle Mês/Ano dos preços ───────────────────────── */
+  // Só troca o que se vê (classe .is-annual na grelha); os spans .amt/.per fazem o resto.
+  const pricingGrid = $(".pricing");
+  $$(".bill-toggle__btn").forEach((b) =>
+    b.addEventListener("click", () => {
+      const annual = b.dataset.bill === "year";
+      if (pricingGrid) pricingGrid.classList.toggle("is-annual", annual);
+      $$(".bill-toggle__btn").forEach((x) => x.classList.toggle("is-active", x === b));
+    }),
+  );
+
   /* ── navbar ──────────────────────────────────────────── */
   const nav = $("#nav");
   const onScroll = () => nav.classList.toggle("is-stuck", window.scrollY > 12);
