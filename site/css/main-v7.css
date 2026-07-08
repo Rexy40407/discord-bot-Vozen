@@ -580,7 +580,7 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 /* Chip ESTÁTICO acima do nome do plano (era absolute top-right e sobrepunha o
    título "Vozen Premium" em larguras intermédias — tablet/mobile). */
 .price-card__badge {
-  display: inline-flex; align-items: center; gap: 5px; margin-bottom: 14px;
+  display: inline-flex; align-self: flex-start; align-items: center; gap: 5px; margin-bottom: 14px;
   font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
   color: #1a1500; background: var(--amber); padding: 5px 11px; border-radius: 999px;
   box-shadow: 0 4px 16px -4px rgba(255, 194, 75, 0.6);
