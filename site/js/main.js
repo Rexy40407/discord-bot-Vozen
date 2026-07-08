@@ -323,10 +323,10 @@
   const SAMPLES = {
     // engines: motores com clipe para esta lingua. O japones so tem Google (o Piper
     // standard nao tem modelo japones). Google = <lang>.mp3, Piper = <lang>-piper.mp3.
-    en: { flag: "🇬🇧", lang: "English", phrase: "Hey! Welcome to the server. Type anything and I'll read it out loud.", engines: ["google", "piper"] },
-    pt: { flag: "🇵🇹", lang: "Português", phrase: "Olá! Escreva qualquer coisa e eu leio em voz alta.", engines: ["google", "piper"] },
-    es: { flag: "🇪🇸", lang: "Español", phrase: "¡Hola! Escribe lo que quieras y lo leeré en voz alta.", engines: ["google", "piper"] },
-    fr: { flag: "🇫🇷", lang: "Français", phrase: "Salut ! Écris ce que tu veux, je le lis à voix haute.", engines: ["google", "piper"] },
+    en: { flag: "🇬🇧", lang: "English", phrase: "Hey! Welcome to the server. Type anything and I'll read it out loud.", engines: ["google", "piper", "kokoro"] },
+    pt: { flag: "🇵🇹", lang: "Português", phrase: "Olá! Escreva qualquer coisa e eu leio em voz alta.", engines: ["google", "piper", "kokoro"] },
+    es: { flag: "🇪🇸", lang: "Español", phrase: "¡Hola! Escribe lo que quieras y lo leeré en voz alta.", engines: ["google", "piper", "kokoro"] },
+    fr: { flag: "🇫🇷", lang: "Français", phrase: "Salut ! Écris ce que tu veux, je le lis à voix haute.", engines: ["google", "piper", "kokoro"] },
     de: { flag: "🇩🇪", lang: "Deutsch", phrase: "Hallo! Schreib irgendwas und ich lese es laut vor.", engines: ["google", "piper"] },
     ja: { flag: "🇯🇵", lang: "日本語", phrase: "こんにちは！メッセージを読み上げます。", engines: ["google"] },
   };
@@ -340,11 +340,12 @@
       langEl = $("#hearLang"),
       phraseEl = $("#hearPhrase"),
       engTag = $("#hearEngTag");
-    const ENGINE_NAME = { google: "Google", piper: "Piper" };
+    const ENGINE_NAME = { google: "Google", piper: "Piper", kokoro: "Kokoro" };
     let current = "en";
     let engine = "google";
 
-    const srcFor = (code, eng) => "assets/samples/" + code + (eng === "piper" ? "-piper" : "") + ".mp3";
+    const ENGINE_SUFFIX = { google: "", piper: "-piper", kokoro: "-kokoro" };
+    const srcFor = (code, eng) => "assets/samples/" + code + (ENGINE_SUFFIX[eng] || "") + ".mp3";
 
     const select = (code, autoplay) => {
       const s = SAMPLES[code];
