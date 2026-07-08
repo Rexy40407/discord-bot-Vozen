@@ -45,6 +45,28 @@
   const LS_KEY = "vozen.lang";
   let lang = localStorage.getItem(LS_KEY) || "en";
 
+  // Nome de uma língua NA LÍNGUA DO SITE (segue o botão EN/PT). Via Intl.DisplayNames
+  // (dados do browser) — sem tabela à mão. PT devolve minúsculas ("inglês"), por isso
+  // capitalizamos a 1.ª letra. Falha do ICU -> código em maiúsculas.
+  const capFirst = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+  function hearLangName(code, siteLang) {
+    try {
+      return capFirst(new Intl.DisplayNames([siteLang, "en"], { type: "language" }).of(code));
+    } catch {
+      return code.toUpperCase();
+    }
+  }
+  // Reescreve as labels dos chips do "Hear it" (e o nome no cartão) na língua do site.
+  function localizeHear(siteLang) {
+    $$(".hear__chip").forEach((c) => {
+      const nameEl = c.querySelector(".hear__chip-name");
+      if (nameEl) nameEl.textContent = hearLangName(c.dataset.sample, siteLang);
+    });
+    const active = document.querySelector(".hear__chip.is-active");
+    const langEl = document.getElementById("hearLang");
+    if (active && langEl) langEl.textContent = hearLangName(active.dataset.sample, siteLang);
+  }
+
   function applyLang(l) {
     lang = DICT[l] ? l : "en";
     document.documentElement.lang = lang;
@@ -54,6 +76,7 @@
       if (d[k] != null) el.textContent = d[k];
     });
     $$(".lang-toggle button").forEach((b) => b.classList.toggle("is-active", b.dataset.lang === lang));
+    localizeHear(lang);
     renderCommands();
     renderFaq();
   }
@@ -355,7 +378,7 @@
       const eng = s.engines.includes(engine) ? engine : "google";
       current = code;
       flagEl.textContent = s.flag;
-      langEl.textContent = s.lang;
+      langEl.textContent = hearLangName(code, lang); // nome na língua do site (segue EN/PT)
       phraseEl.textContent = s.phrase;
       engTag.textContent = ENGINE_NAME[eng];
       $$(".hear__chip").forEach((c) => c.classList.toggle("is-active", c.dataset.sample === code));
