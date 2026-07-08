@@ -169,7 +169,8 @@
       ["/config default-voice", "Sunucunun varsayılan sesini ayarla"],
       ["/config autoread", "Otomatik okumayı aç/kapat"],
       ["/config blockword", "Engel listesini yönet"],
-      ["/config pronunciation", "Özel telaffuzlar"]
+      ["/config pronunciation", "Özel telaffuzlar"],
+      ["/serverpronunciation", "Herkes için sunucu telaffuzları (yönetici, en fazla 3)"]
     ]
   },
   "faq": [

@@ -39,7 +39,7 @@ Cada pasta de `src/` e a sua responsabilidade (o que está realmente no código)
 | `store/userVoice.ts` | Voz por-utilizador (modelo + velocidade): get/set/reset. | `db` |
 | `store/guildConfig.ts` | Config por-guild (canal TTS, autoread, default_voice, max_chars, rate, enabled, role): get/set/reset com defaults. | `db` |
 | `store/blocklist.ts` | Blocklist de palavras por-guild: add/remove/get. | `db` |
-| `store/pronunciation.ts` | Pronúncias **PESSOAIS** (`/pronunciation`, tabela `pronunciation_user`): globais por-utilizador, aplicadas SÓ às mensagens do próprio autor, limite 3 Free / 50 Premium imposto em `addUserPronunciation`. O antigo dicionário de **servidor** (`/config pronunciation`) foi removido no plano v4 (a tabela `pronunciation` fica dormente, dados preservados). | `db` |
+| `store/pronunciation.ts` | Dois dicionários: **PESSOAL** (`/pronunciation`, `pronunciation_user`) — global por-user, só as mensagens do próprio, cap 3 Free / 50 Premium; e **SERVIDOR** (`/serverpronunciation`, `pronunciation`, admin) — toda a guild, cap fixo 3. No pipeline aplica-se pessoal→servidor (o termo do user ganha). `addUser/ServerPronunciation` impõem o cap. | `db` |
 | `store/optout.ts` | Opt-out de auto-leitura por-utilizador: is/set/clear. | `db` |
 | `store/userAbbrev.ts` | Abreviaturas pessoais por-utilizador, **GLOBAIS** (chave = só `user_id`, seguem o utilizador entre servidores): get/add/remove, cap de **10** por utilizador (`USER_ABBREV_CAP`), tabela `user_abbreviation`. | `db` |
 | `store/guildConfig.ts` (locale) | Além dos campos acima, `guild_config.locale` (idioma da **interface**; default `'en'`). | `db`, `i18n` |

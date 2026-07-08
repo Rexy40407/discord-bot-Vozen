@@ -13,7 +13,14 @@ import {
   GUILD_CONFIG_COLUMNS,
 } from '../src/store/guildConfig';
 import { getBlocklist, addBlockword, removeBlockword } from '../src/store/blocklist';
-import { getUserPronunciations, addUserPronunciation } from '../src/store/pronunciation';
+import {
+  getUserPronunciations,
+  addUserPronunciation,
+  getServerPronunciations,
+  addServerPronunciation,
+  removeServerPronunciation,
+  SERVER_PRON_LIMIT,
+} from '../src/store/pronunciation';
 import { isOptedOut, setOptOut, setOptIn } from '../src/store/optout';
 import { getNickname, setNickname, clearNickname } from '../src/store/nickname';
 import { getVoiceEffect, setVoiceEffect, clearVoiceEffect } from '../src/store/voiceEffect';
@@ -342,8 +349,39 @@ describe('store', () => {
     });
   });
 
-  // NB: os testes do dicionário de pronúncia por-GUILD foram removidos com a feature
-  // (plano v4) — as pronúncias agora são pessoais; ver tests/pronunciationUser.test.ts.
+  describe('server pronunciation (/serverpronunciation, cap 3)', () => {
+    it('adiciona, ordena por termo, e isola por guild', () => {
+      expect(getServerPronunciations(db, G)).toEqual([]);
+      expect(addServerPronunciation(db, G, 'zz', 'ultimo', SERVER_PRON_LIMIT)).toBe('ok');
+      expect(addServerPronunciation(db, G, 'aa', 'primeiro', SERVER_PRON_LIMIT)).toBe('ok');
+      expect(getServerPronunciations(db, G)).toEqual([
+        { term: 'aa', replacement: 'primeiro' },
+        { term: 'zz', replacement: 'ultimo' },
+      ]);
+      expect(getServerPronunciations(db, 'guild-2')).toEqual([]);
+    });
+
+    it('re-adicionar edita (upsert) e não conta para o cap', () => {
+      addServerPronunciation(db, G, 'gg', 'good game', SERVER_PRON_LIMIT);
+      addServerPronunciation(db, G, 'gg', 'gigi', SERVER_PRON_LIMIT);
+      expect(getServerPronunciations(db, G)).toEqual([{ term: 'gg', replacement: 'gigi' }]);
+    });
+
+    it('cap 3: aceita 3, bloqueia a 4.ª', () => {
+      for (let n = 1; n <= SERVER_PRON_LIMIT; n++) {
+        expect(addServerPronunciation(db, G, `t${n}`, 'r', SERVER_PRON_LIMIT)).toBe('ok');
+      }
+      expect(addServerPronunciation(db, G, 'extra', 'x', SERVER_PRON_LIMIT)).toBe('limit');
+      expect(getServerPronunciations(db, G)).toHaveLength(SERVER_PRON_LIMIT);
+    });
+
+    it('remove: true quando existia, false quando não', () => {
+      addServerPronunciation(db, G, 'gg', 'good game', SERVER_PRON_LIMIT);
+      expect(removeServerPronunciation(db, G, 'gg')).toBe(true);
+      expect(removeServerPronunciation(db, G, 'gg')).toBe(false);
+      expect(getServerPronunciations(db, G)).toHaveLength(0);
+    });
+  });
 
   describe('optout', () => {
     it('isOptedOut e false quando nada foi definido', () => {

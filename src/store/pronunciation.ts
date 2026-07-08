@@ -3,17 +3,74 @@ import type { PronunciationEntry } from '../textCleaning/pronunciation';
 // Tabela CACHEADA (lida a cada mensagem): todo o setter TEM de chamar invalidate.
 import { cached, invalidate } from './cache';
 
-// Pronúncias PESSOAIS (/pronunciation): só se aplicam às mensagens do PRÓPRIO autor.
-// Globais: seguem o utilizador para qualquer servidor, como as user_abbreviation.
-// Limite (3 Free / 50 Premium) decidido no handler e imposto aqui via parâmetro.
-//
-// NB (plano v4): o antigo dicionário de SERVIDOR (/config pronunciation, tabela
-// `pronunciation`) foi removido do produto — a tabela fica dormente na BD (dados
-// preservados, nada os lê) para a remoção ser reversível.
+// Dois dicionários de pronúncia:
+//  • PESSOAL (/pronunciation, tabela pronunciation_user): só afeta as mensagens do
+//    próprio autor; global (segue o user); limite 3 Free / 50 Premium.
+//  • SERVIDOR (/serverpronunciation, tabela pronunciation): afeta TODA a guild (admin);
+//    limite fixo 3. No pipeline aplica-se a PESSOAL primeiro (o termo do user ganha) e
+//    depois a de servidor.
 
 /** Limites de pronúncias pessoais por plano. */
 export const USER_PRON_LIMIT_FREE = 3;
 export const USER_PRON_LIMIT_PREMIUM = 50;
+/** Limite (fixo) de pronúncias do SERVIDOR. */
+export const SERVER_PRON_LIMIT = 3;
+
+export type AddPronResult = 'ok' | 'limit';
+
+// ── Dicionário de SERVIDOR (/serverpronunciation, admin) ──────────────────────────────
+
+export function getServerPronunciations(
+  db: Database.Database,
+  guildId: string,
+): PronunciationEntry[] {
+  const rows = cached(db, 'pronunciation', guildId, () => {
+    return db
+      .prepare('SELECT term, replacement FROM pronunciation WHERE guild_id = ? ORDER BY term ASC')
+      .all(guildId) as PronunciationEntry[];
+  });
+  return rows.map((e) => ({ ...e }));
+}
+
+/** Adiciona/edita uma pronúncia de servidor. Editar não conta para o limite (é UPDATE). */
+export function addServerPronunciation(
+  db: Database.Database,
+  guildId: string,
+  term: string,
+  replacement: string,
+  limit: number,
+): AddPronResult {
+  const exists = db
+    .prepare('SELECT 1 FROM pronunciation WHERE guild_id = ? AND term = ?')
+    .get(guildId, term);
+  if (!exists) {
+    const row = db
+      .prepare('SELECT COUNT(*) AS n FROM pronunciation WHERE guild_id = ?')
+      .get(guildId) as { n: number };
+    if (row.n >= limit) return 'limit';
+  }
+  db.prepare(
+    `INSERT INTO pronunciation (guild_id, term, replacement) VALUES (?, ?, ?)
+     ON CONFLICT(guild_id, term) DO UPDATE SET replacement = excluded.replacement`,
+  ).run(guildId, term, replacement);
+  invalidate(db, 'pronunciation', guildId);
+  return 'ok';
+}
+
+/** Remove uma pronúncia de servidor. Devolve true se existia. */
+export function removeServerPronunciation(
+  db: Database.Database,
+  guildId: string,
+  term: string,
+): boolean {
+  const res = db
+    .prepare('DELETE FROM pronunciation WHERE guild_id = ? AND term = ?')
+    .run(guildId, term);
+  if (res.changes > 0) invalidate(db, 'pronunciation', guildId);
+  return res.changes > 0;
+}
+
+// ── Dicionário PESSOAL (/pronunciation) ───────────────────────────────────────────────
 
 export function getUserPronunciations(db: Database.Database, userId: string): PronunciationEntry[] {
   const rows = cached(db, 'pronunciation_user', userId, () => {

@@ -169,7 +169,8 @@
       ["/config default-voice", "Die Standardstimme des Servers festlegen"],
       ["/config autoread", "Auto-Vorlesen ein-/ausschalten"],
       ["/config blockword", "Die Sperrliste verwalten"],
-      ["/config pronunciation", "Eigene Aussprachen"]
+      ["/config pronunciation", "Eigene Aussprachen"],
+      ["/serverpronunciation", "Serverweite Aussprachen für alle (Admin, max. 3)"]
     ]
   },
   "faq": [

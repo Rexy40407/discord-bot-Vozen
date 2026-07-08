@@ -169,7 +169,8 @@
       ["/config default-voice", "設定伺服器的預設語音"],
       ["/config autoread", "開啟／關閉自動朗讀"],
       ["/config blockword", "管理封鎖清單"],
-      ["/config pronunciation", "自訂發音"]
+      ["/config pronunciation", "自訂發音"],
+      ["/serverpronunciation", "全伺服器共用的發音（管理員，上限 3）"]
     ]
   },
   "faq": [

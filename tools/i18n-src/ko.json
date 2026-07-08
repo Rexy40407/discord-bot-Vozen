@@ -169,7 +169,8 @@
       ["/config default-voice", "서버 기본 음성 설정"],
       ["/config autoread", "자동 읽기 켜기/끄기"],
       ["/config blockword", "차단 목록 관리"],
-      ["/config pronunciation", "사용자 지정 발음"]
+      ["/config pronunciation", "사용자 지정 발음"],
+      ["/serverpronunciation", "서버 전체 공용 발음 (관리자, 최대 3개)"]
     ]
   },
   "faq": [

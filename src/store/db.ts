@@ -45,10 +45,8 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, word)
       );
 
-      -- (LEGADO, plano v4) Dicionário de pronúncia por-SERVIDOR do antigo
-      -- /config pronunciation. A feature foi removida (pronúncias agora são só
-      -- pessoais, tabela pronunciation_user); os dados ficam preservados aqui,
-      -- dormentes, para a remoção ser reversível.
+      -- Dicionário de pronúncia por-SERVIDOR (/serverpronunciation, admin): aplica-se
+      -- a toda a guild. Limite fixo 3. (O dicionário PESSOAL vive em pronunciation_user.)
       CREATE TABLE IF NOT EXISTS pronunciation (
         guild_id    TEXT NOT NULL,
         term        TEXT NOT NULL,

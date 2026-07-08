@@ -35,7 +35,11 @@ import {
   handlePremium,
   handleVozenGrant,
 } from './handlers/meta';
-import { handlePronunciation, handleRandomizer } from './handlers/personal';
+import {
+  handlePronunciation,
+  handleServerPronunciation,
+  handleRandomizer,
+} from './handlers/personal';
 import { localeFor } from './helpers';
 
 // Re-exports: mantêm os caminhos de import públicos inalterados para quem já importa daqui.
@@ -741,6 +745,46 @@ export const ownerCommandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .addSubcommand((s) => s.setName('list').setDescription('List your personal pronunciations'))
     .toJSON(),
+  // /serverpronunciation — dicionário de pronúncia do SERVIDOR (admin): aplica-se às
+  // mensagens de TODA a gente. Limite fixo 3. `add` sem opções abre um modal.
+  new SlashCommandBuilder()
+    .setName('serverpronunciation')
+    .setDescription('Server-wide pronunciations for everyone (admin, max 3)')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addSubcommand((s) =>
+      s
+        .setName('add')
+        .setDescription('Add or edit a server pronunciation (leave empty for a form)')
+        .addStringOption((o) =>
+          o
+            .setName('term')
+            .setNameLocalizations({ 'pt-BR': 'termo' })
+            .setDescription('The word as people type it')
+            .setMaxLength(100),
+        )
+        .addStringOption((o) =>
+          o
+            .setName('say')
+            .setNameLocalizations({ 'pt-BR': 'dizer' })
+            .setDescription('How Vozen should say it for everyone')
+            .setMaxLength(200),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName('remove')
+        .setDescription('Remove one of the server pronunciations')
+        .addStringOption((o) =>
+          o
+            .setName('term')
+            .setNameLocalizations({ 'pt-BR': 'termo' })
+            .setDescription('The word to remove')
+            .setRequired(true)
+            .setMaxLength(100),
+        ),
+    )
+    .addSubcommand((s) => s.setName('list').setDescription("List the server's pronunciations"))
+    .toJSON(),
   // /randomizer — sorteio falado: escolhe o nº de opções (2–5, modal) OU passa uma lista
   // separada por vírgulas; o Vozen escolhe uma ao acaso e di-la na call. Sem opções
   // nenhumas -> select do nº (beginner-friendly).
@@ -999,6 +1043,8 @@ export async function handleInteraction(
         return await handleHelp(i, deps);
       case 'pronunciation':
         return await handlePronunciation(i, deps);
+      case 'serverpronunciation':
+        return await handleServerPronunciation(i, deps);
       case 'randomizer':
         return await handleRandomizer(i, deps);
     }

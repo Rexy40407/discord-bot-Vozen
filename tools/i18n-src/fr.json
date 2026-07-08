@@ -169,7 +169,8 @@
       ["/config default-voice", "Définir la voix par défaut du serveur"],
       ["/config autoread", "Activer/désactiver la lecture auto"],
       ["/config blockword", "Gérer la liste de blocage"],
-      ["/config pronunciation", "Prononciations personnalisées"]
+      ["/config pronunciation", "Prononciations personnalisées"],
+      ["/serverpronunciation", "Prononciations du serveur pour tous (admin, max 3)"]
     ]
   },
   "faq": [

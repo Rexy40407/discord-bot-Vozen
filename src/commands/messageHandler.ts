@@ -15,7 +15,7 @@ import { isRepetitionSpam } from '../moderation/antispam';
 import { getVoiceEffect } from '../store/voiceEffect';
 import { getClone } from '../store/voiceClone';
 import { bumpTalk } from '../store/talkStats';
-import { getUserPronunciations } from '../store/pronunciation';
+import { getUserPronunciations, getServerPronunciations } from '../store/pronunciation';
 import { getUserVoice } from '../store/userVoice';
 import { isOptedOut } from '../store/optout';
 import { isDetectionOn } from '../store/langDetect';
@@ -249,9 +249,11 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     const speakerName = sanitizeSpeakerName(rawName);
     const { req, learnedLang } = prepareSpeech({
       personal,
-      // Pronúncias PESSOAIS do autor (plano v4): individuais — só as dele se aplicam
-      // às mensagens dele. O antigo dicionário de servidor foi removido do pipeline.
-      pronunciations: getUserPronunciations(deps.db, message.author.id),
+      // Pronúncias do autor PRIMEIRO (o termo dele ganha) + as do SERVIDOR a seguir.
+      pronunciations: [
+        ...getUserPronunciations(deps.db, message.author.id),
+        ...getServerPronunciations(deps.db, message.guildId),
+      ],
       userVoice,
       available: deps.availableModels,
       guildDefaultVoice: cfg.defaultVoice,

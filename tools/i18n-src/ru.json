@@ -169,7 +169,8 @@
       ["/config default-voice", "Задать голос сервера по умолчанию"],
       ["/config autoread", "Включить/выключить автоозвучку"],
       ["/config blockword", "Управлять чёрным списком"],
-      ["/config pronunciation", "Своё произношение слов"]
+      ["/config pronunciation", "Своё произношение слов"],
+      ["/serverpronunciation", "Произношения для всего сервера (админ, макс. 3)"]
     ]
   },
   "faq": [

@@ -5,13 +5,17 @@ import {
   getUserPronunciations,
   addUserPronunciation,
   removeUserPronunciation,
+  getServerPronunciations,
+  addServerPronunciation,
   USER_PRON_LIMIT_FREE,
   USER_PRON_LIMIT_PREMIUM,
+  SERVER_PRON_LIMIT,
 } from '../src/store/pronunciation';
 import { applyPronunciation } from '../src/textCleaning/pronunciation';
 
 const A = 'user-a';
 const B = 'user-b';
+const G = 'guild-1';
 
 describe('pronúncias pessoais — limites e isolamento', () => {
   let db: Database.Database;
@@ -61,11 +65,14 @@ describe('pronúncias pessoais — limites e isolamento', () => {
     expect(getUserPronunciations(db, A)).toHaveLength(0);
   });
 
-  it('só a pronúncia PESSOAL do autor se aplica (a de guild foi removida)', () => {
+  it('precedência: a pronúncia PESSOAL do autor ganha à do SERVIDOR', () => {
     addUserPronunciation(db, A, 'sql', 'sequel', USER_PRON_LIMIT_FREE);
-    // A mensagem de A usa a regra de A.
-    expect(applyPronunciation('i love sql', getUserPronunciations(db, A))).toBe('i love sequel');
-    // A mensagem de B (sem regra própria) fica INTACTA — não herda nada de servidor.
-    expect(applyPronunciation('i love sql', getUserPronunciations(db, B))).toBe('i love sql');
+    addServerPronunciation(db, G, 'sql', 'ess-cue-ell', SERVER_PRON_LIMIT);
+    // Ordem do pipeline: [pessoal do autor, servidor]. A do autor A vence.
+    const dictA = [...getUserPronunciations(db, A), ...getServerPronunciations(db, G)];
+    expect(applyPronunciation('i love sql', dictA)).toBe('i love sequel');
+    // Um user SEM regra própria (B) apanha a do servidor.
+    const dictB = [...getUserPronunciations(db, B), ...getServerPronunciations(db, G)];
+    expect(applyPronunciation('i love sql', dictB)).toBe('i love ess-cue-ell');
   });
 });

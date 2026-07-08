@@ -1802,6 +1802,37 @@ export const catalog: Record<string, Entry> = {
   'pron.modalTerm': { en: 'The word (as people type it)', pt: 'A palavra (como se escreve)' },
   'pron.modalSay': { en: 'How Vozen should say it', pt: 'Como o Vozen a deve dizer' },
 
+  // ── /serverpronunciation (servidor, admin, cap 3) ──────────────────────────
+  'spron.listHeader': {
+    en: '🗣️ **Server pronunciations** ({count}/{limit}) — apply to everyone:',
+    pt: '🗣️ **Pronúncias do servidor** ({count}/{limit}) — aplicam-se a todos:',
+  },
+  'spron.listEmpty': {
+    en: 'None yet — add one with `/serverpronunciation add`.',
+    pt: 'Ainda nenhuma — adiciona com `/serverpronunciation add`.',
+  },
+  'spron.set': {
+    en: '✅ Saved for the whole server! “{term}” → “{replacement}”.',
+    pt: '✅ Guardado para o servidor inteiro! “{term}” → “{replacement}”.',
+  },
+  'spron.removed': {
+    en: '🗑️ Removed “{term}” from the server.',
+    pt: '🗑️ “{term}” removido do servidor.',
+  },
+  'spron.notFound': {
+    en: 'The server has no pronunciation for “{term}”.',
+    pt: 'O servidor não tem nenhuma pronúncia para “{term}”.',
+  },
+  'spron.limitHit': {
+    en: '🔒 The server reached its limit of **{limit}** pronunciations. Remove one with `/serverpronunciation remove`.',
+    pt: '🔒 O servidor atingiu o limite de **{limit}** pronúncias. Remove uma com `/serverpronunciation remove`.',
+  },
+  'spron.modalTitle': { en: 'Server pronunciation', pt: 'Pronúncia do servidor' },
+  'spron.modalSay': {
+    en: 'How Vozen says it for everyone',
+    pt: 'Como o Vozen a diz para todos',
+  },
+
   // ── /randomizer (sorteio falado) ────────────────────────────────────────────
   'rand.selectPrompt': {
     en: '🎲 **Randomizer** — how many options do you want me to pick from?',

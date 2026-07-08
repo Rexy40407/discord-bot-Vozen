@@ -15,7 +15,7 @@ import { getUserVoice } from '../../store/userVoice';
 import { getGuildConfig } from '../../store/guildConfig';
 import { getBlocklist } from '../../store/blocklist';
 import { isDetectionOn } from '../../store/langDetect';
-import { getUserPronunciations } from '../../store/pronunciation';
+import { getUserPronunciations, getServerPronunciations } from '../../store/pronunciation';
 import { getVoiceEffect } from '../../store/voiceEffect';
 import { getClone } from '../../store/voiceClone';
 import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../../textCleaning/clean';
@@ -143,9 +143,12 @@ export async function speakRawText(
   const recentLang = recallLang(guildId, userId);
   const { req, learnedLang } = prepareSpeech({
     personal: cleaned,
-    // Pronúncias PESSOAIS de quem invocou (/tts e context-menu Speak leem com a voz
-    // e as regras do próprio) — o dicionário de servidor foi removido (plano v4).
-    pronunciations: getUserPronunciations(deps.db, userId),
+    // Pronúncias de quem invocou (/tts e Speak leem com a voz + regras do próprio),
+    // seguidas das do SERVIDOR (aplicam-se a todos).
+    pronunciations: [
+      ...getUserPronunciations(deps.db, userId),
+      ...getServerPronunciations(deps.db, guildId),
+    ],
     userVoice,
     available: deps.availableModels,
     guildDefaultVoice: cfg.defaultVoice,

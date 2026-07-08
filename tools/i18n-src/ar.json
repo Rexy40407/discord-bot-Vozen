@@ -169,7 +169,8 @@
       ["/config default-voice", "اضبط الصوت الافتراضي للخادم"],
       ["/config autoread", "تشغيل/إيقاف القراءة التلقائية"],
       ["/config blockword", "إدارة قائمة الحظر"],
-      ["/config pronunciation", "نطق مخصّص"]
+      ["/config pronunciation", "نطق مخصّص"],
+      ["/serverpronunciation", "نطق على مستوى الخادم للجميع (مشرف، بحد أقصى 3)"]
     ]
   },
   "faq": [

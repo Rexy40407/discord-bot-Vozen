@@ -7,8 +7,10 @@ import {
   ActionRowBuilder,
   ChatInputCommandInteraction,
   ComponentType,
+  GuildMember,
   MessageFlags,
   ModalBuilder,
+  PermissionFlagsBits,
   StringSelectMenuBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -19,8 +21,12 @@ import {
   getUserPronunciations,
   addUserPronunciation,
   removeUserPronunciation,
+  getServerPronunciations,
+  addServerPronunciation,
+  removeServerPronunciation,
   USER_PRON_LIMIT_FREE,
   USER_PRON_LIMIT_PREMIUM,
+  SERVER_PRON_LIMIT,
 } from '../../store/pronunciation';
 import { isUserPremium, isGuildPremium } from '../../store/premium';
 import { t } from '../../i18n/index';
@@ -140,6 +146,111 @@ async function applyAddPronunciation(
     return;
   }
   await send(t('pron.set', locale, { term, replacement }));
+}
+
+// ── /serverpronunciation (admin, cap fixo 3, para toda a guild) ───────────────────────
+
+export async function handleServerPronunciation(
+  i: ChatInputCommandInteraction,
+  deps: BotDeps,
+): Promise<void> {
+  const locale = localeForUser(deps, i);
+  const member = i.member as GuildMember;
+  if (!member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
+    await reply(i, t('error.needManageGuild', locale));
+    return;
+  }
+  const sub = i.options.getSubcommand();
+
+  if (sub === 'list') {
+    const dict = getServerPronunciations(deps.db, i.guildId!);
+    const out = dict.length
+      ? dict.map((e) => `- ${e.term} -> ${e.replacement}`).join('\n')
+      : t('spron.listEmpty', locale);
+    await reply(
+      i,
+      `${t('spron.listHeader', locale, { count: dict.length, limit: SERVER_PRON_LIMIT })}\n${out}`,
+    );
+    return;
+  }
+
+  if (sub === 'remove') {
+    const term = i.options.getString('term', true).trim();
+    const removed = removeServerPronunciation(deps.db, i.guildId!, term);
+    await reply(i, t(removed ? 'spron.removed' : 'spron.notFound', locale, { term }));
+    return;
+  }
+
+  // add: com as duas opções aplica já; sem elas abre um modal.
+  const term = i.options.getString('term')?.trim() ?? '';
+  const say = i.options.getString('say')?.trim() ?? '';
+  if (term && say) {
+    await applyAddServerPron(i, deps, locale, term, say);
+    return;
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId(`spronAdd:${i.id}`)
+    .setTitle(t('spron.modalTitle', locale))
+    .addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder()
+          .setCustomId('term')
+          .setLabel(t('pron.modalTerm', locale))
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(100)
+          .setRequired(true),
+      ),
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder()
+          .setCustomId('say')
+          .setLabel(t('spron.modalSay', locale))
+          .setStyle(TextInputStyle.Short)
+          .setMaxLength(200)
+          .setRequired(true),
+      ),
+    );
+  await i.showModal(modal);
+  let submit: ModalSubmitInteraction;
+  try {
+    submit = await i.awaitModalSubmit({
+      time: MODAL_WAIT_MS,
+      filter: (m) => m.customId === `spronAdd:${i.id}` && m.user.id === i.user.id,
+    });
+  } catch {
+    return;
+  }
+  await applyAddServerPron(
+    submit,
+    deps,
+    locale,
+    submit.fields.getTextInputValue('term').trim(),
+    submit.fields.getTextInputValue('say').trim(),
+  );
+}
+
+/** Aplica o add de servidor (validação + cap 3) e responde à interação dada. */
+async function applyAddServerPron(
+  i: ChatInputCommandInteraction | ModalSubmitInteraction,
+  deps: BotDeps,
+  locale: string,
+  term: string,
+  replacement: string,
+): Promise<void> {
+  const send = async (content: string) => {
+    if (i.replied || i.deferred) await i.followUp({ content, flags: MessageFlags.Ephemeral });
+    else await i.reply({ content, flags: MessageFlags.Ephemeral });
+  };
+  if (!term || !replacement) {
+    await send(t('pron.empty', locale));
+    return;
+  }
+  const res = addServerPronunciation(deps.db, i.guildId!, term, replacement, SERVER_PRON_LIMIT);
+  if (res === 'limit') {
+    await send(t('spron.limitHit', locale, { limit: SERVER_PRON_LIMIT }));
+    return;
+  }
+  await send(t('spron.set', locale, { term, replacement }));
 }
 
 // ── /randomizer ───────────────────────────────────────────────────────────────────────
