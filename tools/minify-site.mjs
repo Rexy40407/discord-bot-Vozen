@@ -39,6 +39,24 @@ const HTML_OPTS = {
   useShortDoctype: true,
 };
 
+// Guarda anti-mojibake: apanha UTF-8 lido/gravado como Windows-1252 (o erro do
+// PS 5.1 Get-Content|Set-Content). Digrafos específicos que NUNCA aparecem em
+// UTF-8 correto — não apanha `â` sozinho (ex.: "âmbar" é legítimo).
+const MOJIBAKE = /â‚¬|ðŸ|â€™|â€œ|â€|â€“|â€”|Ã©|Ã¡|Ã£|Ã§|Ãµ|Ã­|Ã³|Ãº|Ã \b|Â·|Â«|Â»|âˆ'/;
+const TEXT_EXT = new Set(['.html', '.css', '.js', '.json', '.svg', '.txt', '.webmanifest']);
+
+/** Falha o build se algum ficheiro de texto tiver mojibake (corrupção de encoding). */
+function assertNoMojibake(rel, text) {
+  const m = text.match(MOJIBAKE);
+  if (m) {
+    const line = text.slice(0, m.index).split('\n').length;
+    throw new Error(
+      `mojibake detetado em ${rel}:${line} (sequência "${m[0]}") — ` +
+        `ficheiro UTF-8 corrompido (lido como Windows-1252?). Restaura do git.`,
+    );
+  }
+}
+
 /** Lista recursiva de todos os ficheiros sob `dir` (caminhos absolutos). */
 async function walk(dir) {
   const out = [];
@@ -61,22 +79,30 @@ async function run() {
     await mkdir(dirname(outPath), { recursive: true });
     const ext = extname(file).toLowerCase();
 
-    if (ext === '.html' && MINIFY_HTML.has(basename(file))) {
-      const out = await minifyHtml(await readFile(file, 'utf8'), HTML_OPTS);
-      await writeFile(outPath, out);
-      minified++;
-    } else if (ext === '.js') {
-      const res = await minifyJs(await readFile(file, 'utf8'), { compress: true, mangle: true });
-      await writeFile(outPath, res.code ?? (await readFile(file, 'utf8')));
-      minified++;
-    } else if (ext === '.css') {
-      const res = new CleanCSS({ returnPromise: false }).minify(await readFile(file, 'utf8'));
-      if (res.errors.length)
-        throw new Error(`clean-css falhou em ${rel}: ${res.errors.join('; ')}`);
-      await writeFile(outPath, res.styles);
-      minified++;
+    // Ficheiros de texto: lê uma vez e valida encoding antes de processar.
+    if (TEXT_EXT.has(ext)) {
+      const text = await readFile(file, 'utf8');
+      assertNoMojibake(rel, text);
+
+      if (ext === '.html' && MINIFY_HTML.has(basename(file))) {
+        await writeFile(outPath, await minifyHtml(text, HTML_OPTS));
+        minified++;
+      } else if (ext === '.js') {
+        const res = await minifyJs(text, { compress: true, mangle: true });
+        await writeFile(outPath, res.code ?? text);
+        minified++;
+      } else if (ext === '.css') {
+        const res = new CleanCSS({ returnPromise: false }).minify(text);
+        if (res.errors.length)
+          throw new Error(`clean-css falhou em ${rel}: ${res.errors.join('; ')}`);
+        await writeFile(outPath, res.styles);
+        minified++;
+      } else {
+        await writeFile(outPath, text); // páginas legais (privacy/terms), json, svg
+        copied++;
+      }
     } else {
-      await copyFile(file, outPath); // páginas legais, assets, favicon
+      await copyFile(file, outPath); // assets binários, favicon, imagens, mp3
       copied++;
     }
   }
