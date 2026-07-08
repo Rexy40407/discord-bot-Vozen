@@ -89,6 +89,12 @@ export interface AppConfig {
   // Página do Ko-fi onde se compra o Premium/Plus. Mostrada no /premium info e nos erros
   // "não tens passe". Env KOFI_URL; default = página genérica (o operador põe a sua).
   kofiUrl: string;
+  // Comandos OWNER-ONLY (/vozengrant): defesa em profundidade. O comando é registado SÓ
+  // na OWNER_GUILD_ID (guild command) — o público nem o vê. Além disso o handler verifica
+  // o invocador contra o dono REAL resolvido via client.application (User/Team) no arranque;
+  // OWNER_ID é um fallback explícito. Sem OWNER_GUILD_ID o comando não é registado.
+  ownerGuildId?: string;
+  ownerId?: string;
 }
 
 function requireEnv(name: string): string {
@@ -271,5 +277,8 @@ export function loadConfig(): AppConfig {
     premiumUserSkuId: strEnv('PREMIUM_USER_SKU_ID', '') || undefined,
     // Página do Ko-fi (compra do Premium/Plus). O operador define KOFI_URL com a sua.
     kofiUrl: strEnv('KOFI_URL', 'https://ko-fi.com/'),
+    // Owner-only: servidor de controlo (onde o /vozengrant é registado) + dono explícito.
+    ownerGuildId: strEnv('OWNER_GUILD_ID', '') || undefined,
+    ownerId: strEnv('OWNER_ID', '') || undefined,
   };
 }

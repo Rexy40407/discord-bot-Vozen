@@ -53,6 +53,12 @@ export interface BotDeps {
    * "motor não instalado" mesmo com o venv detetado. Opcional: testes caem no env.
    */
   cloneAvailable?: boolean;
+  /**
+   * IDs do(s) DONO(S) do bot, resolvidos no ClientReady via client.application (User ou
+   * membros da Team) + OWNER_ID. Fonte da verdade para o gate do /vozengrant (owner-only) —
+   * não se deixa falsear por env. Vazio/ausente => nenhum grant é autorizado.
+   */
+  ownerIds?: Set<string>;
 }
 
 export function getPlayer(deps: BotDeps, guildId: string): GuildVoicePlayer | undefined {

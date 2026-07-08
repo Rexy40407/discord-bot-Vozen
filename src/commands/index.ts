@@ -34,6 +34,7 @@ import {
   handleTopSpeakers,
   handlePremium,
   handleRedeem,
+  handleVozenGrant,
 } from './handlers/meta';
 import { localeFor } from './helpers';
 
@@ -715,6 +716,41 @@ export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = commandDefs
   DM_CAPABLE_COMMANDS.has(def.name) ? def : { ...def, contexts: [InteractionContextType.Guild] },
 );
 
+// Comandos OWNER-ONLY. NÃO entram em commandDefs (global): são registados à parte, como
+// comandos de GUILD, só na OWNER_GUILD_ID (registerOwnerCommands). Assim o público nem
+// os vê no picker — 1.ª camada de defesa. A 2.ª é o gate por dono no handler.
+export const ownerCommandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
+  new SlashCommandBuilder()
+    .setName('vozengrant')
+    .setDescription('Owner only — grant Vozen Premium/Plus to a user')
+    .addUserOption((o) => o.setName('user').setDescription('User to grant to').setRequired(true))
+    .addStringOption((o) =>
+      o
+        .setName('plan')
+        .setDescription('What to grant')
+        .setRequired(true)
+        .addChoices(
+          { name: 'Premium (server pass, 2 licences)', value: 'premium' },
+          { name: 'Plus (personal, follows the user)', value: 'plus' },
+        ),
+    )
+    .addIntegerOption((o) =>
+      o
+        .setName('days')
+        .setDescription('Duration in days (default 30)')
+        .setMinValue(1)
+        .setMaxValue(3650),
+    )
+    .addIntegerOption((o) =>
+      o
+        .setName('seats')
+        .setDescription('Premium only: number of server licences (default 2)')
+        .setMinValue(1)
+        .setMaxValue(50),
+    )
+    .toJSON(),
+];
+
 /**
  * Filtra os modelos disponíveis pelo que o utilizador escreveu (case-insensitive),
  * limitado a 25 (máximo do Discord para autocomplete). Função pura e testável.
@@ -925,6 +961,8 @@ export async function handleInteraction(
         return await handleTopSpeakers(i, deps);
       case 'premium':
         return await handlePremium(i, deps);
+      case 'vozengrant':
+        return await handleVozenGrant(i, deps);
       case 'redeem':
         return await handleRedeem(i, deps);
       case 'game':

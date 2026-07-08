@@ -507,6 +507,19 @@ export const catalog: Record<string, Entry> = {
     en: 'this server',
     pt: 'este servidor',
   },
+  // /vozengrant (owner-only)
+  'grant.denied': {
+    en: '⛔ This command is for the bot owner only.',
+    pt: '⛔ Este comando é só para o dono do bot.',
+  },
+  'grant.okPremium': {
+    en: '✅ Granted <@{user}> a **Premium pass** ({seats} licences) for **{days}** days — expires {date}. They activate it with `/premium activate`.',
+    pt: '✅ Concedido a <@{user}> um **passe Premium** ({seats} licenças) por **{days}** dias — termina {date}. Ativa com `/premium activate`.',
+  },
+  'grant.okPlus': {
+    en: '✅ Granted <@{user}> **Vozen Plus** for **{days}** days — expires {date}.',
+    pt: '✅ Concedido a <@{user}> o **Vozen Plus** por **{days}** dias — termina {date}.',
+  },
   'redeem.ok': {
     en: '✅ Code redeemed! **{target}** now has Vozen Premium until {date}.',
     pt: '✅ Código resgatado! **{target}** tem agora Vozen Premium até {date}.',

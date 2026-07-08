@@ -24,7 +24,7 @@ import { getGuildConfig } from './store/guildConfig';
 import { persistGameScores } from './store/gameScore';
 import { t, DEFAULT_LOCALE } from './i18n/index';
 import { createClient, bindEvents } from './bot/client';
-import { registerCommands } from './bot/registerCommands';
+import { registerCommands, registerOwnerCommands } from './bot/registerCommands';
 import { installSignalHandlers } from './bot/shutdown';
 import { startHealthServer } from './health';
 import { checkFfmpeg } from './health/ffmpeg';
@@ -288,6 +288,33 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] falha ao arrancar a sync de entitlements (ignorado)', err);
     }
+    // Comandos OWNER-ONLY (/vozengrant): resolve o(s) dono(s) REAL(is) via a application
+    // (User ou membros da Team) + OWNER_ID, e regista o comando SÓ na guild de controlo
+    // (guild command => invisível ao público). deps.ownerIds é a fonte da verdade do gate.
+    void (async () => {
+      try {
+        const app = await client.application?.fetch();
+        const ids = new Set<string>();
+        if (config.ownerId) ids.add(config.ownerId);
+        const owner = app?.owner;
+        if (owner) {
+          if ('members' in owner && owner.members) {
+            for (const m of owner.members.values()) if (m.user?.id) ids.add(m.user.id);
+          } else if ('id' in owner) {
+            ids.add(owner.id);
+          }
+        }
+        deps.ownerIds = ids;
+        log.info(`[owner] ${ids.size} dono(s) resolvido(s) para o /vozengrant.`);
+        if (config.ownerGuildId) {
+          await registerOwnerCommands(config.token, config.clientId, config.ownerGuildId);
+        } else {
+          log.info('[owner] OWNER_GUILD_ID não definido — /vozengrant não é registado.');
+        }
+      } catch (err) {
+        log.error('[owner] falha a resolver dono(s)/registar /vozengrant (ignorado)', err);
+      }
+    })();
   });
 
   // Sincronizar os comandos NÃO é fatal: é um PUT global fortemente rate-limited

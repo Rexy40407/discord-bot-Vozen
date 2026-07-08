@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { REST, Routes } from 'discord.js';
-import { commandDefs } from '../commands/index';
+import { commandDefs, ownerCommandDefs } from '../commands/index';
 import { loadConfig } from '../config/index';
 import { log } from '../logging/logger';
 
@@ -83,6 +83,21 @@ export async function registerCommands(
   log.info(`[register] ${commandDefs.length} comandos registados globalmente.`);
   if (opts.stateFile) saveRegisterState(opts.stateFile, clientId, fingerprint);
   return true;
+}
+
+/**
+ * Regista os comandos OWNER-ONLY como comandos de GUILD na `guildId` de controlo — NÃO
+ * globais. Assim o público nem os vê no picker (1.ª camada de defesa; a 2.ª é o gate por
+ * dono no handler). PUT de guild não sofre o rate-limit do global e propaga na hora.
+ */
+export async function registerOwnerCommands(
+  token: string,
+  clientId: string,
+  guildId: string,
+): Promise<void> {
+  const rest = new REST({ version: '10' }).setToken(token);
+  await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: ownerCommandDefs });
+  log.info(`[register] ${ownerCommandDefs.length} comando(s) owner na guild ${guildId}.`);
 }
 
 // arranque quando corrido via `npm run register`

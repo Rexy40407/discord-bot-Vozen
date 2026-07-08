@@ -25,6 +25,8 @@ import {
   listPassActivations,
   activateSeat,
   deactivateSeat,
+  grantGuildPass,
+  grantUserPremium,
 } from '../../store/premium';
 import { t } from '../../i18n/index';
 import { INVITE_PERMISSIONS, formatDuration, localeForUser, reply } from '../helpers';
@@ -218,6 +220,39 @@ async function handlePremiumDeactivate(
   }
   const freed = deactivateSeat(deps.db, i.user.id, i.guildId);
   await reply(i, freed ? t('premium.deactivateOk', locale) : t('premium.deactivateNone', locale));
+}
+
+/**
+ * /vozengrant — OWNER-ONLY. Concede um passe de Premium (guild) ou Plus (user) a alguém,
+ * por N dias. Defesa em profundidade: (1) o comando é registado SÓ na OWNER_GUILD_ID, por
+ * isso o público nem o vê; (2) AQUI recusa quem não estiver em deps.ownerIds — o dono REAL
+ * resolvido do Discord no arranque, não falsificável por env; (3) resposta sempre efémera.
+ */
+export async function handleVozenGrant(
+  i: ChatInputCommandInteraction,
+  deps: BotDeps,
+): Promise<void> {
+  const locale = localeForUser(deps, i);
+  // Camada 2: só o(s) dono(s) real(is). Sem ownerIds resolvidos, ninguém passa.
+  if (!deps.ownerIds || !deps.ownerIds.has(i.user.id)) {
+    await reply(i, t('grant.denied', locale));
+    return;
+  }
+  const target = i.options.getUser('user', true);
+  const plan = i.options.getString('plan', true);
+  const days = i.options.getInteger('days') ?? 30;
+  const now = Date.now();
+  if (plan === 'plus') {
+    const exp = grantUserPremium(deps.db, target.id, days, 'manual', now);
+    await reply(i, t('grant.okPlus', locale, { user: target.id, days, date: stampDate(exp) }));
+  } else {
+    const seats = i.options.getInteger('seats') ?? 2;
+    const exp = grantGuildPass(deps.db, target.id, seats, days, 'manual', now);
+    await reply(
+      i,
+      t('grant.okPremium', locale, { user: target.id, days, seats, date: stampDate(exp) }),
+    );
+  }
 }
 
 /** /redeem <code> — resgata um código de Premium (servidor) ou Plus (utilizador). */
