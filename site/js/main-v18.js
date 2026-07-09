@@ -387,7 +387,7 @@
 
   function renderOk(d) {
     const u = d.user || {};
-    const av = avatarMarkup(u, "ppanel__av", 64);
+    const av = avatarMarkup(u, "ppanel__av", 128);
     const plus = d.plus || {};
     const pass = d.pass;
     const plusActive = !!plus.active;
@@ -415,9 +415,10 @@
     }
     return (
       `<div class="ppanel__account">` +
-      `<div class="ppanel__user">${av}<span class="ppanel__identity"><span class="ppanel__name">${esc(u.username || "Discord user")}</span>` +
-      `<span class="ppanel__id">Discord ID: ${esc(u.id || "-")}</span></span></div>` +
-      `<button type="button" class="ppanel__logout" id="ppLogout">${t("panel.logout")}</button></div>` +
+      `<div class="ppanel__user">${av}</div>` +
+      `<div class="ppanel__identity"><span class="ppanel__name">${esc(u.username || "Discord user")}</span>` +
+      `<span class="ppanel__id">Discord ID: ${esc(u.id || "-")}</span>` +
+      `<button type="button" class="ppanel__logout" id="ppLogout">${t("panel.logout")}</button></div></div>` +
       `<div class="ppanel__statusgrid">` +
       statusRow("Vozen Premium", premiumActive, premiumParts.join(" &middot; ")) +
       statusRow("Vozen Plus", plusActive, plusDetail) +

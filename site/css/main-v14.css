@@ -571,7 +571,7 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 /* ── Painel Premium (login com Discord + estado da conta) ───────────────────── */
 .premium-panel {
   position: relative; overflow: hidden; isolation: isolate;
-  max-width: 560px; margin: 0 auto 22px; padding: 22px; border-radius: var(--radius);
+  max-width: 640px; margin: 0 auto 22px; padding: 22px; border-radius: var(--radius);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
     var(--glass-2);
@@ -631,24 +631,32 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 }
 .btn--ghost:hover { background: rgba(255, 255, 255, 0.08); }
 .btn--ghost:active { transform: translateY(1px); }
-.ppanel__account { display: flex; align-items: center; gap: 14px; padding: 2px 0 4px; }
-.ppanel__user { min-width: 0; display: flex; align-items: center; gap: 12px; }
+.ppanel__account {
+  display: grid; grid-template-columns: 118px minmax(0, 1fr); align-items: center; gap: 24px;
+  padding: 8px 0 8px;
+}
+.ppanel__user {
+  min-width: 0; display: grid; place-items: center;
+}
 .ppanel__av {
-  width: 46px; height: 46px; padding: 2px; border-radius: 50%; object-fit: cover; flex: none;
+  width: 112px; height: 112px; padding: 3px; border-radius: 50%; object-fit: cover; flex: none;
   background: var(--grad-brand);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.24), 0 18px 40px -24px rgba(102, 114, 255, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.24),
+    0 0 34px -8px rgba(46, 230, 200, 0.48),
+    0 28px 64px -34px rgba(102, 114, 255, 0.95);
 }
 .ppanel__av--none {
   display: grid; place-items: center; font-weight: 800;
   background: var(--blurple); color: #fff; font-family: var(--f-display);
 }
-.ppanel__identity { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.ppanel__name { font-weight: 700; color: var(--text-0); font-size: 15px; }
+.ppanel__identity { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.ppanel__name { font-weight: 800; color: var(--text-0); font-size: 20px; line-height: 1.1; }
 .ppanel__id {
   color: var(--text-2); font-family: var(--f-mono); font-size: 12px; overflow-wrap: anywhere;
 }
 .ppanel__logout {
-  min-height: 44px; margin-left: auto; padding: 7px 14px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px;
+  min-height: 44px; margin-top: 8px; padding: 7px 14px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px;
   color: var(--text-1); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line-2);
 }
 .ppanel__logout:hover { color: var(--text-0); background: rgba(255, 255, 255, 0.08); }
@@ -725,8 +733,10 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 @media (max-width: 560px) {
   .premium-panel { padding: 16px; }
   .btn--discord { width: 100%; }
-  .ppanel__account { align-items: flex-start; flex-direction: column; }
-  .ppanel__logout { margin-left: 0; width: 100%; }
+  .ppanel__account { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 16px; }
+  .ppanel__identity { align-items: center; }
+  .ppanel__av { width: 104px; height: 104px; }
+  .ppanel__logout { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .premium-panel,
