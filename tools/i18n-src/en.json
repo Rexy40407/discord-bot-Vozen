@@ -92,7 +92,7 @@
     "price.pro.deal": "🎁 Pay for 1, get 3 — one subscription covers 3 servers",
     "price.pro.1": "All 8 voice effects (deep, demon, radio…)",
     "price.pro.2": "Voice cloning for the whole server",
-    "price.pro.3": "24/7 in the voice channel (coming soon)",
+    "price.pro.3": "Stays in your voice channel even when it's empty",
     "price.pro.4": "Higher limits & priority queue",
     "price.pro.note": "€37.99/year (save ~20%) · buy on Ko-fi",
     "faq.eyebrow": "FAQ",
@@ -181,7 +181,7 @@
     ],
     [
       "What does Premium include?",
-      "All 8 voice effects (deep, demon, radio, underwater…), with premium neural voices and 24/7 in-call mode on the way. €3.99/month or €37.99/year per server, or Vozen Plus (€1.99/month) for personal perks that follow you across servers. Redeem codes with /premium activate."
+      "All 8 voice effects (deep, demon, radio, underwater…), with premium neural voices, and it stays in your voice channel even when everyone leaves. €3.99/month or €37.99/year per server, or Vozen Plus (€1.99/month) for personal perks that follow you across servers. Redeem codes with /premium activate."
     ],
     [
       "How do I add Vozen to my server?",

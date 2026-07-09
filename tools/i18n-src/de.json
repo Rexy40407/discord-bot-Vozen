@@ -92,7 +92,7 @@
     "price.pro.deal": "🎁 Zahl für 1, bekomm 3 — ein Abo deckt 3 Server ab",
     "price.pro.1": "Alle 8 Stimmeneffekte (tief, Dämon, Radio …)",
     "price.pro.2": "Stimmenklon für den ganzen Server",
-    "price.pro.3": "24/7 im Sprachkanal (bald verfügbar)",
+    "price.pro.3": "Bleibt im Sprachkanal, auch wenn er leer ist",
     "price.pro.4": "Höhere Limits & Priorität in der Warteschlange",
     "price.pro.note": "€37.99/Jahr (2 Monate gratis) · in Discord einlösen mit /premium activate",
     "faq.eyebrow": "FAQ",
@@ -181,7 +181,7 @@
     ],
     [
       "Was ist in Premium enthalten?",
-      "Alle 8 Stimmeneffekte (tief, Dämon, Radio, unter Wasser …), dazu Premium-Neuronalstimmen und 24/7-Modus im Call in Kürze. €3.99/Monat oder €37.99/Jahr pro Server, oder Vozen Plus (€1.99/Monat) für persönliche Vorteile, die dir über Server hinweg folgen. Codes einlösen mit /premium activate."
+      "Alle 8 Stimmeneffekte (tief, Dämon, Radio, unter Wasser …), dazu Premium-Neuronalstimmen, und er bleibt im Sprachkanal, auch wenn alle gehen. €3.99/Monat oder €37.99/Jahr pro Server, oder Vozen Plus (€1.99/Monat) für persönliche Vorteile, die dir über Server hinweg folgen. Codes einlösen mit /premium activate."
     ],
     [
       "Wie füge ich Vozen zu meinem Server hinzu?",

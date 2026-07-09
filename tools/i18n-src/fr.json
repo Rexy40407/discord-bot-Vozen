@@ -92,7 +92,7 @@
     "price.pro.deal": "🎁 Payez pour 1, profitez sur 3 — un abonnement couvre 3 serveurs",
     "price.pro.1": "Les 8 effets de voix (grave, démon, radio…)",
     "price.pro.2": "Clonage de voix pour tout le serveur",
-    "price.pro.3": "24/7 dans le salon vocal (bientôt disponible)",
+    "price.pro.3": "Reste dans ton salon vocal même quand il se vide",
     "price.pro.4": "Limites plus élevées et file prioritaire",
     "price.pro.note": "€37.99/an (2 mois offerts) · à activer sur Discord avec /premium activate",
     "faq.eyebrow": "FAQ",
@@ -181,7 +181,7 @@
     ],
     [
       "Que comprend Premium ?",
-      "Les 8 effets de voix (grave, démon, radio, sous l'eau…), avec des voix neuronales premium et le mode 24/7 en appel bientôt disponible. €3.99/mois ou €37.99/an par serveur, ou Vozen Plus (€1.99/mois) pour des avantages personnels qui vous suivent d'un serveur à l'autre. Activez vos codes avec /premium activate."
+      "Les 8 effets de voix (grave, démon, radio, sous l'eau…), avec des voix neuronales premium, et il reste dans ton salon vocal même quand tout le monde part. €3.99/mois ou €37.99/an par serveur, ou Vozen Plus (€1.99/mois) pour des avantages personnels qui vous suivent d'un serveur à l'autre. Activez vos codes avec /premium activate."
     ],
     [
       "Comment ajouter Vozen à mon serveur ?",

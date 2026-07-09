@@ -92,7 +92,7 @@
     "price.pro.deal": "🎁 1 öde, 3 al — tek abonelik 3 sunucuyu kapsar",
     "price.pro.1": "8 ses efektinin tamamı (kalın, iblis, radyo…)",
     "price.pro.2": "Tüm sunucu için ses klonlama",
-    "price.pro.3": "Ses kanalında 7/24 (yakında)",
+    "price.pro.3": "Kanal boşalsa bile ses kanalında kalır",
     "price.pro.4": "Daha yüksek limitler ve öncelikli kuyruk",
     "price.pro.note": "€37.99/yıl (2 ay ücretsiz) · Discord'da /premium activate ile kullan",
     "faq.eyebrow": "SSS",
@@ -181,7 +181,7 @@
     ],
     [
       "Premium neleri içerir?",
-      "8 ses efektinin tamamı (kalın, iblis, radyo, su altı…), premium nöral seslerle ve yolda olan 7/24 arama içi mod. Sunucu başına €3.99/ay ya da €37.99/yıl veya sunucular arasında seninle gelen kişisel ayrıcalıklar için Vozen Plus (€1.99/ay). Kodları /premium activate ile kullan."
+      "8 ses efektinin tamamı (kalın, iblis, radyo, su altı…), premium nöral seslerle, ve kanal boşalsa bile ses kanalında kalır. Sunucu başına €3.99/ay ya da €37.99/yıl veya sunucular arasında seninle gelen kişisel ayrıcalıklar için Vozen Plus (€1.99/ay). Kodları /premium activate ile kullan."
     ],
     [
       "Vozen'i sunucuma nasıl eklerim?",
