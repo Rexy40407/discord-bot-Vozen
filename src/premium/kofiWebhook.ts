@@ -294,8 +294,6 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
   server.on('error', (err) => logError('[kofi] erro no servidor de webhook', err));
   // Loopback-only: o mundo exterior chega via Caddy (reverse_proxy localhost:3001).
   // Assim a garantia não depende só da firewall (defesa em profundidade).
-  server.listen(port, '127.0.0.1', () =>
-    logInfo(`[kofi] webhook à escuta em 127.0.0.1:${port}.`),
-  );
+  server.listen(port, '127.0.0.1', () => logInfo(`[kofi] webhook à escuta em 127.0.0.1:${port}.`));
   return server;
 }
