@@ -305,3 +305,46 @@ sozinho no VPS em ~1 minuto — tal como o site já faz no GitHub Pages.
 - [ ] `PREMIUM_API_BASE` atualizado no site + push
 - [ ] Redirect URI adicionado no Discord Developer Portal
 - [ ] Deploy automático (passo 12): secrets no GitHub + `deploy-bot.yml` + sudoers
+
+## Estado real do VPS (feito em 2026-07-09)
+
+Setup já aplicado no `vozen-prod`. Se algum dia re-clonares o repo do zero, repõe:
+
+### Modelos Piper (línguas + motor Piper)
+`./models` é **gitignored** — um clone fresco fica sem os 38 `.onnx`, e o catálogo
+de línguas colapsa (só sobram as vozes gTTS sintéticas). Repõe copiando do PC:
+```bash
+# do PC (tem-nos em C:\Users\diogo\piper_pkg\piper\models — 38 .onnx + 38 .onnx.json, 2.3 GB):
+scp C:/Users/diogo/piper_pkg/piper/models/*.onnx* vozen@91.98.128.192:~/discord-bot-Vozen/models/
+```
+Binário piper **Linux** (o `.exe` do PC não serve) + `PIPER_PATH` no `.env`:
+```bash
+cd ~ && wget -q https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz && tar xzf piper_linux_x86_64.tar.gz
+# no .env do bot (append, não imprime segredos):
+grep -q '^PIPER_PATH=' ~/discord-bot-Vozen/.env || echo 'PIPER_PATH=/home/vozen/piper/piper' >> ~/discord-bot-Vozen/.env
+```
+Nota: desde `210f171`, `syntheticGttsModels()` faz o catálogo **independente do disco**
+— mesmo sem `.onnx` as ~40 línguas aparecem (via Google). Os modelos só acrescentam
+as vozes Piper reais.
+
+### Kokoro (motor neural) — porta Linux do setup-kokoro.ps1
+`kokoro-venv/`, `kokoro-v1.0.onnx`, `voices-v1.0.bin` são gitignored. Repõe:
+```bash
+sudo apt-get install -y python3-venv python3-pip python3-dev libsndfile1
+cd ~/discord-bot-Vozen/tools && python3 -m venv kokoro-venv
+kokoro-venv/bin/python -m pip install -U pip && kokoro-venv/bin/python -m pip install -r requirements-kokoro.txt
+REL=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
+wget -q $REL/kokoro-v1.0.onnx -O kokoro-v1.0.onnx && wget -q $REL/voices-v1.0.bin -O voices-v1.0.bin
+```
+Desde `210f171`, `resolveKokoroCmd()` auto-deteta `bin/python` (Linux) — sem `KOKORO_CMD`.
+
+### Node 22 LTS
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs
+cd ~/discord-bot-Vozen && npm rebuild   # recompila os módulos nativos para o ABI do Node 22
+```
+
+### Restart (sudoers já configurado para o vozen)
+```bash
+sudo -n systemctl restart vozen.service
+```
