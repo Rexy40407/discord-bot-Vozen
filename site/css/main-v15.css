@@ -653,8 +653,39 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 .ppanel__identity { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .ppanel__name { font-weight: 800; color: var(--text-0); font-size: 20px; line-height: 1.1; }
 .ppanel__id {
-  color: var(--text-2); font-family: var(--f-mono); font-size: 12px; overflow-wrap: anywhere;
+  position: relative; display: inline-flex; align-items: center; gap: 8px; max-width: 100%; min-height: 44px;
+  padding: 4px 8px; border: 1px solid transparent; border-radius: 10px; cursor: pointer;
+  color: var(--text-2); background: transparent; font: 12px/1.25 var(--f-mono); text-align: left;
+  transition: color 0.16s ease, background 0.16s ease, border-color 0.16s ease;
 }
+.ppanel__id:hover,
+.ppanel__id:focus-within {
+  color: var(--text-1); background: rgba(255, 255, 255, 0.04); border-color: var(--line);
+}
+.ppanel__id.is-copied { color: var(--aqua); border-color: rgba(46, 230, 200, 0.3); }
+.ppanel__idnum {
+  min-width: 0; filter: blur(5px); letter-spacing: 0.02em; user-select: none; overflow-wrap: anywhere;
+  transition: filter 0.18s ease;
+}
+.ppanel__id:hover .ppanel__idnum,
+.ppanel__id:focus-within .ppanel__idnum,
+.ppanel__id.is-copied .ppanel__idnum { filter: blur(0); user-select: text; }
+.ppanel__copyic,
+.ppanel__okic { flex: 0 0 auto; opacity: 0.7; transition: opacity 0.16s ease; }
+.ppanel__id:hover .ppanel__copyic,
+.ppanel__id:focus-within .ppanel__copyic { opacity: 1; }
+.ppanel__okic { display: none; }
+.ppanel__id.is-copied .ppanel__copyic { display: none; }
+.ppanel__id.is-copied .ppanel__okic { display: block; opacity: 1; }
+.ppanel__tip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  padding: 3px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--glass-2);
+  color: var(--text-1); font-family: var(--f-body); font-size: 11px; line-height: 1.3; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+}
+.ppanel__id:hover .ppanel__tip,
+.ppanel__id:focus-within .ppanel__tip { opacity: 1; }
+.ppanel__id.is-copied .ppanel__tip { color: var(--aqua); border-color: rgba(46, 230, 200, 0.3); }
 .ppanel__logout {
   min-height: 44px; margin-top: 8px; padding: 7px 14px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px;
   color: var(--text-1); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line-2);
@@ -743,7 +774,12 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
   .ppanel__skel::after { animation: none; }
   .ppanel__status,
   .btn--discord,
-  .btn--ghost { transition: none; }
+  .btn--ghost,
+  .ppanel__id,
+  .ppanel__idnum,
+  .ppanel__copyic,
+  .ppanel__okic,
+  .ppanel__tip { transition: none; }
   .ppanel__status.is-off:hover,
   .btn--discord:hover { transform: none; }
 }

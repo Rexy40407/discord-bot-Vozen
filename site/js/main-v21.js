@@ -445,7 +445,10 @@
       `<div class="ppanel__account">` +
       `<div class="ppanel__user">${av}</div>` +
       `<div class="ppanel__identity"><span class="ppanel__name">${esc(u.username || "Discord user")}</span>` +
-      `<span class="ppanel__id">Discord ID: ${esc(u.id || "-")}</span>` +
+      `<button type="button" class="ppanel__id" data-id="${esc(u.id || "")}" aria-label="Copiar Discord ID">Discord ID: <span class="ppanel__idnum">${esc(u.id || "-")}</span>` +
+      `<svg class="ppanel__copyic" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 7a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-1v-2h1a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v1H8V7Z"/><path d="M3 10a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7Zm3-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1H6Z"/></svg>` +
+      `<svg class="ppanel__okic" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M9.2 16.6 4.9 12.3l1.4-1.4 2.9 2.9 8.5-8.5 1.4 1.4-9.9 9.9Z"/></svg>` +
+      `<span class="ppanel__tip" aria-hidden="true">Click to copy</span></button>` +
       `<button type="button" class="ppanel__logout" id="ppLogout">${t("panel.logout")}</button></div></div>` +
       `<div class="ppanel__statusgrid">` +
       statusRow("Vozen Premium", premiumActive, premiumParts.join(" &middot; ")) +
@@ -485,6 +488,21 @@
     byId("ppLogin")?.addEventListener("click", login);
     byId("ppLogout")?.addEventListener("click", logout);
     byId("ppRetry")?.addEventListener("click", loadPanel);
+    el.querySelector(".ppanel__id")?.addEventListener("click", async (ev) => {
+      const btn = ev.currentTarget;
+      const id = btn.dataset.id || "";
+      if (!id || !navigator.clipboard) return;
+      const tip = btn.querySelector(".ppanel__tip");
+      try {
+        await navigator.clipboard.writeText(id);
+        btn.classList.add("is-copied");
+        if (tip) tip.textContent = "Copied!";
+        window.setTimeout(() => {
+          btn.classList.remove("is-copied");
+          if (tip) tip.textContent = "Click to copy";
+        }, 1500);
+      } catch {}
+    });
   }
 
   // Botão de login na navbar: leva à página dedicada da conta (account.html). Já na
