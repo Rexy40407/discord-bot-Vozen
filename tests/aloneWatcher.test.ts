@@ -121,3 +121,66 @@ describe('AloneWatcher — sai só quando sozinho por leaveMs', () => {
     expect(leave).not.toHaveBeenCalled();
   });
 });
+
+describe('AloneWatcher — 24/7 in-call (Premium fica na call mesmo sozinho)', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('Premium + sozinho (saída imediata) -> NÃO sai, sem timer', () => {
+    const leave = vi.fn();
+    const state = { humans: 0 as number | null };
+    // Sem leaveMs -> default imediato; mas isPremium=true trava a saída.
+    const watcher = new AloneWatcher({
+      humansInBotChannel: () => state.humans,
+      leave,
+      isPremium: () => true,
+    });
+    watcher.evaluate(G);
+    expect(leave).not.toHaveBeenCalled();
+    expect(watcher.pendingCount()).toBe(0);
+  });
+
+  it('Premium + sozinho (com janela leaveMs) -> nunca arma timer nem sai', () => {
+    vi.useFakeTimers();
+    const leave = vi.fn();
+    const state = { humans: 0 as number | null };
+    const watcher = new AloneWatcher({
+      leaveMs: MS,
+      humansInBotChannel: () => state.humans,
+      leave,
+      isPremium: () => true,
+    });
+    watcher.evaluate(G);
+    expect(watcher.pendingCount()).toBe(0);
+    vi.advanceTimersByTime(MS * 5);
+    expect(leave).not.toHaveBeenCalled();
+  });
+
+  it('perder Premium com timer pendente -> a próxima reavaliação Premium cancela-o', () => {
+    vi.useFakeTimers();
+    const leave = vi.fn();
+    const state = { humans: 0 as number | null, premium: false };
+    const watcher = new AloneWatcher({
+      leaveMs: MS,
+      humansInBotChannel: () => state.humans,
+      leave,
+      isPremium: () => state.premium,
+    });
+    watcher.evaluate(G); // Free + sozinho -> arma timer
+    expect(watcher.pendingCount()).toBe(1);
+    state.premium = true; // comprou Premium entretanto
+    watcher.evaluate(G); // Premium -> cancela o timer pendente
+    expect(watcher.pendingCount()).toBe(0);
+    vi.advanceTimersByTime(MS * 5);
+    expect(leave).not.toHaveBeenCalled();
+  });
+
+  it('sem isPremium (default) -> comportamento Free inalterado (sai já)', () => {
+    const leave = vi.fn();
+    const state = { humans: 0 as number | null };
+    const watcher = new AloneWatcher({ humansInBotChannel: () => state.humans, leave });
+    watcher.evaluate(G);
+    expect(leave).toHaveBeenCalledTimes(1);
+  });
+});

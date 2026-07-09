@@ -19,6 +19,7 @@ import type { BotDeps } from './bot/deps';
 import { removePlayer } from './bot/deps';
 import { GameManager } from './games/manager';
 import { systemClock } from './games/types';
+import { isGuildPremium } from './store/premium';
 import { loadBoardEmojis } from './games/boardEmojis';
 import { deleteChannelSafe } from './games/thread';
 import { getGuildConfig } from './store/guildConfig';
@@ -168,6 +169,9 @@ async function main(): Promise<void> {
       removePlayer(deps, guildId);
       getVoiceConnection(guildId)?.destroy();
     },
+    // 24/7 in-call (Premium): servidores Premium ficam no canal mesmo sozinhos.
+    // isGuildPremium cobre o Premium direto do servidor E os passes (Plus) ativados aqui.
+    isPremium: (guildId) => isGuildPremium(db, guildId, Date.now()),
   });
 
   // Minijogos (/game). O GameManager e desacoplado de discord.js/SQLite: recebe um
