@@ -243,6 +243,9 @@ export class KokoroEngine implements TTSEngine {
     this.ready = false;
     this.starting = false;
     this.child = null;
+    // Descarta bytes parciais do processo morto: senão colam-se à 1.ª linha do
+    // sidecar respawnado e partem o JSON.parse (pior caso: corrompem o `ready`).
+    this.buffer = '';
     if (this.active) {
       if (this.active.timer) clearTimeout(this.active.timer);
       this.active.reject(err);
