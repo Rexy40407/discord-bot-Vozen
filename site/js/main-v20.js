@@ -211,6 +211,7 @@
      o estado DESTE utilizador. Escondido enquanto PREMIUM_API_BASE estiver vazio. */
   const TOK_KEY = "vozen.dtoken";
   const STATE_KEY = "vozen.oauthstate";
+  const NAV_USER_KEY = "vozen.navuser";
   const OAUTH_REDIRECT = new URL("account.html", location.href).href;
   let panelState = { mode: "hidden" };
 
@@ -236,6 +237,30 @@
     } catch {
       return null;
     }
+  }
+
+  function cachedNavData() {
+    if (!storedToken()) return null;
+    try {
+      const data = JSON.parse(sessionStorage.getItem(NAV_USER_KEY) || "null");
+      return data && data.user ? data : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function cacheNavData(data) {
+    try {
+      if (data && data.user) {
+        sessionStorage.setItem(NAV_USER_KEY, JSON.stringify({ user: data.user }));
+      } else {
+        sessionStorage.removeItem(NAV_USER_KEY);
+      }
+    } catch {}
+  }
+
+  function navDataForState(s = panelState) {
+    return s.mode === "ok" ? s.data : cachedNavData();
   }
 
   function unlockAccountPage() {
@@ -265,6 +290,7 @@
   function logout() {
     try {
       sessionStorage.removeItem(TOK_KEY);
+      sessionStorage.removeItem(NAV_USER_KEY);
     } catch {}
     if (IS_ACCOUNT) {
       window.location.href = "index.html";
@@ -293,8 +319,10 @@
   }
 
   function setPanel(s) {
+    if (s.mode === "ok") cacheNavData(s.data);
+    if (s.mode === "anon" || (s.mode === "hidden" && !storedToken())) cacheNavData(null);
     panelState = s;
-    renderNavLogin(s.mode === "ok" ? s.data : null);
+    renderNavLogin(navDataForState(s));
     renderPanel();
   }
 
@@ -329,6 +357,7 @@
       if (res.status === 401) {
         try {
           sessionStorage.removeItem(TOK_KEY);
+          sessionStorage.removeItem(NAV_USER_KEY);
         } catch {}
         if (IS_ACCOUNT) {
           login();
@@ -431,7 +460,7 @@
     if (panelState.mode === "hidden") {
       el.hidden = true;
       el.innerHTML = "";
-      renderNavLogin(null);
+      renderNavLogin(navDataForState());
       return;
     }
     el.hidden = false;
@@ -451,7 +480,7 @@
       body = renderOk(panelState.data || {});
     }
     el.innerHTML = head + body;
-    renderNavLogin(panelState.mode === "ok" ? panelState.data : null);
+    renderNavLogin(navDataForState());
     const byId = (id) => el.querySelector("#" + id);
     byId("ppLogin")?.addEventListener("click", login);
     byId("ppLogout")?.addEventListener("click", logout);
