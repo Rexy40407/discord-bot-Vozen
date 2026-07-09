@@ -21,7 +21,7 @@
       href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main-v15.css" />
+    <link rel="stylesheet" href="css/main-v16.css" />
     <style>
       body.page-account:not(.is-account-ready) main,
       body.page-account:not(.is-account-ready) .foot {
@@ -98,14 +98,35 @@
 
     <main>
       <!-- ─────────────── ACCOUNT ─────────────── -->
-      <section class="section" id="account" style="min-height: 64vh; display: flex; align-items: center;">
-        <div class="wrap" style="max-width: 700px; margin-inline: auto; width: 100%;">
-          <header class="head reveal" style="margin-bottom: 28px;">
+      <section class="section account-section" id="account">
+        <div class="wrap account-shell">
+          <header class="account-hero reveal">
             <span class="eyebrow eyebrow--amber">Account</span>
             <h1>Your benefits</h1>
+            <p>Discord identity, server licenses and personal perks in one place.</p>
           </header>
-          <!-- Painel Premium: login com Discord + estado da conta. Preenchido pelo main.js. -->
-          <div class="premium-panel" id="premiumPanel" aria-live="polite"></div>
+
+          <div class="account-grid">
+            <!-- Painel Premium: login com Discord + estado da conta. Preenchido pelo main.js. -->
+            <div class="premium-panel" id="premiumPanel" aria-live="polite"></div>
+
+            <aside class="account-rail" aria-label="Account summary">
+              <div class="account-card account-card--accent">
+                <span class="account-card__icon">◆</span>
+                <b>3 server licenses</b>
+                <p>Vozen Premium can be active on up to three servers.</p>
+              </div>
+              <div class="account-card">
+                <span class="account-card__icon account-card__icon--plus">✦</span>
+                <b>Personal Plus</b>
+                <p>Perks follow your Discord account across every server.</p>
+              </div>
+              <div class="account-actions">
+                <a href="index.html#premium">View plans</a>
+                <a href="#" class="js-support">Support</a>
+              </div>
+            </aside>
+          </div>
         </div>
       </section>
     </main>

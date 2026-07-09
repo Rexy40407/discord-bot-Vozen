@@ -569,9 +569,42 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 }
 
 /* ── Painel Premium (login com Discord + estado da conta) ───────────────────── */
+.account-section {
+  min-height: calc(100vh - 84px);
+  display: flex;
+  align-items: center;
+  padding-top: 110px;
+}
+.account-shell {
+  width: 100%;
+  max-width: 980px;
+}
+.account-hero {
+  margin: 0 0 28px;
+  text-align: center;
+}
+.account-hero h1 {
+  font-family: var(--f-display);
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 0.96;
+  margin-top: 8px;
+}
+.account-hero p {
+  max-width: 560px;
+  margin: 14px auto 0;
+  color: var(--text-2);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.account-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.72fr);
+  gap: 18px;
+  align-items: stretch;
+}
 .premium-panel {
   position: relative; overflow: hidden; isolation: isolate;
-  max-width: 640px; margin: 0 auto 22px; padding: 22px; border-radius: var(--radius);
+  width: 100%; min-height: 100%; margin: 0; padding: 22px; border-radius: var(--radius);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
     var(--glass-2);
@@ -761,7 +794,97 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
   color: rgba(255, 110, 169, 0.82); background: rgba(255, 110, 169, 0.1); border: 1px solid rgba(255, 110, 169, 0.26);
   font-family: var(--f-display); font-weight: 800;
 }
+.account-rail {
+  display: grid;
+  gap: 12px;
+}
+.account-card,
+.account-actions {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 var(--hi);
+}
+.account-card {
+  min-height: 144px;
+  padding: 18px;
+}
+.account-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -34px -50px auto;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(46, 230, 200, 0.16), transparent 68%);
+  pointer-events: none;
+}
+.account-card--accent {
+  background:
+    linear-gradient(135deg, rgba(255, 194, 75, 0.12), transparent 46%),
+    rgba(255, 255, 255, 0.045);
+}
+.account-card__icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  border-radius: 11px;
+  color: #201600;
+  background: var(--amber);
+  box-shadow: 0 14px 34px -18px rgba(255, 194, 75, 0.9);
+}
+.account-card__icon--plus {
+  color: #fff;
+  background: linear-gradient(135deg, var(--blurple), var(--aqua));
+}
+.account-card b {
+  display: block;
+  color: var(--text-0);
+  font-size: 17px;
+  line-height: 1.2;
+}
+.account-card p {
+  margin-top: 8px;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.account-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 58px;
+}
+.account-actions a {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 14px 12px;
+  color: var(--text-1);
+  font-weight: 700;
+  font-size: 14px;
+}
+.account-actions a + a {
+  border-left: 1px solid var(--line);
+}
+.account-actions a:hover {
+  color: var(--text-0);
+  background: rgba(255, 255, 255, 0.045);
+}
+@media (max-width: 900px) {
+  .account-section { padding-top: 96px; align-items: flex-start; }
+  .account-grid { grid-template-columns: 1fr; }
+  .account-rail { grid-template-columns: 1fr 1fr; }
+  .account-actions { grid-column: 1 / -1; }
+}
 @media (max-width: 560px) {
+  .account-section { min-height: auto; padding-top: 92px; }
+  .account-hero { text-align: left; }
+  .account-hero p { margin-left: 0; font-size: 15px; }
+  .account-rail { grid-template-columns: 1fr; }
   .premium-panel { padding: 16px; }
   .btn--discord { width: 100%; }
   .ppanel__account { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 16px; }
