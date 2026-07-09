@@ -61,3 +61,27 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 ## Note on plan 004 (product decision embedded)
 
 Plan 004 gates **guild**-kind `/redeem` codes behind `ManageGuild` (user/Plus codes stay open). That was the audit's safe default — if the intended UX is "any member can redeem a guild code", drop that step of plan 004 and mark the SEC-02 finding REJECTED here instead.
+
+## 2.ª auditoria — 2026-07-09 (executada DIRETAMENTE, sem ficheiros de plano)
+
+Nova passagem do `/improve` @ commit `8abbf1e` (4 auditores paralelos → 20 achados
+vetados). O Diogo pediu execução direta (não planos-para-o-Codex). Os 7 de maior
+alavancagem foram feitos e verificados nesta sessão:
+
+| # | Achado | Categoria | Commit |
+| --- | --- | --- | --- |
+| 019 | CI vermelho desde `449cf88` (prettier em `perUserRouter.test.ts`) | dx | `129a5cc` |
+| 020 | Webhook Ko-fi sem idempotência (retry = premium a dobrar) → ledger `kofi_transaction` | bug/security | `bf27ac7` |
+| 022 | Hardening da API do dinheiro (timingSafeEqual · XFF rightmost · bind loopback · fetch timeout) | security | `7c24ebd` |
+| 025 | Testes do POST Ko-fi (401/400/413) + gate Free/Premium do `/pronunciation` | tests | `90eefcc` |
+| 021 | `Restart=always` no `vozen.service` (kill ao leaf deixava o bot DOWN) | bug/ops | `956a628` |
+| 023 | Node `>=22.12` + gitignore de runtime + `.env.example` completo + ARCHITECTURE | dx/docs | `0f5436a` |
+| 024 | Auto-deploy do bot (`deploy-bot.yml` + deploy key + secrets) — testado ao vivo | dx/ci | `6269d2d` |
+
+Verificação: 1449 testes verdes, CI verde (reposto), tudo deployado no VPS via o novo
+auto-deploy. **Não planeados** (decisão do maintainer): "24/7 in-call" vendido sem código
+(construir M ou tirar do cartão) · Premium Apps do Discord inertes (falta config no portal).
+**Não feitos por baixa alavancagem**: PERF-01 (i18n 10 línguas — ganho modesto pós-gzip; só
+falta `defer` nos scripts) · TEST-05 (extrair `esc` do site) · BUG-03 (buffer dos sidecars
+não-reset — degradação limitada, com fallback) · DEBT-02 (split do array de builders em
+`commands/index.ts`) · DEP-02 (lag de versões — nada urgente).
