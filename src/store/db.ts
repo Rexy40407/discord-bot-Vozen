@@ -224,6 +224,17 @@ export function initDb(path: string): Database.Database {
         transaction_id TEXT PRIMARY KEY,
         processed_at   INTEGER NOT NULL
       );
+
+      -- 24/7 in-call (Premium): canal de voz onde o bot estava, por guild. Guardado ao
+      -- entrar numa call (só servidores Premium) e apagado no /leave e no guildDelete —
+      -- NÃO no funil genérico removePlayer nem no shutdown, para SOBREVIVER a um restart
+      -- (deploy). No arranque (ClientReady) o bot repõe-se nestes canais se ainda for
+      -- Premium; as linhas não-Premium são limpas aí como rede de segurança.
+      CREATE TABLE IF NOT EXISTS voice_presence (
+        guild_id   TEXT PRIMARY KEY,
+        channel_id TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
     `);
 
     // Migracoes idempotentes de guild_config GUIADAS PELO DESCRITOR

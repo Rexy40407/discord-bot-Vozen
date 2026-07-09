@@ -9,6 +9,7 @@ import type { GreetCooldown } from '../voice/greetCooldown';
 import type { DuplicateTracker } from '../moderation/antispam';
 import type { GameManager } from '../games/manager';
 import { invalidateGuild } from '../store/cache';
+import { forgetVoicePresence } from '../store/voicePresence';
 import { log } from '../logging/logger';
 
 export interface BotDeps {
@@ -115,6 +116,8 @@ export function handleGuildDelete(
     deps.games?.endGuild(guildId);
     // Liberta as entradas de cache dos stores desta guild (bound de memória).
     if (deps.db) invalidateGuild(deps.db, guildId);
+    // 24/7 in-call: a guild desapareceu -> esquece a presença (não repor no arranque).
+    if (deps.db) forgetVoicePresence(deps.db, guildId);
   } catch (err) {
     log.warn('[client] falha ao libertar recursos da guild em guildDelete (ignorado)', err);
   }

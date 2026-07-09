@@ -14,6 +14,8 @@ import { ChannelType, type VoiceBasedChannel } from 'discord.js';
 import { GuildVoicePlayer } from './player';
 import type { BotDeps } from '../bot/deps';
 import { removePlayer } from '../bot/deps';
+import { isGuildPremium } from '../store/premium';
+import { rememberVoicePresence } from '../store/voicePresence';
 import { log } from '../logging/logger';
 
 /**
@@ -68,5 +70,15 @@ export function createVoiceSession(
     },
   );
   deps.players.set(guildId, player);
+  // 24/7 in-call: só servidores Premium persistem o canal, para serem repostos no
+  // arranque (ver rejoin.ts). Best-effort — NUNCA bloqueia a entrada na call (e um
+  // deps sem db, como em testes, cai no catch sem efeito).
+  try {
+    if (isGuildPremium(deps.db, guildId, Date.now())) {
+      rememberVoicePresence(deps.db, guildId, channelId, Date.now());
+    }
+  } catch (err) {
+    log.warn('[voice] não consegui guardar a presença 24/7 (ignorado)', err);
+  }
   return player;
 }

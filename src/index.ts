@@ -1,7 +1,7 @@
 import { readdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { getVoiceConnection } from '@discordjs/voice';
-import { Events, Routes } from 'discord.js';
+import { Events, Routes, PermissionFlagsBits } from 'discord.js';
 import { loadConfig } from './config/index';
 import { startBotListUpdater } from './botLists';
 import { log } from './logging/logger';
@@ -20,6 +20,9 @@ import { removePlayer } from './bot/deps';
 import { GameManager } from './games/manager';
 import { systemClock } from './games/types';
 import { isGuildPremium } from './store/premium';
+import { createVoiceSession, becomeSpeakerIfStage } from './voice/session';
+import { listVoicePresence, forgetVoicePresence } from './store/voicePresence';
+import { planRejoin, type ChannelState } from './voice/rejoin';
 import { loadBoardEmojis } from './games/boardEmojis';
 import { deleteChannelSafe } from './games/thread';
 import { getGuildConfig } from './store/guildConfig';
@@ -321,6 +324,50 @@ async function main(): Promise<void> {
       });
     } catch (err) {
       log.error('[index] falha ao arrancar a sync de entitlements (ignorado)', err);
+    }
+    // 24/7 in-call: repõe os servidores Premium nos canais onde estavam antes do
+    // restart/deploy (as ligações de voz morrem no encerramento; as linhas de
+    // voice_presence sobrevivem). planRejoin (puro) decide o que repor vs esquecer;
+    // aqui só resolvemos o estado real do canal e executamos. Best-effort por guild.
+    try {
+      const channelStateOf = (guildId: string, channelId: string): ChannelState => {
+        const guild = client.guilds.cache.get(guildId);
+        if (!guild) return 'gone'; // já não estamos na guild
+        const chan = guild.channels.cache.get(channelId);
+        if (!chan || !chan.isVoiceBased()) return 'gone'; // canal apagado / já não é de voz
+        const me = guild.members.me;
+        const perms = me ? chan.permissionsFor(me) : null;
+        if (!perms?.has(PermissionFlagsBits.Connect) || !perms.has(PermissionFlagsBits.Speak)) {
+          return 'no-perms';
+        }
+        return 'ready';
+      };
+      const rows = listVoicePresence(db);
+      if (rows.length > 0) {
+        const plan = planRejoin(rows, {
+          isPremium: (gid) => isGuildPremium(db, gid, Date.now()),
+          channelState: channelStateOf,
+        });
+        for (const gid of plan.forget) forgetVoicePresence(db, gid);
+        let rejoined = 0;
+        for (const row of plan.rejoin) {
+          try {
+            const guild = client.guilds.cache.get(row.guildId);
+            if (!guild) continue;
+            createVoiceSession(deps, row.guildId, row.channelId, guild.voiceAdapterCreator);
+            const chan = guild.channels.cache.get(row.channelId);
+            if (chan?.isVoiceBased()) becomeSpeakerIfStage(chan);
+            rejoined++;
+          } catch (err) {
+            log.warn(`[voice] falha ao repor 24/7 na guild ${row.guildId} (ignorado)`, err);
+          }
+        }
+        log.info(
+          `[voice] 24/7: ${rejoined} servidor(es) Premium repostos, ${plan.forget.length} presença(s) limpa(s).`,
+        );
+      }
+    } catch (err) {
+      log.error('[index] falha no rejoin 24/7 (ignorado)', err);
     }
     // Comandos OWNER-ONLY (/vozengrant): resolve o(s) dono(s) REAL(is) via a application
     // (User ou membros da Team) + OWNER_ID, e regista o comando SÓ na guild de controlo

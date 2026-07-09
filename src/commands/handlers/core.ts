@@ -18,6 +18,7 @@ import { isDetectionOn } from '../../store/langDetect';
 import { getUserPronunciations, getServerPronunciations } from '../../store/pronunciation';
 import { getVoiceEffect } from '../../store/voiceEffect';
 import { getClone } from '../../store/voiceClone';
+import { forgetVoicePresence } from '../../store/voicePresence';
 import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../../textCleaning/clean';
 import { prepareSpeech, redactRequest, hasReadableText } from '../prepareSpeech';
 import { recallLang, rememberLang } from '../../language/langMemory';
@@ -90,6 +91,9 @@ export async function handleJoin(i: ChatInputCommandInteraction, deps: BotDeps):
 
 export async function handleLeave(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   removePlayer(deps, i.guildId!);
+  // 24/7 in-call: saída EXPLÍCITA -> esquece a presença para NÃO repor no arranque
+  // (ao contrário de um restart/deploy, que preserva a linha de propósito).
+  forgetVoicePresence(deps.db, i.guildId!);
   getVoiceConnection(i.guildId!)?.destroy();
   await reply(i, t('leave.left', localeForUser(deps, i)));
 }
