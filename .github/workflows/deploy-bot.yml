@@ -1,0 +1,40 @@
+# Auto-deploy do BOT para o VPS (docs/DEPLOY-VPS.md §12). A cada push à main que
+# altere o código do bot, faz SSH ao VPS (chave dedicada ~/.ssh/deploy_key do user
+# vozen; secrets VPS_HOST/VPS_USER/VPS_SSH_KEY) e corre pull+ci+build+restart.
+# O sudoers do VPS permite `systemctl restart vozen.service` sem password (NOPASSWD
+# estreito). O site já tem o seu próprio auto-deploy (pages.yml) — este é só o bot.
+name: Deploy bot to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/deploy-bot.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-bot
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd ~/discord-bot-Vozen
+            git pull --ff-only
+            npm ci
+            npm run build
+            sudo -n systemctl restart vozen.service
+            sleep 20
+            systemctl is-active vozen.service
