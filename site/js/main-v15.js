@@ -13,7 +13,7 @@
   // Painel Premium: base HTTPS da API do bot (GET /api/me/premium). VAZIO => o painel fica
   // escondido (a feature ainda não está no ar). Preenche com o teu host quando tiveres o
   // domínio/túnel + PREMIUM_API_ENABLED=true no bot. Ex.: "https://api.vozen.xyz".
-  const PREMIUM_API_BASE = "";
+  const PREMIUM_API_BASE = "https://api.vozen.org";
   const INVITE_URL =
     CLIENT_ID && CLIENT_ID !== "YOUR_CLIENT_ID"
       ? `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&scope=bot%20applications.commands&permissions=${INVITE_PERMISSIONS}`
@@ -324,24 +324,61 @@
     }
   }
 
-  function planChip(label, cls) {
-    return `<span class="ppanel__chip ppanel__chip--${cls}">${label}</span>`;
+  function avatarMarkup(u, cls, size) {
+    const initial = esc((u.username || "?").slice(0, 1).toUpperCase());
+    if (u.id && u.avatar) {
+      const ext = String(u.avatar).startsWith("a_") ? "gif" : "png";
+      return `<img class="${cls}" src="https://cdn.discordapp.com/avatars/${esc(u.id)}/${esc(u.avatar)}.${ext}?size=${size}" alt="" width="${size}" height="${size}" referrerpolicy="no-referrer">`;
+    }
+    return `<span class="${cls} ${cls}--none">${initial}</span>`;
+  }
+
+  function statusRow(label, active, detail) {
+    const state = active ? "is-on" : "is-off";
+    const text = active ? "Active" : "Inactive";
+    const mark = active ? "&#10003;" : "&#10005;";
+    return (
+      `<div class="ppanel__status ${state}">` +
+      `<span>${esc(label)}</span><b class="ppanel__mark ${state}" aria-label="${text}">${mark}</b>` +
+      (detail ? `<small>${detail}</small>` : "") +
+      `</div>`
+    );
+  }
+
+  function renderNavLogin(data) {
+    const btn = document.getElementById("navLogin");
+    if (!btn) return;
+    const u = data && data.user ? data.user : null;
+    if (!u) {
+      btn.classList.remove("nav__login--account");
+      btn.removeAttribute("aria-label");
+      btn.innerHTML = `${DISCORD_MARK}<span data-i18n="nav.login">${t("nav.login")}</span>`;
+      return;
+    }
+    btn.classList.add("nav__login--account");
+    btn.setAttribute("aria-label", `Discord account: ${u.username || "user"}`);
+    btn.innerHTML = `${avatarMarkup(u, "nav__login-av", 24)}<span>${esc(u.username || "Account")}</span>`;
   }
 
   function renderOk(d) {
     const u = d.user || {};
-    const av = u.avatar
-      ? `<img class="ppanel__av" src="https://cdn.discordapp.com/avatars/${esc(u.id)}/${esc(u.avatar)}.png?size=64" alt="" width="40" height="40" referrerpolicy="no-referrer">`
-      : `<span class="ppanel__av ppanel__av--none">${esc((u.username || "?").slice(0, 1).toUpperCase())}</span>`;
-    let plans = "";
+    const av = avatarMarkup(u, "ppanel__av", 64);
     const plus = d.plus || {};
     const pass = d.pass;
-    if (plus.active) {
-      plans += `<div class="ppanel__plan">${planChip("Vozen Plus", "plus")}<span class="ppanel__meta">${t("panel.activeUntil")} ${fmtDate(plus.expiresAt)}</span></div>`;
-    }
+    const plusActive = !!plus.active;
+    const premiumActive = !!(pass && pass.active);
+    const plusDetail = plus.expiresAt
+      ? `${plusActive ? t("panel.activeUntil") : t("panel.expiredOn")} ${esc(fmtDate(plus.expiresAt))}`
+      : "";
+    const premiumParts = [];
     if (pass) {
-      const dateLbl = pass.active ? t("panel.activeUntil") : t("panel.expiredOn");
-      let servers = "";
+      premiumParts.push(`${esc(pass.used ?? 0)} / ${esc(pass.seats ?? 0)} ${t("panel.seatsUsed")}`);
+      if (pass.expiresAt) {
+        premiumParts.push(`${premiumActive ? t("panel.activeUntil") : t("panel.expiredOn")} ${esc(fmtDate(pass.expiresAt))}`);
+      }
+    }
+    let servers = "";
+    if (premiumActive) {
       if (pass.servers && pass.servers.length) {
         const items = pass.servers
           .map((s) => `<li>${s.name ? esc(s.name) : "<code>" + esc(s.id) + "</code>"}</li>`)
@@ -350,15 +387,16 @@
       } else {
         servers = `<p class="ppanel__meta">${t("panel.noServers")}</p>`;
       }
-      plans += `<div class="ppanel__plan">${planChip("Vozen Premium", "pro")}<span class="ppanel__meta">${pass.used} / ${pass.seats} ${t("panel.seatsUsed")} · ${dateLbl} ${fmtDate(pass.expiresAt)}</span>${servers}</div>`;
-    }
-    if (!plus.active && !pass) {
-      plans = `<div class="ppanel__none"><b>${t("panel.none")}</b><span class="ppanel__meta">${t("panel.noneSub")}</span></div>`;
     }
     return (
-      `<div class="ppanel__user">${av}<span class="ppanel__name">${esc(u.username || "")}</span>` +
+      `<div class="ppanel__account">` +
+      `<div class="ppanel__user">${av}<span class="ppanel__identity"><span class="ppanel__name">${esc(u.username || "Discord user")}</span>` +
+      `<span class="ppanel__id">Discord ID: ${esc(u.id || "-")}</span></span></div>` +
       `<button type="button" class="ppanel__logout" id="ppLogout">${t("panel.logout")}</button></div>` +
-      `<div class="ppanel__plans">${plans}</div>`
+      `<div class="ppanel__statusgrid">` +
+      statusRow("Vozen Premium", premiumActive, premiumParts.join(" &middot; ")) +
+      statusRow("Vozen Plus", plusActive, plusDetail) +
+      `</div>${servers}`
     );
   }
 
@@ -368,6 +406,7 @@
     if (panelState.mode === "hidden") {
       el.hidden = true;
       el.innerHTML = "";
+      renderNavLogin(null);
       return;
     }
     el.hidden = false;
@@ -386,6 +425,7 @@
       body = renderOk(panelState.data || {});
     }
     el.innerHTML = head + body;
+    renderNavLogin(panelState.mode === "ok" ? panelState.data : null);
     const byId = (id) => el.querySelector("#" + id);
     byId("ppLogin")?.addEventListener("click", login);
     byId("ppLogout")?.addEventListener("click", logout);
@@ -395,6 +435,12 @@
   // Botão de login na navbar: leva à página dedicada da conta (account.html). Já na
   // página da conta, faz login OAuth quando o backend está no ar; senão faz scroll ao
   // painel (que mostra "em breve") — nunca dispara um redirect que ainda não existe.
+  function scrollPremiumPanel() {
+    document
+      .getElementById("premiumPanel")
+      ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+  }
+
   const navLoginBtn = document.getElementById("navLogin");
   if (navLoginBtn) {
     navLoginBtn.addEventListener("click", () => {
@@ -402,11 +448,12 @@
         window.location.href = "account.html";
         return;
       }
+      if (panelState.mode === "ok") {
+        scrollPremiumPanel();
+        return;
+      }
       if (PREMIUM_API_BASE) login();
-      else
-        document
-          .getElementById("premiumPanel")
-          ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+      else scrollPremiumPanel();
     });
   }
 

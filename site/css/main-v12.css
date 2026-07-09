@@ -586,23 +586,64 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 /* Botão de login na navbar (substitui o CTA "Add to Discord"): logo + texto alinhados. */
 .nav__login { display: inline-flex; align-items: center; gap: 8px; }
 .nav__login svg { display: block; }
+.nav__login--account { padding-left: 10px; }
+.nav__login-av {
+  width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.34);
+}
+.nav__login-av--none {
+  display: grid; place-items: center; font-family: var(--f-display); font-size: 12px; font-weight: 800;
+  background: rgba(255, 255, 255, 0.18); color: #fff;
+}
+.nav__login--account span:last-child {
+  max-width: 132px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .btn--ghost {
   margin-top: 10px; padding: 9px 16px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px;
   color: var(--text-0); background: rgba(255, 255, 255, 0.045); border: 1px solid var(--line-2);
 }
 .btn--ghost:hover { background: rgba(255, 255, 255, 0.08); }
-.ppanel__user { display: flex; align-items: center; gap: 12px; }
-.ppanel__av { border-radius: 50%; object-fit: cover; }
+.ppanel__account { display: flex; align-items: center; gap: 14px; }
+.ppanel__user { min-width: 0; display: flex; align-items: center; gap: 12px; }
+.ppanel__av {
+  width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.24), 0 18px 40px -24px rgba(102, 114, 255, 0.95);
+}
 .ppanel__av--none {
-  width: 40px; height: 40px; display: grid; place-items: center; font-weight: 800;
+  display: grid; place-items: center; font-weight: 800;
   background: var(--blurple); color: #fff; font-family: var(--f-display);
 }
+.ppanel__identity { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .ppanel__name { font-weight: 700; color: var(--text-0); font-size: 15px; }
+.ppanel__id {
+  color: var(--text-2); font-family: var(--f-mono); font-size: 12px; overflow-wrap: anywhere;
+}
 .ppanel__logout {
   margin-left: auto; padding: 7px 14px; border-radius: 9px; cursor: pointer; font-weight: 600; font-size: 13px;
   color: var(--text-1); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line-2);
 }
 .ppanel__logout:hover { color: var(--text-0); background: rgba(255, 255, 255, 0.08); }
+.ppanel__statusgrid { margin-top: 18px; display: grid; gap: 10px; }
+.ppanel__status {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 5px 14px;
+  padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line);
+}
+.ppanel__status.is-on {
+  border-color: rgba(46, 230, 200, 0.28);
+  background: linear-gradient(90deg, rgba(46, 230, 200, 0.09), rgba(255, 255, 255, 0.035));
+}
+.ppanel__status.is-off {
+  border-color: rgba(255, 110, 169, 0.18);
+  background: rgba(255, 255, 255, 0.028);
+}
+.ppanel__status span { color: var(--text-0); font-weight: 700; }
+.ppanel__status small { grid-column: 1 / -1; color: var(--text-2); font-size: 12.5px; line-height: 1.45; }
+.ppanel__mark {
+  width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%;
+  font-family: var(--f-display); font-size: 15px; font-weight: 900;
+}
+.ppanel__mark.is-on { color: #04150f; background: var(--aqua); box-shadow: 0 0 20px rgba(46, 230, 200, 0.34); }
+.ppanel__mark.is-off { color: #ffd4e1; background: rgba(255, 110, 169, 0.13); border: 1px solid rgba(255, 110, 169, 0.34); }
 .ppanel__plans { margin-top: 16px; display: flex; flex-direction: column; gap: 14px; }
 .ppanel__plan { display: flex; flex-direction: column; gap: 6px; }
 .ppanel__chip {
@@ -621,6 +662,11 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 .ppanel__servers li code { font-family: var(--f-mono); color: var(--text-2); }
 .ppanel__none { display: flex; flex-direction: column; gap: 4px; }
 .ppanel__none b { color: var(--text-0); font-size: 15px; }
+@media (max-width: 560px) {
+  .premium-panel { padding: 18px; }
+  .ppanel__account { align-items: flex-start; flex-direction: column; }
+  .ppanel__logout { margin-left: 0; width: 100%; }
+}
 
 .pricing { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; max-width: 1180px; margin: 0 auto; }
 .price-card {
