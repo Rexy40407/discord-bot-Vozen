@@ -85,3 +85,24 @@ auto-deploy. **Não planeados** (decisão do maintainer): "24/7 in-call" vendido
 falta `defer` nos scripts) · TEST-05 (extrair `esc` do site) · BUG-03 (buffer dos sidecars
 não-reset — degradação limitada, com fallback) · DEBT-02 (split do array de builders em
 `commands/index.ts`) · DEP-02 (lag de versões — nada urgente).
+
+## Follow-up — 2026-07-09 (feature 24/7 + limpar os "não feitos")
+
+O Diogo pediu para fechar tudo o que ficou de fora. Resolvido em 5 commits diretos:
+
+| Item | O que | Commit |
+| --- | --- | --- |
+| 24/7 in-call | AloneWatcher ganha gate `isPremium`: guilds Premium ficam na call mesmo sozinhas. Ligado via `isGuildPremium`. +4 testes. | `0ecf9d5` |
+| Copy honesto | Site deixa de vender "coming soon"/"on the way": `price.pro.3` + FAQ nas 10 línguas passam à garantia real ("fica no canal mesmo quando esvazia"). i18n v10→v11 + `defer` (PERF-01). | `0ff81f6` |
+| BUG-03 | `teardown()` do kokoro+clone limpa `this.buffer` (bytes parciais colavam-se à 1.ª linha do respawn → JSON.parse partido). | `3e2b501` |
+| DEBT-02 | `commandDefsRaw`/`commandDefs`/`ownerCommandDefs` → `commands/definitions.ts` (index.ts 1066→~300 linhas), re-exportados. | `9a14a16` |
+| TEST-05 | Teste read-and-eval do `esc()` anti-XSS a partir da fonte real do site (sem tocar no load). +5 testes. | `8a94a97` |
+
+Decisão sobre o 24/7: o gate dá "não sai quando fica sozinho". A persistência através de
+restarts (guardar canal + rejoin no `ClientReady`) NÃO foi construída — mete-se no boot path
+e não estava no âmbito; o copy do site foi acertado à garantia real em vez de prometer isso.
+Fica como follow-up opcional se se quiser o "24/7 literal através de deploys".
+
+Verificação: 1458 testes verdes, CI verde, site (pages) + bot (VPS `8a94a97`) deployados pelos
+auto-deploys. **Premium Apps do Discord** continua inerte (falta config no Developer Portal —
+não é código, só o Diogo pode).
