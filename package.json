@@ -5,7 +5,7 @@
   "description": "Vozen — type it, hear it. Free neural TTS bot for Discord (Piper, self-host) with reliability.",
   "license": "AGPL-3.0-only",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",

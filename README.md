@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/diogoshk3/discord-bot-Vozen/actions/workflows/ci.yml/badge.svg)](https://github.com/diogoshk3/discord-bot-Vozen/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
-![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
+![Node](https://img.shields.io/badge/node-%3E%3D22.12-brightgreen)
 ![Docker ready](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![made with Piper](https://img.shields.io/badge/made%20with-Piper-5a4fcf)
 
@@ -30,7 +30,7 @@ Alongside that: moderation (blocklist, rate-limit, char limit, per-channel gatin
 
 ## 3-line install (quickstart)
 
-Already have Node (>= 20), the Piper binary and at least one `.onnx` voice model? Then the minimum to get going is:
+Already have Node (>= 22.12), the Piper binary and at least one `.onnx` voice model? Then the minimum to get going is:
 
 ```bash
 git clone https://github.com/diogoshk3/discord-bot-Vozen.git vozen && cd vozen
@@ -62,7 +62,7 @@ _(demo coming soon — a ~10s GIF reading PT + EN with the Piper neural voice.)_
 
 ### 1.1 Software
 
-- **Node.js LTS** (>= 20). Check with:
+- **Node.js LTS** (>= 22.12 — required by `@discordjs/voice`). Check with:
   ```
   node -v
   npm -v

@@ -49,12 +49,14 @@ apt install -y curl git ffmpeg build-essential ufw
 `build-essential` é preciso para compilar módulos nativos do npm
 (`better-sqlite3`, `@discordjs/opus`).
 
-## 3. Node.js 20
+## 3. Node.js 22 LTS
+
+O `@discordjs/voice` exige Node >= 22.12 (o `engines` do package.json também).
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt install -y nodejs
-node -v   # confirma v20.x
+node -v   # confirma v22.x
 ```
 
 ## 4. Utilizador não-root (boa prática)
@@ -307,7 +309,7 @@ sozinho no VPS em ~1 minuto — tal como o site já faz no GitHub Pages.
 
 - [ ] VPS criado (Ubuntu 24.04), IP anotado
 - [ ] DNS `api.vozen.org` → IP do VPS
-- [ ] Node 20 + ffmpeg + build-essential instalados
+- [ ] Node 22 (>=22.12) + ffmpeg + build-essential instalados
 - [ ] Repo clonado, `npm ci && npm run build` sem erros
 - [ ] `.env` preenchido, `PREMIUM_API_ENABLED=true`, `PREMIUM_API_ORIGIN=https://vozen.org`
 - [ ] `vozen.service` a correr (`systemctl status`)

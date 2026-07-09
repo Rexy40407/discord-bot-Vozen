@@ -21,5 +21,12 @@ tools/voices-v1.0.bin
 logs/
 commands-state.json
 
+# Cache de áudio sintetizado em runtime (regenera-se; nunca commitar blobs)
+audio-cache/
+
+# Scratch de agentes/pessoal e índice do Obsidian (o repo vive dentro da vault)
+scratchpad/
+_Índice Voxi-bot.md
+
 # Saída da minificação do site (gerada por `npm run build:site`; publicada só em CI)
 site-dist/
