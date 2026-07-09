@@ -1,0 +1,307 @@
+# Deploy do bot num VPS 24/7 + API do Premium em HTTPS
+
+Guia passo-a-passo para pôr o Vozen a correr sempre ligado num VPS Linux, e
+expor a API do painel Premium (`GET /api/me/premium`) em HTTPS — a peça que
+falta para o login com Discord no site (`account.html`) funcionar a sério.
+
+Sem isto o site fica no estado "em breve" (painel dormente). Depois deste
+guia: `PREMIUM_API_ENABLED=true` + domínio `api.vozen.org` + login OAuth
+real.
+
+## 0. Escolha do VPS
+
+**Recomendado:** [Hetzner Cloud](https://www.hetzner.com/cloud) — plano
+**CX22** (2 vCPU, 4 GB RAM, 40 GB disco), ~€4,5/mês. Região `Falkenstein`
+ou `Nuremberg` (Alemanha) — mais perto de Portugal, boa latência.
+
+Ao criar o servidor:
+- **Imagem:** Ubuntu 24.04 LTS
+- **SSH key:** adiciona a tua chave pública (`ssh-keygen` se ainda não
+  tiveres uma) — mais seguro que password. Se preferires password, o
+  Hetzner manda-a por email.
+- Nome sugerido: `vozen-prod`
+
+No fim, o Hetzner dá-te um **IP público** — precisas dele nos passos
+seguintes.
+
+## 1. Apontar o subdomínio da API
+
+Na Namecheap (Advanced DNS do `vozen.org`, o mesmo sítio dos outros
+registos), adiciona:
+
+| Type | Host | Value | TTL |
+|---|---|---|---|
+| A Record | `api` | `<IP do VPS>` | Automatic |
+
+Isto faz `api.vozen.org` apontar para o VPS. Confirma com
+`nslookup api.vozen.org` ao fim de uns minutos.
+
+## 2. Primeiro acesso e atualização do sistema
+
+```bash
+ssh root@<IP do VPS>
+
+apt update && apt upgrade -y
+apt install -y curl git ffmpeg build-essential ufw
+```
+
+`ffmpeg` é obrigatório (o player de voz depende dele).
+`build-essential` é preciso para compilar módulos nativos do npm
+(`better-sqlite3`, `@discordjs/opus`).
+
+## 3. Node.js 20
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs
+node -v   # confirma v20.x
+```
+
+## 4. Utilizador não-root (boa prática)
+
+```bash
+adduser vozen
+usermod -aG sudo vozen
+su - vozen
+```
+
+Todos os passos seguintes correm como `vozen`, não como `root`.
+
+## 5. Clonar e preparar o bot
+
+```bash
+git clone https://github.com/Rexy40407/discord-bot-Vozen.git
+cd discord-bot-Vozen
+npm ci
+npm run build
+```
+
+## 6. `.env` de produção
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Preenche (**nunca commitar este ficheiro**):
+
+```dotenv
+DISCORD_TOKEN=<o token do bot>
+CLIENT_ID=1523826014935842997
+
+# Motor TTS — piper é grátis/self-hosted, é o default se deixares em branco
+TTS_ENGINE=piper
+
+# Ko-fi (se já tiveres o produto configurado)
+KOFI_WEBHOOK_TOKEN=<token da Ko-fi, em Settings -> API>
+KOFI_WEBHOOK_PORT=3001
+
+# Painel Premium — ATIVA aqui
+PREMIUM_API_ENABLED=true
+PREMIUM_API_ORIGIN=https://vozen.org
+```
+
+`PREMIUM_API_ORIGIN` é a única origem que o CORS deixa chamar a API — tem
+de ser exatamente `https://vozen.org` (sem barra final).
+
+## 7. Serviço systemd (mantém o bot ligado 24/7)
+
+```bash
+sudo nano /etc/systemd/system/vozen.service
+```
+
+Conteúdo:
+
+```ini
+[Unit]
+Description=Vozen Discord TTS bot
+After=network.target
+
+[Service]
+Type=simple
+User=vozen
+WorkingDirectory=/home/vozen/discord-bot-Vozen
+ExecStart=/usr/bin/npm run start:prod
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Ativa:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now vozen.service
+sudo systemctl status vozen.service   # confirma "active (running)"
+sudo journalctl -u vozen.service -f   # logs em direto (Ctrl+C para sair)
+```
+
+O `start:prod` usa o supervisor `scripts/start-prod.mjs` (lock, restart
+automático). O systemd é a segunda camada — reinicia mesmo que o processo
+Node morra por completo ou a máquina reinicie.
+
+## 8. Caddy — HTTPS automático e grátis para `api.vozen.org`
+
+Caddy trata do certificado Let's Encrypt sozinho, sem qualquer configuração
+manual de SSL.
+
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install -y caddy
+```
+
+Edita o Caddyfile:
+
+```bash
+sudo nano /etc/caddy/Caddyfile
+```
+
+Substitui tudo por:
+
+```
+api.vozen.org {
+    reverse_proxy localhost:3001
+}
+```
+
+Aplica:
+
+```bash
+sudo systemctl reload caddy
+```
+
+Caddy vai buscar o certificado automaticamente na primeira ligação
+(precisa do DNS do passo 1 já propagado). Testa:
+
+```bash
+curl -I https://api.vozen.org/api/me/premium
+# esperado: 401 Unauthorized (sem token) — confirma que o HTTPS + proxy funcionam
+```
+
+## 9. Firewall
+
+Só deixa passar SSH, HTTP e HTTPS. A porta 3001 fica **só** acessível
+localmente (o Caddy é que fala com ela via `localhost`).
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+sudo ufw status
+```
+
+## 10. Ligar o site ao backend (eu faço isto)
+
+Três alterações no código, depois de confirmares que `api.vozen.org`
+responde em HTTPS:
+
+1. `site/js/main-v14.js`: `PREMIUM_API_BASE = "https://api.vozen.org"`
+2. Build + commit + push do site (dispara o deploy do GitHub Pages).
+3. **Discord Developer Portal** → a tua app → **OAuth2 → Redirects** →
+   adicionar `https://vozen.org/account.html`.
+
+Depois disto, `https://vozen.org/account.html` deixa de mostrar "em
+breve" e passa a ter o botão real de login com Discord.
+
+## 11. Deploys seguintes (manual)
+
+Sempre que houver código novo, até termos o deploy automático (passo 12):
+
+```bash
+cd ~/discord-bot-Vozen
+git pull
+npm ci
+npm run build
+sudo systemctl restart vozen.service
+```
+
+## 12. Deploy automático (GitHub Actions → SSH ao VPS)
+
+Depois de confirmares que o deploy manual funciona (passos 1–11), automatiza-se
+como o site: a cada push à `main` que altere `src/**`, um workflow do GitHub
+faz SSH ao VPS e corre os mesmos 4 comandos sozinho.
+
+**No VPS**, gera um par de chaves SSH dedicado ao deploy (não uses a tua
+chave pessoal):
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/deploy_key -N ""
+cat ~/.ssh/deploy_key.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/deploy_key        # copia esta CHAVE PRIVADA para o passo seguinte
+```
+
+**No GitHub** → repositório → **Settings → Secrets and variables → Actions
+→ New repository secret**, cria 3 segredos:
+
+| Nome | Valor |
+|---|---|
+| `VPS_HOST` | o IP do VPS |
+| `VPS_USER` | `vozen` |
+| `VPS_SSH_KEY` | o conteúdo da chave **privada** (`~/.ssh/deploy_key`, tudo incluindo `-----BEGIN...-----`) |
+
+**No repositório**, cria `.github/workflows/deploy-bot.yml`:
+
+```yaml
+name: Deploy bot to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd ~/discord-bot-Vozen
+            git pull
+            npm ci
+            npm run build
+            sudo systemctl restart vozen.service
+```
+
+Para o `sudo systemctl restart` não pedir password nesse comando específico,
+no VPS:
+
+```bash
+sudo visudo -f /etc/sudoers.d/vozen-deploy
+```
+
+Conteúdo (uma linha, restringe ao mínimo — só este comando, sem password):
+
+```
+vozen ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart vozen.service
+```
+
+A partir daqui, cada `git push` à `main` com alterações em `src/` publica-se
+sozinho no VPS em ~1 minuto — tal como o site já faz no GitHub Pages.
+
+## Checklist rápida
+
+- [ ] VPS criado (Ubuntu 24.04), IP anotado
+- [ ] DNS `api.vozen.org` → IP do VPS
+- [ ] Node 20 + ffmpeg + build-essential instalados
+- [ ] Repo clonado, `npm ci && npm run build` sem erros
+- [ ] `.env` preenchido, `PREMIUM_API_ENABLED=true`, `PREMIUM_API_ORIGIN=https://vozen.org`
+- [ ] `vozen.service` a correr (`systemctl status`)
+- [ ] Caddy a servir `https://api.vozen.org` com certificado válido
+- [ ] `ufw` ativo, só 22/80/443 abertas
+- [ ] `PREMIUM_API_BASE` atualizado no site + push
+- [ ] Redirect URI adicionado no Discord Developer Portal
+- [ ] Deploy automático (passo 12): secrets no GitHub + `deploy-bot.yml` + sudoers
