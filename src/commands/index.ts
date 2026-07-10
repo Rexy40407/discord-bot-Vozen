@@ -35,6 +35,7 @@ import {
   handleServerPronunciation,
   handleRandomizer,
 } from './handlers/personal';
+import { handlePrivacy } from './handlers/privacy';
 import { localeFor } from './helpers';
 
 // Re-exports: mantêm os caminhos de import públicos inalterados para quem já importa daqui.
@@ -287,6 +288,8 @@ export async function handleInteraction(
         return await handleServerPronunciation(i, deps);
       case 'randomizer':
         return await handleRandomizer(i, deps);
+      case 'privacy':
+        return await handlePrivacy(i, deps);
     }
   } catch (err) {
     log.error('[command] erro em', i.commandName, err);

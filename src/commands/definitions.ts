@@ -142,6 +142,17 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) => s.setName('clear').setDescription('Remove your saved birthday'))
     .addSubcommand((s) => s.setName('show').setDescription('Show your saved birthday'))
     .toJSON(),
+  // /privacy — direito ao esquecimento (RGPD / Política do Discord §5(b)): apagar todos
+  // os dados pessoais num só comando (com confirmação). O premium pago fica retido.
+  new SlashCommandBuilder()
+    .setName('privacy')
+    .setDescription('Manage your personal data')
+    .addSubcommand((s) =>
+      s
+        .setName('erase')
+        .setDescription('Permanently delete all your personal data (asks you to confirm first)'),
+    )
+    .toJSON(),
   // /topspeakers — quem teve mais mensagens lidas pelo Vozen + streaks de dias seguidos.
   new SlashCommandBuilder()
     .setName('topspeakers')

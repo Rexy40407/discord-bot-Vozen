@@ -29,6 +29,26 @@ export const catalog: Record<string, Entry> = {
     en: 'Something went wrong. Please try again.',
     pt: 'Ocorreu um erro. Tenta outra vez.',
   },
+
+  // ── /privacy erase (direito ao esquecimento) ────────────────────────────────
+  'privacy.eraseConfirm': {
+    en: '⚠️ This permanently deletes **all** your Vozen data across every server: voice settings, spoken nickname, personal abbreviations and pronunciations, saved birthday, game scores, talk stats, opt-out, and any voice clone (including recordings of your voice made by others). **This cannot be undone.** Are you sure?',
+    pt: '⚠️ Isto apaga PERMANENTEMENTE **todos** os teus dados do Vozen em todos os servidores: definições de voz, apelido falado, abreviaturas e pronúncias pessoais, aniversário guardado, pontuações de jogos, estatísticas de fala, opt-out, e qualquer clone de voz (incluindo gravações da tua voz feitas por outros). **Isto não pode ser desfeito.** Tens a certeza?',
+  },
+  'privacy.erasePremiumNote': {
+    en: '_Note: your paid Premium/Plus and its purchase history are kept — they belong to you and to legally-required financial records. To stop Premium, let it expire or contact support._',
+    pt: '_Nota: o teu Premium/Plus pago e o histórico da compra são mantidos — pertencem-te e à contabilidade legalmente exigida. Para parar o Premium, deixa-o expirar ou contacta o suporte._',
+  },
+  'privacy.eraseYes': { en: 'Delete everything', pt: 'Apagar tudo' },
+  'privacy.eraseNo': { en: 'Cancel', pt: 'Cancelar' },
+  'privacy.eraseCancelled': {
+    en: 'Cancelled — nothing was deleted.',
+    pt: 'Cancelado — nada foi apagado.',
+  },
+  'privacy.eraseDone': {
+    en: '✅ Done. All your personal data has been permanently deleted.',
+    pt: '✅ Feito. Todos os teus dados pessoais foram apagados permanentemente.',
+  },
   'error.needManageGuild': {
     en: 'You need the **Manage Server** permission to do that.',
     pt: 'Precisas da permissao **Gerir Servidor** para fazer isto.',
