@@ -75,6 +75,22 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       o.setName('laughter').setDescription('Add laughter at the end?').setRequired(true),
     )
     .toJSON(),
+  // /rizz — manda uma pick-up line na LINGUA escolhida (mesmo autocomplete `language` do
+  // /joke). `sound` (obrigatorio) toca o efeito sonoro "rizz" no fim. Precisa de call.
+  new SlashCommandBuilder()
+    .setName('rizz')
+    .setDescription('Vozen drops a pickup line in the language you pick')
+    .addStringOption((o) =>
+      o
+        .setName('language')
+        .setDescription('Language of the pickup line')
+        .setRequired(true)
+        .setAutocomplete(true),
+    )
+    .addBooleanOption((o) =>
+      o.setName('sound').setDescription('Add the rizz sound effect at the end?').setRequired(true),
+    )
+    .toJSON(),
   // Micro-comandos divertidos (falados na voz + resposta pública). Funcionam sem estar
   // numa call (só texto); se o Vozen estiver na call, também fala.
   new SlashCommandBuilder()
@@ -403,6 +419,12 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setDescription(
           "Don't read spammed messages (mass word repetition or the same big message) (off by default)",
         )
+        .addBooleanOption((o) => o.setName('active').setDescription('on/off').setRequired(true)),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName('streaks')
+        .setDescription('Show the 🔥 daily streak notice when someone speaks (on by default)')
         .addBooleanOption((o) => o.setName('active').setDescription('on/off').setRequired(true)),
     )
     .addSubcommand((s) =>

@@ -1,4 +1,5 @@
-// src/commands/handlers/fun.ts — handlers divertidos: /laugh, /joke, micro-fun (/8ball,/fortune,/fact,/wyr) e /birthday extraídos de index.ts (plano 015).
+// src/commands/handlers/fun.ts — handlers divertidos: /laugh, /joke, /rizz, micro-fun (/8ball,/fortune,/fact,/wyr) e /birthday extraídos de index.ts (plano 015).
+import { join } from 'node:path';
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import type { BotDeps } from '../../bot/deps';
 import { getPlayer, getLimiter } from '../../bot/deps';
@@ -8,6 +9,7 @@ import { getBirthday, setBirthday, clearBirthday, isValidBirthday } from '../../
 import type { SynthRequest } from '../../tts/engine';
 import { laughterFor } from '../../content/laughter';
 import { jokeLangByKey, pickJoke } from '../../content/jokes';
+import { pickLine } from '../../content/pickupLines';
 import {
   funLocaleOf,
   pickEightball,
@@ -151,6 +153,67 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
 
   // Confirmacao inclui a piada escrita (o user ve o que esta a ser lido).
   await i.editReply(queued ? t('joke.playing', locale, { joke }) : t('tts.busy', locale));
+}
+
+// Efeito sonoro do /rizz: um WAV pronto em assets/sfx/ (raiz do repo). Em runtime este
+// modulo vive em dist/commands/handlers/, por isso subimos 3 niveis ate a raiz (mesmo
+// padrao das wordlists em games/wordchain/dict.ts). O silencio de pausa esta EMBUTIDO no
+// ficheiro (o assetPath salta os motores, onde vive o leadSilenceMs). Trocavel: basta
+// substituir o ficheiro por outro WAV.
+const RIZZ_SFX_PATH = join(__dirname, '..', '..', '..', 'assets', 'sfx', 'rizz.wav');
+
+/**
+ * /rizz — manda uma pick-up line (frase de engate) na LINGUA escolhida (`language`,
+ * autocomplete — o MESMO do /joke), falada na voz dessa lingua. Se `sound` for true,
+ * toca a seguir o efeito sonoro "rizz" como fala SEPARADA que o player reproduz DIRETO
+ * (assetPath, sem motor/cache/efeitos). Mesma logica de voz/motor do /joke.
+ */
+export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+  await i.deferReply({ flags: MessageFlags.Ephemeral });
+  const locale = localeForUser(deps, i);
+  const player = getPlayer(deps, i.guildId!);
+  if (!player) {
+    await i.editReply(t('tts.notInVoice', locale));
+    return;
+  }
+  const langKey = i.options.getString('language', true);
+  const lang = jokeLangByKey(langKey);
+  if (!lang) {
+    await i.editReply(t('rizz.unknownLang', locale));
+    return;
+  }
+  const sound = i.options.getBoolean('sound', true);
+  const cfg = getGuildConfig(deps.db, i.guildId!);
+
+  // rate-limit por-utilizador (MESMO limiter do /tts e /joke): APOS o deferReply.
+  const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
+  if (!rl.allow(i.user.id, Date.now())) {
+    await i.editReply(t('tts.tooFast', locale));
+    return;
+  }
+
+  const model =
+    deps.availableModels.find((m) => m.startsWith(lang.prefix)) ||
+    cfg.defaultVoice ||
+    deps.config.defaultVoice ||
+    'en_US-amy-medium';
+  const stored = getUserVoice(deps.db, i.guildId!, i.user.id);
+  const engine = stored?.engine; // segue o motor do user (como /joke e /laugh)
+
+  const line = pickLine(langKey, Date.now());
+  const speed = deps.config.defaultSpeed;
+
+  // Enfileira SEMPRE a frase sozinha primeiro; o reply baseia-se NESTA fala.
+  const queued = await player.say({ text: line, model, speed, singleVoice: true, engine });
+
+  // Efeito sonoro "rizz" a seguir (fala SEPARADA, tocada direto via assetPath — sem motor
+  // nem cache). Best-effort: se a fila encher entretanto, simplesmente nao toca o efeito
+  // (o reply ja reflete a frase). `text: ''` -> sem ganho de enfase.
+  if (queued && sound) {
+    await player.say({ text: '', model, speed, singleVoice: true, assetPath: RIZZ_SFX_PATH });
+  }
+
+  await i.editReply(queued ? t('rizz.playing', locale, { line }) : t('tts.busy', locale));
 }
 
 type MicroFunKind = '8ball' | 'fortune' | 'fact' | 'wyr';

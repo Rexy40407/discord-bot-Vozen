@@ -11,7 +11,13 @@ import { handleJoin, handleLeave, handleTts, handleSkip, handleShutup } from './
 import { handleVoice } from './handlers/voice';
 import { handleConfig, handleSetup, handleStats } from './handlers/config';
 import { handleGame } from './handlers/games';
-import { handleLaugh, handleJoke, handleMicroFun, handleBirthday } from './handlers/fun';
+import {
+  handleLaugh,
+  handleJoke,
+  handleRizz,
+  handleMicroFun,
+  handleBirthday,
+} from './handlers/fun';
 import {
   handleHelp,
   handleInvite,
@@ -233,6 +239,8 @@ export async function handleInteraction(
         return await handleLaugh(i, deps);
       case 'joke':
         return await handleJoke(i, deps);
+      case 'rizz':
+        return await handleRizz(i, deps);
       case '8ball':
         return await handleMicroFun(i, deps, '8ball');
       case 'fortune':

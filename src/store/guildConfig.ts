@@ -43,6 +43,10 @@ export interface GuildConfig {
   // (opt-in, mesmo com Premium — a pessoa liga com /config always-on). Só tem EFEITO se a
   // guild for Premium (o gate no AloneWatcher/rejoin exige Premium E este toggle).
   stayInCall: boolean;
+  // streakAnnounce: mostrar o aviso "🔥 Dia N" na PRIMEIRA mensagem lida do dia de cada
+  // pessoa (streak de dias seguidos, estilo TikTok). LIGADO por defeito; desliga-se com
+  // /config streaks. O streak em si é sempre calculado (alimenta o /topspeakers).
+  streakAnnounce: boolean;
 }
 
 const DEFAULTS: GuildConfig = {
@@ -64,6 +68,7 @@ const DEFAULTS: GuildConfig = {
   greetLocale: DEFAULT_LOCALE, // 'en' — inglês como língua da saudação por defeito
   antispam: false, // NÃO filtrar spam por defeito (opt-in, decisão do Diogo)
   stayInCall: false, // 24/7 in-call DESLIGADO por defeito (opt-in, mesmo com Premium)
+  streakAnnounce: true, // aviso de streak 🔥 LIGADO por defeito
 };
 
 interface GuildConfigRow {
@@ -84,6 +89,7 @@ interface GuildConfigRow {
   greet_locale: string | null;
   antispam: number | null;
   stay_in_call: number | null;
+  streak_announce: number | null;
 }
 
 type SqlValue = string | number | null;
@@ -217,6 +223,13 @@ export const GUILD_CONFIG_COLUMNS: GuildConfigColumn[] = [
     sqlType: 'INTEGER NOT NULL DEFAULT 0',
     toDb: asBool,
     fromDb: (r) => (r == null ? DEFAULTS.stayInCall : r === 1),
+  },
+  {
+    prop: 'streakAnnounce',
+    column: 'streak_announce',
+    sqlType: 'INTEGER NOT NULL DEFAULT 1',
+    toDb: asBool,
+    fromDb: (r) => (r == null ? DEFAULTS.streakAnnounce : r === 1),
   },
 ];
 

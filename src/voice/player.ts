@@ -9,6 +9,7 @@ import {
   createAudioResource,
   entersState,
 } from '@discordjs/voice';
+import { existsSync } from 'node:fs';
 import type { TTSEngine, SynthRequest } from '../tts/engine';
 import { emphasisGain } from '../tts/emphasis';
 import { PlayQueue } from './queue';
@@ -180,17 +181,30 @@ export class GuildVoicePlayer {
 
     let audioPath: string;
     const synthStart = process.hrtime.bigint();
-    try {
-      audioPath = await this.engine.synth(next.req);
-      // Latencia de sintese efetiva (inclui cache hit rapido e miss/spawn lento).
-      metrics.recordSynthMs(Number(process.hrtime.bigint() - synthStart) / 1e6);
-    } catch (err) {
-      log.error('[player] erro na sintese, item saltado:', err);
-      metrics.inc('synthErrors');
-      // Salta este item e continua a fila sem crashar (sem crescimento de stack:
-      // estamos depois do await).
-      void this.playNext();
-      return;
+    if (next.req.assetPath) {
+      // ASSET fixo (ex. efeito sonoro do /rizz): WAV já pronto em disco, tocado DIRETO —
+      // sem motor/cache/efeitos (nada disso se aplica a um clip fixo). Ficheiro em falta =
+      // tratado como falha de síntese (salta o item, não crasha).
+      if (!existsSync(next.req.assetPath)) {
+        log.error('[player] asset de audio inexistente, item saltado:', next.req.assetPath);
+        metrics.inc('synthErrors');
+        void this.playNext();
+        return;
+      }
+      audioPath = next.req.assetPath;
+    } else {
+      try {
+        audioPath = await this.engine.synth(next.req);
+        // Latencia de sintese efetiva (inclui cache hit rapido e miss/spawn lento).
+        metrics.recordSynthMs(Number(process.hrtime.bigint() - synthStart) / 1e6);
+      } catch (err) {
+        log.error('[player] erro na sintese, item saltado:', err);
+        metrics.inc('synthErrors');
+        // Salta este item e continua a fila sem crashar (sem crescimento de stack:
+        // estamos depois do await).
+        void this.playNext();
+        return;
+      }
     }
 
     // A sintese pode ter demorado; o player pode ter sido destruido entretanto.

@@ -39,6 +39,12 @@ export interface SynthRequest {
   // presente, o CloneEngine sintetiza `text` nessa voz (sidecar Python) em vez do motor
   // normal; qualquer falha cai na voz normal. Fora da cacheKey (cache própria 'clone').
   cloneRef?: string;
+  // ASSET de áudio fixo: caminho de um WAV JÁ pronto em disco (ex. o efeito sonoro do
+  // /rizz). Quando presente, o player toca-o DIRETO — sem motor, sem cache, sem efeitos
+  // (nada disso se aplica a um clip fixo). `text` é ignorado para a síntese (mas o ganho
+  // de ênfase usa emphasisSource/text, por isso passa-se '' para não gritar). O silêncio
+  // de arranque deve estar EMBUTIDO no ficheiro (o leadSilenceMs vive nos motores).
+  assetPath?: string;
 }
 
 export interface TTSEngine {

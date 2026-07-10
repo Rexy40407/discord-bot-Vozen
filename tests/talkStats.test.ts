@@ -67,3 +67,34 @@ describe('bumpTalk — contagem + streak', () => {
     expect(getTopSpeakers(db, 'outra')).toEqual([]);
   });
 });
+
+describe('bumpTalk — sinal de streak (return) para o aviso 🔥', () => {
+  let db: Database.Database;
+  beforeEach(() => {
+    db = initDb(':memory:');
+  });
+  afterEach(() => {
+    db.close();
+  });
+  const d = (y: number, m: number, day: number) => new Date(y, m - 1, day);
+
+  it('primeira mensagem de sempre -> { firstOfDay:true, streak:1 }', () => {
+    expect(bumpTalk(db, G, 'u1', d(2026, 7, 5))).toEqual({ firstOfDay: true, streak: 1 });
+  });
+
+  it('repetição no MESMO dia -> firstOfDay:false', () => {
+    bumpTalk(db, G, 'u1', d(2026, 7, 5));
+    expect(bumpTalk(db, G, 'u1', d(2026, 7, 5))).toEqual({ firstOfDay: false, streak: 1 });
+  });
+
+  it('dia SEGUINTE -> firstOfDay:true, streak sobe', () => {
+    bumpTalk(db, G, 'u1', d(2026, 7, 5));
+    expect(bumpTalk(db, G, 'u1', d(2026, 7, 6))).toEqual({ firstOfDay: true, streak: 2 });
+  });
+
+  it('INTERVALO -> firstOfDay:true, streak recomeça a 1', () => {
+    bumpTalk(db, G, 'u1', d(2026, 7, 5));
+    bumpTalk(db, G, 'u1', d(2026, 7, 6));
+    expect(bumpTalk(db, G, 'u1', d(2026, 7, 9))).toEqual({ firstOfDay: true, streak: 1 });
+  });
+});

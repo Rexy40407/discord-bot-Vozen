@@ -128,6 +128,11 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { antispam: on });
     await reply(i, on ? t('config.antispamOn', locale) : t('config.antispamOff', locale));
+  } else if (sub === 'streaks') {
+    // Aviso de streak 🔥 na 1.ª mensagem do dia de cada pessoa. LIGADO por defeito.
+    const on = i.options.getBoolean('active', true);
+    setGuildConfig(deps.db, i.guildId!, { streakAnnounce: on });
+    await reply(i, on ? t('config.streaksOn', locale) : t('config.streaksOff', locale));
   } else if (sub === 'greet') {
     // Saudação de voz a quem entra na call. LIGADA por defeito.
     const on = i.options.getBoolean('active', true);

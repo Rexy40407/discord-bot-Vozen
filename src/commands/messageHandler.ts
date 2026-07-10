@@ -14,13 +14,15 @@ import { redactBlocked } from '../moderation/filter';
 import { isRepetitionSpam } from '../moderation/antispam';
 import { getVoiceEffect } from '../store/voiceEffect';
 import { getClone } from '../store/voiceClone';
-import { bumpTalk } from '../store/talkStats';
+import { bumpTalk, getTopSpeakers, type TalkBump } from '../store/talkStats';
+import { renderLeaderboard } from '../leaderboard/randomPost';
 import { getUserPronunciations, getServerPronunciations } from '../store/pronunciation';
 import { getUserVoice } from '../store/userVoice';
 import { isOptedOut } from '../store/optout';
 import { isDetectionOn } from '../store/langDetect';
 import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { recallLang, rememberLang } from '../language/langMemory';
+import { t } from '../i18n/index';
 import { log } from '../logging/logger';
 
 /**
@@ -292,8 +294,9 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
 
     // "Tagarelas" (/topspeakers): conta esta mensagem lida + atualiza o streak diário do
     // autor. Só aqui (a mensagem foi mesmo lida). Best-effort — nunca deve impedir a fala.
+    let talk: TalkBump | null = null;
     try {
-      bumpTalk(deps.db, message.guildId, message.author.id, new Date());
+      talk = bumpTalk(deps.db, message.guildId, message.author.id, new Date());
     } catch (err) {
       log.warn('[messageHandler] falha a registar tagarela (ignorado)', err);
     }
@@ -302,7 +305,52 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // (silêncio PREPENDido ao WAV). Configurável (MESSAGE_LEAD_MS); 0 = sem espera.
     if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
 
-    await player.say(outReq);
+    const queued = await player.say(outReq);
+
+    // Streak 🔥 (F1, estilo TikTok): aviso "Dia N" SÓ na 1.ª mensagem de cada dia, do Dia 2
+    // em diante (anunciar o Dia 1 de cada pessoa todos os dias seria spam), e só se a fala
+    // foi mesmo enfileirada e o toggle está ligado. A menção é VISÍVEL mas NÃO pinga
+    // (allowedMentions vazio, igual ao leaderboard) — num servidor movimentado, notificar
+    // cada pessoa todos os dias seria chato. Best-effort: um envio falhado (sem permissão de
+    // escrita no canal, etc.) NUNCA pode partir a fala.
+    if (queued && talk?.firstOfDay && talk.streak >= 2 && cfg.streakAnnounce) {
+      try {
+        const ch = message.channel;
+        if ('send' in ch && typeof (ch as { send?: unknown }).send === 'function') {
+          await (ch as { send: (c: unknown) => Promise<unknown> }).send({
+            content: t('streak.day', cfg.locale, { user: message.author.id, n: talk.streak }),
+            allowedMentions: { parse: [] },
+          });
+        }
+      } catch (err) {
+        log.warn('[messageHandler] falha a anunciar streak (ignorado)', err);
+      }
+    }
+
+    // Leaderboard automático (F2): de vez em quando, o Vozen posta o top de tagarelas no
+    // canal do /setup. Ativado por ATIVIDADE (só conta mensagens mesmo lidas, em guilds com
+    // canal configurado); o decisor faz o limiar + cooldown + sorteio. As menções são
+    // suprimidas (post não-solicitado não deve pingar 10 pessoas). Best-effort: um envio
+    // falhado (sem permissão de escrita, etc.) NUNCA pode partir a fala.
+    if (queued && cfg.ttsChannelId && deps.leaderboardPoster?.record(message.guildId)) {
+      try {
+        const rows = getTopSpeakers(deps.db, message.guildId, 10);
+        const ch = deps.client.channels.cache.get(cfg.ttsChannelId);
+        if (
+          rows.length > 0 &&
+          ch &&
+          'send' in ch &&
+          typeof (ch as { send?: unknown }).send === 'function'
+        ) {
+          await (ch as { send: (c: unknown) => Promise<unknown> }).send({
+            content: renderLeaderboard(rows, cfg.locale),
+            allowedMentions: { parse: [] },
+          });
+        }
+      } catch (err) {
+        log.warn('[messageHandler] falha a postar leaderboard automatico (ignorado)', err);
+      }
+    }
   } catch (err) {
     log.error('[messageHandler] erro', err);
   }

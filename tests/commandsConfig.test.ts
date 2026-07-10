@@ -704,3 +704,32 @@ describe('/config always-on — toggle 24/7 in-call (default OFF)', () => {
     expect(getGuildConfig(db, GUILD).stayInCall).toBe(false);
   });
 });
+
+// ── streaks (aviso de streak 🔥) ─────────────────────────────────────────────
+
+describe('/config streaks — toggle do aviso de streak (default ON)', () => {
+  let db: Database.Database;
+  beforeEach(() => {
+    db = initDb(':memory:');
+  });
+  afterEach(() => {
+    db.close();
+  });
+
+  it('default ON (mesmo sem tocar em nada)', () => {
+    expect(getGuildConfig(db, GUILD).streakAnnounce).toBe(true);
+  });
+
+  it('desligar persiste streakAnnounce=false', async () => {
+    const i = makeConfigInteraction({ sub: 'streaks', optionsMap: { active: false } });
+    await handleInteraction(i as any, makeConfigDeps(db));
+    expect(getGuildConfig(db, GUILD).streakAnnounce).toBe(false);
+  });
+
+  it('religar persiste streakAnnounce=true', async () => {
+    setGuildConfig(db, GUILD, { streakAnnounce: false });
+    const i = makeConfigInteraction({ sub: 'streaks', optionsMap: { active: true } });
+    await handleInteraction(i as any, makeConfigDeps(db));
+    expect(getGuildConfig(db, GUILD).streakAnnounce).toBe(true);
+  });
+});

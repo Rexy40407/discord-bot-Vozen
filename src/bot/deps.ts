@@ -6,6 +6,7 @@ import { GuildVoicePlayer } from '../voice/player';
 import { RateLimiter } from '../moderation/rateLimiter';
 import type { AloneWatcher } from '../voice/aloneWatcher';
 import type { GreetCooldown } from '../voice/greetCooldown';
+import type { LeaderboardPoster } from '../leaderboard/randomPost';
 import type { DuplicateTracker } from '../moderation/antispam';
 import type { GameManager } from '../games/manager';
 import { invalidateGuild } from '../store/cache';
@@ -35,6 +36,12 @@ export interface BotDeps {
    * bootstrap; opcional (sem ele, saúda sempre — comportamento antigo). Ver greetCooldown.
    */
   greetCooldown?: GreetCooldown;
+  /**
+   * Decisor do leaderboard automático (F2): de vez em quando posta o top de tagarelas no
+   * canal do /setup. Estado em memória por-guild. Injetado no bootstrap; opcional (sem
+   * ele, nunca aparece). Ver leaderboard/randomPost.
+   */
+  leaderboardPoster?: LeaderboardPoster;
   /**
    * Tracker de mensagens duplicadas (anti-spam), por (guild, author). Deteta a mesma
    * pessoa a repetir a mesma mensagem grande em janela curta. Só é consultado quando

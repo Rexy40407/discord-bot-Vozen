@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 // --- Mock de @discordjs/voice -------------------------------------------------
 // Um AudioPlayer falso (EventEmitter) cujo play() regista o recurso tocado e
@@ -142,6 +145,64 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     expect(order).toEqual(['ok']);
     expect(unhandled).toEqual([]);
 
+    player.destroy();
+  });
+
+  it('assetPath toca o ficheiro DIRETO (efeito sonoro do /rizz), sem chamar engine.synth', async () => {
+    (globalThis as Record<string, unknown>).__playOrder = [];
+    const dir = mkdtempSync(join(tmpdir(), 'player-asset-'));
+    const asset = join(dir, 'sfx.wav');
+    writeFileSync(asset, 'RIFFfake-wav');
+
+    // Engine espia: NÃO deve ser chamado para o item de asset (só para 'normal').
+    const synth = vi.fn((req: SynthRequest) => Promise.resolve(req.text));
+    const engine: TTSEngine = { synth };
+    const conn = makeConnection() as any;
+    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+
+    await Promise.all([
+      player.say({ text: 'normal', model: 'm', speed: 1 }),
+      player.say({ text: '', model: 'm', speed: 1, assetPath: asset }),
+    ]);
+
+    await vi.waitFor(
+      () => {
+        const order = (globalThis as Record<string, unknown>).__playOrder as string[];
+        expect(order).toHaveLength(2);
+      },
+      { timeout: 1000 },
+    );
+
+    const order = (globalThis as Record<string, unknown>).__playOrder as string[];
+    // O asset tocou pelo caminho DIRETO; o engine só sintetizou o item 'normal'.
+    expect(order).toEqual(['normal', asset]);
+    expect(synth).toHaveBeenCalledTimes(1);
+    expect(synth.mock.calls[0][0].text).toBe('normal');
+
+    player.destroy();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('assetPath inexistente é saltado (não crasha, drena o seguinte)', async () => {
+    (globalThis as Record<string, unknown>).__playOrder = [];
+    const engine: TTSEngine = { synth: (req: SynthRequest) => Promise.resolve(req.text) };
+    const conn = makeConnection() as any;
+    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+
+    await Promise.all([
+      player.say({ text: '', model: 'm', speed: 1, assetPath: '/nao/existe/rizz.wav' }),
+      player.say({ text: 'ok', model: 'm', speed: 1 }),
+    ]);
+
+    await vi.waitFor(
+      () => {
+        const order = (globalThis as Record<string, unknown>).__playOrder as string[];
+        expect(order).toHaveLength(1);
+      },
+      { timeout: 1000 },
+    );
+
+    expect((globalThis as Record<string, unknown>).__playOrder).toEqual(['ok']);
     player.destroy();
   });
 });

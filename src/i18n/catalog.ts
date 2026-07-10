@@ -358,6 +358,15 @@ export const catalog: Record<string, Entry> = {
     en: "I don't know that language. Pick one from the list.",
     pt: 'Nao conheco essa lingua. Escolhe uma da lista.',
   },
+  // /rizz — pick-up line falada + (opcional) efeito sonoro.
+  'rizz.playing': {
+    en: '😏 Dropping some rizz…\n> {line}',
+    pt: '😏 A mandar umas cantadas…\n> {line}',
+  },
+  'rizz.unknownLang': {
+    en: "I don't know that language. Pick one from the list.",
+    pt: 'Nao conheco essa lingua. Escolhe uma da lista.',
+  },
 
   // ── Micro-comandos divertidos (/8ball, /fortune, /fact, /wyr) ──────────────
   'fun.eightball': {
@@ -411,6 +420,16 @@ export const catalog: Record<string, Entry> = {
   'topspeakers.line': {
     en: '{rank}. <@{user}> — **{count}** messages · 🔥 {streak}-day streak',
     pt: '{rank}. <@{user}> — **{count}** mensagens · 🔥 streak de {streak} dias',
+  },
+  // Aviso de streak 🔥 (F1): primeira mensagem lida do dia. {user} = id (menção), {n} = dias.
+  'streak.day': {
+    en: '🔥 <@{user}> is on a **{n}-day** streak! Keep talking to keep it alive.',
+    pt: '🔥 <@{user}> está numa streak de **{n} dias**! Continua a falar para a manteres.',
+  },
+  // Título do leaderboard automático (F2) que aparece de vez em quando no canal do /setup.
+  'leaderboard.autoTitle': {
+    en: '🏆 Top talkers in this server',
+    pt: '🏆 Os que mais falam neste servidor',
   },
 
   // ── /premium & /redeem ─────────────────────────────────────────────────────
@@ -721,6 +740,14 @@ export const catalog: Record<string, Entry> = {
   'config.antispamOff': {
     en: 'Anti-spam **off** — Vozen reads every message as usual.',
     pt: 'Anti-spam **desligado** — o Vozen lê todas as mensagens como habitual.',
+  },
+  'config.streaksOn': {
+    en: '✅ Streak notices **on** — Vozen shows a 🔥 day-streak message the first time each person speaks each day.',
+    pt: '✅ Avisos de streak **ligados** — o Vozen mostra a mensagem de streak 🔥 na primeira vez que cada pessoa fala em cada dia.',
+  },
+  'config.streaksOff': {
+    en: 'Streak notices **off** — Vozen still tracks streaks (see `/topspeakers`) but stays quiet about them.',
+    pt: 'Avisos de streak **desligados** — o Vozen continua a contar os streaks (vê `/topspeakers`) mas não os anuncia.',
   },
   'config.greetOn': {
     en: "✅ I'll greet people by name when they join the voice channel.",
@@ -1120,6 +1147,7 @@ export const catalog: Record<string, Entry> = {
   'help.groupFunBody': {
     en:
       '• /joke — I tell a short joke (pick a language + optional laughter) · e.g. /joke English\n' +
+      '• /rizz — I drop a pickup line (pick a language + optional rizz sound) · e.g. /rizz English\n' +
       '• /laugh — I laugh out loud in your current voice\n' +
       '• /8ball · /fortune · /fact · /wyr — I answer/read out loud (and in chat)\n' +
       '• /birthday set — I wish you a happy birthday when you join on your day\n' +
@@ -1127,6 +1155,7 @@ export const catalog: Record<string, Entry> = {
       '• /game — play a minigame with the server (13 games!) · e.g. /game play, /game leaderboard',
     pt:
       '• /joke — conto uma piada curta (escolhe a lingua + risos opcionais) · ex. /joke Portuguese\n' +
+      '• /rizz — mando uma cantada (escolhe a lingua + efeito rizz opcional) · ex. /rizz Portuguese\n' +
       '• /laugh — rio-me em voz alta na tua voz atual\n' +
       '• /8ball · /fortune · /fact · /wyr — respondo/leio em voz alta (e no chat)\n' +
       '• /birthday set — digo-te parabens quando entrares na call no teu dia\n' +

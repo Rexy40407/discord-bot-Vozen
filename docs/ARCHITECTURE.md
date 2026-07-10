@@ -85,6 +85,8 @@ Cada pasta de `src/` e a sua responsabilidade (o que está realmente no código)
 | `commands/resolveSynth.ts` | `resolveSynth`: resolve `SynthRequest` — a **língua da mensagem decide a voz** (`lang = forceLang \|\| detectLang(text)` + `pickVoiceForLang`). `ResolveSynthInput` inclui `forceLang` (código franc que força a língua da voz, ignorando `detectLang`; usado quando a mensagem é só gírias EN). | `language` |
 | `commands/prepareSpeech.ts` | `prepareSpeech` (partilhado por `/tts` e leitura de canal): texto→`SynthRequest`. Deteção ON → parte **gírias EN** para um segmento em voz inglesa e deteta o resto por si (**vozes mistas**, ex. "isto funciona **btw**"); usa a **memória de língua** (`recentLang`) para desambiguar curtos e devolve `learnedLang` (deteção confiante) para o caller memorizar. Deteção OFF → voz fixa `singleVoice`. | `detect`, `voiceMap`, `abbreviations`, `pronunciation`, `langMemory` |
 | `content/jokes.ts` | Catálogo de piadas curtas multilingue (35 línguas) + `JOKE_LANGUAGES` (autocomplete `idioma`), `jokeLangByKey`, `pickJoke(langKey, seed)` (puro/seeded). Usado pelo `/joke`. | — |
+| `content/pickupLines.ts` | Banco de pick-up lines (frases de engate) multilingue — REUTILIZA `JOKE_LANGUAGES` (35 línguas) + `pickLine(key, seed)` (puro/seeded, fallback EN). Usado pelo `/rizz`. | `content/jokes` |
+| `leaderboard/randomPost.ts` | `LeaderboardPoster` (F2): decide por ATIVIDADE (mensagens lidas + limiar + cooldown + sorteio; relógio/aleatoriedade injetáveis) quando postar o top de tagarelas no canal do `/setup`. `renderLeaderboard(rows, locale)` (puro) monta o texto (menções suprimidas). Estado em memória por-guild; instância no `BotDeps`. | `store/talkStats`, `i18n` |
 | `content/laughter.ts` | `laughterFor(prefix)`: riso localizado pela língua da voz (ex. cirílico para `ru_`), com fallback "hahaha". Usado pelo `/laugh` e pelo `/joke` (opção `risos`). | — |
 | `games/manager.ts` | `GameManager`: **1 jogo ativo por guild** (lock; há 1 só ligação de voz por guild). `handleMessage` encaminha as mensagens do **canal do jogo** para a partida e devolve `true` (consumida → o `handleMessage` do TTS salta essa mensagem). Possui os timers da sessão (cancelados **sempre** no fim); persiste pontos no fim **normal** (`end`), descarta no fim **forçado** (`stop`/`endGuild`). Desacoplado de discord.js/SQLite via `GameEnv`. | `games/types` |
 | `games/types.ts` | `Clock` (relógio + timers **injetáveis**, `systemClock`; testes deterministas), `GameContext` (`say`/`send`/`t`/`after`/`award`/`end` + `seed`/`locale`/`defaultVoice`), `Game`, `GameDefinition`, `GameEnv`. | — |
@@ -111,6 +113,9 @@ Cada pasta de `src/` e a sua responsabilidade (o que está realmente no código)
 `/laugh` (o Vozen ri na voz atual do utilizador; `content/laughter.ts`),
 `/joke <idioma> <risos>` (piada curta na língua escolhida — `idioma` por autocomplete
 sobre 35 línguas; `risos` acrescenta o riso da língua no fim; `content/jokes.ts`),
+`/rizz <language> <sound>` (pick-up line na língua escolhida — mesmo autocomplete do
+`/joke`; `sound` toca o efeito sonoro `assets/sfx/rizz.wav` no fim via `SynthRequest.assetPath`,
+que o player reproduz DIRETO, sem motor/cache; `content/pickupLines.ts`),
 `/voice set|list|reset|optout|optin|preview`,
 `/voice abbrev add|remove|list` (abreviaturas **pessoais** por-utilizador, **globais**,
 cap 10; `store/userAbbrev.ts` + `textCleaning/userAbbrev.ts`, tabela `user_abbreviation`),
@@ -200,6 +205,11 @@ Pipeline de auto-leitura em `commands/messageHandler.ts` (`handleMessage`), pela
 13. **Resolver voz** (`resolveSynth`): ver "Precedência de voz" abaixo.
 14. **`player.say(req)`** → enfileira FIFO e devolve **boolean** (ver invariantes); a
     síntese acontece no worker (`playNext`), não no `say`, para preservar a ordem de chegada.
+    Depois do `say`, e SÓ se a fala foi enfileirada: **streak 🔥** (F1 — `bumpTalk` devolve
+    `firstOfDay`/`streak`; na 1.ª mensagem do dia, do Dia 2 em diante, com `streakAnnounce`
+    ON, anuncia "🔥 Dia N" no canal) e o **leaderboard automático** (F2 — `LeaderboardPoster`
+    posta o top no canal do `/setup` de vez em quando). Ambos best-effort — um envio falhado
+    NUNCA parte a fala.
 15. **Worker (`playNext`)**: sintetiza → espera `entersState(Ready)` da ligação **antes**
     de `play()` (a 1.ª fala numa ligação lenta não vai para o vazio) → toca em sequência;
     `/skip` corta a atual (ou descarta o item na janela de síntese via `pendingSkip`).

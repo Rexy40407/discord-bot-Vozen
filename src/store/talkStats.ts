@@ -32,12 +32,26 @@ export function prevDateKey(d: Date): string {
   return dateKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
 }
 
+/** Resultado de `bumpTalk`: se esta foi a PRIMEIRA mensagem do dia (para o aviso de
+ * streak 🔥) e o streak ATUAL de dias seguidos. */
+export interface TalkBump {
+  firstOfDay: boolean;
+  streak: number;
+}
+
 /**
  * Regista UMA mensagem lida de `userId` no dia `now`: +1 na contagem e atualiza o streak
  * — mantém-se se já falou hoje, +1 se falou ontem, reinicia a 1 caso contrário. Atualiza
  * também o melhor streak. UPSERT (cria a linha na primeira mensagem). `now` injetável.
+ * Devolve `{ firstOfDay, streak }` — o chamador usa-o para o aviso de streak (só na 1.ª
+ * mensagem de cada dia).
  */
-export function bumpTalk(db: Database.Database, guildId: string, userId: string, now: Date): void {
+export function bumpTalk(
+  db: Database.Database,
+  guildId: string,
+  userId: string,
+  now: Date,
+): TalkBump {
   const today = dateKey(now);
   const yesterday = prevDateKey(now);
   const row = db
@@ -51,9 +65,11 @@ export function bumpTalk(db: Database.Database, guildId: string, userId: string,
       `INSERT INTO talk_stats (guild_id, user_id, spoken_count, streak, best_streak, last_date)
        VALUES (?, ?, 1, 1, 1, ?)`,
     ).run(guildId, userId, today);
-    return;
+    return { firstOfDay: true, streak: 1 };
   }
 
+  // firstOfDay = ainda não tinha falado HOJE (a última mensagem é de outro dia).
+  const firstOfDay = row.last_date !== today;
   let streak: number;
   if (row.last_date === today)
     streak = row.streak; // já contou hoje
@@ -67,6 +83,7 @@ export function bumpTalk(db: Database.Database, guildId: string, userId: string,
      SET spoken_count = spoken_count + 1, streak = ?, best_streak = ?, last_date = ?
      WHERE guild_id = ? AND user_id = ?`,
   ).run(streak, best, today, guildId, userId);
+  return { firstOfDay, streak };
 }
 
 /** Top `limit` tagarelas desta guild por contagem (desc), depois melhor streak (desc). */
