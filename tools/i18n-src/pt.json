@@ -75,7 +75,7 @@
     "price.free.price": "€0",
     "price.free.per": "para sempre",
     "price.free.1": "As 38 vozes em 35 línguas",
-    "price.free.2": "Leitura automática, 16 jogos, piadas e saudações",
+    "price.free.2": "Auto-leitura, 13 jogos grátis, piadas e saudações",
     "price.free.3": "Efeitos de voz Robot e Echo",
     "price.free.4": "Todos os controlos de admin e leaderboard semanal",
     "price.plus.badge": "PESSOAL",
@@ -84,7 +84,7 @@
     "price.plus.1": "Os 8 efeitos de voz — só para ti",
     "price.plus.2": "Clona a tua própria voz com /voice clone",
     "price.plus.3": "As tuas vantagens seguem-te em todos os servidores",
-    "price.plus.4": "Fila de síntese prioritária",
+    "price.plus.4": "Jogos premium, /rizz e 50 pronúncias",
     "price.plus.note": "€18,99/ano (poupa ~20%) · compra no Ko-fi",
     "price.pro.badge": "PREMIUM",
     "price.pro.name": "Vozen Premium",
@@ -93,7 +93,7 @@
     "price.pro.1": "Os 8 efeitos de voz (grave, demónio, rádio…)",
     "price.pro.2": "Clone de voz para todo o servidor",
     "price.pro.3": "Fica no teu canal de voz mesmo quando esvazia",
-    "price.pro.4": "Limites maiores e fila prioritária",
+    "price.pro.4": "Jogos premium, /rizz e 50 pronúncias — para todos",
     "price.pro.note": "€37,99/ano (poupa ~20%) · compra no Ko-fi",
     "faq.eyebrow": "FAQ",
     "faq.title": "Perguntas, respondidas",
@@ -125,7 +125,17 @@
     "panel.seatsUsed": "licenças em uso",
     "panel.servers": "Ativo em:",
     "panel.noServers": "Ainda não ativado em nenhum servidor — usa /premium activate.",
-    "nav.login": "Entrar"
+    "nav.login": "Entrar",
+    "price.max.badge": "MAX",
+    "price.max.name": "Vozen Premium Max",
+    "price.max.per": "/ mês · 10 servidores",
+    "price.max.perYear": "/ ano · 10 servidores",
+    "price.max.deal": "🎁 Uma subscrição cobre 10 servidores",
+    "price.max.1": "Tudo do Premium — em até 10 servidores",
+    "price.max.2": "Uma subscrição para toda a tua comunidade",
+    "price.max.3": "Todos os efeitos, clone de voz e 24/7 na call, em todo o lado",
+    "price.max.4": "Melhor preço por servidor",
+    "price.max.note": "€75,99/ano (poupa ~20%) · comprar no Ko-fi"
   },
   "commands": {
     "general": [
@@ -177,11 +187,11 @@
   "faq": [
     [
       "O Vozen é mesmo grátis?",
-      "Sim — tudo o que o Vozen faz hoje é grátis e continua grátis: todas as vozes, os 15 jogos, saudações, ferramentas de admin. O Vozen Premium (€3,99/mês por servidor) só acrescenta extras opcionais, como o pack completo de efeitos de voz. Nada do que usas passa para trás de um paywall."
+      "Sim — o essencial é grátis para sempre: as 38 vozes em 35 línguas, a auto-leitura, as saudações, a maioria dos jogos e todos os controlos de admin. O Vozen Premium (a partir de €3,99/mês) só acrescenta extras opcionais — o pack completo de efeitos, o clone de voz, o 24/7 na call, o /rizz e três dos dezasseis jogos. Nada do que já usas passa para trás de um paywall."
     ],
     [
       "O que inclui o Premium?",
-      "Os 8 efeitos de voz (grave, demónio, rádio, debaixo de água…), com vozes neurais premium, e fica no teu canal de voz mesmo quando todos saem. €3,99/mês ou €37.99/ano por servidor, ou Vozen Plus (€1,99/mês) para vantagens pessoais que te seguem entre servidores. Resgata códigos com /premium activate."
+      "Os 8 efeitos de voz (grave, demónio, rádio, debaixo de água…), clone de voz, 24/7 na call, 50 pronúncias pessoais, o comando /rizz e os jogos premium (Cadeia de Palavras, Termo, Xadrez). €3,99/mês cobre 3 servidores, ou €7,99/mês cobre 10 (Premium Max); o anual poupa ~20%. O Vozen Plus (€1,99/mês) dá as mesmas vantagens só para ti, em qualquer servidor. Resgata códigos com /premium activate."
     ],
     [
       "Como adiciono o Vozen ao meu servidor?",

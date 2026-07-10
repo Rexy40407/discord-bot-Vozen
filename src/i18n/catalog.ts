@@ -458,8 +458,8 @@ export const catalog: Record<string, Entry> = {
     pt: '👤 **Tu (Plus):** inativo',
   },
   'premium.getHint': {
-    en: 'Everything you use today stays free. Premium (€3.99/mo) adds premium voices, 24/7 in-call, full voice effects and higher limits. Support: https://ko-fi.com/',
-    pt: 'Tudo o que já usas continua grátis. O Premium (€3,99/mês) acrescenta vozes premium, 24/7 na call, efeitos de voz completos e limites maiores. Apoio: https://ko-fi.com/',
+    en: 'Everything you use today stays free. Premium adds all 8 voice effects, voice cloning, 24/7 in-call, 50 personal pronunciations, /rizz and the premium games. Support: https://ko-fi.com/',
+    pt: 'Tudo o que já usas continua grátis. O Premium acrescenta os 8 efeitos de voz, clone de voz, 24/7 na call, 50 pronúncias pessoais, /rizz e os jogos premium. Apoio: https://ko-fi.com/',
   },
   // Passe (compra de Premium): linha de estado + montra + fluxo activate/deactivate.
   'premium.linePass': {
@@ -471,8 +471,8 @@ export const catalog: Record<string, Entry> = {
     pt: '↳ Em uso em: {servers}',
   },
   'premium.pitch': {
-    en: "You don't have Premium yet. Premium unlocks all 8 voice effects, server voice cloning, higher limits and priority queue (24/7 in-call coming soon). **Vozen Plus** (€1.99/mo) gives you the effects & cloning personally, on any server.",
-    pt: 'Ainda não tens Premium. O Premium desbloqueia os 8 efeitos de voz, clonar voz para o servidor, limites maiores e fila prioritária (24/7 na call em breve). O **Vozen Plus** (€1,99/mês) dá-te os efeitos e o clone só para ti, em qualquer servidor.',
+    en: "You don't have Premium yet. **Premium** (€3.99/mo · 3 servers — or **Max** €7.99/mo · 10 servers) unlocks for the whole server: all 8 voice effects, voice cloning, 24/7 in-call, 50 personal pronunciations (vs 3), the /rizz command and the premium games (Word Chain, Wordle, Chess). **Vozen Plus** (€1.99/mo) gives you those perks personally, on any server.",
+    pt: 'Ainda não tens Premium. O **Premium** (€3,99/mês · 3 servidores — ou **Max** €7,99/mês · 10 servidores) desbloqueia para o servidor inteiro: os 8 efeitos de voz, clone de voz, 24/7 na call, 50 pronúncias pessoais (vs 3), o comando /rizz e os jogos premium (Cadeia de Palavras, Termo, Xadrez). O **Vozen Plus** (€1,99/mês) dá-te essas perks só para ti, em qualquer servidor.',
   },
   'premium.buyHint': {
     en: '▶ **Get Premium:** {link}\nAfter buying, run `/premium activate` on the server you want.',

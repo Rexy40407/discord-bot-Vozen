@@ -9,6 +9,7 @@ import {
   extractDiscordId,
   mapKofiToGrant,
   PREMIUM_PASS_SEATS,
+  PREMIUM_MAX_SEATS,
 } from '../src/premium/kofi';
 import { applyKofiGrant, resolveKofiDiscordId } from '../src/premium/kofiWebhook';
 import { startKofiWebhook } from '../src/premium/kofiWebhook';
@@ -87,6 +88,24 @@ describe('kofi — mapeamento produto -> grant', () => {
   it('Plus -> plan plus', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({ tier_name: 'Vozen Plus' }))!, now)!;
     expect(g.plan).toBe('plus');
+  });
+  it('Premium Max mensal -> premium, 30 dias, 10 licenças', () => {
+    const g = mapKofiToGrant(parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium Max' }))!, now)!;
+    expect(g.plan).toBe('premium');
+    expect(g.seats).toBe(PREMIUM_MAX_SEATS);
+    expect(g.days).toBe(30);
+  });
+  it('Premium Max anual -> 10 licenças, 365 dias', () => {
+    const g = mapKofiToGrant(
+      parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium Max — Annual' }))!,
+      now,
+    )!;
+    expect(g.seats).toBe(PREMIUM_MAX_SEATS);
+    expect(g.days).toBe(365);
+  });
+  it('Premium SEM "max" mantém 3 licenças (não é mal-mapeado para Max)', () => {
+    const g = mapKofiToGrant(parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium' }))!, now)!;
+    expect(g.seats).toBe(PREMIUM_PASS_SEATS);
   });
   it('anual via shop_items (variation_name)', () => {
     const raw = kofiJson({

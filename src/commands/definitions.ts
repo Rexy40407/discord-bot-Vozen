@@ -692,7 +692,7 @@ export const ownerCommandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setDescription('What to grant')
         .setRequired(true)
         .addChoices(
-          { name: 'Premium (server pass, 3 licences)', value: 'premium' },
+          { name: 'Premium (server pass — set licences below)', value: 'premium' },
           { name: 'Plus (personal, follows the user)', value: 'plus' },
         ),
     )

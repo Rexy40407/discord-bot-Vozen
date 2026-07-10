@@ -12,6 +12,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 
 /** Nº de licenças (servidores) de um passe de Premium. Decisão de produto: paga 1, usa 3. */
 export const PREMIUM_PASS_SEATS = 3;
+/** Licenças do tier "Premium Max" (nome do produto Ko-fi contém "max"): paga 1, usa 10. */
+export const PREMIUM_MAX_SEATS = 10;
 
 export type KofiPlan = 'premium' | 'plus';
 
@@ -100,9 +102,11 @@ export function extractDiscordId(message: string | null): string | null {
 
 /**
  * Decide o grant a partir do evento, por PALAVRAS-CHAVE no nome do tier/itens (robusto a
- * nomes exatos): "plus" => Plus (user); "premium" => passe de Premium (guild). "annual"/
- * "anual"/"year"/"ano" => 365 dias, senão 30 (mensal). Devolve null se não for um produto
- * reconhecível (ex.: donativo avulso) — esses são ignorados.
+ * nomes exatos): "plus" => Plus (user); "premium" => passe de Premium (guild), com "max"
+ * => 10 licenças (Premium Max) e senão as 3 default. "annual"/"anual"/"year"/"ano" => 365
+ * dias, senão 30 (mensal). Devolve null se não for um produto reconhecível (ex.: donativo
+ * avulso) — esses são ignorados. ORDEM CRÍTICA: o "plus" é testado ANTES do "premium", por
+ * isso um produto Premium Max NUNCA pode conter a palavra "plus" no nome.
  */
 export function mapKofiToGrant(event: KofiEvent, now: number): KofiGrant | null {
   void now; // reservado (datas são calculadas no store ao aplicar)
@@ -114,10 +118,14 @@ export function mapKofiToGrant(event: KofiEvent, now: number): KofiGrant | null 
   if (!plan) return null;
   const annual = /(annual|anual|yearly|year|ano)/.test(lower);
   const days = annual ? 365 : 30;
+  // Tier "Max": um passe de Premium com 10 licenças em vez de 3. Só se aplica ao 'premium'
+  // (o Plus é por-utilizador, seats irrelevante).
+  const seats =
+    plan === 'premium' && /\bmax\b/.test(lower) ? PREMIUM_MAX_SEATS : PREMIUM_PASS_SEATS;
   return {
     plan,
     days,
-    seats: PREMIUM_PASS_SEATS,
+    seats,
     discordId: extractDiscordId(event.message),
     label: label || plan,
   };
