@@ -6,6 +6,7 @@
 
 import { createServer, type Server } from 'node:http';
 import type Database from 'better-sqlite3';
+import { hardenServerTimeouts } from '../http/serverHardening';
 import {
   grantGuildPass,
   grantUserPremium,
@@ -292,6 +293,7 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
     req.on('error', (err) => logError('[kofi] erro no request do webhook', err));
   });
   server.on('error', (err) => logError('[kofi] erro no servidor de webhook', err));
+  hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
   // Loopback-only: o mundo exterior chega via Caddy (reverse_proxy localhost:3001).
   // Assim a garantia não depende só da firewall (defesa em profundidade).
   server.listen(port, '127.0.0.1', () => logInfo(`[kofi] webhook à escuta em 127.0.0.1:${port}.`));

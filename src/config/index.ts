@@ -292,8 +292,9 @@ export function loadConfig(): AppConfig {
     // Webhook do Ko-fi: sem token => não arranca. Porta local do endpoint.
     kofiWebhookToken: strEnv('KOFI_WEBHOOK_TOKEN', '') || undefined,
     kofiWebhookPort: numEnvPositive('KOFI_WEBHOOK_PORT', 3001, { integer: true }),
-    // Painel Premium: opt-in explícito (default off). Origem = página do site (GitHub Pages).
+    // Painel Premium: opt-in explícito (default off). Origem = domínio do site (vozen.org).
+    // Produção deve definir PREMIUM_API_ORIGIN no .env; o default segue o domínio atual.
     premiumApiEnabled: boolEnvDefaultOff('PREMIUM_API_ENABLED'),
-    premiumApiOrigin: strEnv('PREMIUM_API_ORIGIN', 'https://rexy40407.github.io'),
+    premiumApiOrigin: strEnv('PREMIUM_API_ORIGIN', 'https://vozen.org'),
   };
 }

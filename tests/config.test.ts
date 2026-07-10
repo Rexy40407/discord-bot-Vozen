@@ -45,6 +45,8 @@ describe('loadConfig', () => {
       // tambem limpamos a env reservada do discord.js para o teste de regressao
       // partir de um estado conhecido (so um teste a define de proposito).
       SHARDS: undefined,
+      PREMIUM_API_ORIGIN: undefined,
+      PREMIUM_API_ENABLED: undefined,
     });
   });
 
@@ -92,6 +94,14 @@ describe('loadConfig', () => {
       setEnv({ ...REQUIRED, TOPGG_WEBHOOK_ALLOW_INSECURE: v });
       expect(loadConfig().topggWebhookAllowInsecure, `valor=${v}`).toBe(false);
     }
+  });
+
+  it('SEC-02: premiumApiOrigin default aponta para o site atual (vozen.org)', () => {
+    setEnv(REQUIRED); // ausente => default
+    expect(loadConfig().premiumApiOrigin).toBe('https://vozen.org');
+    // override explícito continua a mandar (produção define no .env)
+    setEnv({ ...REQUIRED, PREMIUM_API_ORIGIN: 'https://exemplo.test' });
+    expect(loadConfig().premiumApiOrigin).toBe('https://exemplo.test');
   });
 
   it('applies string defaults when optionals missing', () => {

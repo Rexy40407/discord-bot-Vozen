@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import type { Server } from 'node:http';
 import { healthResponse, startHealthServer } from '../src/health';
+import { SERVER_TIMEOUTS } from '../src/http/serverHardening';
 import type { AppConfig } from '../src/config/index';
 
 // Helper: AppConfig minima — so `healthPort` interessa ao startHealthServer.
@@ -68,5 +69,14 @@ describe('startHealthServer — arranque opcional', () => {
 
     const res404 = await fetch(`http://127.0.0.1:${addr.port}/nope`);
     expect(res404.status).toBe(404);
+  });
+
+  it('SEC: aplica timeouts defensivos (anti-slowloris) ao servidor real', () => {
+    server = startHealthServer(cfg(0));
+    expect(server).toBeDefined();
+    // Prova que startHealthServer chama hardenServerTimeouts (defaults do Node seriam maiores).
+    expect(server!.requestTimeout).toBe(SERVER_TIMEOUTS.request);
+    expect(server!.headersTimeout).toBe(SERVER_TIMEOUTS.headers);
+    expect(server!.keepAliveTimeout).toBe(SERVER_TIMEOUTS.keepAlive);
   });
 });

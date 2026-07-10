@@ -280,12 +280,24 @@
 
   function randState() {
     const a = new Uint8Array(16);
-    (window.crypto || {}).getRandomValues?.(a);
+    const c = window.crypto || window.msCrypto;
+    // Fail-closed: sem CSPRNG não geramos um `state` fraco/previsível (seria um oráculo
+    // de CSRF no OAuth). Abortamos o login — todos os browsers modernos têm crypto.
+    if (!c || typeof c.getRandomValues !== "function") {
+      throw new Error("secure-random-unavailable");
+    }
+    c.getRandomValues(a);
     return [...a].map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
   function login() {
-    const state = randState();
+    let state;
+    try {
+      state = randState();
+    } catch {
+      alert("Your browser can't generate a secure login token. Please update it and try again.");
+      return;
+    }
     try {
       sessionStorage.setItem(STATE_KEY, state);
     } catch {}

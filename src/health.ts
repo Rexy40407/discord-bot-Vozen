@@ -16,6 +16,7 @@ import http from 'node:http';
 import type { Server } from 'node:http';
 import { log } from './logging/logger';
 import type { AppConfig } from './config/index';
+import { hardenServerTimeouts } from './http/serverHardening';
 
 export interface HealthResult {
   status: number;
@@ -64,6 +65,8 @@ export function startHealthServer(config: Pick<AppConfig, 'healthPort'>): Server
   server.on('error', (err) => {
     log.error(`[health] erro no servidor de health (porta ${port})`, err);
   });
+
+  hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
 
   // Loopback-only (defesa em profundidade): o health é para monitorização local/proxy.
   server.listen(port, '127.0.0.1', () => {

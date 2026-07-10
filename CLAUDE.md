@@ -55,3 +55,17 @@ Guidance for AI coding agents working on Vozen (Discord TTS bot).
 - Tests: vitest, flat files in `tests/` named after the module under test
   (e.g. `tests/playerFifo.test.ts` covers `src/voice/player.ts`).
 - Commits: short conventional-ish one-liners in Portuguese (see `git log`).
+
+## Testing — TDD is mandatory
+
+Every code change goes through **test-driven development**: write the failing
+test FIRST (RED), then the minimum code to pass it (GREEN), then refactor.
+Never write production code before there is a test that fails without it.
+
+- For logic covered by vitest (`src/**` TypeScript), this is literal: add/adjust
+  the test in `tests/`, run it and see it fail, then implement.
+- For code with no unit harness (static site in `site/`, browser JS), the
+  executable acceptance test is the browser (preview): define the pass/fail
+  criteria first, then verify against the running page — no CSP console errors,
+  the flow works, etc. Don't ship site changes unverified.
+- Always finish with the full suite green: `npx vitest run` + `npm run typecheck`.

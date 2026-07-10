@@ -40,6 +40,7 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { log } from './logging/logger';
 import { metrics } from './metrics';
 import type { AppConfig } from './config/index';
+import { hardenServerTimeouts } from './http/serverHardening';
 
 export interface VoteWebhookInput {
   /** Valor do header Authorization do pedido (ou undefined se ausente). */
@@ -223,6 +224,8 @@ export function startVoteWebhookServer(
   server.on('error', (err) => {
     log.error(`[vote] erro no servidor de webhook top.gg (porta ${port})`, err);
   });
+
+  hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
 
   // Loopback-only (defesa em profundidade): a exposição pública faz-se via reverse
   // proxy no mesmo host (Caddy), nunca com a porta crua na internet.

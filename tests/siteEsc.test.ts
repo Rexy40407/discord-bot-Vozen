@@ -1,22 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-// TEST-05: a função `esc()` do painel do site (site/js/main-v22.js) escapa HTML antes
-// de o injetar no DOM — é a barreira anti-XSS de dados que vêm da API (nomes, e-mails,
-// estado premium). Não a extraímos para um módulo (o site carrega por <script> simples,
-// não módulos — mexer nisso arriscava o load). Em vez disso, LEMOS a fonte real, isolamos
-// a expressão do `esc` e avaliamo-la num sandbox — testa o código que corre em produção
-// sem alterar o site. Se o prettier reformatar o `esc`, este teste falha alto (é de propósito).
+// TEST-05: a função `esc()` do painel do site escapa HTML antes de o injetar no DOM — é a
+// barreira anti-XSS de dados que vêm da API (nomes, e-mails, estado premium). Não a
+// extraímos para um módulo (o site carrega por <script> simples, não módulos — mexer nisso
+// arriscava o load). Em vez disso, LEMOS a fonte real, isolamos a expressão do `esc` e
+// avaliamo-la num sandbox — testa o código que corre em produção sem alterar o site. Se o
+// prettier reformatar o `esc`, este teste falha alto (é de propósito).
 
 // cwd = raiz do repo quando o vitest corre (evita import.meta, banido no output CommonJS
-// do tsconfig.test.json).
-const SRC = readFileSync(join(process.cwd(), 'site', 'js', 'main-v22.js'), 'utf8');
+// do tsconfig.test.json). O bundle muda de nome a cada cache-bust (main-vN.js) — encontramo-lo.
+const JS_DIR = join(process.cwd(), 'site', 'js');
+const MAIN_JS = readdirSync(JS_DIR).find((f) => /^main-v\d+\.js$/.test(f));
+if (!MAIN_JS) throw new Error('não encontrei site/js/main-v*.js (bundle principal do site)');
+const SRC = readFileSync(join(JS_DIR, MAIN_JS), 'utf8');
 
 function extractEsc(): (s: unknown) => string {
   // Captura `(s) => String(s).replace( ... \n    );` — do `(s) =>` até ao `);` que fecha o replace.
   const m = SRC.match(/const esc =\s*(\(s\)\s*=>[\s\S]*?\n\s*\)\s*);/);
-  if (!m) throw new Error('não encontrei a expressão do esc em main-v22.js (mudou o formato?)');
+  if (!m) throw new Error(`não encontrei a expressão do esc em ${MAIN_JS} (mudou o formato?)`);
   return eval('(' + m[1] + ')') as (s: unknown) => string;
 }
 
