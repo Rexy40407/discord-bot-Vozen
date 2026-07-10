@@ -135,7 +135,9 @@
     "price.max.2": "Servidor principal, o da malta, o dos memes — cobertos",
     "price.max.3": "Efeitos, clone de voz e 24/7 na call em todos eles",
     "price.max.4": "Dá €0,80 por servidor. Faz as contas.",
-    "price.max.note": "€75,99/ano (poupa ~20%) · comprar no Ko-fi"
+    "price.max.note": "€75,99/ano (poupa ~20%) · comprar no Ko-fi",
+    "price.pro.seats3": "3 servidores",
+    "price.pro.seats10": "10 servidores"
   },
   "commands": {
     "general": [

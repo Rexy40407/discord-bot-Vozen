@@ -135,7 +135,9 @@
     "price.max.2": "主伺服器、社群伺服器、迷因伺服器——通通涵蓋",
     "price.max.3": "每個伺服器都有特效、複製和 24/7 駐留",
     "price.max.4": "每個伺服器 €0.80。自己算算。",
-    "price.max.note": "€75.99/年（省约 20%）· 在 Ko-fi 购买"
+    "price.max.note": "€75.99/年（省约 20%）· 在 Ko-fi 购买",
+    "price.pro.seats3": "3 個伺服器",
+    "price.pro.seats10": "10 個伺服器"
   },
   "commands": {
     "general": [

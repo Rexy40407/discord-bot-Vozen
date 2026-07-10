@@ -135,7 +135,9 @@
     "price.max.2": "Serveur principal, celui de la commu, celui des memes — couverts",
     "price.max.3": "Effets, clonage et 24/7 en vocal sur tous",
     "price.max.4": "Ça fait 0,80 € par serveur. Fais le calcul.",
-    "price.max.note": "75,99 €/an (~20 % d’économie) · sur Ko-fi"
+    "price.max.note": "75,99 €/an (~20 % d’économie) · sur Ko-fi",
+    "price.pro.seats3": "3 serveurs",
+    "price.pro.seats10": "10 serveurs"
   },
   "commands": {
     "general": [

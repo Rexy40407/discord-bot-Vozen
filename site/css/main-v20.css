@@ -560,9 +560,45 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 .price-card--pro .price-card__price .was { text-decoration-color: rgba(255, 194, 75, 0.6); }
 .price-card--plus .price-card__price .was { text-decoration-color: rgba(102, 114, 255, 0.6); }
 .price-card--max .price-card__price .was { text-decoration-color: rgba(167, 106, 255, 0.55); }
-/* O preço grande (colorido) fica SEMPRE a 46px — igual no mensal e no anual. Para o anual
-   de 6 glifos (€75.99) caber nos 4 cartões lado a lado, o espaço vem do padding/gap mais
-   apertados da grelha (ver .pricing e .price-card), não de encolher o número. */
+/* O preço grande (colorido) fica SEMPRE a 46px — igual no mensal e no anual. */
+/* ── Cartão Premium: toggle 3 / 10 servidores ───────────────────────
+   Mesma tier, muda só o nº de licenças (e o preço). Dois eixos independentes: período
+   (mês/ano, via .pricing.is-annual) × licenças (3/10, via .is-10 no cartão). Só o combo
+   ativo aparece; as variantes --s10 reutilizam as chaves i18n price.max.* (já em 10 línguas). */
+.seat-toggle {
+  display: inline-flex; align-self: flex-start; margin: 2px 0 16px; padding: 3px;
+  border-radius: 999px; background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line-2); box-shadow: inset 0 1px 0 var(--hi);
+}
+.seat-toggle__btn {
+  border: 0; cursor: pointer; font-family: var(--f-body); font-weight: 700; font-size: 12.5px;
+  color: var(--text-1); background: transparent; padding: 6px 15px; border-radius: 999px;
+  transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.seat-toggle__btn:hover { color: var(--text-0); }
+.seat-toggle__btn.is-active {
+  color: #1a1500; background: var(--amber); box-shadow: 0 6px 16px -8px rgba(255, 194, 75, 0.7);
+}
+/* Base: esconder todas as variantes de preço do cartão pro; os combos abaixo reativam uma. */
+.price-card--pro .price-line .amt,
+.price-card--pro .price-card__price .per,
+.price-card--pro .price-line .was { display: none; }
+/* 3 servidores (cartão SEM .is-10) */
+.pricing:not(.is-annual) .price-card--pro:not(.is-10) .amt--m.amt--s3,
+.pricing:not(.is-annual) .price-card--pro:not(.is-10) .per--m.per--s3 { display: inline; }
+.pricing.is-annual .price-card--pro:not(.is-10) .amt--y.amt--s3,
+.pricing.is-annual .price-card--pro:not(.is-10) .per--y.per--s3,
+.pricing.is-annual .price-card--pro:not(.is-10) .was--s3 { display: inline; }
+/* 10 servidores (cartão COM .is-10) */
+.pricing:not(.is-annual) .price-card--pro.is-10 .amt--m.amt--s10,
+.pricing:not(.is-annual) .price-card--pro.is-10 .per--m.per--s10 { display: inline; }
+.pricing.is-annual .price-card--pro.is-10 .amt--y.amt--s10,
+.pricing.is-annual .price-card--pro.is-10 .per--y.per--s10,
+.pricing.is-annual .price-card--pro.is-10 .was--s10 { display: inline; }
+/* deal + nota: só dependem do nº de licenças (não do período) */
+.price-card--pro .deal--s10, .price-card--pro .note--s10 { display: none; }
+.price-card--pro.is-10 .deal--s3, .price-card--pro.is-10 .note--s3 { display: none; }
+.price-card--pro.is-10 .deal--s10, .price-card--pro.is-10 .note--s10 { display: block; }
 /* Troca Mensal→Anual: os elementos anuais entram com um fade+subida curto. Só sob
    .is-annual → o load inicial (mensal) nunca anima. */
 @keyframes priceIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -915,9 +951,9 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
   .btn--discord:hover { transform: none; }
 }
 
-.pricing { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; max-width: 1480px; margin: 0 auto; }
-/* 4 cartões: acima de 1160px cabem os 4; abaixo caem para 2×2 (e a 1 coluna no telemóvel). */
-@media (max-width: 1160px) { .pricing { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 760px; } }
+.pricing { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; max-width: 1180px; margin: 0 auto; }
+/* 3 cartões lado a lado; abaixo de ~920px empilham numa coluna. */
+@media (max-width: 920px) { .pricing { grid-template-columns: 1fr; max-width: 460px; } }
 .price-card {
   position: relative; padding: 38px 24px; border-radius: var(--radius);
   background: var(--glass); border: 1px solid var(--line); box-shadow: inset 0 1px 0 var(--hi);

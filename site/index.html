@@ -42,7 +42,7 @@
       href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main-v19.css" />
+    <link rel="stylesheet" href="css/main-v20.css" />
 
     <!-- FAQ structured data (Google rich results). Mantém em sincronia com
          window.VOZEN_FAQ (js/i18n.js) — o JSON-LD tem de ser ESTÁTICO porque os
@@ -464,38 +464,31 @@
             <div class="price-card price-card--pro reveal">
               <span class="price-card__badge">💎 <span data-i18n="price.pro.badge">PREMIUM</span></span>
               <h3 data-i18n="price.pro.name">Vozen Premium</h3>
-              <div class="price-card__price">
-                <span class="price-line"><b><span class="amt amt--m">€3.99</span><span class="amt amt--y">€37.99</span></b><s class="was was--y">€47.88</s></span>
-                <span class="per per--m" data-i18n="price.pro.per">/ month · 3 servers</span>
-                <span class="per per--y" data-i18n="price.pro.perYear">/ year · 3 servers</span>
+              <!-- Toggle de licenças: mesma tier, muda só o nº de servidores (e o preço). A
+                   classe .is-10 no cartão faz o CSS trocar preço/período/riscado/deal/nota;
+                   as variantes --s10 reutilizam as chaves i18n price.max.* (já em 10 línguas). -->
+              <div class="seat-toggle" role="group" aria-label="Servers per subscription">
+                <button type="button" class="seat-toggle__btn is-active" data-seats="3" data-i18n="price.pro.seats3">3 servers</button>
+                <button type="button" class="seat-toggle__btn" data-seats="10" data-i18n="price.pro.seats10">10 servers</button>
               </div>
-              <p class="price-card__deal" data-i18n="price.pro.deal">🎁 Pay for 1, get 3 — you pick the servers</p>
+              <div class="price-card__price">
+                <span class="price-line"><b><span class="amt amt--m amt--s3">€3.99</span><span class="amt amt--m amt--s10">€7.99</span><span class="amt amt--y amt--s3">€37.99</span><span class="amt amt--y amt--s10">€75.99</span></b><s class="was was--y was--s3">€47.88</s><s class="was was--y was--s10">€95.88</s></span>
+                <span class="per per--m per--s3" data-i18n="price.pro.per">/ month · 3 servers</span>
+                <span class="per per--m per--s10" data-i18n="price.max.per">/ month · 10 servers</span>
+                <span class="per per--y per--s3" data-i18n="price.pro.perYear">/ year · 3 servers</span>
+                <span class="per per--y per--s10" data-i18n="price.max.perYear">/ year · 10 servers</span>
+              </div>
+              <p class="price-card__deal deal--s3" data-i18n="price.pro.deal">🎁 Pay for 1, get 3 — you pick the servers</p>
+              <p class="price-card__deal deal--s10" data-i18n="price.max.deal">🎁 Ten servers. One subscription.</p>
               <ul class="ticks ticks--amber">
                 <li data-i18n="price.pro.1">Demon, deep, radio… all 8 effects, server-wide</li>
                 <li data-i18n="price.pro.2">Anyone in the server can clone their voice</li>
                 <li data-i18n="price.pro.3">In the call 24/7 — even alone at 4 a.m.</li>
                 <li data-i18n="price.pro.4">Every premium game, /rizz & 50 pronunciations each</li>
               </ul>
-              <p class="price-card__note" data-i18n="price.pro.note">€37.99/year (save ~20%) · buy on Ko-fi</p>
+              <p class="price-card__note note--s3" data-i18n="price.pro.note">€37.99/year (save ~20%) · buy on Ko-fi</p>
+              <p class="price-card__note note--s10" data-i18n="price.max.note">€75.99/year (save ~20%) · buy on Ko-fi</p>
               <a class="price-card__buy price-card__buy--pro js-kofi" href="https://ko-fi.com/rexy00" target="_blank" rel="noopener">Get Vozen Premium</a>
-            </div>
-            <div class="price-card price-card--max reveal">
-              <span class="price-card__badge price-card__badge--max">🚀 <span data-i18n="price.max.badge">MAX</span></span>
-              <h3 data-i18n="price.max.name">Vozen Premium Max</h3>
-              <div class="price-card__price">
-                <span class="price-line"><b><span class="amt amt--m">€7.99</span><span class="amt amt--y">€75.99</span></b><s class="was was--y">€95.88</s></span>
-                <span class="per per--m" data-i18n="price.max.per">/ month · 10 servers</span>
-                <span class="per per--y" data-i18n="price.max.perYear">/ year · 10 servers</span>
-              </div>
-              <p class="price-card__deal price-card__deal--max" data-i18n="price.max.deal">🎁 Ten servers. One subscription.</p>
-              <ul class="ticks">
-                <li data-i18n="price.max.1">Everything in Premium — on up to 10 servers</li>
-                <li data-i18n="price.max.2">Main server, community server, the meme one — covered</li>
-                <li data-i18n="price.max.3">Effects, cloning & 24/7 in-call on all of them</li>
-                <li data-i18n="price.max.4">That's €0.80 per server. Do the math.</li>
-              </ul>
-              <p class="price-card__note" data-i18n="price.max.note">€75.99/year (save ~20%) · buy on Ko-fi</p>
-              <a class="price-card__buy price-card__buy--max js-kofi" href="https://ko-fi.com/rexy00" target="_blank" rel="noopener">Get Vozen Premium Max</a>
             </div>
           </div>
         </div>
@@ -559,7 +552,7 @@
       </div>
     </footer>
 
-    <script defer src="js/i18n-v13.js"></script>
-    <script defer src="js/main-v22.js"></script>
+    <script defer src="js/i18n-v14.js"></script>
+    <script defer src="js/main-v23.js"></script>
   </body>
 </html>

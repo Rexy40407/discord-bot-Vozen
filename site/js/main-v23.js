@@ -204,6 +204,17 @@
     }),
   );
 
+  /* ── toggle 3/10 servidores (só no cartão Premium) ────── */
+  // Mesma tier, muda o nº de licenças e o preço. Como o bill-toggle: só troca uma classe
+  // (.is-10 no cartão); o CSS mostra o combo certo (preço/período/riscado/deal/nota).
+  const proCard = $(".price-card--pro");
+  $$(".seat-toggle__btn").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (proCard) proCard.classList.toggle("is-10", b.dataset.seats === "10");
+      $$(".seat-toggle__btn").forEach((x) => x.classList.toggle("is-active", x === b));
+    }),
+  );
+
   /* ── Painel Premium (login com Discord + estado da conta) ─────────────
      OAuth2 implicit (scope identify): 100% client-side, sem segredo. O token vem no
      fragment (#access_token), guardamo-lo em sessionStorage, limpamos o fragment, e
