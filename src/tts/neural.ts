@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { SynthRequest, TTSEngine } from './engine';
 import { AudioCache, cacheKey } from './cache';
+import { lowerAllCapsRuns } from './deCaps';
 
 const OPENAI_TTS_URL = 'https://api.openai.com/v1/audio/speech';
 const OPENAI_MODEL = 'tts-1';
@@ -75,7 +76,9 @@ export class NeuralEngine implements TTSEngine {
         body: JSON.stringify({
           model: OPENAI_MODEL,
           voice: mapVoice(req.model),
-          input: req.text,
+          // lowerAllCapsRuns: evita que um "grito" em MAIÚSCULAS saia soletrado (ver
+          // deCaps.ts). A chave de cache usa o req ORIGINAL.
+          input: lowerAllCapsRuns(req.text),
           speed: req.speed > 0 ? req.speed : 1,
           response_format: 'wav',
         }),

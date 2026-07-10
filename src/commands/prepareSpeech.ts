@@ -190,7 +190,7 @@ function prepareSpeechCore(input: PrepareSpeechInput): PreparedSpeech {
     const spoken = restoreAccents(spokenRaw, accentLangOfModel(preferred));
     return {
       spoken,
-      req: { text: spoken, model: preferred, speed, singleVoice: true },
+      req: { text: spoken, model: preferred, speed, singleVoice: true, emphasisSource: spoken },
       learnedLang: '',
     };
   }
@@ -235,13 +235,13 @@ function prepareSpeechCore(input: PrepareSpeechInput): PreparedSpeech {
   // sem girias): devolve um req single-voice sao com a voz preferida, sem crashar.
   if (!hasEng) {
     const model = pickVoiceForLang(baseLang, input.available, preferred);
-    return { spoken, req: { text: spoken, model, speed }, learnedLang };
+    return { spoken, req: { text: spoken, model, speed, emphasisSource: spoken }, learnedLang };
   }
 
   // So girias EN: voz unica inglesa.
   if (!hasOther) {
     const model = pickVoiceForLang('eng', input.available, preferred);
-    return { spoken, req: { text: spoken, model, speed }, learnedLang };
+    return { spoken, req: { text: spoken, model, speed, emphasisSource: spoken }, learnedLang };
   }
 
   // MISTURADO: cada segmento com a sua voz (giria -> EN, resto -> lingua-base). O
@@ -251,5 +251,9 @@ function prepareSpeechCore(input: PrepareSpeechInput): PreparedSpeech {
     model: pickVoiceForLang(s.isEnglish ? 'eng' : baseLang, input.available, preferred),
   }));
   const baseModel = pickVoiceForLang(baseLang, input.available, preferred);
-  return { spoken, req: { text: spoken, model: baseModel, speed, segments }, learnedLang };
+  return {
+    spoken,
+    req: { text: spoken, model: baseModel, speed, segments, emphasisSource: spoken },
+    learnedLang,
+  };
 }

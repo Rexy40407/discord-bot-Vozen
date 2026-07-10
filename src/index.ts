@@ -10,6 +10,7 @@ import { AudioCache } from './tts/cache';
 import { createEngine, createPerUserEngine, selectEngine } from './tts/factory';
 import { syntheticGttsModels } from './language/voiceMap';
 import { EffectEngine } from './tts/effects';
+import { ProsodyEngine } from './tts/prosody';
 import { CloneEngine, resolveCloneCmd } from './tts/cloneEngine';
 import { GuildVoicePlayer } from './voice/player';
 import { AloneWatcher } from './voice/aloneWatcher';
@@ -105,7 +106,8 @@ async function main(): Promise<void> {
       ? createEngine(config, cache)
       : createPerUserEngine(config, cache);
   // Decoradores externos, de dentro para fora:
-  //   selectEngine (multi-segmento) -> CloneEngine (voz clonada, premium) -> EffectEngine
+  //   selectEngine (multi-segmento) -> CloneEngine (voz clonada) -> ProsodyEngine
+  //   (entoação de pergunta) -> EffectEngine (efeito de voz)
   // O CloneEngine substitui a SÍNTESE quando req.cloneRef está presente (voz da pessoa);
   // o EffectEngine aplica o efeito por CIMA do resultado. Ambos caem na voz normal/limpa
   // em falha e têm cache própria. O sidecar de clone é auto-detetado (tools/clone-venv)
@@ -122,7 +124,11 @@ async function main(): Promise<void> {
   // Pré-aquece o modelo de clone no arranque (~35s de GPU), para a 1.ª mensagem clonada
   // não pagar o cold-load. No-op sem motor; falha cai na voz normal.
   cloneEngine.prewarm();
-  const engine = new EffectEngine(cloneEngine, cache.withNamespace('fx'));
+  // ProsodyEngine: ENTOAÇÃO DE PERGUNTA (sobe o tom no fim das falas com `?`). Fica por
+  // FORA do clone/multiseg (aplica-se ao WAV FINAL da fala) e por DENTRO do efeito (um
+  // efeito de voz vem por cima). Cache própria 'q'; só corre quando a fala acaba em `?`.
+  const prosodyEngine = new ProsodyEngine(cloneEngine, cache.withNamespace('q'));
+  const engine = new EffectEngine(prosodyEngine, cache.withNamespace('fx'));
   log.info(
     `[index] motor TTS ativo: ${config.ttsEngine === 'neural' ? 'neural' : 'per-user (google+piper)'}`,
   );

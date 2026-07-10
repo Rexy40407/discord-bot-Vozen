@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { AudioCache, cacheKey } from './cache';
+import { lowerAllCapsRuns } from './deCaps';
 import type { SynthRequest, TTSEngine } from './engine';
 import { parseCommand } from './cloneEngine';
 import { langKeyOfModel } from '../language/spokenPhrases';
@@ -113,7 +114,9 @@ export class KokoroEngine implements TTSEngine {
 
     let tmp: string | null = null;
     try {
-      tmp = await this.enqueue(req.text, m.lang, m.voice, req.speed);
+      // lowerAllCapsRuns: sem isto, um "grito" em MAIÚSCULAS podia sair SOLETRADO no
+      // G2P do Kokoro (ver deCaps.ts). A chave de cache usa o req ORIGINAL (acima).
+      tmp = await this.enqueue(lowerAllCapsRuns(req.text), m.lang, m.voice, req.speed);
       return this.cache.put(key, tmp);
     } finally {
       if (tmp) {

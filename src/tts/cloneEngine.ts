@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { AudioCache, cacheKey } from './cache';
+import { lowerAllCapsRuns } from './deCaps';
 import type { SynthRequest, TTSEngine } from './engine';
 import { langKeyOfModel } from '../language/spokenPhrases';
 import { log } from '../logging/logger';
@@ -108,7 +109,9 @@ export class CloneEngine implements TTSEngine {
     let tmp: string | null = null;
     try {
       const lang = langCode(req.model);
-      tmp = await this.enqueue(req.text, req.cloneRef, lang);
+      // lowerAllCapsRuns: evita que um "grito" em MAIÚSCULAS saia soletrado (ver
+      // deCaps.ts). A chave de cache usa o req ORIGINAL (acima).
+      tmp = await this.enqueue(lowerAllCapsRuns(req.text), req.cloneRef, lang);
       return this.cache.put(key, tmp); // copia para a cache (chave estável)
     } catch (err) {
       log.warn('[clone] síntese clonada falhou, a servir voz normal:', err);

@@ -16,6 +16,7 @@
 import { spawn } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { rmDirSafe } from './cleanupDir';
+import { lowerAllCapsRuns } from './deCaps';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import ffmpegPath from 'ffmpeg-static';
@@ -184,10 +185,12 @@ export function chunkText(text: string, max: number): string[] {
  * de frase, "I", "A", ou o "V" de "Voltei") NÃO é tocada — só corridas de 2+. Trade-off
  * aceite: siglas legítimas ("NASA") passam a ser lidas como palavra, mas em chat o
  * TODO-MAIÚSCULAS é quase sempre ênfase/gritar, não uma sigla. PURA.
+ *
+ * A transformação em si vive em deCaps.ts (partilhada com Kokoro/Clone/Neural, que têm
+ * o mesmo problema); aqui fica só o wrapper com o nome histórico e a nota gTTS.
  */
-const RE_ALLCAPS_RUN = /\p{Lu}[\p{Lu}\p{M}]+/gu;
 export function deCapsForGoogle(text: string): string {
-  return text.replace(RE_ALLCAPS_RUN, (run) => run.toLowerCase());
+  return lowerAllCapsRuns(text);
 }
 
 export interface GttsOptions {

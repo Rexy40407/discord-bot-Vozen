@@ -27,7 +27,7 @@ interface ParsedWav {
  * `fact`/`LIST` antes do `data`). Respeita o pad de alinhamento a palavra
  * (chunks de tamanho impar levam 1 byte de padding).
  */
-function parseWav(wav: Buffer, index: number): ParsedWav {
+export function parseWav(wav: Buffer, index: number): ParsedWav {
   const where = `WAV #${index + 1}`;
   if (wav.length < 12) {
     throw new Error(`${where}: buffer demasiado pequeno para ser um WAV`);
@@ -94,7 +94,7 @@ function validateFormat(w: ParsedWav, index: number): void {
 }
 
 /** Constroi um WAV canonico (header 44 bytes) a partir dos dados PCM combinados. */
-function buildWav(data: Buffer): Buffer {
+export function buildWav(data: Buffer): Buffer {
   const header = Buffer.alloc(44);
   header.write('RIFF', 0, 'ascii');
   header.writeUInt32LE(36 + data.length, 4); // ChunkSize

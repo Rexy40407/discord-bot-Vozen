@@ -79,8 +79,10 @@ const RE_UNICODE_EMOJI = /\p{Extended_Pictographic}/gu;
 // literais, que seriam invisiveis no diff). IMPORTANTE: so componentes/RI — o
 // DIGITO/LETRA base fica, por isso "1️⃣" -> "1" (so VS16+keycap sao removidos).
 const RE_EMOJI_EXTRA = /[\u200D\uFE0F\u20E3]|\p{Regional_Indicator}/gu;
-const RE_REPEAT_LOWER = /([a-z])\1{2,}/g;
-const RE_REPEAT_UPPER = /([A-Z])\1{1,}/g;
+// Unicode-aware (\p{Ll}/\p{Lu}, não [a-z]/[A-Z]): sem isto, spam de letras ACENTUADAS
+// ou não-latinas ("ÁÁÁÁÁ…", "ÇÇÇÇ", "ЁЁЁЁ") NÃO era colapsado e ia inteiro para a síntese.
+const RE_REPEAT_LOWER = /(\p{Ll})\1{2,}/gu;
+const RE_REPEAT_UPPER = /(\p{Lu})\1{1,}/gu;
 const RE_WS = /\s+/g;
 
 export function cleanText(raw: string, opts: CleanOptions): string {

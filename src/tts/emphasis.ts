@@ -16,11 +16,14 @@
 // resultados errados entre chamadas). \p{M} apanha diacríticos combinados (ÁÁ).
 const RE_ALLCAPS_RUN = /\p{Lu}[\p{Lu}\p{M}]+/u;
 
-// Ganhos de amplitude (multiplicadores lineares). Modestos de propósito: o WAV do
-// Piper/gTTS não vem no máximo, mas passar de ~1.4 arrisca clipping/distorção.
+// Ganhos de amplitude (multiplicadores lineares). O WAV do Piper/gTTS não vem no máximo,
+// por isso há margem; subimo-los (de 1.22/1.4) para o "grito" ser mais NÍTIDO — o pedido
+// era que se notasse mesmo. Acima disto o risco de clipping/distorção cresce depressa nas
+// sílabas mais fortes, por isso ficamos por aqui. TUNÁVEL: se soar a distorcer, baixa; se
+// for pouco, o passo seguinte é dar-lhe pitch (ffmpeg), não mais volume.
 const GAIN_NONE = 1;
-const GAIN_SOFT = 1.22; // um sinal de ênfase (um `!` ou uma palavra em maiúsculas)
-const GAIN_STRONG = 1.4; // ênfase forte (!! ou mais, ou maiúsculas + `!`)
+const GAIN_SOFT = 1.3; // um sinal de ênfase (um `!` ou uma palavra em maiúsculas)
+const GAIN_STRONG = 1.5; // ênfase forte (!! ou mais, ou maiúsculas + `!`)
 
 /**
  * Ganho de volume para uma fala, a partir do seu texto. 1.0 = normal (sem ganho).

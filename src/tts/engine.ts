@@ -3,6 +3,12 @@ export interface SynthRequest {
   text: string;
   model: string;
   speed: number;
+  // Texto de onde se calcula a ÊNFASE (grito por `!`/MAIÚSCULAS e a entoação de `?`) —
+  // deve ser SÓ o que o UTILIZADOR escreveu, sem o que o bot injeta (prefixo xsaid
+  // "{nome} disse", sufixo de media "um link"). Sem isto, um nome/apelido em MAIÚSCULAS
+  // fazia TODAS as mensagens saírem mais alto (falso grito). Ausente => cai no `text`.
+  // NÃO entra na cacheKey (é decidido na reprodução/pós-síntese, não muda o áudio base).
+  emphasisSource?: string;
   // Milissegundos de silencio a PREPENDER ao audio sintetizado (default: nenhum).
   // Usado p.ex. pelo /joke para criar uma pausa real ANTES do riso (o riso e uma
   // fala separada com leadSilenceMs). Opcional: ausente => output inalterado.

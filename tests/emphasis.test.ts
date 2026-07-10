@@ -17,6 +17,11 @@ describe('emphasisGain — "mais alto quando ! ou MAIÚSCULAS"', () => {
     expect(emphasisGain('PARA quieto')).toBeGreaterThan(1);
   });
 
+  it('MAIÚSCULAS sozinhas contam como um "!" (mesmo ganho suave)', () => {
+    // Pedido do Diogo: gritar também as palavras TODO-MAIÚSCULAS, ao nível de um `!`.
+    expect(emphasisGain('PARA quieto')).toBe(emphasisGain('para quieto!'));
+  });
+
   it('"!!" ou mais -> ganho forte', () => {
     expect(emphasisGain('vamos!!')).toBe(emphasisGain('boaaa!!!'));
     expect(emphasisGain('vamos!!')).toBeGreaterThan(emphasisGain('vamos!'));

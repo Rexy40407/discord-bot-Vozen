@@ -237,11 +237,12 @@ export class GuildVoicePlayer {
     // reiniciar) e rejeitava o `void playNext()` do call-site (unhandledRejection).
     // Tratamento idêntico ao erro de síntese: salta o item e continua a fila.
     try {
-      // ÊNFASE: "mais alto quando há ! ou MAIÚSCULAS". Ganho calculado do texto
-      // ORIGINAL (req.text ainda tem as maiúsculas; o deCapsForGoogle só baixa dentro
-      // do gTTS). inlineVolume só quando há ganho, para não pagar o VolumeTransformer
-      // na esmagadora maioria das falas (ganho 1.0 = sem transformer, caminho normal).
-      const gain = emphasisGain(next.req.text);
+      // ÊNFASE: "mais alto quando há ! ou MAIÚSCULAS". Ganho calculado do `emphasisSource`
+      // (o que o UTILIZADOR escreveu) e não do req.text decorado — senão um nome/apelido em
+      // MAIÚSCULAS no prefixo xsaid fazia TODAS as mensagens gritar (falso grito). Cai no
+      // req.text quando não há source (jogos, /tts, preview — sem decoração). inlineVolume
+      // só quando há ganho, para não pagar o VolumeTransformer na maioria das falas.
+      const gain = emphasisGain(next.req.emphasisSource ?? next.req.text);
       const resource = createAudioResource(audioPath, {
         inputType: StreamType.Arbitrary,
         inlineVolume: gain !== 1,

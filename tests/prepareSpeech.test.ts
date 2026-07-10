@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { prepareSpeech, redactRequest, hasReadableText } from '../src/commands/prepareSpeech';
+import { emphasisGain } from '../src/tts/emphasis';
 import type { SynthRequest } from '../src/tts/engine';
 
 // Catalogo: EN + PT + ES (mesmo dos testes de resolveSynth).
@@ -85,6 +86,21 @@ describe('prepareSpeech — anúncios (xsaid + media) localizados na voz', () =>
     });
     expect(spoken).toBe('Alex said hello there');
     expect(req.text).toBe('Alex said hello there');
+  });
+
+  it('emphasisSource = SÓ o corpo (sem o nome xsaid) — anti falso-grito', () => {
+    // Bug: um nome/apelido em MAIÚSCULAS no prefixo xsaid fazia TODAS as mensagens
+    // gritar. O emphasisSource tem de ser só o que o utilizador escreveu.
+    const { req } = prepareSpeech({
+      ...BASE,
+      autoDetect: false, // voz fixa EN (amy)
+      personal: 'hello there',
+      announceSpeaker: 'DIOGO', // nome em MAIÚSCULAS
+    });
+    expect(req.text).toBe('DIOGO said hello there'); // o texto sintetizado leva o nome
+    expect(req.emphasisSource).toBe('hello there'); // mas a ênfase vem só do corpo
+    expect(emphasisGain(req.emphasisSource ?? req.text)).toBe(1); // corpo calmo -> não grita
+    expect(emphasisGain(req.text)).toBeGreaterThan(1); // o texto decorado gritaria (bug antigo)
   });
 
   it('xsaid localizado: voz PT -> "disse"', () => {
