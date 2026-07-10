@@ -34,7 +34,7 @@ export interface AloneWatcherDeps {
    * expulsa pela regra do "sozinho"). Default = () => false (comportamento Free
    * inalterado; todos os testes existentes continuam iguais).
    */
-  isPremium?: (guildId: string) => boolean;
+  stayInCall?: (guildId: string) => boolean;
   /** Injetáveis para testes; default = setTimeout/clearTimeout globais. */
   setTimer?: (fn: () => void, ms: number) => ReturnType<typeof setTimeout>;
   clearTimer?: (t: ReturnType<typeof setTimeout>) => void;
@@ -47,13 +47,13 @@ export class AloneWatcher {
   private readonly clr: (t: ReturnType<typeof setTimeout>) => void;
   private readonly humans: (guildId: string) => number | null;
   private readonly doLeave: (guildId: string) => void;
-  private readonly isPremium: (guildId: string) => boolean;
+  private readonly stayInCall: (guildId: string) => boolean;
 
   constructor(d: AloneWatcherDeps) {
     this.leaveMs = d.leaveMs ?? ALONE_LEAVE_MS;
     this.humans = d.humansInBotChannel;
     this.doLeave = d.leave;
-    this.isPremium = d.isPremium ?? (() => false);
+    this.stayInCall = d.stayInCall ?? (() => false);
     this.set = d.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
     this.clr = d.clearTimer ?? ((t) => clearTimeout(t));
   }
@@ -73,7 +73,7 @@ export class AloneWatcher {
     // 24/7 in-call (Premium): a guild fica no canal mesmo sozinha — NUNCA sai por
     // esta regra. Cancela qualquer timer pendente (ex.: perdeu Premium e voltou a ter)
     // e devolve sem expulsar. Free continua a sair como antes.
-    if (this.isPremium(guildId)) {
+    if (this.stayInCall(guildId)) {
       this.clear(guildId);
       return;
     }

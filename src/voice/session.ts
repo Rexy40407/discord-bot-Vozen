@@ -15,6 +15,7 @@ import { GuildVoicePlayer } from './player';
 import type { BotDeps } from '../bot/deps';
 import { removePlayer } from '../bot/deps';
 import { isGuildPremium } from '../store/premium';
+import { getGuildConfig } from '../store/guildConfig';
 import { rememberVoicePresence } from '../store/voicePresence';
 import { log } from '../logging/logger';
 
@@ -70,11 +71,15 @@ export function createVoiceSession(
     },
   );
   deps.players.set(guildId, player);
-  // 24/7 in-call: só servidores Premium persistem o canal, para serem repostos no
-  // arranque (ver rejoin.ts). Best-effort — NUNCA bloqueia a entrada na call (e um
-  // deps sem db, como em testes, cai no catch sem efeito).
+  // 24/7 in-call: só persiste o canal quando a guild é Premium E ligou o toggle
+  // (/config always-on, default OFF) — assim é reposto no arranque (ver rejoin.ts).
+  // Best-effort — NUNCA bloqueia a entrada na call (e um deps sem db, como em testes,
+  // cai no catch sem efeito).
   try {
-    if (isGuildPremium(deps.db, guildId, Date.now())) {
+    if (
+      isGuildPremium(deps.db, guildId, Date.now()) &&
+      getGuildConfig(deps.db, guildId).stayInCall
+    ) {
       rememberVoicePresence(deps.db, guildId, channelId, Date.now());
     }
   } catch (err) {

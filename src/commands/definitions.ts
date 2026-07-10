@@ -427,6 +427,21 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .addSubcommand((s) =>
       s
+        .setName('always-on')
+        .setNameLocalizations({ 'pt-BR': 'sempre-ligado' })
+        .setDescription(
+          '24/7 in-call (💎 Premium): Vozen stays in the voice channel even when empty',
+        )
+        .addBooleanOption((o) =>
+          o
+            .setName('active')
+            .setNameLocalizations({ 'pt-BR': 'ativo' })
+            .setDescription('on/off')
+            .setRequired(true),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
         .setName('read-bots')
         .setNameLocalizations({ 'pt-BR': 'ler-bots' })
         .setDescription('Read messages from other bots and webhooks (off by default)')

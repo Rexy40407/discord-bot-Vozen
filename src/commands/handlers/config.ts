@@ -105,6 +105,13 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { autojoin: on });
     await reply(i, on ? t('config.autojoinOn', locale) : t('config.autojoinOff', locale));
+  } else if (sub === 'always-on') {
+    // 24/7 in-call: o bot fica no canal mesmo vazio + é reposto no arranque. DESLIGADO por
+    // defeito (opt-in). Só tem EFEITO com Premium (o gate no AloneWatcher/rejoin exige-o);
+    // guardar o toggle é livre — a mensagem ON avisa que precisa de Premium.
+    const on = i.options.getBoolean('active', true);
+    setGuildConfig(deps.db, i.guildId!, { stayInCall: on });
+    await reply(i, on ? t('config.stayOn', locale) : t('config.stayOff', locale));
   } else if (sub === 'read-bots') {
     // Ler outros bots/webhooks. DESLIGADO por defeito (o Vozen nunca se lê a si próprio).
     const on = i.options.getBoolean('active', true);

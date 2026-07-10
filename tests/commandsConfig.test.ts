@@ -674,3 +674,33 @@ describe('/config — wiring do locale (PT quando locale="pt")', () => {
     expect(i.replies.join('\n')).not.toMatch(/reset to defaults/i);
   });
 });
+
+// ── always-on (24/7 in-call) ──────────────────────────────────────────────────
+
+describe('/config always-on — toggle 24/7 in-call (default OFF)', () => {
+  let db: Database.Database;
+  beforeEach(() => {
+    db = initDb(':memory:');
+  });
+  afterEach(() => {
+    db.close();
+  });
+
+  it('default OFF (mesmo sem tocar em nada)', () => {
+    expect(getGuildConfig(db, GUILD).stayInCall).toBe(false);
+  });
+
+  it('ligar persiste stayInCall=true e avisa que precisa de Premium', async () => {
+    const i = makeConfigInteraction({ sub: 'always-on', optionsMap: { active: true } });
+    await handleInteraction(i as any, makeConfigDeps(db));
+    expect(getGuildConfig(db, GUILD).stayInCall).toBe(true);
+    expect(i.replies.join('\n')).toMatch(/Premium/i);
+  });
+
+  it('desligar persiste stayInCall=false', async () => {
+    setGuildConfig(db, GUILD, { stayInCall: true });
+    const i = makeConfigInteraction({ sub: 'always-on', optionsMap: { active: false } });
+    await handleInteraction(i as any, makeConfigDeps(db));
+    expect(getGuildConfig(db, GUILD).stayInCall).toBe(false);
+  });
+});

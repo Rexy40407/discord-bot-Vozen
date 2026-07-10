@@ -15,8 +15,8 @@ import type { VoicePresenceRow } from '../store/voicePresence';
 export type ChannelState = 'ready' | 'no-perms' | 'gone';
 
 export interface RejoinPolicyDeps {
-  /** A guild é Premium AGORA? (só Premium é reposto — 24/7 é uma vantagem paga.) */
-  isPremium: (guildId: string) => boolean;
+  /** A guild deve ficar 24/7 na call AGORA? (Premium E o toggle /config always-on ligado.) */
+  stayInCall: (guildId: string) => boolean;
   /** Estado atual do canal persistido desta guild. */
   channelState: (guildId: string, channelId: string) => ChannelState;
 }
@@ -39,7 +39,7 @@ export function planRejoin(rows: VoicePresenceRow[], deps: RejoinPolicyDeps): Re
   const rejoin: VoicePresenceRow[] = [];
   const forget: string[] = [];
   for (const row of rows) {
-    if (!deps.isPremium(row.guildId)) {
+    if (!deps.stayInCall(row.guildId)) {
       forget.push(row.guildId);
       continue;
     }

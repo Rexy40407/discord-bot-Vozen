@@ -130,11 +130,11 @@ describe('AloneWatcher — 24/7 in-call (Premium fica na call mesmo sozinho)', (
   it('Premium + sozinho (saída imediata) -> NÃO sai, sem timer', () => {
     const leave = vi.fn();
     const state = { humans: 0 as number | null };
-    // Sem leaveMs -> default imediato; mas isPremium=true trava a saída.
+    // Sem leaveMs -> default imediato; mas stayInCall=true trava a saída.
     const watcher = new AloneWatcher({
       humansInBotChannel: () => state.humans,
       leave,
-      isPremium: () => true,
+      stayInCall: () => true,
     });
     watcher.evaluate(G);
     expect(leave).not.toHaveBeenCalled();
@@ -149,7 +149,7 @@ describe('AloneWatcher — 24/7 in-call (Premium fica na call mesmo sozinho)', (
       leaveMs: MS,
       humansInBotChannel: () => state.humans,
       leave,
-      isPremium: () => true,
+      stayInCall: () => true,
     });
     watcher.evaluate(G);
     expect(watcher.pendingCount()).toBe(0);
@@ -165,7 +165,7 @@ describe('AloneWatcher — 24/7 in-call (Premium fica na call mesmo sozinho)', (
       leaveMs: MS,
       humansInBotChannel: () => state.humans,
       leave,
-      isPremium: () => state.premium,
+      stayInCall: () => state.premium,
     });
     watcher.evaluate(G); // Free + sozinho -> arma timer
     expect(watcher.pendingCount()).toBe(1);
@@ -176,7 +176,7 @@ describe('AloneWatcher — 24/7 in-call (Premium fica na call mesmo sozinho)', (
     expect(leave).not.toHaveBeenCalled();
   });
 
-  it('sem isPremium (default) -> comportamento Free inalterado (sai já)', () => {
+  it('sem stayInCall (default) -> comportamento Free inalterado (sai já)', () => {
     const leave = vi.fn();
     const state = { humans: 0 as number | null };
     const watcher = new AloneWatcher({ humansInBotChannel: () => state.humans, leave });

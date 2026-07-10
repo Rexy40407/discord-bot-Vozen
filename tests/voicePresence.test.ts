@@ -58,7 +58,7 @@ describe('planRejoin — política pura do rejoin no arranque', () => {
     FREE: 'ready', // irrelevante: será esquecida por não ser Premium
   };
   const plan = planRejoin(rows, {
-    isPremium: (g) => g.startsWith('PREM'),
+    stayInCall: (g) => g.startsWith('PREM'),
     channelState: (g) => states[g],
   });
 
@@ -80,7 +80,7 @@ describe('planRejoin — política pura do rejoin no arranque', () => {
   });
 
   it('lista vazia -> plano vazio', () => {
-    expect(planRejoin([], { isPremium: () => true, channelState: () => 'ready' })).toEqual({
+    expect(planRejoin([], { stayInCall: () => true, channelState: () => 'ready' })).toEqual({
       rejoin: [],
       forget: [],
     });

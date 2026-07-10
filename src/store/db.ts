@@ -36,7 +36,8 @@ export function initDb(path: string): Database.Database {
         text_in_voice  INTEGER NOT NULL DEFAULT 0,
         greet_on_join  INTEGER NOT NULL DEFAULT 1,
         greet_locale   TEXT NOT NULL DEFAULT 'en',
-        antispam       INTEGER NOT NULL DEFAULT 0
+        antispam       INTEGER NOT NULL DEFAULT 0,
+        stay_in_call   INTEGER NOT NULL DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS blocklist (

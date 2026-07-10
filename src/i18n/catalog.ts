@@ -690,6 +690,14 @@ export const catalog: Record<string, Entry> = {
     en: 'Auto-join **off** — use `/join` to bring Vozen into voice.',
     pt: 'Auto-entrada **desligada** — usa `/join` para trazer o Vozen para a voz.',
   },
+  'config.stayOn': {
+    en: '✅ 24/7 in-call **on** — Vozen will stay in the voice channel even when it empties, and come back after restarts. 💎 Needs Premium to take effect (buy or `/redeem` a code, then `/premium activate`).',
+    pt: '✅ 24/7 na call **ligado** — o Vozen fica no canal de voz mesmo quando esvazia, e volta após reinícios. 💎 Precisa de Premium para ter efeito (compra ou `/redeem` um código, depois `/premium activate`).',
+  },
+  'config.stayOff': {
+    en: '24/7 in-call **off** — Vozen leaves when the voice channel empties (default).',
+    pt: '24/7 na call **desligado** — o Vozen sai quando o canal de voz esvazia (padrão).',
+  },
   'config.readBotsOn': {
     en: '✅ Vozen will now read messages from **other bots and webhooks** too.',
     pt: '✅ O Vozen passa a ler também mensagens de **outros bots e webhooks**.',

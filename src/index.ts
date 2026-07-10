@@ -172,9 +172,10 @@ async function main(): Promise<void> {
       removePlayer(deps, guildId);
       getVoiceConnection(guildId)?.destroy();
     },
-    // 24/7 in-call (Premium): servidores Premium ficam no canal mesmo sozinhos.
-    // isGuildPremium cobre o Premium direto do servidor E os passes (Plus) ativados aqui.
-    isPremium: (guildId) => isGuildPremium(db, guildId, Date.now()),
+    // 24/7 in-call: a guild fica no canal mesmo sozinha só se for Premium E tiver o toggle
+    // ligado (/config always-on, default OFF). isGuildPremium cobre Premium direto + passes.
+    stayInCall: (guildId) =>
+      isGuildPremium(db, guildId, Date.now()) && getGuildConfig(db, guildId).stayInCall,
   });
 
   // Minijogos (/game). O GameManager e desacoplado de discord.js/SQLite: recebe um
@@ -345,7 +346,8 @@ async function main(): Promise<void> {
       const rows = listVoicePresence(db);
       if (rows.length > 0) {
         const plan = planRejoin(rows, {
-          isPremium: (gid) => isGuildPremium(db, gid, Date.now()),
+          stayInCall: (gid) =>
+            isGuildPremium(db, gid, Date.now()) && getGuildConfig(db, gid).stayInCall,
           channelState: channelStateOf,
         });
         for (const gid of plan.forget) forgetVoicePresence(db, gid);
