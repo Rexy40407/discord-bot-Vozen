@@ -544,17 +544,30 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 .pricing.is-annual .amt--m, .pricing.is-annual .per--m { display: none; }
 .pricing.is-annual .amt--y, .pricing.is-annual .per--y { display: inline; }
 .pricing.is-annual .was--y { display: inline; }
-/* Preço + preço "cheio" (12× mensal) riscado na MESMA linha; o riscado só no anual. */
-.price-line { display: flex; align-items: baseline; gap: 10px; }
-/* Riscado recuado (peso 600, cinzento) para dar palco ao preço grande. O TRAÇO herda o
-   sotaque do cartão (âmbar/blurple), em vez do risco default do browser. Sem opacity aqui:
-   a animação priceIn termina em opacity:1 e anulá-la-ia — o recuo vem da cor + peso. */
+/* Preço "cheio" (12× mensal) riscado EMPILHADO por cima do preço grande (padrão
+   "was/now"): em 4 colunas cada cartão tem ~196px úteis e o par lado a lado transbordava.
+   Coluna → o riscado fica numa linha própria; o `order:-1` do .was sobe-o sem mexer no HTML. */
+.price-line { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+/* Riscado pequeno (peso 600, cinzento) POR CIMA do preço. O TRAÇO herda o sotaque do cartão
+   (âmbar/blurple/violeta), em vez do risco default do browser. Sem opacity aqui: a animação
+   priceIn termina em opacity:1 e anulá-la-ia — o recuo vem da cor + peso. */
 .price-card__price .was {
-  font-family: var(--f-display); font-weight: 600; font-size: 22px; color: var(--text-2);
+  order: -1; /* sobe para cima do <b> sem tocar no markup dos 3 cartões */
+  font-family: var(--f-display); font-weight: 600; font-size: 16px; line-height: 1;
+  color: var(--text-2);
   text-decoration: line-through; text-decoration-thickness: 2px;
 }
 .price-card--pro .price-card__price .was { text-decoration-color: rgba(255, 194, 75, 0.6); }
 .price-card--plus .price-card__price .was { text-decoration-color: rgba(102, 114, 255, 0.6); }
+.price-card--max .price-card__price .was { text-decoration-color: rgba(167, 106, 255, 0.55); }
+/* Em 4 colunas (~196px úteis) o preço anual tem 6 glifos (€75.99) e roçava a borda mesmo
+   sozinho: baixa um degrau. Só no anual e só na grelha larga; o mensal fica intacto a 46px. */
+@media (min-width: 1161px) {
+  .pricing.is-annual .price-card__price b { font-size: 36px; }
+}
+@media (max-width: 360px) {
+  .pricing.is-annual .price-card__price b { font-size: 38px; }
+}
 /* Troca Mensal→Anual: os elementos anuais entram com um fade+subida curto. Só sob
    .is-annual → o load inicial (mensal) nunca anima. */
 @keyframes priceIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
