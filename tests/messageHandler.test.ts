@@ -22,6 +22,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { handleMessage } from '../src/commands/messageHandler';
 import type { BotDeps } from '../src/bot/deps';
+import { metrics } from '../src/metrics';
 import { initDb } from '../src/store/db';
 import { setGuildConfig } from '../src/store/guildConfig';
 import { addBlockword } from '../src/store/blocklist';
@@ -119,6 +120,9 @@ function makeMessage(
       repliedUser: replyToBot ? { id: BOT_ID } : null,
     },
     reference: replyToBot ? { messageId: 'msg-ref-1' } : null,
+    // react: usado pelo feedback de rate-limit (🐢). Sempre presente no mock (o código
+    // real chama-o best-effort com optional-chaining); os testes que não o usam ignoram-no.
+    react: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -274,11 +278,28 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
   });
 
   // ── 9. Rate-limited ───────────────────────────────────────────────────────
-  it('rate-limited (ratePerMin = 0) → não fala', async () => {
+  it('rate-limited (ratePerMin = 0) → não fala, MAS o drop é visível (🐢 + métrica)', async () => {
+    metrics.reset();
     setGuildConfig(db, GUILD, { ratePerMin: 0 });
     const deps = makeDeps(db, say);
-    await handleMessage(makeMessage(), deps);
+    const msg = makeMessage();
+    await handleMessage(msg, deps);
     expect(say).not.toHaveBeenCalled();
+    // O drop deixou de ser silencioso: reage com 🐢 e conta a métrica.
+    expect(msg.react).toHaveBeenCalledWith('🐢');
+    expect(metrics.snapshot().messagesRateLimited).toBe(1);
+  });
+
+  // ── 9b. Ordem dos filtros: mensagem NÃO-legível não consome token ─────────
+  // BUG (Fable): o rate-limit corria ANTES do cleanText/guard-de-legível, por isso um
+  // emoji/link (que nunca ia ser falado) queimava o orçamento e silenciava a mensagem
+  // legível seguinte. Com 1 token: emoji-só + "ola" -> "ola" DEVE ser falado.
+  it('mensagem só-emoji não gasta token do rate-limit (a legível seguinte fala)', async () => {
+    setGuildConfig(db, GUILD, { ratePerMin: 1 });
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: '🎉' }), deps); // não-legível: não deve gastar token
+    await handleMessage(makeMessage({ content: 'ola' }), deps); // legível: usa o token
+    expect(say).toHaveBeenCalledTimes(1);
   });
 
   // ── 10. Texto vazio após cleanText ────────────────────────────────────────

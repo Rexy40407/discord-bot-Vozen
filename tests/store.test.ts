@@ -95,7 +95,7 @@ describe('store', () => {
         autoread: false,
         defaultVoice: '', // vazio = guild nao definiu voz default
         maxChars: 300,
-        ratePerMin: 5,
+        ratePerMin: 15,
         enabled: true,
         ttsRoleId: null,
         locale: 'en', // default: ingles como idioma da interface
@@ -142,7 +142,7 @@ describe('store', () => {
         autoread: true,
         defaultVoice: '', // vazio = guild nao definiu voz default
         maxChars: 300,
-        ratePerMin: 5,
+        ratePerMin: 15,
         enabled: true,
         ttsRoleId: null,
         locale: 'en', // default: ingles como idioma da interface

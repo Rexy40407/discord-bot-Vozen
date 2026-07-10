@@ -7,6 +7,9 @@ export interface MetricsSnapshot {
   cacheHits: number;
   cacheMisses: number;
   synthErrors: number;
+  // Mensagens SALTADAS por rate-limit (limite N/min por-user). Antes o drop era
+  // silencioso (sem log, sem métrica) — parecia "o bot não fala". Agora é observável.
+  messagesRateLimited: number;
   // Reconexao a voz (P7.4): quedas detetadas e reconexoes com sucesso.
   voiceDrops: number;
   voiceReconnects: number;
@@ -38,6 +41,7 @@ class Metrics {
   cacheHits = 0;
   cacheMisses = 0;
   synthErrors = 0;
+  messagesRateLimited = 0;
   voiceDrops = 0;
   voiceReconnects = 0;
   votes = 0;
@@ -70,6 +74,7 @@ class Metrics {
       cacheHits: this.cacheHits,
       cacheMisses: this.cacheMisses,
       synthErrors: this.synthErrors,
+      messagesRateLimited: this.messagesRateLimited,
       voiceDrops: this.voiceDrops,
       voiceReconnects: this.voiceReconnects,
       votes: this.votes,
@@ -86,6 +91,7 @@ class Metrics {
     this.cacheHits = 0;
     this.cacheMisses = 0;
     this.synthErrors = 0;
+    this.messagesRateLimited = 0;
     this.voiceDrops = 0;
     this.voiceReconnects = 0;
     this.votes = 0;

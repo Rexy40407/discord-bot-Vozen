@@ -12,6 +12,7 @@ import { getGuildConfig } from '../store/guildConfig';
 import { getBlocklist } from '../store/blocklist';
 import { redactBlocked } from '../moderation/filter';
 import { isRepetitionSpam } from '../moderation/antispam';
+import { metrics } from '../metrics';
 import { getVoiceEffect } from '../store/voiceEffect';
 import { getClone } from '../store/voiceClone';
 import { bumpTalk, getTopSpeakers, type TalkBump } from '../store/talkStats';
@@ -72,6 +73,20 @@ function maybeAutojoin(
   } catch (err) {
     log.warn('[messageHandler] autojoin falhou (ignorado)', err);
     return undefined;
+  }
+}
+
+/**
+ * Feedback VISÍVEL de rate-limit: reage com 🐢 à mensagem que foi limitada. Best-effort —
+ * precisa de AddReactions; sem permissão/em falha, ignora-se (nunca parte o handler nem
+ * enfileira rejeições). Antes, o drop do rate-limit era 100% silencioso e parecia "o bot
+ * não fala"; a reação diz ao utilizador que está a ir depressa demais.
+ */
+function reactRateLimited(message: Message): void {
+  try {
+    void Promise.resolve(message.react?.('🐢')).catch(() => {});
+  } catch {
+    /* best-effort — ignora qualquer erro síncrono */
   }
 }
 
@@ -168,10 +183,6 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       if (!player) return;
     }
 
-    // rate-limit por user (limiter persistente por guild)
-    const rl = getLimiter(deps, message.guildId, cfg.ratePerMin);
-    if (!rl.allow(message.author.id, Date.now())) return;
-
     // limpeza com caches da guild
     const cleaned = cleanText(message.content ?? '', {
       maxChars: cfg.maxChars,
@@ -190,6 +201,19 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // (rede de segurança do strip de emoji): nada disso é "legível". Sem corpo legível
     // E sem media -> não vale sintetizar.
     if (!/[\p{L}\p{N}]/u.test(cleaned) && media.length === 0) return;
+
+    // rate-limit por user (limiter persistente por guild). Corre AGORA — DEPOIS do guard de
+    // texto legível — para que uma mensagem que nunca ia ser falada (emoji/link/vazio) NÃO
+    // queime o orçamento e silencie a mensagem legível seguinte (bug antigo: o rate-limit
+    // corria antes do cleanText). O drop é VISÍVEL: reação 🐢 + métrica + log info — antes
+    // era um `return` silencioso e parecia "o bot não fala".
+    const rl = getLimiter(deps, message.guildId, cfg.ratePerMin);
+    if (!rl.allow(message.author.id, Date.now())) {
+      metrics.inc('messagesRateLimited');
+      log.info(`[rate] mensagem de ${message.author.id} saltada (limite ${cfg.ratePerMin}/min)`);
+      reactRateLimited(message);
+      return;
+    }
 
     // Anti-spam (opt-in por guild, OFF por defeito): não lê mensagens spamadas —
     // repetição massiva de tokens NA mensagem (ex. "POKEBOLAS ×39") OU a MESMA

@@ -26,7 +26,7 @@ export function initDb(path: string): Database.Database {
         autoread       INTEGER NOT NULL DEFAULT 0,
         default_voice  TEXT NOT NULL DEFAULT 'en_US-amy-medium',
         max_chars      INTEGER NOT NULL DEFAULT 300,
-        rate_per_min   INTEGER NOT NULL DEFAULT 5,
+        rate_per_min   INTEGER NOT NULL DEFAULT 15,
         enabled        INTEGER NOT NULL DEFAULT 1,
         tts_role_id    TEXT,
         locale         TEXT NOT NULL DEFAULT 'en',
