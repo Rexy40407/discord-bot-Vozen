@@ -142,7 +142,8 @@
     "price.m.18": "Funciona para todos en el servidor",
     "price.idNote": "⚠️ Pon tu ID de Discord en el mensaje de compra de Ko-fi. Eso activa tu plan al instante.",
     "price.idNoteLink": "Copiar mi ID →",
-    "price.m.19": "50 pronunciaciones del servidor"
+    "price.m.19": "50 pronunciaciones del servidor",
+    "price.m.20": "Rachas diarias de charla"
   },
   "commands": {
     "general": [

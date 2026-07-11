@@ -142,7 +142,8 @@
     "price.m.18": "Marche pour tout le serveur",
     "price.idNote": "⚠️ Mets ton ID Discord dans le message d’achat Ko-fi. C’est ce qui active ton offre instantanément.",
     "price.idNoteLink": "Copier mon ID →",
-    "price.m.19": "50 prononciations du serveur"
+    "price.m.19": "50 prononciations du serveur",
+    "price.m.20": "Séries de discussion quotidiennes"
   },
   "commands": {
     "general": [

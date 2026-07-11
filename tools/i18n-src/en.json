@@ -142,7 +142,8 @@
     "price.m.18": "Works for everyone in the server",
     "price.idNote": "⚠️ Paste your Discord ID in the Ko-fi checkout message. That's what activates your plan instantly.",
     "price.idNoteLink": "Copy your ID →",
-    "price.m.19": "50 server pronunciations"
+    "price.m.19": "50 server pronunciations",
+    "price.m.20": "Daily talk streaks"
   },
   "commands": {
     "general": [

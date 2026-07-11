@@ -142,7 +142,8 @@
     "price.m.18": "Für alle auf dem Server",
     "price.idNote": "⚠️ Gib deine Discord-ID in die Ko-fi-Kaufnachricht ein. Das aktiviert deinen Plan sofort.",
     "price.idNoteLink": "Meine ID kopieren →",
-    "price.m.19": "50 Server-Aussprachen"
+    "price.m.19": "50 Server-Aussprachen",
+    "price.m.20": "Tägliche Gesprächs-Streaks"
   },
   "commands": {
     "general": [

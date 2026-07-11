@@ -142,7 +142,8 @@
     "price.m.18": "Sunucudaki herkes için çalışır",
     "price.idNote": "⚠️ Ko-fi ödeme mesajına Discord ID’ni yaz. Planını anında etkinleştiren budur.",
     "price.idNoteLink": "ID’mi kopyala →",
-    "price.m.19": "50 sunucu telaffuzu"
+    "price.m.19": "50 sunucu telaffuzu",
+    "price.m.20": "Günlük konuşma serileri"
   },
   "commands": {
     "general": [

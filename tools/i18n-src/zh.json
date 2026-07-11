@@ -142,7 +142,8 @@
     "price.m.18": "服务器里所有人可用",
     "price.idNote": "⚠️ 在 Ko-fi 结账留言里填入你的 Discord ID，这样才能立即激活你的方案。",
     "price.idNoteLink": "复制我的 ID →",
-    "price.m.19": "50 个服务器发音"
+    "price.m.19": "50 个服务器发音",
+    "price.m.20": "每日聊天连击"
   },
   "commands": {
     "general": [
