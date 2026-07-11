@@ -276,9 +276,11 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         const exp = applied.exp;
         if (exp == null) {
           // Comprou mas não pôs (ou pôs mal) o Discord ID → resolve-se à mão com /vozengrant.
+          // Minimização de PII: NÃO registamos o nome do comprador; o tx id chega para
+          // reconciliar a compra no painel do Ko-fi (onde o nome/email vivem).
           logError(
             `[kofi] compra SEM Discord ID válido — grant MANUAL: ${grant.plan} ${grant.days}d, ` +
-              `de "${event.fromName ?? '?'}" tx=${event.transactionId ?? '?'}`,
+              `tx=${event.transactionId ?? '?'}`,
             null,
           );
         } else {

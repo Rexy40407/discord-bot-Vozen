@@ -542,4 +542,34 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     const status = await startAndPost(kofiJson({ kofi_transaction_id: 'tx-db-fail' }));
     expect(status).toBe(503);
   });
+
+  it('grant manual: NÃO regista o nome do comprador (PII), só o tx id', async () => {
+    const logs: string[] = [];
+    server = startKofiWebhook({
+      db,
+      token: 'tok',
+      port: 0,
+      now: () => 1_000_000,
+      logInfo: () => {},
+      logError: (msg: string) => {
+        logs.push(msg);
+      },
+    });
+    await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
+
+    // Compra sem Discord ID resolúvel (mensagem sem id + email desconhecido) -> caminho do
+    // grant MANUAL, onde antes se registava o nome do comprador (PII).
+    const status = await startAndPost(
+      kofiJson({
+        message: 'obrigado!',
+        email: 'stranger@example.com',
+        from_name: 'João Comprador',
+        kofi_transaction_id: 'tx-anon',
+      }),
+    );
+    expect(status).toBe(200);
+    const joined = logs.join('\n');
+    expect(joined).toContain('tx-anon'); // dá para reconciliar a compra no Ko-fi...
+    expect(joined).not.toContain('João Comprador'); // ...mas o nome NUNCA entra no log.
+  });
 });
