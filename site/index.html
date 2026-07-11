@@ -47,7 +47,7 @@
       href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main-v26.css" />
+    <link rel="stylesheet" href="css/main-v27.css" />
 
     <!-- FAQ structured data (Google rich results). Mantém em sincronia com
          window.VOZEN_FAQ (js/i18n.js) — o JSON-LD tem de ser ESTÁTICO porque os
@@ -429,7 +429,6 @@
           <!-- O login/estado da conta vivem agora numa página dedicada (account.html),
                acessível pelo botão "Log in" da navbar. -->
           <div class="price-toolbar reveal">
-            <p data-i18n="price.sub">Everything Vozen does today stays free — forever. Premium adds the extras that cost us real compute.</p>
             <div class="bill-toggle" role="group" aria-label="Billing period">
               <button type="button" class="bill-toggle__btn is-active" data-bill="month" data-i18n="price.billMonthly">Monthly</button>
               <button type="button" class="bill-toggle__btn" data-bill="year">
@@ -467,6 +466,10 @@
               </div>
               <h3 data-i18n="price.plus.name">Vozen Plus</h3>
               <p class="price-card__pitch" data-i18n="price.plus.pitch">Your premium voice perks follow you into every server.</p>
+              <div class="seat-toggle seat-toggle--spacer" aria-hidden="true">
+                <span class="seat-toggle__btn is-active" data-i18n="price.pro.seats3">3 servers</span>
+                <span class="seat-toggle__btn" data-i18n="price.pro.seats10">10 servers</span>
+              </div>
               <div class="price-card__price">
                 <span class="price-line"><b><span class="amt amt--m">€1.99</span><span class="amt amt--y">€18.99</span></b><s class="was was--y">€23.88</s></span>
                 <span class="per per--m" data-i18n="price.plus.per">/ month · per user</span>

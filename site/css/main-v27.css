@@ -1048,12 +1048,9 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 
 /* ── Pricing v2: decisão primeiro, matriz completa depois ─────────────── */
 .price-toolbar {
-  display: flex; align-items: center; justify-content: space-between; gap: 28px;
-  max-width: 1110px; margin: 0 auto clamp(28px, 4vw, 44px); padding: 12px 12px 12px 22px;
-  background: rgba(12, 15, 31, 0.62); border: 1px solid var(--line);
-  border-radius: 18px; box-shadow: inset 0 1px 0 var(--hi);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto clamp(28px, 4vw, 44px);
 }
-.price-toolbar > p { max-width: 590px; color: var(--text-1); font-size: 14px; line-height: 1.6; }
 .price-toolbar .bill-toggle { flex: 0 0 auto; margin: 0; }
 .pricing { display: block; max-width: 1110px; }
 
@@ -1103,6 +1100,7 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 .paid-plans .price-card__buy { padding: 14px 18px; border-radius: 12px; font-size: 15px; }
 .paid-plans .price-card__idnote { position: relative; }
 .paid-plans .seat-toggle { margin: 18px 0 12px; }
+.paid-plans .seat-toggle--spacer { visibility: hidden; pointer-events: none; margin-bottom: 7px; }
 .paid-plans .price-card__deal { margin: -6px 0 18px; }
 
 .plan-comparison {
@@ -1132,7 +1130,6 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 .plan-table .has-not { color: rgba(149, 156, 186, 0.42); }
 
 @media (max-width: 920px) {
-  .price-toolbar { align-items: flex-start; }
   .free-plan { grid-template-columns: auto 1fr auto; gap: 18px; }
   .free-plan__identity { grid-column: 1; }
   .free-plan__price { grid-column: 2; }
@@ -1141,11 +1138,11 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
   .free-plan__cta { grid-column: 3; grid-row: 1 / 4; }
   .paid-plans { grid-template-columns: 1fr; max-width: 620px; margin: 0 auto; }
   .paid-plans .price-card { min-height: 0; }
+  .paid-plans .seat-toggle--spacer { display: none; }
 }
 
 @media (max-width: 640px) {
-  .price-toolbar { flex-direction: column; align-items: stretch; padding: 16px; }
-  .price-toolbar .bill-toggle { align-self: stretch; width: 100%; }
+  .price-toolbar .bill-toggle { width: 100%; }
   .price-toolbar .bill-toggle__btn { flex: 1 1 0; min-width: 0; padding-inline: 10px; }
   .price-toolbar .bill-toggle__save { padding-inline: 6px; }
   .free-plan { grid-template-columns: 1fr auto; padding: 20px; }
