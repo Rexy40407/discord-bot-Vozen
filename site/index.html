@@ -47,7 +47,7 @@
       href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main-v23.css" />
+    <link rel="stylesheet" href="css/main-v24.css" />
 
     <!-- FAQ structured data (Google rich results). Mantém em sincronia com
          window.VOZEN_FAQ (js/i18n.js) — o JSON-LD tem de ser ESTÁTICO porque os
@@ -453,6 +453,9 @@
                 <li data-i18n="price.m.1">38 voices</li>
                 <li data-i18n="price.m.2">35 languages</li>
                 <li data-i18n="price.m.3">Auto-read your channel</li>
+                <li data-i18n="price.m.5">13 of the 16 games</li>
+                <li data-i18n="price.m.20">Daily talk streaks</li>
+                <li data-i18n="price.m.8">Full admin kit</li>
               </ul>
               <a class="free-plan__cta btn btn--ghost btn--sm" href="https://discord.com/oauth2/authorize?client_id=1523826014935842997&amp;permissions=3148800&amp;scope=bot%20applications.commands" target="_blank" rel="noopener" data-i18n="cta.add">Add to Discord</a>
             </article>
@@ -485,7 +488,7 @@
             </article>
             <article class="price-card price-card--pro reveal">
               <div class="price-card__topline">
-                <span class="price-card__badge"><span aria-hidden="true">◆</span> <span data-i18n="price.pro.badge">PREMIUM</span></span>
+                <span class="price-card__badge"><span aria-hidden="true">💎</span> <span data-i18n="price.pro.badge">PREMIUM</span></span>
                 <span class="price-card__recommended" data-i18n="price.recommended">BEST FOR SERVERS</span>
               </div>
               <h3 data-i18n="price.pro.name">Vozen Premium</h3>
@@ -504,8 +507,8 @@
                 <span class="per per--y per--s3" data-i18n="price.pro.perYear">/ year · 3 servers</span>
                 <span class="per per--y per--s10" data-i18n="price.max.perYear">/ year · 10 servers</span>
               </div>
-              <p class="price-card__deal deal--s3" data-i18n="price.pro.deal">Three servers. One subscription.</p>
-              <p class="price-card__deal deal--s10" data-i18n="price.max.deal">Ten servers. One subscription.</p>
+              <p class="price-card__deal deal--s3" data-i18n="price.pro.deal">🎁 Three servers. One subscription.</p>
+              <p class="price-card__deal deal--s10" data-i18n="price.max.deal">🎁 Ten servers. One subscription.</p>
               <ul class="ticks ticks--amber price-card__highlights">
                 <li data-i18n="price.m.18">Works for everyone in the server</li>
                 <li data-i18n="price.m.9">All 8 voice effects (deep, demon, radio…)</li>
@@ -544,18 +547,29 @@
                     </tr>
                   </thead>
                   <tbody>
+                    <!-- Bloco A — base grátis: incluído nos três planos. -->
                     <tr><th scope="row" data-i18n="price.m.1">38 voices</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
                     <tr><th scope="row" data-i18n="price.m.2">35 languages</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
                     <tr><th scope="row" data-i18n="price.m.3">Auto-read your channel</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.4">Jokes &amp; greetings</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.5">13 of the 16 games</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.6">Robot &amp; Echo voice effects</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.7">Weekly leaderboard</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.20">Daily talk streaks</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
                     <tr><th scope="row" data-i18n="price.m.8">Full admin kit</th><td class="has">✓</td><td class="has">✓</td><td class="has">✓</td></tr>
-                    <tr><th scope="row" data-i18n="price.m.9">All 8 voice effects</th><td class="has-not">—</td><td class="has">✓</td><td class="has">✓</td></tr>
-                    <tr><th scope="row" data-i18n="price.m.10">Clone your voice</th><td class="has-not">—</td><td class="has">✓</td><td class="has">✓</td></tr>
-                    <tr><th scope="row" data-i18n="price.m.11">Word Chain game</th><td class="has-not">—</td><td class="has">✓</td><td class="has">✓</td></tr>
-                    <tr><th scope="row" data-i18n="price.m.15">50 personal pronunciations</th><td class="has-not">—</td><td class="has">✓</td><td class="has">✓</td></tr>
-                    <tr><th scope="row" data-i18n="price.m.17">Goes with you to any server</th><td class="has-not">—</td><td class="has">✓</td><td class="has-not">—</td></tr>
-                    <tr><th scope="row" data-i18n="price.m.19">50 server pronunciations</th><td class="has-not">—</td><td class="has-not">—</td><td class="has has--premium">✓</td></tr>
-                    <tr><th scope="row" data-i18n="price.m.16">In the call 24/7</th><td class="has-not">—</td><td class="has-not">—</td><td class="has has--premium">✓</td></tr>
-                    <tr><th scope="row" data-i18n="price.m.18">Works for everyone in the server</th><td class="has-not">—</td><td class="has-not">—</td><td class="has has--premium">✓</td></tr>
+                    <!-- Bloco B — extras pagos: iguais no Plus e no Premium. -->
+                    <tr><th scope="row" data-i18n="price.m.9">All 8 voice effects (deep, demon, radio…)</th><td class="has-not">✗</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.10">Clone your voice (/voice clone)</th><td class="has-not">✗</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.11">Word Chain game</th><td class="has-not">✗</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.12">Wordle game</th><td class="has-not">✗</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.13">Chess game</th><td class="has-not">✗</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.14">/rizz</th><td class="has-not">✗</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.15">50 personal pronunciations</th><td class="has-not">✗</td><td class="has">✓</td><td class="has">✓</td></tr>
+                    <!-- Bloco C — exclusivos: pessoal (Plus) vs servidor (Premium). -->
+                    <tr><th scope="row" data-i18n="price.m.17">Goes with you to any server</th><td class="has-not">✗</td><td class="has">✓</td><td class="has-not">✗</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.19">50 server pronunciations</th><td class="has-not">✗</td><td class="has-not">✗</td><td class="has has--premium">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.16">In the call 24/7</th><td class="has-not">✗</td><td class="has-not">✗</td><td class="has has--premium">✓</td></tr>
+                    <tr><th scope="row" data-i18n="price.m.18">Works for everyone in the server</th><td class="has-not">✗</td><td class="has-not">✗</td><td class="has has--premium">✓</td></tr>
                   </tbody>
                 </table>
               </div>
