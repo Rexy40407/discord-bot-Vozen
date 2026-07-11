@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { AudioCache, cacheKey } from './cache';
+import { materializeSampleForSidecar, cleanupMaterialized } from './cloneSampleFile';
 import { lowerAllCapsRuns } from './deCaps';
 import type { SynthRequest, TTSEngine } from './engine';
 import { langKeyOfModel } from '../language/spokenPhrases';
@@ -80,6 +81,9 @@ export class CloneEngine implements TTSEngine {
     private readonly spawnImpl: typeof spawn = spawn,
     // Deadline do warmup injetável para testes (default: READY_TIMEOUT_MS).
     private readonly readyTimeoutMs: number = READY_TIMEOUT_MS,
+    // Chave para decifrar amostras cifradas em repouso antes de as passar ao sidecar
+    // (que lê o ficheiro por caminho). Ausente => amostras em claro (retrocompatível).
+    private readonly cloneKey?: Buffer,
   ) {}
 
   /** Há motor de clone instalado nesta instância? */
@@ -107,11 +111,15 @@ export class CloneEngine implements TTSEngine {
     if (hit) return hit;
 
     let tmp: string | null = null;
+    // Amostra em claro para o sidecar: se estiver cifrada em repouso, decifra para um temp
+    // (o sidecar lê o ficheiro por caminho e não sabe decifrar). Apagado no finally.
+    let ref: { path: string; temp: boolean } | null = null;
     try {
       const lang = langCode(req.model);
+      ref = materializeSampleForSidecar(req.cloneRef, this.cloneKey);
       // lowerAllCapsRuns: evita que um "grito" em MAIÚSCULAS saia soletrado (ver
       // deCaps.ts). A chave de cache usa o req ORIGINAL (acima).
-      tmp = await this.enqueue(lowerAllCapsRuns(req.text), req.cloneRef, lang);
+      tmp = await this.enqueue(lowerAllCapsRuns(req.text), ref.path, lang);
       return this.cache.put(key, tmp); // copia para a cache (chave estável)
     } catch (err) {
       log.warn('[clone] síntese clonada falhou, a servir voz normal:', err);
@@ -124,6 +132,7 @@ export class CloneEngine implements TTSEngine {
           // best-effort
         }
       }
+      if (ref) cleanupMaterialized(ref);
     }
   }
 

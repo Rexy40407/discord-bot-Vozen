@@ -121,6 +121,9 @@ async function main(): Promise<void> {
     selectEngine(baseEngine, config, availableModels, cache),
     cache.withNamespace('clone'),
     cloneCmd,
+    undefined, // spawnImpl (default)
+    undefined, // readyTimeoutMs (default)
+    config.cloneKey, // cifra em repouso das amostras (no-op sem CLONE_KEY)
   );
   log.info(
     `[index] clone de voz: ${cloneEngine.available ? 'motor detetado' : 'sem motor (voz normal)'}`,

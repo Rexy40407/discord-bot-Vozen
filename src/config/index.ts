@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { log } from '../logging/logger';
 import { PIPER_DEFAULT_SYNTH_PARAMS } from '../tts/calibration';
+import { deriveCloneKey } from '../tts/cloneCrypto';
 
 export type TtsEngineKind = 'piper' | 'neural' | 'gtts' | 'router';
 
@@ -66,6 +67,10 @@ export interface AppConfig {
   // desativada (fallback à voz normal) até o operador instalar o motor (setup na
   // Vaga 2). Env: CLONE_CMD.
   cloneCmd?: string;
+  // Chave (derivada) para cifrar as amostras de clone (.wav) EM REPOUSO — dado biométrico
+  // (ToS §5(c) + RGPD). Env CLONE_KEY (passphrase); ausente => sem cifra (em claro,
+  // retrocompatível com self-hosters que não a definam). Ver tts/cloneCrypto.
+  cloneKey?: Buffer;
   // Kokoro (motor neural OPT-IN, /voice set engine:Kokoro): comando do sidecar Python
   // (auto-deteta tools/kokoro-venv + modelo se ausente). SEM sidecar => escolher Kokoro
   // serve o gTTS (nunca silêncio). Env: KOKORO_CMD.
@@ -267,6 +272,10 @@ export function loadConfig(): AppConfig {
     // Clone de voz: comando do sidecar Python (ausente => síntese clonada desativada;
     // a gravação/gestão de amostras funciona na mesma).
     cloneCmd: process.env.CLONE_CMD?.trim() || undefined,
+    cloneKey: (() => {
+      const s = process.env.CLONE_KEY?.trim();
+      return s ? deriveCloneKey(s) : undefined;
+    })(),
     // Kokoro: comando do sidecar (ausente => auto-deteta tools/kokoro-venv).
     kokoroCmd: process.env.KOKORO_CMD?.trim() || undefined,
     // Línguas do Kokoro: csv KOKORO_LANGS (prefixos), ou as validadas no spike por defeito.

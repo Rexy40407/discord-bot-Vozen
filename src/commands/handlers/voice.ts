@@ -29,6 +29,7 @@ import {
   deleteClonesByTarget,
 } from '../../store/voiceClone';
 import { recordUserSample, pcmToWavFile } from '../../voice/recorder';
+import { encryptSampleFileInPlace } from '../../tts/cloneSampleFile';
 import { join, dirname } from 'node:path';
 import { unlinkSync, rmSync } from 'node:fs';
 import { log } from '../../logging/logger';
@@ -347,6 +348,8 @@ async function handleVoiceClone(
     const prev = getClone(deps.db, userId);
     const outPath = join(dirname(deps.config.dbPath), 'voice-clones', `${userId}-${stamp}.wav`);
     await pcmToWavFile(pcm, outPath);
+    // Cifra a amostra biométrica EM REPOUSO (ToS §5(c)). No-op sem CLONE_KEY (em claro).
+    encryptSampleFileInPlace(outPath, deps.config.cloneKey);
     // targetId = a pessoa cuja voz foi gravada (o próprio num auto-clone). Fica registado
     // para que essa pessoa possa revogar o clone com /voice clone delete (Fase 2 compliance).
     saveClone(deps.db, userId, outPath, stamp, targetId);
