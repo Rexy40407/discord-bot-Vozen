@@ -1,0 +1,12 @@
+# Dependabot — mantém os pins das GitHub Actions (SHA) atualizados com um PR/diff
+# auditável, em vez de tags mutáveis. Só as actions; deps npm ficam de fora (o bloco
+# `overrides` no package.json controla os transitivos deliberadamente — não mexer aqui).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    open-pull-requests-limit: 5
