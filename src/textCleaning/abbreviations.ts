@@ -81,6 +81,14 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Regexes PRÉ-COMPILADAS uma vez no load (não por mensagem). O `expandAbbreviations`
+// está no hot path (uma vez por mensagem lida); recompilar ~33 RegExp com \p{...}+lookbehind
+// a cada chamada era CPU do event loop desperdiçada. Mesmo padrão de emphasis.ts/clean.ts.
+const COMPILED_ABBREV: ReadonlyArray<readonly [RegExp, string]> = Object.keys(DICT).map((token) => [
+  new RegExp(`(?<=^|[^\\p{L}\\p{N}])${escapeRegExp(token)}(?=[^\\p{L}\\p{N}]|$)`, 'giu'),
+  DICT[token],
+]);
+
 /** Capitaliza so a 1.a letra (preservando o resto da expansao). */
 function capitalizeFirst(s: string): string {
   if (s.length === 0) return s;
@@ -95,12 +103,7 @@ function capitalizeFirst(s: string): string {
  */
 export function expandAbbreviations(text: string): string {
   let out = text;
-  for (const token of Object.keys(DICT)) {
-    const expansion = DICT[token];
-    const pattern = new RegExp(
-      `(?<=^|[^\\p{L}\\p{N}])${escapeRegExp(token)}(?=[^\\p{L}\\p{N}]|$)`,
-      'giu',
-    );
+  for (const [pattern, expansion] of COMPILED_ABBREV) {
     out = out.replace(pattern, (match) => {
       const first = match[0];
       // Token comeca por maiuscula -> capitaliza a 1.a letra da expansao.

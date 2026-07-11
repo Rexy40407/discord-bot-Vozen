@@ -215,6 +215,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Regexes PRÉ-COMPILADAS por-língua uma vez no load (não por mensagem). `restoreAccents`
+// está no hot path; recompilar dezenas de RegExp com \p{...}+lookbehind a cada mensagem
+// (88 só no pt) era CPU desperdiçada. Construído DEPOIS da limpeza de chaves com '_' acima.
+const COMPILED_DICTS: Record<string, ReadonlyArray<readonly [RegExp, string]>> = {};
+for (const lang of Object.keys(DICTS)) {
+  COMPILED_DICTS[lang] = Object.keys(DICTS[lang]).map((key) => [
+    new RegExp(`(?<=^|[^\\p{L}\\p{N}])${escapeRegExp(key)}(?=[^\\p{L}\\p{N}]|$)`, 'giu'),
+    DICTS[lang][key],
+  ]);
+}
+
 /** Aplica a capitalização de `sample` (o token casado) à forma acentuada `accented`. */
 function matchCase(sample: string, accented: string): string {
   if (sample === sample.toUpperCase() && sample !== sample.toLowerCase()) {
@@ -232,15 +243,10 @@ function matchCase(sample: string, accented: string): string {
  * (`[^\p{L}\p{N}]`), case-insensitive, preservando a capitalização. PURO.
  */
 export function restoreAccents(text: string, lang: string): string {
-  const dict = DICTS[lang];
-  if (!dict) return text;
+  const compiled = COMPILED_DICTS[lang];
+  if (!compiled) return text;
   let out = text;
-  for (const key of Object.keys(dict)) {
-    const accented = dict[key];
-    const pattern = new RegExp(
-      `(?<=^|[^\\p{L}\\p{N}])${escapeRegExp(key)}(?=[^\\p{L}\\p{N}]|$)`,
-      'giu',
-    );
+  for (const [pattern, accented] of compiled) {
     out = out.replace(pattern, (m) => matchCase(m, accented));
   }
   return out;
