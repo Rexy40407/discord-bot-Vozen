@@ -4,7 +4,7 @@
 
 > type it, hear it.
 
-[![CI](https://github.com/diogoshk3/discord-bot-Vozen/actions/workflows/ci.yml/badge.svg)](https://github.com/diogoshk3/discord-bot-Vozen/actions/workflows/ci.yml)
+[![CI](https://github.com/Rexy40407/discord-bot-Vozen/actions/workflows/ci.yml/badge.svg)](https://github.com/Rexy40407/discord-bot-Vozen/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D22.12-brightgreen)
 ![Docker ready](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
@@ -33,7 +33,7 @@ Alongside that: moderation (blocklist, rate-limit, char limit, per-channel gatin
 Already have Node (>= 22.12), the Piper binary and at least one `.onnx` voice model? Then the minimum to get going is:
 
 ```bash
-git clone https://github.com/diogoshk3/discord-bot-Vozen.git vozen && cd vozen
+git clone https://github.com/Rexy40407/discord-bot-Vozen.git vozen && cd vozen
 npm install                       # deps + native bindings
 cp .env.example .env              # edit: DISCORD_TOKEN, CLIENT_ID, PIPER_PATH, MODELS_DIR; then: npm run register && npm run dev
 ```
@@ -353,8 +353,8 @@ docker compose down            # stops and removes the container (data persists 
 
 > **Note for Discord registration/verification.** The Discord Developer Portal asks for a **Privacy Policy URL** and a **Terms of Service URL** (e.g. for _Public Bot_ / verification). When this repository is **public**, the URLs to paste into those fields are the files here in the repo:
 >
-> - Privacy Policy URL: `https://github.com/diogoshk3/discord-bot-Vozen/blob/main/PRIVACY.md`
-> - Terms of Service URL: `https://github.com/diogoshk3/discord-bot-Vozen/blob/main/TERMS.md`
+> - Privacy Policy URL: `https://github.com/Rexy40407/discord-bot-Vozen/blob/main/PRIVACY.md`
+> - Terms of Service URL: `https://github.com/Rexy40407/discord-bot-Vozen/blob/main/TERMS.md`
 >
 > The repository is **private** for now, so these links only become accessible (and valid for Discord) once you make it public. Before publishing, fill in the contact/responsible-party field at the end of `PRIVACY.md`.
 

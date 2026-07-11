@@ -40,7 +40,7 @@ A imagem corre em ARM64, mas **o Piper tem de ser o build `aarch64`** — **não
    ```
 3. Clona o repositório:
    ```
-   git clone https://github.com/diogoshk3/discord-bot-Vozen.git
+   git clone https://github.com/Rexy40407/discord-bot-Vozen.git
    cd discord-bot-Vozen
    ```
 4. **Piper ARM64** — confirma `uname -m` (deve dar `aarch64`) e extrai para `./piper/`:
