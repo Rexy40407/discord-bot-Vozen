@@ -109,6 +109,47 @@ describe('kofi — mapeamento produto -> grant', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium' }))!, now)!;
     expect(g.seats).toBe(PREMIUM_PASS_SEATS);
   });
+  // Nomes REAIS dos produtos no Ko-fi (2026-07): o nº de servidores vem do nome
+  // "(N servers)", já não da palavra "max" (que foi retirada dos produtos).
+  it('produto real: "Premium (10 servers) 1 month" -> 10 licenças, 30 dias', () => {
+    const g = mapKofiToGrant(
+      parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium (10 servers) 1 month' }))!,
+      now,
+    )!;
+    expect(g.plan).toBe('premium');
+    expect(g.seats).toBe(10);
+    expect(g.days).toBe(30);
+  });
+  it('produto real: "Premium (3 servers) 1 year" -> 3 licenças, 365 dias', () => {
+    const g = mapKofiToGrant(
+      parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium (3 servers) 1 year' }))!,
+      now,
+    )!;
+    expect(g.seats).toBe(3);
+    expect(g.days).toBe(365);
+  });
+  it('produto real: "Premium (10 servers) 1 year" -> 10 licenças, 365 dias', () => {
+    const g = mapKofiToGrant(
+      parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium (10 servers) 1 year' }))!,
+      now,
+    )!;
+    expect(g.seats).toBe(10);
+    expect(g.days).toBe(365);
+  });
+  it('produto real: "Plus 1 year" -> plus, 365 dias; "Plus 1 month" -> 30 dias', () => {
+    const yr = mapKofiToGrant(
+      parseKofiPayload(kofiJson({ tier_name: 'Vozen Plus 1 year' }))!,
+      now,
+    )!;
+    expect(yr.plan).toBe('plus');
+    expect(yr.days).toBe(365);
+    const mo = mapKofiToGrant(
+      parseKofiPayload(kofiJson({ tier_name: 'Vozen Plus 1 month' }))!,
+      now,
+    )!;
+    expect(mo.plan).toBe('plus');
+    expect(mo.days).toBe(30);
+  });
   it('anual via shop_items (variation_name)', () => {
     const raw = kofiJson({
       type: 'Shop Order',

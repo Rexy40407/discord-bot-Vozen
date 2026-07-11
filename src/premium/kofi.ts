@@ -126,15 +126,13 @@ export function mapKofiToGrant(event: KofiEvent, now: number): KofiGrant | null 
   const label = `${event.tierName ?? ''} ${event.shopItemsText}`.trim();
   const lower = label.toLowerCase();
   let plan: KofiPlan | null = null;
-  if (/\bplus\b/.test(lower) || lower.includes('plus')) plan = 'plus';
+  if (lower.includes('plus')) plan = 'plus';
   else if (lower.includes('premium')) plan = 'premium';
   if (!plan) return null;
   const annual = /(annual|anual|yearly|year|ano)/.test(lower);
   const days = annual ? 365 : 30;
-  // Tier "Max": um passe de Premium com 10 licenças em vez de 3. Só se aplica ao 'premium'
-  // (o Plus é por-utilizador, seats irrelevante).
-  const seats =
-    plan === 'premium' && /\bmax\b/.test(lower) ? PREMIUM_MAX_SEATS : PREMIUM_PASS_SEATS;
+  // Licenças (só para 'premium'; o Plus é por-utilizador). O Plus é irrelevante -> 3.
+  const seats = plan === 'premium' ? premiumSeats(lower) : PREMIUM_PASS_SEATS;
   return {
     plan,
     days,
@@ -142,4 +140,19 @@ export function mapKofiToGrant(event: KofiEvent, now: number): KofiGrant | null 
     discordId: extractDiscordId(event.message),
     label: label || plan,
   };
+}
+
+/**
+ * Nº de licenças de um passe Premium, LIDO do nome do produto: "(N servers)" -> N
+ * (ex.: "Vozen Premium (10 servers)" -> 10; "(3 servers)" -> 3). Fallback histórico para a
+ * palavra "max" (10). Default 3. O N é limitado a 1..100 para um nome com gralha não gerar
+ * um passe absurdo (o nome é do operador, mas isto é defesa barata).
+ */
+function premiumSeats(lower: string): number {
+  const m = lower.match(/(\d+)\s*servers?\b/);
+  if (m) {
+    const n = Number.parseInt(m[1], 10);
+    if (Number.isFinite(n) && n >= 1 && n <= 100) return n;
+  }
+  return /\bmax\b/.test(lower) ? PREMIUM_MAX_SEATS : PREMIUM_PASS_SEATS;
 }
