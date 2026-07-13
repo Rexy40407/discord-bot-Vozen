@@ -1220,6 +1220,9 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
   .free-plan { padding: 18px; }
   .free-plan__highlights { gap: 6px 14px; }
   .price-card__idnote { font-size: 11.5px; }
+  /* Anti-aperto: com GitHub + idioma + login-círculo + burger, ecrãs estreitos ficam
+     justos — o seletor de idioma mostra só a bandeira (+chevron), sem o nome. */
+  .lang__name { display: none; }
 }
 
 /* ── faq ────────────────────────────────────────────────── */
@@ -1300,7 +1303,15 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
   body { font-size: 16px; }
   /* safe-area: iPhones com notch em landscape não cortam o conteúdo */
   .wrap { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
-  .nav .btn--sm { display: none; }
+  /* Login em mobile: em vez de esconder o botão (deixava o telemóvel SEM ponto de
+     entrada de login), encolhe-o para um CÍRCULO 44×44 só com o logo Discord (avatar
+     quando logado). O texto fica visually-hidden — presente para leitores de ecrã e
+     traduzido (data-i18n), sem ocupar espaço; filhos absolute saem do fluxo flex, por
+     isso o gap não cria espaço fantasma. */
+  .nav .nav__login { position: relative; padding: 0; width: 44px; height: 44px; justify-content: center; gap: 0; border-radius: 50%; }
+  .nav .nav__login > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .nav .nav__login svg { width: 20px; height: 15px; }
+  .nav .nav__login:active { transform: scale(0.96); }
   .stats__grid { grid-template-columns: repeat(2, 1fr); gap: 26px 12px; }
   .stat:not(:last-child)::after { display: none; }
   .cards, .steps { grid-template-columns: 1fr; }
