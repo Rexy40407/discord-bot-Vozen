@@ -400,8 +400,8 @@ Estes cinco pontos são requisitos de correção do `GuildVoicePlayer`, não oti
 
 ## Developer experience (DX)
 
-- **CI (GitHub Actions).** Corre `build` + `vitest` em Node 20 e 22 a cada push/PR;
-  badge no README.
+- **CI (GitHub Actions).** Corre `build` + `typecheck` + `lint` + `format:check` +
+  `vitest` em Node 22 e 24 a cada push/PR; badge no README.
 - **Smoke test de boot.** Monta as `BotDeps` reais (config, DB, cache, engine, cliente)
   sem ligar ao Discord — apanha regressões de arranque sem precisar de token.
 - **Health-check do ffmpeg no boot** (ver Fiabilidade): falha cedo e com mensagem
@@ -419,10 +419,10 @@ Estes cinco pontos são requisitos de correção do `GuildVoicePlayer`, não oti
   `sha1(texto+modelo+velocidade)` não inclui o motor; se um motor e outro produzissem a
   mesma chave, poderiam servir áudio errado. Isto está mitigado por
   `withNamespace('piper'|'neural')`, que separa fisicamente as caches.
-- **A língua da mensagem pode sobrepor-se ao `default_voice` da guild.** Como a voz é
-  escolhida pela língua detetada (`pickVoiceForLang`), uma guild que configurou
-  `default_voice` só o vê aplicado quando esse modelo já está na língua da mensagem, ou
-  quando não há modelo para a língua detetada (ver "Precedência de voz").
+- **A voz é fixa no caminho principal — não há troca por língua.** `prepareSpeech` usa
+  sempre a voz preferida do membro (ou o `default_voice` da guild) para qualquer língua,
+  `singleVoice`, sem detetar a língua do texto. A troca de voz por língua só sobrevive
+  atrás da flag experimental `MULTILINGUAL_SEGMENTS` (`detectSegments`).
 - **Multi-segmento só separa com confiança texto multi-script.** `detectSegments` parte
   por run de script (Latin/Cyrillic/CJK/Arabic). Duas línguas do **mesmo script** na
   mesma frase (ex. inglês + francês, ambos Latin) não são separadas de forma fiável — o

@@ -104,7 +104,7 @@ For users and server administrators, the bot's commands allow data to be removed
 | Your spoken nickname         | `/voice nickname` (with no name) | Deletes your record in `user_nickname`.                                                                                                 |
 | Your opt-out (be read again) | `/voice optin`                   | Deletes your record in `tts_optout`.                                                                                                    |
 | Your cloned voice sample     | `/voice clone delete`            | Deletes the row in `user_clone` **and** the sample's `.wav` file, immediately.                                                          |
-| Your transcription consent   | `/transcribe consent revoke`     | Deletes your row in `stt_consent`; you stop being transcribed. Messages already posted are normal Discord messages (delete in Discord). |
+| Your transcription consent   | `/transcribe revoke`             | Deletes your row in `stt_consent`; you stop being transcribed. Messages already posted are normal Discord messages (delete in Discord). |
 | Server configuration         | `/config reset`                  | Restores `guild_config` to its default values. **Note:** the reset does **NOT** clear the blocklist or the pronunciation dictionary.    |
 | A word from the blocklist    | `/config blockword remove`       | Removed individually (not by `/config reset`).                                                                                          |
 | A pronunciation term         | `/config pronunciation remove`   | Removed individually (not by `/config reset`).                                                                                          |

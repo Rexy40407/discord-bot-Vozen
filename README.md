@@ -162,7 +162,7 @@ npm run dev
 - `npm run register` — registers the slash commands on the Discord application (uses `DISCORD_TOKEN` + `CLIENT_ID`). Run this **once** and whenever you change command definitions.
 - `npm run dev` — starts the bot. Expected in the terminal: `[client] online como <bot-name>#0000`.
 
-For a production build: `npm run build` and then `npm start` (or `node dist/index.js`).
+For production, use `npm run start:prod` (it runs the supervisor: single-instance lock, native-module preheat, auto-restart, persistent logs). `node dist/index.js` runs the bot directly **without** that supervisor — not recommended in production.
 
 ---
 

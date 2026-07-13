@@ -97,4 +97,5 @@ Never write production code before there is a test that fails without it.
   executable acceptance test is the browser (preview): define the pass/fail
   criteria first, then verify against the running page — no CSP console errors,
   the flow works, etc. Don't ship site changes unverified.
-- Always finish with the full suite green: `npx vitest run` + `npm run typecheck`.
+- Always finish with the full suite green: `npm run check` (build + typecheck + lint +
+  format:check + vitest, mirrors CI). Individually: `npx vitest run` + `npm run typecheck`.
