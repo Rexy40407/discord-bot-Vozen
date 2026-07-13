@@ -79,6 +79,17 @@ Voice cloning (`/voice clone`, a Premium feature) is the **most sensitive** data
 
 > Compliance note: a voice sample may be treated as **sensitive/biometric data** in certain jurisdictions (e.g. GDPR). The instance operator is responsible for only allowing clones with proper consent and for responding to removal requests.
 
+### 2.4 Speech-to-text / transcription (consent-first)
+
+Transcription (`/transcribe`, a Premium feature) turns the speech in a voice channel into text messages. Like the voice clone, it is strictly **consent-first** and processes audio **locally** (a Whisper sidecar on the instance's machine — nothing is sent to an external service, nothing is used to train AI). How it works:
+
+- **Consent first, per speaker.** Only people who have **explicitly consented** in that server are transcribed — an on-screen Allow button that **only that person** can press. Consent is asked **once per server** and remembered (`stt_consent` stores your user ID, the server ID and `consent_at`); people who never consent are simply **not transcribed** while the rest of the call continues. Revoking consent stops future transcription of you.
+- **No audio is ever stored.** The voice audio is processed in memory to produce text and then discarded; the bot never writes an audio file for transcription.
+- **The bot announces transcription** in the channel when it **starts and stops**, and **auto-stops** when nobody consented remains in the call.
+- **Transcriptions are normal Discord messages — and therefore permanent.** The text the bot posts lives in the channel like any other message. This means it is **outside `/privacy erase`** (which only removes data from the bot's own database, not messages already posted to Discord). Revoking consent stops new transcriptions but does **not** retroactively delete messages already posted; to remove those, delete the messages in Discord (or ask a server moderator to). Only the **consent record** (`stt_consent`) is bot-side data, and that is removed by `/privacy erase`.
+
+> Compliance note: transcribing a person's speech acts on that person, so it requires their explicit prior consent (handled above). The instance operator is responsible for honoring consent and removal requests.
+
 ---
 
 ## 3. Data retention and deletion
@@ -87,18 +98,19 @@ Because Vozen is self-hosted, **the instance operator directly controls** the SQ
 
 For users and server administrators, the bot's commands allow data to be removed:
 
-| To remove...                 | Use...                           | Notes                                                                                                                                |
-| ---------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Your voice preference        | `/voice reset`                   | Deletes your record in `user_voice`.                                                                                                 |
-| Your spoken nickname         | `/voice nickname` (with no name) | Deletes your record in `user_nickname`.                                                                                              |
-| Your opt-out (be read again) | `/voice optin`                   | Deletes your record in `tts_optout`.                                                                                                 |
-| Your cloned voice sample     | `/voice clone delete`            | Deletes the row in `user_clone` **and** the sample's `.wav` file, immediately.                                                       |
-| Server configuration         | `/config reset`                  | Restores `guild_config` to its default values. **Note:** the reset does **NOT** clear the blocklist or the pronunciation dictionary. |
-| A word from the blocklist    | `/config blockword remove`       | Removed individually (not by `/config reset`).                                                                                       |
-| A pronunciation term         | `/config pronunciation remove`   | Removed individually (not by `/config reset`).                                                                                       |
-| **All your personal data**   | `/privacy erase`                 | One command (asks you to confirm). Deletes everything tied to your user ID across **all** servers.                                   |
+| To remove...                 | Use...                           | Notes                                                                                                                                   |
+| ---------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Your voice preference        | `/voice reset`                   | Deletes your record in `user_voice`.                                                                                                    |
+| Your spoken nickname         | `/voice nickname` (with no name) | Deletes your record in `user_nickname`.                                                                                                 |
+| Your opt-out (be read again) | `/voice optin`                   | Deletes your record in `tts_optout`.                                                                                                    |
+| Your cloned voice sample     | `/voice clone delete`            | Deletes the row in `user_clone` **and** the sample's `.wav` file, immediately.                                                          |
+| Your transcription consent   | `/transcribe consent revoke`     | Deletes your row in `stt_consent`; you stop being transcribed. Messages already posted are normal Discord messages (delete in Discord). |
+| Server configuration         | `/config reset`                  | Restores `guild_config` to its default values. **Note:** the reset does **NOT** clear the blocklist or the pronunciation dictionary.    |
+| A word from the blocklist    | `/config blockword remove`       | Removed individually (not by `/config reset`).                                                                                          |
+| A pronunciation term         | `/config pronunciation remove`   | Removed individually (not by `/config reset`).                                                                                          |
+| **All your personal data**   | `/privacy erase`                 | One command (asks you to confirm). Deletes everything tied to your user ID across **all** servers.                                      |
 
-> **To delete everything at once, use `/privacy erase`** — it asks you to confirm, then removes all data tied to your user ID across every server (`user_voice`, `user_nickname`, `user_abbreviation`, `pronunciation_user`, `user_effect`, `tts_optout`, `user_clone` including its `.wav`, `game_score`, `talk_stats`, `user_birthday`). It also revokes any clone made from **your** voice by other people. Your **paid Premium/Plus and its purchase history are intentionally kept** — they belong to you and to legally-required financial records; to stop Premium, let it expire or contact the operator (see section 5).
+> **To delete everything at once, use `/privacy erase`** — it asks you to confirm, then removes all data tied to your user ID across every server (`user_voice`, `user_nickname`, `user_abbreviation`, `pronunciation_user`, `user_effect`, `tts_optout`, `user_clone` including its `.wav`, `stt_consent`, `game_score`, `talk_stats`, `user_birthday`). It also revokes any clone made from **your** voice by other people. (Transcription text already posted to a channel is a normal Discord message, not bot-side data — see section 2.4.) Your **paid Premium/Plus and its purchase history are intentionally kept** — they belong to you and to legally-required financial records; to stop Premium, let it expire or contact the operator (see section 5).
 
 The audio cache is regenerable and self-limiting (see section 2.1); deleting it loses no configuration.
 

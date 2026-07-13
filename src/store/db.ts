@@ -164,6 +164,18 @@ export function initDb(path: string): Database.Database {
         target_id   TEXT NOT NULL DEFAULT ''
       );
 
+      -- Consentimento para o STT (transcrição voz->texto, Fase 4). CONSENT-FIRST: a linha
+      -- só existe depois de o locutor consentir; a sua PRESENÇA É o consentimento (o gate
+      -- hasSttConsent decide se a fala da pessoa entra no receiver). Por-SERVIDOR (1-clique
+      -- lembrado): a pessoa consente UMA vez por guild e não lhe é mais pedido. Revogar =
+      -- apagar a linha. Zero áudio guardado aqui; só o facto+timestamp do consentimento.
+      CREATE TABLE IF NOT EXISTS stt_consent (
+        user_id    TEXT NOT NULL,
+        guild_id   TEXT NOT NULL,
+        consent_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, guild_id)
+      );
+
       -- PASSE Vozen Premium por-UTILIZADOR: uma compra de Premium (guild) dá à pessoa um
       -- passe com N "licenças" (seats) e uma DATA DE FIM ABSOLUTA (expires_at, unix ms). O
       -- relógio corre no passe: ativar/desativar um servidor não pausa nem estende a data.

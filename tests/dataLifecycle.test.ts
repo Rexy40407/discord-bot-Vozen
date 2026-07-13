@@ -62,6 +62,7 @@ function seedGuild(db: Database.Database, g: string, u: string): void {
     'C',
     1,
   );
+  db.prepare('INSERT INTO stt_consent (user_id, guild_id, consent_at) VALUES (?,?,?)').run(u, g, 1);
   // Retidas (financeiro/entitlement) — NÃO devem ser tocadas pela purga.
   db.prepare('INSERT INTO premium_guild (guild_id, expires_at, source) VALUES (?,?,?)').run(
     g,

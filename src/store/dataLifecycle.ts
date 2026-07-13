@@ -26,6 +26,7 @@ export const GUILD_PURGE_TABLES = [
   'talk_stats',
   'user_effect',
   'voice_presence',
+  'stt_consent',
   'guild_departed', // a própria marca de saída (auto-limpeza ao purgar o servidor)
 ] as const;
 
@@ -49,6 +50,7 @@ export const USER_ERASE_TABLES = [
   'user_abbreviation',
   'pronunciation_user',
   'user_clone',
+  'stt_consent',
 ] as const;
 
 /**
