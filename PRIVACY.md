@@ -68,7 +68,7 @@ Vozen writes **operational logs** to the console/terminal and (in the production
 
 ### 2.3 Voice clone (sensitive data — opt-in)
 
-Voice cloning (`/voice clone`, a Premium feature) is the **most sensitive** data an instance stores: a **real recording of a person's voice**. It is strictly **opt-in** — the instance only has a sample if someone runs `/voice clone record`. How it works:
+Voice cloning (`/voice clone`, a Premium feature) is the **most sensitive** data an instance stores: a **real recording of a person's voice**. It is strictly **opt-in** — the instance only has a sample if someone runs `/voice clone record`. (The `/voice clone` command needs a GPU/RAM-capable host; on the official hosted instance it is **not offered**, so no samples are collected there. If you ever have a legacy sample, `/privacy erase` deletes it.) How it works:
 
 - **Consent first.** You can record **your own** voice, or another person's voice **only after they grant explicit on-screen consent** — an Allow/Deny button that **only that person** can press. Without that "yes", nothing is recorded. `consent_at` records the moment of consent.
 - **Only the target is recorded.** Outside the recording window the bot is always `selfDeaf` (deafened); it uncovers its ears **only during the window** and records **only** the chosen person, never the rest of the channel. Afterwards it deafens again.

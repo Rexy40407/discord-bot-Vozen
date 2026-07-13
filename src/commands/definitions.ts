@@ -686,9 +686,38 @@ const DM_CAPABLE_COMMANDS = new Set(['invite', 'vote', 'help', 'uptime', 'botsta
 // Guild faz o Discord ESCONDÊ-LOS em DM. Centralizado por nome (em vez de repetir
 // .setContexts() em ~10 builders) para não esquecer nenhum comando novo. Cobre
 // também o context-menu "Speak" (precisa de canal de voz).
-export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = commandDefsRaw.map((def) =>
-  DM_CAPABLE_COMMANDS.has(def.name) ? def : { ...def, contexts: [InteractionContextType.Guild] },
+/**
+ * Remove o grupo de subcomandos `clone` do /voice. O motor de clone (Chatterbox)
+ * precisa de GPU/RAM que o bot alojado não tem — nem sequer carrega no VPS (ver
+ * docs/SPIKE-CLONE.md). Mostrar o comando dava uma feature que só devolve voz normal.
+ * Quem já gravou uma amostra continua a poder apagá-la por /privacy erase (eraseUser
+ * apaga user_clone + o .wav), por isso esconder o grupo é compliance-safe. PURA.
+ */
+export function withoutCloneGroup(
+  defs: RESTPostAPIApplicationCommandsJSONBody[],
+): RESTPostAPIApplicationCommandsJSONBody[] {
+  return defs.map((def) => {
+    const options = (def as { options?: Array<{ name?: string }> }).options;
+    if (def.name !== 'voice' || !Array.isArray(options)) return def;
+    // Cast no retorno: só filtrámos options (sem mudar a sua forma), a estrutura mantém-se.
+    return {
+      ...def,
+      options: options.filter((o) => o.name !== 'clone'),
+    } as RESTPostAPIApplicationCommandsJSONBody;
+  });
+}
+
+// O clone só aparece onde o motor pode correr: CLONE_ENABLED=1 (variável de ambiente
+// REAL, ex. numa máquina com GPU). No bot alojado fica off por defeito -> grupo escondido.
+const CLONE_ENABLED = process.env.CLONE_ENABLED === '1';
+
+const commandDefsWithContext: RESTPostAPIApplicationCommandsJSONBody[] = commandDefsRaw.map(
+  (def) =>
+    DM_CAPABLE_COMMANDS.has(def.name) ? def : { ...def, contexts: [InteractionContextType.Guild] },
 );
+export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = CLONE_ENABLED
+  ? commandDefsWithContext
+  : withoutCloneGroup(commandDefsWithContext);
 
 // Comandos OWNER-ONLY. NÃO entram em commandDefs (global): são registados à parte, como
 // comandos de GUILD, só na OWNER_GUILD_ID (registerOwnerCommands). Assim o público nem

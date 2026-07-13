@@ -149,7 +149,6 @@
     "price.m.7": "Weekly leaderboard",
     "price.m.8": "Full admin kit",
     "price.m.9": "All 8 voice effects (deep, demon, radio…)",
-    "price.m.10": "Clone your voice (/voice clone)",
     "price.m.11": "Word Chain game",
     "price.m.12": "Wordle game",
     "price.m.13": "Chess game",
@@ -181,7 +180,6 @@
       ["/voice set", "Pick your voice, language & engine"],
       ["/voice list", "Browse all voices"],
       ["/voice preview", "Hear a voice sample"],
-      ["/voice clone", "Clone your own voice (Premium)"],
       ["/voice effect", "Robot, echo, demon… voice effects"],
       ["/voice nickname", "How Vozen calls you out loud"],
       ["/voice optout", "Stop being auto-read"],
@@ -215,11 +213,11 @@
   "faq": [
     [
       "Is Vozen really free?",
-      "Yes — the core is free forever: all 38 voices in 35 languages, auto-read, greetings, most of the games and every admin control. Vozen Premium (from €3.99/month) only adds optional extras — the full voice-effect pack, voice cloning, 24/7 in-call, /rizz and three of the sixteen games. Nothing you already use moves behind a paywall."
+      "Yes — the core is free forever: all 38 voices in 35 languages, auto-read, greetings, most of the games and every admin control. Vozen Premium (from €3.99/month) only adds optional extras — the full voice-effect pack, 24/7 in-call, /rizz and three of the sixteen games. Nothing you already use moves behind a paywall."
     ],
     [
       "What does Premium include?",
-      "All 8 voice effects (deep, demon, radio, underwater…), voice cloning, 24/7 in-call, 50 personal pronunciations, the /rizz command and the premium games (Word Chain, Wordle, Chess). €3.99/month covers 3 servers, or €7.99/month covers 8 (Premium Max); annual saves ~20%. Vozen Plus (€1.99/month) gives the same perks personally, on any server. Redeem codes with /premium activate. When you buy on Ko-fi, activate at vozen.org/account — log in with Discord and enter the email you paid with."
+      "All 8 voice effects (deep, demon, radio, underwater…), 24/7 in-call, 50 personal pronunciations, the /rizz command and the premium games (Word Chain, Wordle, Chess). €3.99/month covers 3 servers, or €7.99/month covers 8 (Premium Max); annual saves ~20%. Vozen Plus (€1.99/month) gives the same perks personally, on any server. Redeem codes with /premium activate. When you buy on Ko-fi, activate at vozen.org/account — log in with Discord and enter the email you paid with."
     ],
     [
       "How do I add Vozen to my server?",

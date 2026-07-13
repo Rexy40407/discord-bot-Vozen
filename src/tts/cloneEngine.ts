@@ -48,18 +48,35 @@ export function parseCommand(cmd: string): { exe: string; args: string[] } {
   return { exe: clean[0] ?? '', args: clean.slice(1) };
 }
 
+export interface ResolveCloneDeps {
+  /** Injetável nos testes; em produção é fs.existsSync. */
+  exists?: (p: string) => boolean;
+  /** Raiz do projeto; default process.cwd(). */
+  cwd?: string;
+}
+
 /**
  * Resolve o comando do sidecar: usa CLONE_CMD se dado, senão AUTO-DETETA o venv em
  * tools/clone-venv (criado por setup-clone). Devolve null se nada estiver instalado
  * (=> o motor de clone fica inerte e serve sempre a voz normal).
+ *
+ * O python do venv fica em Scripts/python.exe (Windows) OU bin/python (Linux/VPS) —
+ * tenta os dois (o sidecar de STT já fazia isto; o do clone só via Windows, por isso
+ * no VPS Linux o clone NUNCA era detetado mesmo com o venv lá).
  */
 export function resolveCloneCmd(
   explicit: string | undefined,
+  deps: ResolveCloneDeps = {},
 ): { exe: string; args: string[] } | null {
   if (explicit && explicit.trim()) return parseCommand(explicit.trim());
-  const venvPy = join(process.cwd(), 'tools', 'clone-venv', 'Scripts', 'python.exe');
-  const server = join(process.cwd(), 'tools', 'clone_server.py');
-  if (existsSync(venvPy) && existsSync(server)) return { exe: venvPy, args: [server] };
+  const exists = deps.exists ?? existsSync;
+  const cwd = deps.cwd ?? process.cwd();
+  const venvPy = [
+    join(cwd, 'tools', 'clone-venv', 'Scripts', 'python.exe'),
+    join(cwd, 'tools', 'clone-venv', 'bin', 'python'),
+  ].find((p) => exists(p));
+  const server = join(cwd, 'tools', 'clone_server.py');
+  if (venvPy && exists(server)) return { exe: venvPy, args: [server] };
   return null;
 }
 

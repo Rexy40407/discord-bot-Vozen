@@ -149,7 +149,6 @@
     "price.m.7": "Leaderboard semanal",
     "price.m.8": "Kit de administração completo",
     "price.m.9": "Os 8 efeitos de voz (grave, demónio, rádio…)",
-    "price.m.10": "Clona a tua voz (/voice clone)",
     "price.m.11": "Jogo Word Chain",
     "price.m.12": "Jogo Wordle",
     "price.m.13": "Jogo de xadrez",
@@ -181,7 +180,6 @@
       ["/voice set", "Escolhe a tua voz, língua e motor"],
       ["/voice list", "Vê todas as vozes"],
       ["/voice preview", "Ouve uma amostra de voz"],
-      ["/voice clone", "Clona a tua própria voz (Premium)"],
       ["/voice effect", "Robô, eco, demónio… efeitos de voz"],
       ["/voice nickname", "Como o Vozen te chama em voz alta"],
       ["/voice optout", "Deixa de ser lido automaticamente"],
@@ -212,11 +210,11 @@
   "faq": [
     [
       "O Vozen é mesmo grátis?",
-      "Sim — o essencial é grátis para sempre: as 38 vozes em 35 línguas, a auto-leitura, as saudações, a maioria dos jogos e todos os controlos de admin. O Vozen Premium (a partir de €3,99/mês) só acrescenta extras opcionais — o pack completo de efeitos, o clone de voz, o 24/7 na call, o /rizz e três dos dezasseis jogos. Nada do que já usas passa para trás de um paywall."
+      "Sim — o essencial é grátis para sempre: as 38 vozes em 35 línguas, a auto-leitura, as saudações, a maioria dos jogos e todos os controlos de admin. O Vozen Premium (a partir de €3,99/mês) só acrescenta extras opcionais — o pack completo de efeitos, o 24/7 na call, o /rizz e três dos dezasseis jogos. Nada do que já usas passa para trás de um paywall."
     ],
     [
       "O que inclui o Premium?",
-      "Os 8 efeitos de voz (grave, demónio, rádio, debaixo de água…), clone de voz, 24/7 na call, 50 pronúncias pessoais, o comando /rizz e os jogos premium (Cadeia de Palavras, Termo, Xadrez). €3,99/mês cobre 3 servidores, ou €7,99/mês cobre 8 (Premium Max); o anual poupa ~20%. O Vozen Plus (€1,99/mês) dá as mesmas vantagens só para ti, em qualquer servidor. Resgata códigos com /premium activate. Ao comprar no Ko-fi, ativa em vozen.org/account — entra com o Discord e escreve o email com que pagaste."
+      "Os 8 efeitos de voz (grave, demónio, rádio, debaixo de água…), 24/7 na call, 50 pronúncias pessoais, o comando /rizz e os jogos premium (Cadeia de Palavras, Termo, Xadrez). €3,99/mês cobre 3 servidores, ou €7,99/mês cobre 8 (Premium Max); o anual poupa ~20%. O Vozen Plus (€1,99/mês) dá as mesmas vantagens só para ti, em qualquer servidor. Resgata códigos com /premium activate. Ao comprar no Ko-fi, ativa em vozen.org/account — entra com o Discord e escreve o email com que pagaste."
     ],
     [
       "Como adiciono o Vozen ao meu servidor?",

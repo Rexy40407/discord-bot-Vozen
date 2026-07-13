@@ -21,11 +21,39 @@ describe('parseCommand', () => {
 });
 
 describe('resolveCloneCmd', () => {
-  it('CLONE_CMD explícito ganha; ausente e sem venv -> null', () => {
+  // `exists`/`cwd` injetáveis para não depender do venv real da máquina de teste.
+  // Paths construídos com join() para bater na plataforma (Windows '\\', Linux '/').
+  const CWD = join('/', 'proj');
+  const PY_LINUX = join(CWD, 'tools', 'clone-venv', 'bin', 'python');
+  const PY_WIN = join(CWD, 'tools', 'clone-venv', 'Scripts', 'python.exe');
+  const SERVER = join(CWD, 'tools', 'clone_server.py');
+
+  it('CLONE_CMD explícito ganha (parseia exe + args)', () => {
     expect(resolveCloneCmd('py serve.py')).toEqual({ exe: 'py', args: ['serve.py'] });
-    // sem tools/clone-venv no cwd de teste -> null (não há motor instalado)
-    const r = resolveCloneCmd(undefined);
-    expect(r === null || typeof r === 'object').toBe(true); // tolera ambos os ambientes
+  });
+
+  it('venv Linux (bin/python) + server presentes -> comando', () => {
+    const cmd = resolveCloneCmd(undefined, {
+      cwd: CWD,
+      exists: (p) => p === PY_LINUX || p === SERVER,
+    });
+    expect(cmd).toEqual({ exe: PY_LINUX, args: [SERVER] });
+  });
+
+  it('venv Windows (Scripts/python.exe) também é detetado', () => {
+    const cmd = resolveCloneCmd(undefined, {
+      cwd: CWD,
+      exists: (p) => p === PY_WIN || p === SERVER,
+    });
+    expect(cmd).toEqual({ exe: PY_WIN, args: [SERVER] });
+  });
+
+  it('sem venv -> null (clone inerte)', () => {
+    expect(resolveCloneCmd(undefined, { cwd: CWD, exists: (p) => p === SERVER })).toBeNull();
+  });
+
+  it('sem clone_server.py -> null', () => {
+    expect(resolveCloneCmd(undefined, { cwd: CWD, exists: (p) => p === PY_LINUX })).toBeNull();
   });
 });
 
