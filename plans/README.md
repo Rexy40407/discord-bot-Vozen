@@ -124,3 +124,63 @@ que o `shutdown.ts` NÃO passa pelos sítios de esquecer — confirmado, só faz
 **Premium Apps** continua a ser a única coisa que não é código — guia entregue ao Diogo (criar
 SKUs no Developer Portal pós-verificação → colar `PREMIUM_GUILD_SKU_ID`/`PREMIUM_USER_SKU_ID`
 no `.env` do VPS; o `entitlementSync` já os consome).
+
+---
+
+## 3.ª auditoria — 2026-07-14 (STT + varredura pós-Vaga 5) — PLANOS para o Opus executar
+
+Nova passagem do `/improve` @ commit `965b15b` (4 auditores paralelos: correctness,
+security, perf+debt+deps, tests+DX+docs+direction → 22 achados vetados à mão). Foco extra
+no código do **STT** (`/transcribe`) shipado a 2026-07-13. Estes são **planos**, não execução
+direta — para outro modelo (Opus) executar sem contexto desta sessão. Baseline de verificação:
+`npm run build` exit 0; `npx vitest run` → **1714 testes verdes**.
+
+| Plan | Título | Prio | Effort | Risk | Depende de | Status |
+| ---- | ------ | ---- | ------ | ---- | ---------- | ------ |
+| 019  | Lifecycle do `/transcribe`: teardown ao sair da call · corrida no start · selfMute · nomes de tmp · guard de exit dos sidecars | P1 | M | LOW | — | TODO |
+| 020  | AudioCache: índice LRU em memória (elimina o readdir+stat de ~500 ficheiros em cada miss) | P2 | S | LOW | — | TODO |
+| 021  | Endurecer o claim Ko-fi por email (spike + fix — email não é segredo, janela 90d) | P1 | M | MED | — | TODO |
+| 022  | Doc-sync (comando de revoke errado na PRIVACY · README `npm start` · ARCHITECTURE stale) + script `check` | P2 | S | LOW | — | TODO |
+
+**Ordem sugerida**: 019 primeiro (P1, código mais novo, leak em produção 24/7). 022 é trivial e
+independente (pode ir em paralelo). 020 independente. 021 é P1 mas tem Step 0 de decisão do
+maintainer (STOP antes de mudar comportamento do dinheiro) — arrancar mas não fechar sem OK.
+Nenhum depende de outro (ficheiros disjuntos).
+
+### Achados NÃO planeados nesta ronda (registados p/ não re-auditar)
+
+- **[DEBT-01] Dedup do lifecycle dos 3 sidecars** (clone/kokoro/whisper ~150 linhas em triplicado):
+  real e HIGH-confidence, mas MED-risk (caminho crítico da fiabilidade "cai sempre na voz normal")
+  e effort M sem ganho funcional — refactor puro. Vale mais **depois** do 019 (que já toca os 3 no
+  guard de exit). Candidato a plano próprio quando houver apetite; não agora.
+- **[PERF-02] STT: `writeFileSync` ~1MB + ffmpeg spawn por utterance** — real (event loop nos 2 vCPU),
+  effort M, mas MED-risk (downsample à mão muda o áudio p/ o Whisper — precisa de spot-check de
+  precisão). Adiado: o filtro anti-alucinação e o `--lang` já estabilizaram a qualidade; medir o
+  custo real de CPU sob carga antes de reescrever. Folded-in candidate do 019 se sobrar tempo.
+- **[DEBT-02] Dedup do RMS/voiced por-frame** (recorder vs utteranceCollector, `rmsOf` idêntico):
+  effort S, mas baixo ganho; boa "boy-scout" a fazer quando alguém tocar nesses ficheiros.
+- **[TESTS-02] `start-prod.mjs` lock/sinais não testados**: real mas genuinamente território de
+  orquestração (EADDRINUSE, spawn real); a policy pura já está testada. Not-now defensável — o
+  próprio auditor deu MED e sugeriu "cobertura por ops".
+- **[TESTS-03] extrair `readTokenFromHash`/`randState` do site p/ teste** — LOW-MED prioridade; a
+  verificação por browser (by-design) cobre o resto. Micro.
+- **[SECURITY-02] Autz do dashboard em cache 60s por token** — janela curta, escopo limitado
+  (config TTS, não dados sensíveis), provável tradeoff de perf intencional. Vale **documentar** o
+  TTL como decisão (ou invalidar no `GuildDelete`), não um plano só por si. Registar e seguir.
+- **[DEPS-01] franc 5→6** — ESM-only contra build CommonJS; migração L p/ dependência que funciona.
+  Verdict: **não vale agora** — revisitar se/quando o projeto migrar p/ ESM, ou se franc 5 tiver CVE.
+- **discord.js/@discordjs/voice "major lag"**: falso — estão na versão corrente do major atual.
+
+### Achados de DIREÇÃO (decisões do maintainer — não planeados como bugs)
+
+- **[DIRECTION-01] Dashboard "Fase 3b": escrever canal-TTS + voz-default** (`dashboardApi.ts`
+  `DASHBOARD_FIELDS` tem 9 toggles + maxChars/rate/locale mas NÃO `tts_channel_id`/`default_voice`).
+  O `PLAN-VAGA5-FEATURES.md` marca a Fase 3 "✅ COMPLETA" mas o critério de sucesso ("mudar a voz
+  default pelo dashboard") está por cumprir. É a maior alavanca da superfície web e a arquitetura
+  já a suporta (`setGuildConfig` trata os campos, autz/whitelist/cache provados). **Efeito M**
+  (spike da UX do picker de voz + validação). — Foi a frente que o Diogo tinha em aberto ("seletores
+  de canal/voz") antes do STT. Se disser sim, vira plano/spec próprio.
+- **[DIRECTION-02] STT: apagar transcrições postadas ao revogar consentimento** — decisão
+  conscientemente adiada (`PLAN-VAGA5-FEATURES.md:104` deixou "apagar OU documentar"; escolheu-se
+  documentar). Enhancement de uma decisão, não um defeito: "apaga as minhas transcrições" é
+  expectativa natural e diferenciador. Custo M + tabela nova (rot-guard/PRIVACY). Opção, não bug.
