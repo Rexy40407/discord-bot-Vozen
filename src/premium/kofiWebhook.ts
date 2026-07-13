@@ -25,6 +25,7 @@ import {
   type KofiGrant,
 } from './kofi';
 import type { StatusApi } from './statusApi';
+import type { DashboardApi } from './dashboardApi';
 
 export interface KofiWebhookDeps {
   db: Database.Database;
@@ -37,6 +38,9 @@ export interface KofiWebhookDeps {
   // Ausente => só o webhook. Presente => também responde à API com CORS restrito a `apiOrigin`.
   statusApi?: StatusApi;
   apiOrigin?: string;
+  // Dashboard web de config (opcional): rotas /api/dashboard/* no MESMO servidor, mesmo CORS.
+  // Ausente => sem dashboard. Requer também `apiOrigin`.
+  dashboardApi?: DashboardApi;
   /** Limite defensivo do mapa de rate-limit da API. Default 2048. */
   apiRateMaxEntries?: number;
 }
@@ -335,6 +339,159 @@ function handleClaimRequest(
   req.on('error', (err) => ctx.logError('[claim] erro no request do claim', err));
 }
 
+interface DashboardCtx {
+  dashboardApi: DashboardApi;
+  apiOrigin: string;
+  now: () => number;
+  rate: Map<string, RateState>;
+  rateMaxEntries: number;
+  logError: (m: string, err: unknown) => void;
+}
+
+const DASHBOARD_GUILD_PREFIX = '/api/dashboard/guild/';
+const MAX_DASHBOARD_BODY = 8_000; // um patch de config é minúsculo
+
+/**
+ * Rotas do dashboard web (config da guild). CORS restrito a `apiOrigin`, rate-limit e Bearer
+ * obrigatório; a AUTORIZAÇÃO real (MANAGE_GUILD + bot presente) vive no dashboardApi. Rotas:
+ *   GET  /api/dashboard/guilds       -> servidores geríveis (401 se token inválido)
+ *   GET  /api/dashboard/guild/<id>   -> config (whitelist)  (403 se não autorizado)
+ *   POST /api/dashboard/guild/<id>   -> aplica patch (whitelist) (403 se não autorizado)
+ */
+function handleDashboardRequest(
+  req: import('node:http').IncomingMessage,
+  res: import('node:http').ServerResponse,
+  ctx: DashboardCtx,
+): void {
+  const cors: Record<string, string> = {
+    'Access-Control-Allow-Origin': ctx.apiOrigin,
+    Vary: 'Origin',
+  };
+  const path = (req.url ?? '').split('?')[0];
+  const json = (code: number, body: unknown): void => {
+    res.writeHead(code, { ...cors, 'Content-Type': 'application/json' }).end(JSON.stringify(body));
+  };
+
+  if (req.method === 'OPTIONS') {
+    res
+      .writeHead(204, {
+        ...cors,
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+        'Access-Control-Max-Age': '600',
+      })
+      .end();
+    return;
+  }
+  if (
+    isRateLimited(
+      ctx.rate,
+      clientIp(req),
+      ctx.now(),
+      ctx.rateMaxEntries,
+      API_RATE_MAX,
+      API_RATE_WINDOW_MS,
+    )
+  ) {
+    json(429, { error: 'rate_limited' });
+    return;
+  }
+  const auth = req.headers['authorization'];
+  const bearer =
+    typeof auth === 'string' && auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
+  if (!bearer) {
+    json(401, { error: 'no_token' });
+    return;
+  }
+
+  // GET /api/dashboard/guilds -> lista de servidores geríveis (ponto de entrada; 401 no token).
+  if (req.method === 'GET' && path === '/api/dashboard/guilds') {
+    ctx.dashboardApi
+      .listGuilds(bearer)
+      .then((guilds) =>
+        guilds === null ? json(401, { error: 'invalid_token' }) : json(200, { guilds }),
+      )
+      .catch((err) => {
+        ctx.logError('[dashboard] erro a listar guilds', err);
+        try {
+          json(500, { error: 'internal' });
+        } catch {
+          /* resposta já enviada */
+        }
+      });
+    return;
+  }
+
+  // /api/dashboard/guild/<id> -> GET (ler) ou POST (guardar). 403 quando não autorizado.
+  if (path.startsWith(DASHBOARD_GUILD_PREFIX)) {
+    const guildId = path.slice(DASHBOARD_GUILD_PREFIX.length);
+    if (!/^\d{1,20}$/.test(guildId)) {
+      json(400, { error: 'bad_guild' });
+      return;
+    }
+
+    if (req.method === 'GET') {
+      ctx.dashboardApi
+        .getConfig(bearer, guildId)
+        .then((cfg) =>
+          cfg === null ? json(403, { error: 'forbidden' }) : json(200, { config: cfg }),
+        )
+        .catch((err) => {
+          ctx.logError('[dashboard] erro a ler config', err);
+          try {
+            json(500, { error: 'internal' });
+          } catch {
+            /* resposta já enviada */
+          }
+        });
+      return;
+    }
+
+    if (req.method === 'POST') {
+      let body = '';
+      let aborted = false;
+      req.on('data', (chunk) => {
+        body += chunk;
+        if (body.length > MAX_DASHBOARD_BODY) {
+          aborted = true;
+          json(413, { error: 'too_large' });
+          req.destroy();
+        }
+      });
+      req.on('end', () => {
+        if (aborted) return;
+        let patch: unknown;
+        try {
+          patch = JSON.parse(body || '{}');
+        } catch {
+          json(400, { error: 'bad_json' });
+          return;
+        }
+        ctx.dashboardApi
+          .saveConfig(bearer, guildId, patch)
+          .then((cfg) =>
+            cfg === null ? json(403, { error: 'forbidden' }) : json(200, { config: cfg }),
+          )
+          .catch((err) => {
+            ctx.logError('[dashboard] erro a guardar config', err);
+            try {
+              json(500, { error: 'internal' });
+            } catch {
+              /* resposta já enviada */
+            }
+          });
+      });
+      req.on('error', (err) => ctx.logError('[dashboard] erro no request', err));
+      return;
+    }
+
+    json(405, { error: 'method_not_allowed' });
+    return;
+  }
+
+  json(404, { error: 'not_found' });
+}
+
 /**
  * Arranca o servidor HTTP do Premium. Roteia:
  *   - GET/OPTIONS /api/me/premium -> Painel Premium (se `statusApi` presente), com CORS
@@ -342,7 +499,7 @@ function handleClaimRequest(
  * No-op (devolve null) se NÃO houver nem token do Ko-fi nem API do painel. Devolve o Server.
  */
 export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
-  const { db, token, port, now, logInfo, logError, statusApi, apiOrigin } = deps;
+  const { db, token, port, now, logInfo, logError, statusApi, apiOrigin, dashboardApi } = deps;
   if (!token && !statusApi) {
     logInfo('[premium] servidor HTTP inativo (sem webhook Ko-fi nem API do painel).');
     return null;
@@ -371,6 +528,23 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         rateMaxEntries,
         logError,
         token,
+      });
+      return;
+    }
+
+    // ── Dashboard web: /api/dashboard/* ────────────────────────────────────────────
+    if (
+      dashboardApi &&
+      apiOrigin &&
+      (path === '/api/dashboard/guilds' || path.startsWith(DASHBOARD_GUILD_PREFIX))
+    ) {
+      handleDashboardRequest(req, res, {
+        dashboardApi,
+        apiOrigin,
+        now,
+        rate,
+        rateMaxEntries,
+        logError,
       });
       return;
     }

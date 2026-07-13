@@ -41,6 +41,7 @@ import { startLoopLagMonitor } from './health/loopLag';
 import { startEntitlementSync } from './premium/entitlementSync';
 import { startKofiWebhook } from './premium/kofiWebhook';
 import { createStatusApi } from './premium/statusApi';
+import { createDashboardApi } from './premium/dashboardApi';
 import { startVoteWebhookServer, VOTE_REWARD_HOURS } from './vote';
 
 function discoverModels(modelsDir: string): string[] {
@@ -286,6 +287,17 @@ async function main(): Promise<void> {
           logError: (m, err) => log.error(m, err),
         })
       : undefined;
+    // Dashboard web de config (opt-in, mesmo gate/servidor do painel). botHasGuild lê o cache
+    // de guilds do cliente AO PEDIDO — a autz (MANAGE_GUILD + bot presente) vive no módulo.
+    const dashboardApi = config.premiumApiEnabled
+      ? createDashboardApi({
+          db,
+          now: () => Date.now(),
+          fetchImpl: (u, i) => fetch(u, i),
+          botHasGuild: (id) => client.guilds.cache.has(id),
+          logError: (m, err) => log.error(m, err),
+        })
+      : undefined;
     startKofiWebhook({
       db,
       token: config.kofiWebhookToken,
@@ -294,6 +306,7 @@ async function main(): Promise<void> {
       logInfo: (m) => log.info(m),
       logError: (m, err) => log.error(m, err),
       statusApi,
+      dashboardApi,
       apiOrigin: config.premiumApiEnabled ? config.premiumApiOrigin : undefined,
     });
   } catch (err) {

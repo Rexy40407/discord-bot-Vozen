@@ -17,7 +17,8 @@
 - **Fase 0 — ✅ metade local feita:** checklist de compliance em `docs/COMPLIANCE-VAGA5.md`. Spike STT (VPS) só bloqueia a Fase 4.
 - **Fase 1 — Soundboard: ✅ DEPLOYED** (deploy VPS success; inclui o toggle admin `/config soundboard`). **MVP alcançado e no ar.**
 - **Fase 2 — Stats de servidor: ✅ code-complete + verde** (`/serverstats`: gate Premium OU Plus + teaser free top-3; agrega talk_stats + game_score, sem recolha nova). Falta: funil no site (matriz de preços i18n×10) — marketing, não-crítico.
-- Fases 3–4: por começar.
+- **Fase 3 — Dashboard web: BACKEND ✅** (`dashboardApi.ts` autz MANAGE_GUILD/ADMIN + bot-presente + escrita whitelisted via setter; rotas `/api/dashboard/*` com CORS+rate-limit+Bearer; 18 testes). **Falta o FRONTEND** (F3.3): OAuth com scope `guilds` (re-consent), seletor de guild, form de config, i18n×10, verificação browser + PRIVACY (scope guilds). *Whitelist do MVP:* toggles + maxChars/ratePerMin + locale; canais/vozes/blocklist/pronúncias ficam para 3b.
+- Fase 4 (STT): por começar (depende do spike VPS).
 
 ## Objetivo / Goal
 
