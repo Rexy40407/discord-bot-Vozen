@@ -68,6 +68,15 @@ Guidance for AI coding agents working on Vozen (Discord TTS bot).
   `tools/setup-kokoro.ps1` into `tools/kokoro-venv/` (gitignored) + model/voices.
   Auto-detected. It is an **opt-in** per-user engine (`/voice set engine:Kokoro`);
   gTTS stays the default for everyone and without the sidecar Kokoro serves gTTS.
+- Optional STT sidecar (faster-whisper, no PyTorch/cmake): installed by
+  `tools/setup-whisper.{sh,ps1}` into `tools/whisper-venv/` (gitignored). The bot
+  auto-detects it (`resolveWhisperCmd`: `Scripts/python.exe` on Windows OR
+  `bin/python` on Linux) — model `base` runs on the VPS (~2.2s per 13.6s of speech;
+  see `docs/SPIKE-STT.md`). Powers `/transcribe` (voice→text, **Premium-gated +
+  Manage-Guild**): consent-first per speaker (inline button → `stt_consent`), bot
+  un-deafens only during a session, audio never persisted, transcripts are channel
+  messages (disclosed in PRIVACY §2.4). Without the sidecar `/transcribe` replies
+  "unavailable" (inert).
 
 ## Conventions
 

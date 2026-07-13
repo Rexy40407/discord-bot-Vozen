@@ -30,6 +30,72 @@ export const catalog: Record<string, Entry> = {
     pt: 'Ocorreu um erro. Tenta outra vez.',
   },
 
+  // ── /transcribe (STT — voz para texto, Premium) ─────────────────────────────
+  'stt.guildOnly': {
+    en: 'Transcription only works inside a server.',
+    pt: 'A transcrição só funciona dentro de um servidor.',
+  },
+  'stt.noManage': {
+    en: 'You need the **Manage Server** permission to start or stop transcription.',
+    pt: 'Precisas da permissão **Gerir Servidor** para arrancar ou parar a transcrição.',
+  },
+  'stt.notPremium': {
+    en: '🎙️ Live transcription is a **Premium** feature. See `/premium info` to unlock it for this server.',
+    pt: '🎙️ A transcrição ao vivo é uma feature **Premium**. Vê `/premium info` para a desbloquear neste servidor.',
+  },
+  'stt.unavailable': {
+    en: 'Transcription is not available on this instance (the speech-to-text engine is not installed).',
+    pt: 'A transcrição não está disponível nesta instância (o motor de voz-para-texto não está instalado).',
+  },
+  'stt.notInVoice': {
+    en: "I'm not in a voice channel — join one and run `/join` first, then start transcription.",
+    pt: 'Não estou num canal de voz — entra num e corre `/join` primeiro, depois arranca a transcrição.',
+  },
+  'stt.alreadyRunning': {
+    en: 'Transcription is already running on this server. Use `/transcribe stop` first.',
+    pt: 'A transcrição já está a correr neste servidor. Usa `/transcribe stop` primeiro.',
+  },
+  'stt.noChannel': {
+    en: "I can't post transcripts in this channel. Try running the command from a normal text channel.",
+    pt: 'Não consigo postar transcrições neste canal. Tenta correr o comando de um canal de texto normal.',
+  },
+  'stt.started': {
+    en: '✅ Transcription started. Anyone who presses **Consent** in the announcement will be transcribed to this channel.',
+    pt: '✅ Transcrição iniciada. Quem carregar em **Consinto** no anúncio passa a ser transcrito para este canal.',
+  },
+  'stt.announceStart': {
+    en: '🎙️ **Live transcription is ON in this channel.** Only people who consent are transcribed — press the button below to allow your speech to be written here. You can withdraw anytime with `/transcribe revoke`.',
+    pt: '🎙️ **A transcrição ao vivo está LIGADA neste canal.** Só quem consente é transcrito — carrega no botão abaixo para permitir que a tua fala seja escrita aqui. Podes retirar quando quiseres com `/transcribe revoke`.',
+  },
+  'stt.consentBtn': {
+    en: 'Consent to be transcribed',
+    pt: 'Consinto ser transcrito',
+  },
+  'stt.consentThanks': {
+    en: '✅ Thanks — your speech will now be transcribed on this server. Withdraw anytime with `/transcribe revoke`.',
+    pt: '✅ Obrigado — a tua fala passa a ser transcrita neste servidor. Retira quando quiseres com `/transcribe revoke`.',
+  },
+  'stt.stopped': {
+    en: '🛑 Transcription stopped.',
+    pt: '🛑 Transcrição parada.',
+  },
+  'stt.notRunning': {
+    en: 'Transcription is not running on this server.',
+    pt: 'A transcrição não está a correr neste servidor.',
+  },
+  'stt.announceStop': {
+    en: '🛑 **Live transcription is now OFF.** I stopped listening.',
+    pt: '🛑 **A transcrição ao vivo está agora DESLIGADA.** Deixei de ouvir.',
+  },
+  'stt.revoked': {
+    en: '✅ Consent withdrawn — you will no longer be transcribed on this server. (Messages already posted stay; delete them in Discord if you want.)',
+    pt: '✅ Consentimento retirado — deixas de ser transcrito neste servidor. (As mensagens já postadas ficam; apaga-as no Discord se quiseres.)',
+  },
+  'stt.revokeNone': {
+    en: "You hadn't consented to transcription on this server, so there was nothing to withdraw.",
+    pt: 'Não tinhas consentido a transcrição neste servidor, por isso não havia nada a retirar.',
+  },
+
   // ── /privacy erase (direito ao esquecimento) ────────────────────────────────
   'privacy.eraseConfirm': {
     en: '⚠️ This permanently deletes **all** your Vozen data across every server: voice settings, spoken nickname, personal abbreviations and pronunciations, saved birthday, game scores, talk stats, opt-out, and any voice clone (including recordings of your voice made by others). **This cannot be undone.** Are you sure?',
@@ -1255,11 +1321,13 @@ export const catalog: Record<string, Entry> = {
       '• /setup — guided one-step configuration · run this first\n' +
       '• /config — autoread, tts-channel, language, default-voice, blockword, pronunciation,\n' +
       '  rate-limit, role, max-chars, antispam, enabled · e.g. /config tts-channel #general\n' +
+      '• /transcribe — 🎙️ live speech-to-text of consenting speakers (Premium)\n' +
       '• /stats — bot statistics',
     pt:
       '• /setup — configuracao guiada num passo · corre isto primeiro\n' +
       '• /config — autoread, tts-channel, language, default-voice, blockword, pronunciation,\n' +
       '  rate-limit, role, max-chars, antispam, enabled · ex. /config tts-channel #geral\n' +
+      '• /transcribe — 🎙️ voz-para-texto ao vivo de quem consente (Premium)\n' +
       '• /stats — estatisticas do bot',
   },
   'help.groupMore': {

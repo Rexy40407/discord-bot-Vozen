@@ -1,0 +1,52 @@
+// src/commands/transcribeGate.ts
+//
+// Gates PUROS do /transcribe (Fase 4): decidem SEM IO se a transcrição pode arrancar e
+// quando deve auto-parar. O handler (integração) traduz o veredito em resposta/ação. Manter
+// aqui torna a lógica sensível (authz + entitlement + disponibilidade) testável e sem
+// depender do discord.js.
+
+export interface TranscribeStartInput {
+  /** Tem a permissão Manage Guild (só admins arrancam a transcrição do servidor). */
+  canManage: boolean;
+  /** O servidor é Premium (STT é gated a Premium — ver spike: pouca concorrência no VPS). */
+  isPremium: boolean;
+  /** O sidecar Whisper está instalado nesta instância (resolveWhisperCmd != null). */
+  sidecarAvailable: boolean;
+  /** O bot está numa call neste servidor (há ligação de voz). */
+  botInVoice: boolean;
+  /** Já existe uma sessão de transcrição a correr neste servidor. */
+  alreadyRunning: boolean;
+}
+
+export type TranscribeStartVerdict =
+  'ok' | 'noManage' | 'notPremium' | 'unavailable' | 'notInVoice' | 'alreadyRunning';
+
+/**
+ * Ordem dos gates: authz (Manage-Guild) ANTES do entitlement (Premium) — a quem não pode
+ * gerir o servidor dizemos "não tens permissão", não "compra Premium". Depois disponibilidade
+ * (sidecar), presença na call e sessão já a correr.
+ */
+export function evaluateTranscribeStart(i: TranscribeStartInput): TranscribeStartVerdict {
+  if (!i.canManage) return 'noManage';
+  if (!i.isPremium) return 'notPremium';
+  if (!i.sidecarAvailable) return 'unavailable';
+  if (!i.botInVoice) return 'notInVoice';
+  if (i.alreadyRunning) return 'alreadyRunning';
+  return 'ok';
+}
+
+/**
+ * Deve a sessão auto-parar? Pára quando a call fica sem HUMANOS, ou — depois de já ter havido
+ * pelo menos um consentimento nesta sessão (`everConsented`) — quando não resta ninguém
+ * consentido na call. O `everConsented` evita o insta-stop no arranque (antes de alguém
+ * carregar no botão, ninguém está consentido, mas isso não é motivo para parar).
+ */
+export function shouldAutoStop(
+  humanIdsInChannel: string[],
+  hasConsent: (userId: string) => boolean,
+  everConsented: boolean,
+): boolean {
+  if (humanIdsInChannel.length === 0) return true;
+  if (!everConsented) return false;
+  return humanIdsInChannel.every((id) => !hasConsent(id));
+}

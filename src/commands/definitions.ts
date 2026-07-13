@@ -197,6 +197,23 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .toJSON(),
   new SlashCommandBuilder()
+    .setName('transcribe')
+    .setDescription('Live speech-to-text: transcribe consenting speakers to this channel (Premium)')
+    .addSubcommand((s) =>
+      s
+        .setName('start')
+        .setDescription(
+          'Start transcribing the voice call to this channel (Manage Server, Premium)',
+        ),
+    )
+    .addSubcommand((s) =>
+      s.setName('stop').setDescription('Stop transcribing the voice call (Manage Server)'),
+    )
+    .addSubcommand((s) =>
+      s.setName('revoke').setDescription('Withdraw your consent to be transcribed on this server'),
+    )
+    .toJSON(),
+  new SlashCommandBuilder()
     .setName('voice')
     .setDescription('Manage your voice')
     .addSubcommand((s) =>

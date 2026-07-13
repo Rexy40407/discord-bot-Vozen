@@ -10,6 +10,7 @@ import { getUserPronunciations, getServerPronunciations } from '../store/pronunc
 // Handlers extraídos por domínio (plano 015): index.ts fica como registry/dispatcher fino.
 import { handleJoin, handleLeave, handleTts, handleSkip, handleShutup } from './handlers/core';
 import { handleVoice } from './handlers/voice';
+import { handleTranscribe } from './handlers/transcribe';
 import { handleConfig, handleSetup, handleStats } from './handlers/config';
 import { handleGame } from './handlers/games';
 import {
@@ -306,6 +307,8 @@ export async function handleInteraction(
         return await handleGame(i, deps);
       case 'voice':
         return await handleVoice(i, deps);
+      case 'transcribe':
+        return await handleTranscribe(i, deps);
       case 'config':
         return await handleConfig(i, deps);
       case 'setup':

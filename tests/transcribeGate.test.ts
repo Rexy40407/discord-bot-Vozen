@@ -1,0 +1,63 @@
+import { describe, it, expect } from 'vitest';
+import { evaluateTranscribeStart, shouldAutoStop } from '../src/commands/transcribeGate';
+
+// Gates PUROS do /transcribe (Fase 4). Decidem SEM IO se a transcrição pode arrancar e
+// quando deve auto-parar — o handler só traduz o veredito em resposta/ação.
+
+describe('evaluateTranscribeStart', () => {
+  const ok = {
+    canManage: true,
+    isPremium: true,
+    sidecarAvailable: true,
+    botInVoice: true,
+    alreadyRunning: false,
+  };
+
+  it('tudo verde -> ok', () => {
+    expect(evaluateTranscribeStart(ok)).toBe('ok');
+  });
+
+  it('sem Manage-Guild -> noManage (authz primeiro)', () => {
+    expect(evaluateTranscribeStart({ ...ok, canManage: false })).toBe('noManage');
+  });
+
+  it('sem Premium -> notPremium', () => {
+    expect(evaluateTranscribeStart({ ...ok, isPremium: false })).toBe('notPremium');
+  });
+
+  it('sidecar não instalado -> unavailable', () => {
+    expect(evaluateTranscribeStart({ ...ok, sidecarAvailable: false })).toBe('unavailable');
+  });
+
+  it('bot fora da call -> notInVoice', () => {
+    expect(evaluateTranscribeStart({ ...ok, botInVoice: false })).toBe('notInVoice');
+  });
+
+  it('já a correr -> alreadyRunning', () => {
+    expect(evaluateTranscribeStart({ ...ok, alreadyRunning: true })).toBe('alreadyRunning');
+  });
+
+  it('authz vence entitlement: sem Manage E sem Premium -> noManage', () => {
+    expect(evaluateTranscribeStart({ ...ok, canManage: false, isPremium: false })).toBe('noManage');
+  });
+});
+
+describe('shouldAutoStop', () => {
+  const consented = (id: string) => id === 'a' || id === 'b';
+
+  it('não arma antes de alguém consentir (evita insta-stop no arranque)', () => {
+    expect(shouldAutoStop(['x', 'y'], consented, false)).toBe(false);
+  });
+
+  it('depois de haver consentimento: pára quando não resta ninguém consentido na call', () => {
+    expect(shouldAutoStop(['x', 'y'], consented, true)).toBe(true);
+  });
+
+  it('depois de haver consentimento: continua enquanto um consentido estiver na call', () => {
+    expect(shouldAutoStop(['a', 'x'], consented, true)).toBe(false);
+  });
+
+  it('call vazia de humanos -> pára (mesmo que ninguém tenha consentido ainda)', () => {
+    expect(shouldAutoStop([], consented, false)).toBe(true);
+  });
+});
