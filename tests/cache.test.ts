@@ -8,31 +8,32 @@ import {
   readFileSync,
   readdirSync,
   utimesSync,
-  statSync,
+  unlinkSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cacheKey, AudioCache } from '../src/tts/cache';
 import type { SynthRequest } from '../src/tts/engine';
 
-// Guarda as implementacoes REAIS de statSync/readdirSync para as poder repor no
-// afterEach (mockReset limpa tambem a impl default). `vi.hoisted` corre antes do
-// factory de vi.mock, por isso as refs estao disponiveis dentro dele.
+// Guarda a implementacao REAL de unlinkSync para a poder repor no afterEach (mockReset
+// limpa tambem a impl default). `vi.hoisted` corre antes do factory de vi.mock, por
+// isso a ref esta disponivel dentro dele.
 const realFs = vi.hoisted(() => {
   const actual = require('node:fs') as typeof import('node:fs');
-  return { statSync: actual.statSync, readdirSync: actual.readdirSync };
+  return { unlinkSync: actual.unlinkSync };
 });
 
 // Mock de node:fs que MANTEM as implementacoes reais (spread `...actual`) e apenas
-// envolve `statSync`/`readdirSync` em spies. Assim os restantes testes com fs REAL
-// deste ficheiro continuam verdes; so os testes de ramos defensivos abaixo forcam
-// (via mockImplementationOnce, scoped a UMA chamada) essas duas funcoes a lancar.
+// envolve `readdirSync`/`unlinkSync` em spies. `readdirSync` e espiado para CONTAR
+// chamadas (prova de que o evict() em memoria ja nao faz directory scan no hot path —
+// plano 020); `unlinkSync` e forcado a lancar num teste especifico (ficheiro ja
+// removido fora do processo). Os restantes testes com fs REAL continuam verdes.
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
   return {
     ...actual,
-    statSync: vi.fn(actual.statSync),
     readdirSync: vi.fn(actual.readdirSync),
+    unlinkSync: vi.fn(actual.unlinkSync),
   };
 });
 
@@ -379,12 +380,36 @@ describe('AudioCache eviction (maxFiles)', () => {
     const files = readdirSync(dir).filter((f) => f.endsWith('.wav'));
     expect(files.length).toBe(10);
   });
+
+  // Plano 020: a ordem de evicção passa a vir de um índice LRU em memória (ordem de
+  // inserção/acesso), não do mtime em disco — get() já não faz utimesSync.
+  it('get() refresca a chave acedida: a evicção passa a apanhar a SEGUNDA mais antiga', () => {
+    // maxFiles=3: a, b, c cabem sem evict. get('a') refresca 'a' para o fim do
+    // índice (mais recente). O 4.º put ('d') excede o cap -> despeja o mais antigo
+    // do índice, que passa a ser 'b' (não 'a') — prova que a ordem vem do acesso via
+    // índice, não de um mtime em disco que já não é tocado.
+    const cache = new AudioCache(dir, 3);
+    const a = cache.put('a', makeSrc('a.wav'));
+    const b = cache.put('b', makeSrc('b.wav'));
+    const c = cache.put('c', makeSrc('c.wav'));
+
+    expect(cache.get('a')).toBe(a); // hit -> refresca 'a' para o fim do índice
+
+    const d = cache.put('d', makeSrc('d.wav'));
+
+    expect(existsSync(a)).toBe(true); // 'a' sobrevive (foi refrescada pelo get)
+    expect(existsSync(b)).toBe(false); // 'b' é agora a mais antiga -> evicted
+    expect(existsSync(c)).toBe(true);
+    expect(existsSync(d)).toBe(true); // recém-escrito nunca é evicted
+  });
 });
 
 // ── ramos defensivos do evict ─────────────────────────────────────────────────
-// Estes testes forcam `statSync`/`readdirSync` (mockados no topo) a lancar, para
-// cobrir os catch de dentro/fora do map em `evict`. `mockImplementationOnce` limita
-// o throw a UMA chamada; as restantes voltam a delegar na implementacao real.
+// Plano 020: o evict() deixou de fazer directory scan (readdirSync/statSync) — a
+// ordem vive num índice LRU em memória. Os ramos defensivos que SOBRAM são: o
+// unlinkSync a falhar (ficheiro já removido fora do processo) e o guard contra
+// drift entre `count`/`lru` (não deveria acontecer em uso normal — ver notas de
+// manutenção do plano — mas o loop tem de TERMINAR em vez de correr para sempre).
 describe('AudioCache.evict — ramos defensivos', () => {
   let dir: string;
   let srcDir: string;
@@ -395,12 +420,10 @@ describe('AudioCache.evict — ramos defensivos', () => {
   });
 
   afterEach(() => {
-    // Repoe as implementacoes REAIS (limpa qualquer mockImplementation/Once pendente)
+    // Repoe a implementacao REAL (limpa qualquer mockImplementationOnce pendente)
     // para nao contaminar testes seguintes.
-    vi.mocked(statSync).mockReset();
-    vi.mocked(statSync).mockImplementation(realFs.statSync as never);
-    vi.mocked(readdirSync).mockReset();
-    vi.mocked(readdirSync).mockImplementation(realFs.readdirSync as never);
+    vi.mocked(unlinkSync).mockReset();
+    vi.mocked(unlinkSync).mockImplementation(realFs.unlinkSync as never);
     rmSync(dir, { recursive: true, force: true });
     rmSync(srcDir, { recursive: true, force: true });
   });
@@ -411,61 +434,44 @@ describe('AudioCache.evict — ramos defensivos', () => {
     return p;
   }
 
-  it('statSync a falhar num ficheiro: entrada vira null, e filtrada, evict nao crasha', () => {
-    // cap=1 para forcar eviccao no 2o put. No evict o statSync do ficheiro antigo
-    // lanca -> essa entrada vira null e e removida do array (o map apanha o erro).
+  it('unlinkSync a falhar (ficheiro já removido fora do processo): evict não crasha', () => {
+    // cap=1 força eviccao no 2.º put. O unlinkSync do ficheiro antigo lanca (ex.:
+    // outro processo já o apagou) — o catch e best-effort e tem de engolir o erro.
     const cache = new AudioCache(dir, 1);
 
     const old = cache.put('old', makeSrc('old.wav'));
 
-    // No proximo evict, a PRIMEIRA chamada a statSync lanca (ficheiro "sumiu").
-    vi.mocked(statSync).mockImplementationOnce(() => {
-      throw new Error('ENOENT: statSync falhou');
+    vi.mocked(unlinkSync).mockImplementationOnce(() => {
+      throw new Error('ENOENT: unlinkSync falhou');
     });
 
-    // Nao deve crashar mesmo com uma entrada a falhar.
     expect(() => cache.put('new', makeSrc('new.wav'))).not.toThrow();
 
-    // O recem-escrito continua la (nunca e alvo de eviccao).
-    expect(existsSync(join(dir, 'new.wav'))).toBe(true);
-    // `old` nao pode ser removido porque a sua entrada foi filtrada (statSync lancou),
-    // por isso, apesar de exceder o cap, nao havia candidato valido para remover.
-    expect(existsSync(old)).toBe(true);
-  });
-
-  it('readdirSync a lancar (dir sumiu): evict sai sem crashar e sem remover nada', () => {
-    const cache = new AudioCache(dir, 1);
-
-    const old = cache.put('old', makeSrc('old.wav'));
-
-    // O readdirSync do proximo evict lanca (dir desapareceu entre o put e o evict).
-    vi.mocked(readdirSync).mockImplementationOnce(() => {
-      throw new Error('ENOENT: readdirSync falhou');
-    });
-
-    // O catch exterior apanha e faz `return` — sem crash.
-    expect(() => cache.put('new', makeSrc('new.wav'))).not.toThrow();
-
-    // Nada foi removido: o put copiou o ficheiro novo e o evict saiu cedo.
+    // O recém-escrito sobrevive sempre. `old` continua fisicamente em disco (o
+    // unlinkSync mockado nunca chegou a apagá-lo de facto) — o catch engoliu o erro
+    // e o índice segue em frente na mesma (best-effort).
     expect(existsSync(join(dir, 'new.wav'))).toBe(true);
     expect(existsSync(old)).toBe(true);
   });
 
-  it('mtime empatado: o recem-escrito NUNCA e removido (excluido antes do sort)', () => {
-    // cap=1 e mtimes todos iguais. Como `justWritten` e filtrado ANTES do sort, o
-    // recem-escrito nunca e candidato — mesmo com empate perfeito de mtime.
+  it('drift entre count e lru: evict para quando só sobra o recém-escrito (sem loop infinito)', () => {
+    // Em uso normal `count` e `lru.size` andam sempre em lockstep (ver notas de
+    // manutenção do plano 020). Este teste simula uma corrupção artificial desse
+    // invariante — acesso a campos privados via bracket notation, o mesmo padrão já
+    // usado nesta suite (ex. `ns['dir']`) — para provar que o loop do evict()
+    // TERMINA em vez de correr para sempre quando não há candidato para além do
+    // próprio justWritten.
     const cache = new AudioCache(dir, 1);
+    const dest = cache.put('unico', makeSrc('unico.wav'));
 
-    const old = cache.put('old', makeSrc('old.wav'));
+    // Força count > maxFiles sem que o índice tenha mais nenhuma chave além de `dest`.
+    (cache as unknown as { count: number }).count = 5;
 
-    // Todos os ficheiros passam a ter EXATAMENTE o mesmo mtimeMs no proximo evict.
-    vi.mocked(statSync).mockImplementation((() => ({ mtimeMs: 1000 })) as never);
-
-    const newest = cache.put('new', makeSrc('new.wav'));
-
-    // O recem-escrito sobrevive ao empate; o antigo (unico candidato) e removido.
-    expect(existsSync(newest)).toBe(true);
-    expect(existsSync(old)).toBe(false);
+    expect(() =>
+      (cache as unknown as { evict: (justWritten: string) => void }).evict(dest),
+    ).not.toThrow();
+    // Sem candidato para remover, o `count` fica tal como estava — não desce sozinho.
+    expect((cache as unknown as { count: number }).count).toBe(5);
   });
 });
 
@@ -489,16 +495,19 @@ describe('AudioCache contador em memória', () => {
     return p;
   }
 
-  it('abaixo do cap NÃO faz readdir (contador em memória); ao cruzar o cap, faz e despeja', () => {
+  it('nunca faz readdir fora do arranque (índice LRU em memória) — nem abaixo nem acima do cap', () => {
+    // Plano 020: evict() passou a despejar a partir do índice LRU em memória, sem
+    // directory scan. Antes deste plano, cruzar o cap acionava ~1 readdir por put;
+    // agora e SEMPRE zero (só o scan do construtor faz readdir, uma única vez).
     const cache = new AudioCache(dir, 5);
     vi.mocked(readdirSync).mockClear(); // o scan do constructor não conta para o teste
     for (let i = 0; i < 4; i++) cache.put(`k${i}`, makeSrc(`f${i}.wav`));
-    // 4 puts <= cap 5 -> ZERO readdir (era ~1 por put antes deste plano).
+    // 4 puts <= cap 5 -> ZERO readdir.
     expect(vi.mocked(readdirSync)).not.toHaveBeenCalled();
-    // 6.º put cruza o cap -> readdir + evicção do mais antigo.
+    // 6.º e 7.º put cruzam o cap -> evicção via índice em memória, continua SEM readdir.
     cache.put('k4', makeSrc('f4.wav'));
     cache.put('k5', makeSrc('f5.wav'));
-    expect(vi.mocked(readdirSync).mock.calls.length).toBeGreaterThanOrEqual(1);
+    expect(vi.mocked(readdirSync)).not.toHaveBeenCalled();
     expect(readdirSync(dir).filter((f) => f.endsWith('.wav')).length).toBeLessThanOrEqual(5);
   });
 
@@ -518,6 +527,26 @@ describe('AudioCache contador em memória', () => {
     // e despejava; com o reset a 0, os 3 sobrevivem.
     for (let i = 0; i < 3; i++) cache.put(`b${i}`, makeSrc(`b${i}.wav`));
     expect(readdirSync(dir).filter((f) => f.endsWith('.wav')).length).toBe(3);
+  });
+
+  it('purge da pasta em runtime limpa também o índice LRU (evicção pós-purge só vê as chaves novas)', () => {
+    // Plano 020: sem o `this.lru.clear()` no ramo de dir-recriado, as chaves
+    // antigas (a0/a1, já inexistentes em disco) ficavam "presas" no índice à
+    // frente das novas. Na próxima evicção, o evict() apanhava-as a ELAS primeiro
+    // (unlink falha em silêncio, count-- na mesma) em vez das chaves b* reais —
+    // o cap furava-se (o dir ficava com MAIS ficheiros do que maxFiles).
+    const cache = new AudioCache(dir, 2);
+    cache.put('a0', makeSrc('a0.wav'));
+    cache.put('a1', makeSrc('a1.wav'));
+    rmSync(dir, { recursive: true, force: true }); // simula o purge de privacidade
+
+    cache.put('b0', makeSrc('b0.wav'));
+    cache.put('b1', makeSrc('b1.wav'));
+    const b2 = cache.put('b2', makeSrc('b2.wav')); // 3.º put pós-purge excede o cap=2
+
+    const remaining = readdirSync(dir).filter((f) => f.endsWith('.wav'));
+    expect(remaining.length).toBeLessThanOrEqual(2);
+    expect(existsSync(b2)).toBe(true); // o recém-escrito nunca é evicted
   });
 
   it('re-escrever a MESMA chave não conta a dobrar', () => {
