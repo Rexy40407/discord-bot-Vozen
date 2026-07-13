@@ -17,7 +17,11 @@
 - **Fase 0 — ✅ metade local feita:** checklist de compliance em `docs/COMPLIANCE-VAGA5.md`. Spike STT (VPS) só bloqueia a Fase 4.
 - **Fase 1 — Soundboard: ✅ DEPLOYED** (deploy VPS success; inclui o toggle admin `/config soundboard`). **MVP alcançado e no ar.**
 - **Fase 2 — Stats de servidor: ✅ code-complete + verde** (`/serverstats`: gate Premium OU Plus + teaser free top-3; agrega talk_stats + game_score, sem recolha nova). Falta: funil no site (matriz de preços i18n×10) — marketing, não-crítico.
-- **Fase 3 — Dashboard web: BACKEND ✅** (`dashboardApi.ts` autz MANAGE_GUILD/ADMIN + bot-presente + escrita whitelisted via setter; rotas `/api/dashboard/*` com CORS+rate-limit+Bearer; 18 testes). **Falta o FRONTEND** (F3.3): OAuth com scope `guilds` (re-consent), seletor de guild, form de config, i18n×10, verificação browser + PRIVACY (scope guilds). *Whitelist do MVP:* toggles + maxChars/ratePerMin + locale; canais/vozes/blocklist/pronúncias ficam para 3b.
+- **Fase 3 — Dashboard web: ✅ COMPLETA** (a fazer deploy do site).
+  - Backend: `dashboardApi.ts` (autz MANAGE_GUILD/ADMIN + bot-presente; escrita whitelisted via setter) + rotas `/api/dashboard/*` (CORS+rate-limit+Bearer); 18 testes. **Deployed.**
+  - Frontend: `site/dashboard.html` + `dashboard-v1.js` (login OAuth `identify guilds` via **redirect /account reutilizado** — sem passo no portal; bounce `returnTo` no `main.js`→v27), seletor de servidor, form de 11 campos (9 toggles + maxChars + ratePerMin), guardar. Verificado no browser (en+pt, sem erros de CSP).
+  - PRIVACY: secção 1.1 disclosa o login do site (scopes `identify`/`guilds`, transitório, não guardado).
+  - *MVP:* i18n do corpo é en+pt inline (resto cai no en); locale/canal/voz/blocklist/pronúncias ficam para 3b.
 - Fase 4 (STT): por começar (depende do spike VPS).
 
 ## Objetivo / Goal

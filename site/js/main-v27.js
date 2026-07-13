@@ -362,6 +362,18 @@
       try {
         sessionStorage.setItem(TOK_KEY, fromHash);
       } catch {}
+      // Bounce de regresso: o /dashboard reutiliza o redirect /account (o único registado no
+      // portal) para o OAuth com scope `guilds`. O token fica no sessionStorage (mesmo
+      // domínio), e saltamos de volta. Só caminhos internos (anti open-redirect).
+      let rt = null;
+      try {
+        rt = sessionStorage.getItem("vozen.returnTo");
+        sessionStorage.removeItem("vozen.returnTo");
+      } catch {}
+      if (rt && /^\/[A-Za-z0-9/_-]*$/.test(rt)) {
+        location.replace(rt);
+        return;
+      }
     }
     const tok = storedToken();
     if (!tok) {

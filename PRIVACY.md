@@ -35,6 +35,15 @@ Vozen stores the data below in a local **SQLite** database (by default `tts.db`,
 
 Note on opt-out: running `/voice optout` **creates** a record with your `user_id` (so the bot remembers the preference). `/voice optin` removes that record. No other information about you is stored.
 
+### 1.1 Website login (vozen.org)
+
+When you log in on **vozen.org** with Discord (the account page and the server dashboard), Vozen uses Discord OAuth2 and requests only:
+
+- **`identify`** — your Discord ID, username and avatar, to show your account and to verify that a request is really yours.
+- **`guilds`** (server dashboard only) — the **list of servers you belong to**, used solely to show which servers you can configure (those where you have **Manage Server** and Vozen is present). Vozen never posts, leaves, or changes anything about those servers from this list.
+
+This login data is used **transiently** to answer the request and is **not stored** in the database — it is held in memory for at most ~60 seconds (a short cache) and then discarded. The access token stays in **your browser** (`sessionStorage`), is sent only to Vozen's own API over HTTPS, and is never written to disk on our side. The dashboard only changes the same per-server settings you could change with `/config` in Discord.
+
 ---
 
 ## 2. Message content
