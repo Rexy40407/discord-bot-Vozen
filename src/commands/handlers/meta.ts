@@ -14,9 +14,11 @@ import type { BotDeps } from '../../bot/deps';
 import { metrics } from '../../metrics';
 import { brandEmbed } from '../../ui/theme';
 import { getTopSpeakers } from '../../store/talkStats';
+import { buildServerStats } from '../../store/serverStats';
 import {
   getUserPremiumExpiry,
   isGuildPremium,
+  isUserPremium,
   effectiveGuildPremiumExpiry,
   getPremiumPass,
   countActiveSeats,
@@ -57,6 +59,76 @@ export async function handleTopSpeakers(
     }),
   );
   await i.reply({ content: `${t('topspeakers.title', locale)}\n${lines.join('\n')}` });
+}
+
+/**
+ * /serverstats — estatísticas AGREGADAS do servidor. Perk Premium: um servidor Premium (ou
+ * um utilizador Plus) vê tudo (leitura + streaks + jogos); free vê um TEASER (top-3 tagarelas
+ * + upsell) para descobrir o perk. Só agrega dados JÁ guardados (talk_stats + game_score) —
+ * sem recolha nova; ver docs/COMPLIANCE-VAGA5.md. As <@id> NÃO fazem ping (allowedMentions []).
+ */
+export async function handleServerStats(
+  i: ChatInputCommandInteraction,
+  deps: BotDeps,
+): Promise<void> {
+  const locale = localeForUser(deps, i);
+  const now = Date.now();
+  const premium =
+    isGuildPremium(deps.db, i.guildId!, now) || isUserPremium(deps.db, i.user.id, now);
+  const s = buildServerStats(deps.db, i.guildId!, new Date(now), premium ? 5 : 3);
+
+  if (s.totalMessages === 0 && s.gamePlayers === 0) {
+    await reply(i, t('serverstats.empty', locale));
+    return;
+  }
+
+  const lines: string[] = [
+    t('serverstats.title', locale),
+    t('serverstats.messages', locale, { total: s.totalMessages, speakers: s.activeSpeakers }),
+  ];
+  if (s.topSpeakers.length) {
+    lines.push(t('serverstats.topTalkers', locale));
+    s.topSpeakers.forEach((r, idx) =>
+      lines.push(
+        t('serverstats.talkerLine', locale, {
+          rank: idx + 1,
+          user: r.userId,
+          count: r.count,
+          streak: r.streak,
+        }),
+      ),
+    );
+  }
+
+  if (premium) {
+    // Premium: streak vivo + resumo de jogos + top jogadores.
+    lines.push(t('serverstats.streak', locale, { days: s.topStreak }));
+    lines.push(
+      t('serverstats.games', locale, {
+        points: s.gamePoints,
+        wins: s.gameWins,
+        players: s.gamePlayers,
+      }),
+    );
+    if (s.topPlayers.length) {
+      lines.push(t('serverstats.topPlayers', locale));
+      s.topPlayers.forEach((r, idx) =>
+        lines.push(
+          t('serverstats.playerLine', locale, {
+            rank: idx + 1,
+            user: r.userId,
+            points: r.points,
+            wins: r.wins,
+          }),
+        ),
+      );
+    }
+  } else {
+    // Free: teaser -> upsell (descoberta do perk).
+    lines.push(t('serverstats.upsell', locale));
+  }
+
+  await i.reply({ content: lines.join('\n'), allowedMentions: { parse: [] } });
 }
 
 // Discord renderiza <t:SEGUNDOS:D> como data localizada por-utilizador.

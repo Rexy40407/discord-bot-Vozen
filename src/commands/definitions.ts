@@ -172,6 +172,12 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .setName('topspeakers')
     .setDescription('See who Vozen has read the most — and daily streaks')
     .toJSON(),
+  // /serverstats — estatísticas agregadas do servidor (perk Premium; free vê um teaser).
+  // Público (qualquer pessoa pode ver); o gate Premium é no handler, não no comando.
+  new SlashCommandBuilder()
+    .setName('serverstats')
+    .setDescription('Server stats: messages, top talkers and games (💎 Premium, free preview)')
+    .toJSON(),
   // /premium — estado/montra + gerir licenças do passe (info/activate/deactivate).
   new SlashCommandBuilder()
     .setName('premium')

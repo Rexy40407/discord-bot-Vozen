@@ -26,6 +26,7 @@ import {
   handleUptime,
   handleBotstats,
   handleTopSpeakers,
+  handleServerStats,
   handlePremium,
   handleVozenGrant,
   handleGenCode,
@@ -257,6 +258,8 @@ export async function handleInteraction(
         return await handleBirthday(i, deps);
       case 'topspeakers':
         return await handleTopSpeakers(i, deps);
+      case 'serverstats':
+        return await handleServerStats(i, deps);
       case 'premium':
         return await handlePremium(i, deps);
       case 'vozengrant':

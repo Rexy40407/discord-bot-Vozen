@@ -14,9 +14,10 @@
 
 ## Estado da execução (2026-07-13)
 
-- **Fase 0 — ✅ metade local feita:** checklist de compliance em `docs/COMPLIANCE-VAGA5.md`. Spike STT (VPS) ainda por correr — só bloqueia a Fase 4.
-- **Fase 1 — Soundboard: ✅ code-complete + verde** (typecheck, build, 1628 testes, eslint, prettier). Falta: verificação live numa call (precisa de deploy) + toggle admin `/config` (opcional). **MVP alcançado.**
-- Fases 2–4: por começar.
+- **Fase 0 — ✅ metade local feita:** checklist de compliance em `docs/COMPLIANCE-VAGA5.md`. Spike STT (VPS) só bloqueia a Fase 4.
+- **Fase 1 — Soundboard: ✅ DEPLOYED** (deploy VPS success; inclui o toggle admin `/config soundboard`). **MVP alcançado e no ar.**
+- **Fase 2 — Stats de servidor: ✅ code-complete + verde** (`/serverstats`: gate Premium OU Plus + teaser free top-3; agrega talk_stats + game_score, sem recolha nova). Falta: funil no site (matriz de preços i18n×10) — marketing, não-crítico.
+- Fases 3–4: por começar.
 
 ## Objetivo / Goal
 

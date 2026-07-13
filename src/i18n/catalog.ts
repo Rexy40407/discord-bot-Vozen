@@ -450,6 +450,48 @@ export const catalog: Record<string, Entry> = {
     en: '{rank}. <@{user}> — **{count}** messages · 🔥 {streak}-day streak',
     pt: '{rank}. <@{user}> — **{count}** mensagens · 🔥 streak de {streak} dias',
   },
+
+  // ── /serverstats (perk Premium; free vê um teaser) ────────────────────────
+  'serverstats.title': {
+    en: '📊 **Server stats**',
+    pt: '📊 **Estatísticas do servidor**',
+  },
+  'serverstats.empty': {
+    en: "No stats yet — I haven't read any messages or run any games here. Set up with `/setup`!",
+    pt: 'Ainda sem estatísticas — não li mensagens nem corri jogos aqui. Configura com `/setup`!',
+  },
+  'serverstats.messages': {
+    en: '🗣️ **{total}** messages read · **{speakers}** people',
+    pt: '🗣️ **{total}** mensagens lidas · **{speakers}** pessoas',
+  },
+  'serverstats.topTalkers': {
+    en: '**Top talkers:**',
+    pt: '**Top tagarelas:**',
+  },
+  'serverstats.talkerLine': {
+    en: '{rank}. <@{user}> — {count} msgs · 🔥 {streak}d',
+    pt: '{rank}. <@{user}> — {count} msgs · 🔥 {streak}d',
+  },
+  'serverstats.streak': {
+    en: '🔥 Longest active streak: **{days}** days',
+    pt: '🔥 Maior streak ativo: **{days}** dias',
+  },
+  'serverstats.games': {
+    en: '🎮 **{points}** game points · **{wins}** wins · **{players}** players',
+    pt: '🎮 **{points}** pontos de jogos · **{wins}** vitórias · **{players}** jogadores',
+  },
+  'serverstats.topPlayers': {
+    en: '**Top players:**',
+    pt: '**Top jogadores:**',
+  },
+  'serverstats.playerLine': {
+    en: '{rank}. <@{user}> — {points} pts · {wins} wins',
+    pt: '{rank}. <@{user}> — {points} pts · {wins} vitórias',
+  },
+  'serverstats.upsell': {
+    en: '🔒 That’s the free preview. **Premium** unlocks streaks, game stats and the full top 5 — see `/premium`.',
+    pt: '🔒 Isto é a pré-visualização grátis. O **Premium** desbloqueia streaks, estatísticas de jogos e o top 5 completo — vê `/premium`.',
+  },
   // Aviso de streak 🔥 (F1): primeira mensagem lida do dia. {user} = id (menção), {n} = dias.
   'streak.day': {
     en: '🔥 <@{user}> is on a **{n}-day** streak! Keep talking to keep it alive.',
@@ -1192,6 +1234,7 @@ export const catalog: Record<string, Entry> = {
       '• /8ball · /fortune · /fact · /wyr — I answer/read out loud (and in chat)\n' +
       '• /birthday set — I wish you a happy birthday when you join on your day\n' +
       '• /topspeakers — who I read the most + daily streaks\n' +
+      '• /serverstats — server stats: messages, top talkers, games · 💎 Premium (free preview)\n' +
       '• /game — play a minigame with the server (13 games!) · e.g. /game play, /game leaderboard',
     pt:
       '• /joke — conto uma piada curta (escolhe a lingua + risos opcionais) · ex. /joke Portuguese\n' +
@@ -1200,6 +1243,7 @@ export const catalog: Record<string, Entry> = {
       '• /laugh — rio-me em voz alta na tua voz atual\n' +
       '• /8ball · /fortune · /fact · /wyr — respondo/leio em voz alta (e no chat)\n' +
       '• /birthday set — digo-te parabens quando entrares na call no teu dia\n' +
+      '• /serverstats — estatísticas do servidor: mensagens, top tagarelas, jogos · 💎 Premium (pré-vê grátis)\n' +
       '• /game — joga um minijogo com o servidor (13 jogos!) · ex. /game play, /game leaderboard',
   },
   'help.groupAdmin': {

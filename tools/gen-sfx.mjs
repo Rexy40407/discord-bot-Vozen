@@ -21,14 +21,6 @@ const saw = (ph) => {
   return 2 * t - 1;
 };
 
-/** Constrói N samples chamando fn(t) em segundos; devolve Float64Array em [-1,1]. */
-function build(seconds, fn) {
-  const n = Math.floor(seconds * SR);
-  const out = new Float64Array(n);
-  for (let i = 0; i < n; i++) out[i] = fn(i / SR);
-  return out;
-}
-
 /** Nota: oscilador `osc` à frequência `freq` com decaimento exponencial `tau` (s). */
 function note(seconds, freq, osc = sine, tau = 0.25, gain = 0.6) {
   let ph = 0;
