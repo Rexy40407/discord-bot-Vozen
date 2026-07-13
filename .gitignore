@@ -12,6 +12,9 @@ tools/clone-venv/
 tools/_smoke_*
 voice-clones/
 
+# Sidecar STT Whisper (venv Python local + modelo ~140MB) — instalado por setup-whisper.sh
+tools/whisper-venv/
+
 # Sidecar TTS Kokoro (venv Python local + modelo/vozes ~340MB) — descarregados por setup-kokoro.ps1
 tools/kokoro-venv/
 tools/kokoro-v1.0.onnx
