@@ -132,6 +132,17 @@ async function main(): Promise<void> {
   log.info(
     `[index] clone de voz: ${cloneEngine.available ? 'motor detetado' : 'sem motor (voz normal)'}`,
   );
+  // Plano 024 (SECRET-02) — fail-open genuino: com o motor de clone disponível
+  // mas SEM CLONE_KEY, as amostras (dado biométrico, ToS §5(c) + RGPD) ficam
+  // gravadas/lidas em claro (ver src/tts/cloneEngine.ts) sem qualquer sinal ao
+  // operador. Só avisa (não muda comportamento — a cifra em falta é decisão
+  // adiada, não corrigida aqui).
+  if (cloneEngine.available && config.cloneKey === undefined) {
+    log.warn(
+      '[index] CLONE_KEY não definida com o motor de clone ATIVO — as amostras de voz clonada ' +
+        '(dado biométrico) ficam gravadas em claro, sem cifra em repouso. Define CLONE_KEY no .env.',
+    );
+  }
   // Pré-aquece o modelo de clone no arranque (~35s de GPU), para a 1.ª mensagem clonada
   // não pagar o cold-load. No-op sem motor; falha cai na voz normal.
   cloneEngine.prewarm();

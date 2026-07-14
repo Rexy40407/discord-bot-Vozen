@@ -224,7 +224,64 @@ function engineEnv(): TtsEngineKind {
   return 'piper';
 }
 
+/** Um problema de configuração detetado por `validateConfigEnv`. */
+export interface ConfigFinding {
+  level: 'warn' | 'error';
+  message: string;
+}
+
+// Vars de segredo/token que, se PRESENTES mas VAZIAS, indicam um clobber por
+// linha duplicada no .env (dotenv v16: chaves duplicadas => a ÚLTIMA ganha) em
+// vez de "feature desligada de propósito" (que é a env AUSENTE). Qualquer
+// segredo novo com o mesmo risco deve ser acrescentado aqui.
+const EMPTY_SECRET_VARS = ['TOPGG_WEBHOOK_SECRET', 'KOFI_WEBHOOK_TOKEN'] as const;
+
+/**
+ * Plano 024 (SECRET-01) — validação PURA da env crua: não lê `process.env`
+ * diretamente (recebe um record) nem tem side-effects, para ser testável em
+ * isolamento. Devolve findings a logar por quem chama (`loadConfig`), nunca
+ * o valor do segredo em si (só o NOME da var).
+ *
+ * Dois casos cobertos:
+ *  1. Segredo PRESENTE mas VAZIO (`CHAVE in env && CHAVE.trim() === ''`):
+ *     distinto de AUSENTE (que é "feature desligada", um estado legítimo).
+ *     Sintoma típico: uma linha `TOPGG_WEBHOOK_SECRET=` residual/duplicada
+ *     a seguir à boa apaga o valor real em silêncio (dotenv last-wins) —
+ *     ver src/vote.ts:113, que trata secret === '' como "sem auth".
+ *  2. Listener dedicado do top.gg redundante: TOPGG_WEBHOOK_PORT definido
+ *     ao mesmo tempo que um TOPGG_WEBHOOK_SECRET não-vazio — a rota
+ *     partilhada /webhook/topgg na API já cobre o caso autenticado.
+ */
+export function validateConfigEnv(env: Record<string, string | undefined>): ConfigFinding[] {
+  const findings: ConfigFinding[] = [];
+
+  for (const key of EMPTY_SECRET_VARS) {
+    if (key in env && (env[key] ?? '').trim() === '') {
+      findings.push({
+        level: 'warn',
+        message: `[config] ${key} está presente mas VAZIO — uma linha duplicada/residual pode tê-lo sobreposto (dotenv usa sempre a ÚLTIMA ocorrência da chave). Se não era intenção desligar esta feature, corrige o .env.`,
+      });
+    }
+  }
+
+  const topggPortSet = (env.TOPGG_WEBHOOK_PORT ?? '').trim() !== '';
+  const topggSecretNonEmpty = (env.TOPGG_WEBHOOK_SECRET ?? '').trim() !== '';
+  if (topggPortSet && topggSecretNonEmpty) {
+    findings.push({
+      level: 'warn',
+      message:
+        '[config] TOPGG_WEBHOOK_PORT está definido junto com um TOPGG_WEBHOOK_SECRET não-vazio — o listener dedicado é redundante com a rota partilhada /webhook/topgg na API pública; considera remover TOPGG_WEBHOOK_PORT.',
+    });
+  }
+
+  return findings;
+}
+
 export function loadConfig(): AppConfig {
+  for (const finding of validateConfigEnv(process.env)) {
+    if (finding.level === 'error') log.error(finding.message);
+    else log.warn(finding.message);
+  }
   return {
     token: requireEnv('DISCORD_TOKEN'),
     clientId: requireEnv('CLIENT_ID'),
