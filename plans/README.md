@@ -137,10 +137,20 @@ direta — para outro modelo (Opus) executar sem contexto desta sessão. Baselin
 
 | Plan | Título | Prio | Effort | Risk | Depende de | Status |
 | ---- | ------ | ---- | ------ | ---- | ---------- | ------ |
-| 019  | Lifecycle do `/transcribe`: teardown ao sair da call · corrida no start · selfMute · nomes de tmp · guard de exit dos sidecars | P1 | M | LOW | — | TODO |
-| 020  | AudioCache: índice LRU em memória (elimina o readdir+stat de ~500 ficheiros em cada miss) | P2 | S | LOW | — | TODO |
-| 021  | Endurecer o claim Ko-fi por email (spike + fix — email não é segredo, janela 90d) | P1 | M | MED | — | TODO |
-| 022  | Doc-sync (comando de revoke errado na PRIVACY · README `npm start` · ARCHITECTURE stale) + script `check` | P2 | S | LOW | — | TODO |
+| 019  | Lifecycle do `/transcribe`: teardown ao sair da call · corrida no start · selfMute · nomes de tmp · guard de exit dos sidecars | P1 | M | LOW | — | **DONE** (`7569c78`) |
+| 020  | AudioCache: índice LRU em memória (elimina o readdir+stat de ~500 ficheiros em cada miss) | P2 | S | LOW | — | **DONE** (`852e98c`+`ff321a8`) |
+| 021  | Endurecer o claim Ko-fi por email → **Opção A** (só código do recibo; email já não é prova de posse) | P1 | M | MED | — | **DONE** (`844cce0`+`32a3aef`) |
+| 022  | Doc-sync (comando de revoke errado na PRIVACY · README `npm start` · ARCHITECTURE stale) + script `check` | P2 | S | LOW | — | **DONE** (`81deb66`) |
+
+**Execução (2026-07-14):** os 4 planos foram executados por executores `sonnet` em worktrees
+isolados (`/improve execute`) e revistos como tech-lead (re-corri done-criteria, âmbito, li
+os diffs + testes). 019: 5 testes de caracterização novos (invariante de privacidade: rejoin
+selfDeaf:true + speaking.off + dispose no stop; corrida do start fechada por Set+finally).
+020: LRU em memória, API pública intacta, 3 testes defensivos obsoletos reescritos. 021: via
+tx-id intocada byte-a-byte, ramo email → `use_receipt_code` sem tocar na BD, copy nos 10
+idiomas. 022: docs corrigidos + script `check`. **Suite final na main: 1719 testes verdes.**
+Achado colateral: `tests/wordChain.test.ts` é flaky sob carga de CPU (passa na main/CI, falha
+em worktrees sob contenção) — task à parte, não bloqueia.
 
 **Ordem sugerida**: 019 primeiro (P1, código mais novo, leak em produção 24/7). 022 é trivial e
 independente (pode ir em paralelo). 020 independente. 021 é P1 mas tem Step 0 de decisão do
