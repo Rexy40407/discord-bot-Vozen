@@ -50,3 +50,22 @@ export function addGcloudMonthlyChars(
      ON CONFLICT(scope, key, month) DO UPDATE SET chars = chars + excluded.chars`,
   ).run(scope, key, month, chars);
 }
+
+/**
+ * Apaga o consumo PESSOAL de um utilizador (RGPD / `/privacy erase`). Só os pools
+ * scope 'user'/'pass' são keyed pelo Discord ID do utilizador — as linhas 'guild'/'global'
+ * não são dados dele. Chamado pelo `eraseUser` (dataLifecycle), fora do `USER_ERASE_TABLES`
+ * porque a chave é `key`, não `user_id`.
+ */
+export function deleteUserGcloudUsage(db: Database.Database, userId: string): void {
+  db.prepare("DELETE FROM gcloud_usage WHERE key = ? AND scope IN ('user', 'pass')").run(userId);
+}
+
+/**
+ * Purga de retenção: apaga o consumo de meses ANTERIORES a `cutoffMonth` ('YYYY-MM').
+ * Evita que a tabela cresça para sempre (1 linha por pool por mês). Devolve o nº apagado.
+ * O mês corrente e os recentes ficam (o gate de custo só olha para o mês atual).
+ */
+export function purgeOldGcloudUsage(db: Database.Database, cutoffMonth: string): number {
+  return db.prepare('DELETE FROM gcloud_usage WHERE month < ?').run(cutoffMonth).changes;
+}

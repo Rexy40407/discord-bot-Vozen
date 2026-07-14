@@ -11,6 +11,7 @@
 import type Database from 'better-sqlite3';
 import { invalidateGuild, invalidateUser } from './cache';
 import { deleteClone, deleteClonesByTarget } from './voiceClone';
+import { deleteUserGcloudUsage } from './gcloudUsage';
 
 // ── Tabelas com guild_id ─────────────────────────────────────────────────────
 /** Apagadas quando um servidor remove o bot (após o grace period). Conteúdo/config/stats. */
@@ -65,6 +66,30 @@ export const USER_RETAINED_TABLES = [
   'premium_pass_activation',
 ] as const;
 
+// ── Cobertura para o rot-guard ALARGADO (colunas-identificador não-standard) ──────────
+// O rot-guard antigo só via colunas literalmente `user_id`/`guild_id`. Um ID de utilizador
+// guardado sob OUTRO nome (discord_id, key, created_by…) escapava-lhe E à eliminação. O
+// guard alargado (ver dataLifecycle.test.ts) exige que TODA a tabela com uma coluna em
+// forma de identificador esteja numa das listas acima OU numa das duas abaixo.
+
+/**
+ * Tabelas apagadas por `eraseUser` MAS não via `USER_ERASE_TABLES` (a chave NÃO é
+ * `user_id`): apagadas à mão dentro da transação do erase. Guardam o ID do utilizador
+ * sob outro nome, por isso o guard alargado exige-as aqui para não escaparem ao erase.
+ */
+export const USER_ERASE_BESPOKE = ['kofi_supporter', 'gcloud_usage'] as const;
+
+/**
+ * Tabelas com uma coluna em forma de identificador que NÃO são dados pessoais
+ * elimináveis — ledgers financeiros / de idempotência deliberadamente RETIDOS. Estar
+ * aqui é uma decisão consciente (revista à mão); o guard alargado aceita-as.
+ */
+export const LIFECYCLE_REVIEWED_EXEMPT = [
+  'premium_code', // ledger de códigos: created_by/redeemed_by = prova de compra/resgate, retido
+  'kofi_transaction', // ledger de idempotência: transaction_id do Ko-fi, não um ID de utilizador
+  'kofi_pending', // compras pendentes, purgadas por TTL (startPendingPurgeJob); tx id + email_hash
+] as const;
+
 /**
  * Apaga TODAS as linhas guild-scoped de um servidor (não toca nas retidas). Transação:
  * ou apaga tudo, ou nada. Invalida a cache guild-keyed no fim.
@@ -98,6 +123,12 @@ export function eraseUser(db: Database.Database, userId: string): EraseResult {
       if (table === 'user_clone') continue;
       db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(uid);
     }
+    // BESPOKE (chave != user_id): kofi_supporter guarda o Discord ID em `discord_id`;
+    // gcloud_usage guarda-o em `key` para scope user/pass (pool pessoal/do passe). As
+    // linhas scope='guild' do gcloud_usage são retidas e purgadas por TTL
+    // (purgeOldGcloudUsage), não são dado pessoal apagável por este erase.
+    db.prepare('DELETE FROM kofi_supporter WHERE discord_id = ?').run(uid);
+    deleteUserGcloudUsage(db, uid);
   });
   run(userId);
 

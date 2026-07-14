@@ -15,7 +15,10 @@ import {
   GUILD_RETAINED_TABLES,
   USER_ERASE_TABLES,
   USER_RETAINED_TABLES,
+  USER_ERASE_BESPOKE,
+  LIFECYCLE_REVIEWED_EXEMPT,
 } from '../src/store/dataLifecycle';
+import { purgeOldGcloudUsage } from '../src/store/gcloudUsage';
 
 function count(db: Database.Database, table: string, col: string, id: string): number {
   return (
@@ -116,6 +119,25 @@ describe('eraseUser', () => {
         'nginx',
         'engine x',
       );
+      // Identificadores do utilizador guardados sob OUTRO nome (bespoke erase).
+      db.prepare('INSERT INTO kofi_supporter (email_hash, discord_id, updated_at) VALUES (?,?,?)').run(
+        'hash-de-U',
+        'U',
+        1,
+      );
+      db.prepare('INSERT INTO gcloud_usage (scope, key, month, chars) VALUES (?,?,?,?)').run(
+        'user',
+        'U',
+        '2026-07',
+        100,
+      );
+      // Consumo do SERVIDOR (scope guild) — NÃO é dado pessoal de U, fica retido.
+      db.prepare('INSERT INTO gcloud_usage (scope, key, month, chars) VALUES (?,?,?,?)').run(
+        'guild',
+        'G1',
+        '2026-07',
+        50,
+      );
       // Financeiro/entitlement do utilizador (RETIDO).
       db.prepare('INSERT INTO premium_user (user_id, expires_at, source) VALUES (?,?,?)').run(
         'U',
@@ -141,6 +163,11 @@ describe('eraseUser', () => {
       }
       // O clone da voz de U gravado por outro (target_id = U) também foi revogado.
       expect(count(db, 'user_clone', 'target_id', 'U')).toBe(0);
+      // Bespoke: o link Ko-fi (discord_id) e o consumo pessoal (key) de U foram apagados;
+      // o consumo do SERVIDOR (scope guild) fica retido (não é dado pessoal de U).
+      expect(count(db, 'kofi_supporter', 'discord_id', 'U')).toBe(0);
+      expect(count(db, 'gcloud_usage', 'key', 'U')).toBe(0);
+      expect(count(db, 'gcloud_usage', 'key', 'G1')).toBe(1);
       // Retidas: intactas.
       expect(count(db, 'premium_user', 'user_id', 'U')).toBe(1);
       expect(count(db, 'premium_pass', 'user_id', 'U')).toBe(1);
@@ -180,6 +207,27 @@ describe('rot-guard: categorização vs schema real', () => {
             `tabela '${t}' tem user_id mas não está em USER_ERASE_TABLES nem USER_RETAINED_TABLES`,
           ).toContain(t);
         }
+        // ALARGADO: um ID de utilizador guardado sob OUTRO nome (discord_id, key,
+        // created_by…) escapava ao guard antigo E à eliminação. Qualquer coluna em forma
+        // de identificador (além de user_id/guild_id, já cobertos acima) obriga a tabela a
+        // estar categorizada numa das 4 listas OU tratada/isenta explicitamente.
+        const idCols = cols.filter(
+          (c) => c !== 'user_id' && c !== 'guild_id' && (/_(id|by)$/.test(c) || c === 'key' || c === 'discord_id'),
+        );
+        if (idCols.length > 0) {
+          expect(
+            [
+              ...GUILD_PURGE_TABLES,
+              ...GUILD_RETAINED_TABLES,
+              ...USER_ERASE_TABLES,
+              ...USER_RETAINED_TABLES,
+              ...USER_ERASE_BESPOKE,
+              ...LIFECYCLE_REVIEWED_EXEMPT,
+            ],
+            `tabela '${t}' tem coluna(s)-identificador [${idCols.join(', ')}] mas não está categorizada, ` +
+              'tratada por bespoke-erase, nem isenta — decide erase/retenção e adiciona à lista certa',
+          ).toContain(t);
+        }
       }
     } finally {
       db.close();
@@ -203,11 +251,39 @@ describe('rot-guard: categorização vs schema real', () => {
         ...GUILD_RETAINED_TABLES,
         ...USER_ERASE_TABLES,
         ...USER_RETAINED_TABLES,
+        ...USER_ERASE_BESPOKE,
+        ...LIFECYCLE_REVIEWED_EXEMPT,
       ];
       for (const t of all) expect(exists, `lista refere tabela inexistente '${t}'`).toContain(t);
       // Disjunção por-eixo: nenhuma tabela é ao mesmo tempo purgada e retida.
       for (const t of GUILD_PURGE_TABLES) expect(GUILD_RETAINED_TABLES).not.toContain(t);
       for (const t of USER_ERASE_TABLES) expect(USER_RETAINED_TABLES).not.toContain(t);
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe('purgeOldGcloudUsage — retenção mensal', () => {
+  it('apaga meses ANTERIORES ao cutoff e mantém o cutoff e os posteriores', () => {
+    const db = initDb(':memory:');
+    try {
+      db.prepare('INSERT INTO gcloud_usage (scope, key, month, chars) VALUES (?,?,?,?)').run(
+        'user',
+        'U',
+        '2026-04',
+        10,
+      );
+      db.prepare('INSERT INTO gcloud_usage (scope, key, month, chars) VALUES (?,?,?,?)').run(
+        'user',
+        'U',
+        '2026-07',
+        20,
+      );
+      const removed = purgeOldGcloudUsage(db, '2026-06');
+      expect(removed).toBe(1); // só o mês '2026-04'
+      expect(count(db, 'gcloud_usage', 'month', '2026-04')).toBe(0);
+      expect(count(db, 'gcloud_usage', 'month', '2026-07')).toBe(1);
     } finally {
       db.close();
     }

@@ -8,6 +8,7 @@ import { log } from './logging/logger';
 import { initDb } from './store/db';
 import { startDepartedPurgeJob } from './store/guildDeparted';
 import { startPendingPurgeJob } from './store/kofiPending';
+import { purgeOldGcloudUsage, monthKeyUTC } from './store/gcloudUsage';
 import { AudioCache } from './tts/cache';
 import { createEngine, createPerUserEngine, selectEngine } from './tts/factory';
 import { syntheticGttsModels } from './language/voiceMap';
@@ -400,6 +401,27 @@ async function main(): Promise<void> {
       );
     } catch (err) {
       log.error('[index] falha ao arrancar o job de purga de pendentes Ko-fi (ignorado)', err);
+    }
+    // Retenção do gcloud_usage (contadores mensais de chars): apaga meses com mais de ~3
+    // meses. Corre já e depois 1x/dia. Evita crescimento sem fim; o gate de custo só olha
+    // para o mês corrente. Timer unref'd (nunca segura o processo). Best-effort.
+    try {
+      const purgeGcloud = (): void => {
+        try {
+          const cutoff = monthKeyUTC(Date.now() - 92 * 86_400_000);
+          const removed = purgeOldGcloudUsage(db, cutoff);
+          if (removed > 0) {
+            log.info(`[retencao] purgadas ${removed} linha(s) antigas de gcloud_usage (< ${cutoff}).`);
+          }
+        } catch (err) {
+          log.error('[retencao] falha na purga do gcloud_usage (ignorado)', err);
+        }
+      };
+      purgeGcloud();
+      const gcloudTimer = setInterval(purgeGcloud, 24 * 60 * 60 * 1000);
+      gcloudTimer.unref?.();
+    } catch (err) {
+      log.error('[index] falha ao arrancar a purga do gcloud_usage (ignorado)', err);
     }
     // 24/7 in-call: repõe os servidores Premium nos canais onde estavam antes do
     // restart/deploy (as ligações de voz morrem no encerramento; as linhas de
