@@ -1372,6 +1372,13 @@ export const catalog: Record<string, Entry> = {
     en: '🛟 Need help or want to report an issue? {url}',
     pt: '🛟 Precisas de ajuda ou queres reportar um problema? {url}',
   },
+  // Oferta de codigo-fonte in-product (AGPL-3.0 §13, clausula de uso-em-rede): quem so
+  // interage com o bot no Discord tem de poder chegar ao Corresponding Source sem passar
+  // pelo site.
+  'help.source': {
+    en: '📄 Open source (AGPL-3.0) — get the exact source running here: {url}',
+    pt: '📄 Codigo aberto (AGPL-3.0) — obtem o codigo exato que corre aqui: {url}',
+  },
 
   // ── welcome embed (guildCreate) ────────────────────────────────────────────
   // Enviado UMA vez quando o Vozen entra num servidor novo. Guild nova nao tem

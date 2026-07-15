@@ -37,6 +37,9 @@ import { generateCodeString, normalizeCode } from '../../premium/codeGen';
 import { voteRewardStatus } from '../../store/voteReward';
 import { voteUpsellLine } from '../voteUpsell';
 
+/** Repo público (AGPL-3.0 §13: oferta de Corresponding Source in-product, ver /help). */
+const SOURCE_URL = 'https://github.com/Rexy40407/discord-bot-Vozen';
+
 /**
  * /topspeakers — ranking público de quem teve mais mensagens LIDAS pelo Vozen nesta guild,
  * com o streak (dias seguidos a falar) de cada um. Mesma renderização do game leaderboard
@@ -597,14 +600,17 @@ export async function handleHelp(i: ChatInputCommandInteraction, deps: BotDeps):
   // dar ao utilizador uma forma de reportar problemas). Vem do config (env
   // SUPPORT_URL; default = servidor de suporte oficial).
   const supportLine = t('help.support', locale, { url: deps.config.supportUrl });
+  // AGPL-3.0 §13: oferece o Corresponding Source dentro do próprio produto (Discord), para
+  // quem nunca abre o site. URL público e estável do repo.
+  const sourceLine = t('help.source', locale, { url: SOURCE_URL });
 
   const embed = new EmbedBuilder()
     .setColor(0x5865f2) // blurple — parece intencional, nao o cinzento default
     .setTitle(t('help.embedTitle', locale))
     // Descricao: tagline da marca + o que o Vozen faz (intro) + o diferenciador
-    // (voz neural gratis) — a mesma chave do welcome embed — + a linha de suporte.
+    // (voz neural gratis) — a mesma chave do welcome embed — + suporte + fonte (AGPL §13).
     .setDescription(
-      `${t('help.title', locale)}\n${t('help.intro', locale)}\n\n${t('welcome.tagline', locale)}\n\n${supportLine}`,
+      `${t('help.title', locale)}\n${t('help.intro', locale)}\n\n${t('welcome.tagline', locale)}\n\n${supportLine}\n${sourceLine}`,
     )
     .addFields(fields)
     .setFooter({ text: t('help.footer', locale, { command: '/setup' }) });
