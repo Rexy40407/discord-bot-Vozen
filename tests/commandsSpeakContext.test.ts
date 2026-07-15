@@ -1,6 +1,6 @@
 /**
- * Context-menu "Speak" (Vaga 2·I): botão direito numa mensagem -> Apps -> Speak ->
- * o Vozen lê essa mensagem com a voz de quem clicou (mesmo pipeline do /tts).
+ * Context-menu "Speak" (Wave 2·I): right-click on a message -> Apps -> Speak ->
+ * Vozen reads that message with the clicker's voice (same pipeline as /tts).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
@@ -65,47 +65,47 @@ describe('context-menu "Speak"', () => {
   });
   afterEach(() => db.close());
 
-  it('lê a mensagem-alvo com a voz do user (player.say chamado)', async () => {
+  it('reads the target message with the user voice (player.say called)', async () => {
     const i = makeInteraction('olá pessoal isto é a mensagem');
     await handleMessageContextMenu(i as any, makeDeps(db, say));
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].text).toBe('olá pessoal isto é a mensagem');
   });
 
-  it('mensagem sem texto -> avisa, não fala', async () => {
+  it('message with no text -> warns, does not speak', async () => {
     const i = makeInteraction('   ');
     await handleMessageContextMenu(i as any, makeDeps(db, say));
     expect(say).not.toHaveBeenCalled();
     expect(i.replies.join('')).toMatch(/texto|read/i);
   });
 
-  it('bot fora de voz -> avisa, não fala', async () => {
+  it('bot not in voice -> warns, does not speak', async () => {
     const i = makeInteraction('olá');
     await handleMessageContextMenu(i as any, makeDeps(db, say, false));
     expect(say).not.toHaveBeenCalled();
     expect(i.replies.length).toBe(1);
   });
 
-  it('ignora outros comandos de context-menu (nome != Speak)', async () => {
+  it('ignores other context-menu commands (name != Speak)', async () => {
     const i = makeInteraction('olá');
     (i as any).commandName = 'Outro';
     await handleMessageContextMenu(i as any, makeDeps(db, say));
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('está registado em commandDefs como comando de MENSAGEM (type 3)', () => {
+  it('is registered in commandDefs as a MESSAGE command (type 3)', () => {
     const def = commandDefs.find((c) => c.name === 'Speak');
     expect(def).toBeDefined();
     expect(def?.type).toBe(3); // ApplicationCommandType.Message
   });
 
-  // Bug-hunt 2026-07: o handler do context-menu é despachado com `void ...` SEM catch
-  // e não tinha try/catch próprio. Um throw no speakRawText (ex.: player.say rejeita)
-  // deixava o utilizador preso em "Vozen is thinking…" para sempre + unhandledRejection.
-  // Agora tem que apanhar o erro e responder com a mensagem genérica.
-  it('se a síntese/say lança, responde erro (não fica preso em "thinking…") e não rejeita', async () => {
+  // Bug-hunt 2026-07: the context-menu handler is dispatched with `void ...` WITHOUT a
+  // catch and had no try/catch of its own. A throw in speakRawText (e.g. player.say
+  // rejects) left the user stuck in "Vozen is thinking…" forever + unhandledRejection.
+  // Now it must catch the error and respond with the generic message.
+  it('if synthesis/say throws, responds with error (not stuck in "thinking…") and does not reject', async () => {
     const boom = vi.fn().mockRejectedValue(new Error('synth boom'));
-    // Interação que regista o ciclo defer/reply para exercer o ramo editReply do catch.
+    // Interaction that records the defer/reply cycle to exercise the catch's editReply branch.
     const replies: string[] = [];
     const i = {
       commandName: 'Speak',
@@ -131,10 +131,10 @@ describe('context-menu "Speak"', () => {
       },
     };
 
-    // NÃO deve rejeitar (o catch engole o erro e responde).
+    // Must NOT reject (the catch swallows the error and responds).
     await expect(handleMessageContextMenu(i as any, makeDeps(db, boom))).resolves.toBeUndefined();
     expect(boom).toHaveBeenCalledTimes(1);
-    // Recebeu uma resposta de erro (em vez de ficar preso).
+    // Received an error response (instead of being stuck).
     expect(replies.length).toBe(1);
     expect(replies[0]).toMatch(/erro|wrong|try/i);
   });

@@ -1,10 +1,10 @@
 import type Database from 'better-sqlite3';
 
-// Códigos de presente (gift codes): o dono gera com /gencode (owner-only), a pessoa
-// resgata com /redeem. USO ÚNICO — o resgate é atómico (transação + UPDATE ... WHERE
-// redeemed_by IS NULL) para dois resgates simultâneos não gastarem o mesmo código duas
-// vezes. Ver a tabela premium_code em db.ts. O grant em si reutiliza grantUserPremium/
-// grantGuildPass (como o Ko-fi e o /vozengrant), com source 'code'.
+// Gift codes: the owner generates them with /gencode (owner-only), the person redeems
+// with /redeem. SINGLE-USE — redemption is atomic (transaction + UPDATE ... WHERE
+// redeemed_by IS NULL) so two simultaneous redemptions don't spend the same code twice.
+// See the premium_code table in db.ts. The grant itself reuses grantUserPremium/
+// grantGuildPass (like Ko-fi and /vozengrant), with source 'code'.
 
 export type CodePlan = 'premium' | 'plus';
 
@@ -12,11 +12,11 @@ export interface PremiumCodeInput {
   code: string;
   plan: CodePlan;
   days: number;
-  /** Só relevante para 'premium' (nº de licenças do passe); 0 para 'plus'. */
+  /** Only relevant for 'premium' (number of pass seats); 0 for 'plus'. */
   seats: number;
   createdBy: string;
   createdAt: number;
-  /** Validade do CÓDIGO (unix ms) — null = nunca expira. Não confundir com a duração do premium. */
+  /** CODE validity (unix ms) — null = never expires. Not to be confused with the premium duration. */
   expiresAt: number | null;
 }
 
@@ -29,7 +29,7 @@ export type RedeemResult =
   | { ok: true; plan: CodePlan; days: number; seats: number }
   | { ok: false; reason: 'not-found' | 'used' | 'expired' };
 
-/** Insere um novo código. Devolve false se o código já existir (colisão — o chamador regera). */
+/** Inserts a new code. Returns false if the code already exists (collision — the caller regenerates). */
 export function insertPremiumCode(db: Database.Database, c: PremiumCodeInput): boolean {
   const res = db
     .prepare(
@@ -41,7 +41,7 @@ export function insertPremiumCode(db: Database.Database, c: PremiumCodeInput): b
   return res.changes > 0;
 }
 
-/** Lê um código pelo valor (já normalizado). null se não existir. */
+/** Reads a code by value (already normalized). null if it does not exist. */
 export function getPremiumCode(db: Database.Database, code: string): PremiumCodeRow | null {
   const r = db.prepare('SELECT * FROM premium_code WHERE code = ?').get(code) as
     | {
@@ -70,7 +70,7 @@ export function getPremiumCode(db: Database.Database, code: string): PremiumCode
   };
 }
 
-/** O que o código concede — passado ao `applyGrant` para ele aplicar o premium. */
+/** What the code grants — passed to `applyGrant` for it to apply the premium. */
 export interface RedeemClaim {
   plan: CodePlan;
   days: number;
@@ -78,12 +78,12 @@ export interface RedeemClaim {
 }
 
 /**
- * Resgata um código ATOMICAMENTE (uso único). Numa transação: valida existência/uso/
- * expiração, reclama a linha com UPDATE ... WHERE redeemed_by IS NULL e — na MESMA
- * transação — aplica o grant via `applyGrant`. Se dois resgates corressem juntos, só um
- * vê changes>0; o outro recebe 'used'. Se o `applyGrant` rebentar, a transação reverte e o
- * código NÃO fica queimado (mesmo padrão do webhook Ko-fi: reclamar+conceder é atómico).
- * `applyGrant` recebe o MESMO `db` (dentro da transação) e é síncrono (better-sqlite3).
+ * Redeems a code ATOMICALLY (single-use). In a transaction: validates existence/use/
+ * expiration, claims the row with UPDATE ... WHERE redeemed_by IS NULL and — in the SAME
+ * transaction — applies the grant via `applyGrant`. If two redemptions ran together, only
+ * one sees changes>0; the other gets 'used'. If `applyGrant` throws, the transaction rolls
+ * back and the code is NOT burned (same pattern as the Ko-fi webhook: claim+grant is atomic).
+ * `applyGrant` receives the SAME `db` (inside the transaction) and is synchronous (better-sqlite3).
  */
 export function redeemPremiumCode(
   db: Database.Database,
@@ -102,8 +102,8 @@ export function redeemPremiumCode(
         'UPDATE premium_code SET redeemed_by = ?, redeemed_at = ? WHERE code = ? AND redeemed_by IS NULL',
       )
       .run(userId, now, code);
-    if (upd.changes === 0) return { ok: false, reason: 'used' }; // corrida: alguém resgatou primeiro
-    // Grant DENTRO da transação: se rebentar, o UPDATE acima reverte junto.
+    if (upd.changes === 0) return { ok: false, reason: 'used' }; // race: someone redeemed first
+    // Grant INSIDE the transaction: if it throws, the UPDATE above rolls back with it.
     applyGrant?.(db, { plan: row.plan, days: row.days, seats: row.seats });
     return { ok: true, plan: row.plan, days: row.days, seats: row.seats };
   })();

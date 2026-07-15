@@ -1,106 +1,106 @@
 import { describe, it, expect } from 'vitest';
 import { JOKE_LANGUAGES, pickJoke, jokeLangByKey } from '../src/content/jokes';
 
-// Ranges Unicode por script (iguais aos de laughter.test.ts).
+// Unicode ranges by script (same as in laughter.test.ts).
 const CYRILLIC = /[Ѐ-ӿ]/;
 const ARABIC = /[؀-ۿ]/;
 const HAN = /[一-鿿]/;
 const DEVANAGARI = /[ऀ-ॿ]/;
 const GEORGIAN = /[Ⴀ-ჿ]/;
 
-describe('JOKE_LANGUAGES (lista de linguas suportadas)', () => {
-  it('cobre exatamente as 35 linguas distintas dos modelos Piper', () => {
-    // Prefixos DISTINTOS de LANG_TO_PREFIX = 35 (japones 'ja_' incluido; no_/Norueguês
-    // nao entra: so existe em LOCALE_NAMES, nao tem corpus de piadas). Este numero e o contrato.
+describe('JOKE_LANGUAGES (list of supported languages)', () => {
+  it('covers exactly the 35 distinct languages of the Piper models', () => {
+    // DISTINCT prefixes of LANG_TO_PREFIX = 35 (Japanese 'ja_' included; no_/Norwegian
+    // is not in: it only exists in LOCALE_NAMES, has no joke corpus). This number is the contract.
     expect(JOKE_LANGUAGES.length).toBe(35);
   });
 
-  it('cada lingua tem key, prefix (xx_) e display name em INGLES nao-vazios', () => {
+  it('each language has non-empty key, prefix (xx_) and ENGLISH display name', () => {
     for (const lang of JOKE_LANGUAGES) {
       expect(lang.key.length).toBeGreaterThan(0);
       expect(lang.prefix).toMatch(/^[a-z]{2}_$/);
       expect(lang.display.length).toBeGreaterThan(0);
-      // Display names em ingles (ASCII), para o autocomplete filtrar por substring
-      // que um utilizador anglofono escreve ("russ", "arab"...).
+      // Display names in English (ASCII), so autocomplete filters by substring
+      // that an English-speaking user types ("russ", "arab"...).
       expect(lang.display).toMatch(/^[A-Za-z() ]+$/);
     }
   });
 
-  it('as keys sao unicas', () => {
+  it('the keys are unique', () => {
     const keys = JOKE_LANGUAGES.map((l) => l.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it('os prefixos sao unicos (sem linguas duplicadas)', () => {
+  it('the prefixes are unique (no duplicate languages)', () => {
     const prefixes = JOKE_LANGUAGES.map((l) => l.prefix);
     expect(new Set(prefixes).size).toBe(prefixes.length);
   });
 });
 
 describe('pickJoke', () => {
-  it('TODA a lingua suportada devolve uma piada nao-vazia', () => {
+  it('EVERY supported language returns a non-empty joke', () => {
     for (const lang of JOKE_LANGUAGES) {
       const joke = pickJoke(lang.key, 0);
-      expect(joke, `lingua ${lang.key} sem piada`).toBeTruthy();
+      expect(joke, `language ${lang.key} without a joke`).toBeTruthy();
       expect(joke.trim().length).toBeGreaterThan(0);
     }
   });
 
-  it('e PURO/DETERMINISTICO dado (langKey, seed)', () => {
+  it('is PURE/DETERMINISTIC given (langKey, seed)', () => {
     for (const lang of JOKE_LANGUAGES) {
       expect(pickJoke(lang.key, 7)).toBe(pickJoke(lang.key, 7));
       expect(pickJoke(lang.key, 42)).toBe(pickJoke(lang.key, 42));
     }
   });
 
-  it('o seed indexa por modulo (seed % n) — deterministico e wrap-around', () => {
-    // Para uma lingua com >=1 piada, seed e seed+len apontam para a MESMA piada.
+  it('the seed indexes by modulo (seed % n) — deterministic and wrap-around', () => {
+    // For a language with >=1 joke, seed and seed+len point to the SAME joke.
     const en = jokeLangByKey('en');
     expect(en).toBeTruthy();
-    // seed grande faz wrap; a igualdade prova o modulo (nao um clamp/overflow).
+    // A large seed wraps; the equality proves the modulo (not a clamp/overflow).
     const a = pickJoke('en', 3);
     const b = pickJoke('en', 3 + 1_000_000 * jokeCount('en'));
     expect(a).toBe(b);
   });
 
-  it('langKey desconhecida faz fallback ao ingles', () => {
+  it('an unknown langKey falls back to English', () => {
     expect(pickJoke('xx-nao-existe', 0)).toBe(pickJoke('en', 0));
   });
 
-  // Scripts nao-latinos: as piadas TEM de estar no script nativo.
-  it('russo (ru) em Cirilico', () => {
+  // Non-Latin scripts: the jokes MUST be in the native script.
+  it('Russian (ru) in Cyrillic', () => {
     expect(pickJoke('ru', 0)).toMatch(CYRILLIC);
   });
-  it('ucraniano (uk) em Cirilico', () => {
+  it('Ukrainian (uk) in Cyrillic', () => {
     expect(pickJoke('uk', 0)).toMatch(CYRILLIC);
   });
-  it('cazaque (kk) em Cirilico', () => {
+  it('Kazakh (kk) in Cyrillic', () => {
     expect(pickJoke('kk', 0)).toMatch(CYRILLIC);
   });
-  it('servio (sr) em Cirilico', () => {
+  it('Serbian (sr) in Cyrillic', () => {
     expect(pickJoke('sr', 0)).toMatch(CYRILLIC);
   });
-  it('arabe (ar) em escrita Arabe', () => {
+  it('Arabic (ar) in Arabic script', () => {
     expect(pickJoke('ar', 0)).toMatch(ARABIC);
   });
-  it('persa (fa) em escrita Arabe', () => {
+  it('Persian (fa) in Arabic script', () => {
     expect(pickJoke('fa', 0)).toMatch(ARABIC);
   });
-  it('georgiano (ka) em escrita Georgiana', () => {
+  it('Georgian (ka) in Georgian script', () => {
     expect(pickJoke('ka', 0)).toMatch(GEORGIAN);
   });
-  it('nepali (ne) em Devanagari', () => {
+  it('Nepali (ne) in Devanagari', () => {
     expect(pickJoke('ne', 0)).toMatch(DEVANAGARI);
   });
-  it('chines (zh) em Han', () => {
+  it('Chinese (zh) in Han', () => {
     expect(pickJoke('zh', 0)).toMatch(HAN);
   });
 });
 
-// Helper local: numero de piadas de uma lingua (via wrap-around de pickJoke seria
-// circular; contamos direto pela lista exportada nao — usamos o length do banco).
+// Local helper: number of jokes for a language (via wrap-around of pickJoke would be
+// circular; we don't count directly from the exported list — we use the bank length).
 function jokeCount(key: string): number {
-  // pickJoke com seeds 0..N deve ciclar; determinamos N empiricamente ate repetir.
+  // pickJoke with seeds 0..N should cycle; we determine N empirically until it repeats.
   const first = pickJoke(key, 0);
   let n = 1;
   while (n < 50 && pickJoke(key, n) !== first) n++;

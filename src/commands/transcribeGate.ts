@@ -1,27 +1,27 @@
 // src/commands/transcribeGate.ts
 //
-// Gates PUROS do /transcribe (Fase 4): decidem SEM IO se a transcrição pode arrancar e
-// quando deve auto-parar. O handler (integração) traduz o veredito em resposta/ação. Manter
-// aqui torna a lógica sensível (authz + entitlement + disponibilidade) testável e sem
-// depender do discord.js.
+// PURE gates for /transcribe (Phase 4): they decide WITHOUT IO whether transcription can
+// start and when it should auto-stop. The handler (integration) translates the verdict into
+// a response/action. Keeping it here makes the sensitive logic (authz + entitlement +
+// availability) testable without depending on discord.js.
 
 export interface TranscribeStartInput {
-  /** Tem a permissão Manage Guild (só admins arrancam a transcrição do servidor). */
+  /** Has the Manage Guild permission (only admins start the server's transcription). */
   canManage: boolean;
-  /** O servidor é Premium (STT é gated a Premium — ver spike: pouca concorrência no VPS). */
+  /** The server is Premium (STT is gated to Premium — see spike: little concurrency on the VPS). */
   isPremium: boolean;
-  /** O sidecar Whisper está instalado nesta instância (resolveWhisperCmd != null). */
+  /** The Whisper sidecar is installed on this instance (resolveWhisperCmd != null). */
   sidecarAvailable: boolean;
-  /** O bot está numa call neste servidor (há ligação de voz). */
+  /** The bot is in a call in this server (there is a voice connection). */
   botInVoice: boolean;
-  /** Já existe uma sessão de transcrição a correr neste servidor. */
+  /** A transcription session is already running in this server. */
   alreadyRunning: boolean;
   /**
-   * O cap GLOBAL de sessões STT concorrentes (todas as guilds, processo inteiro) já foi
-   * atingido — plano 029/ABUSE-01. Cada sessão arranca um processo Python dedicado com o
-   * seu próprio modelo Whisper em RAM (ao contrário do Kokoro, que é um singleton
-   * partilhado); sem cap, N guilds Premium a transcrever ao mesmo tempo podem fazer OOM
-   * ao processo inteiro (todas as guilds perdem TTS, não só o STT degrada).
+   * The GLOBAL cap of concurrent STT sessions (all guilds, whole process) has already been
+   * reached — plan 029/ABUSE-01. Each session starts a dedicated Python process with its
+   * own Whisper model in RAM (unlike Kokoro, which is a shared singleton); without a cap,
+   * N Premium guilds transcribing at the same time could OOM the whole process (all guilds
+   * lose TTS, not just STT degrading).
    */
   atCapacity: boolean;
 }
@@ -30,12 +30,13 @@ export type TranscribeStartVerdict =
   'ok' | 'noManage' | 'notPremium' | 'unavailable' | 'notInVoice' | 'alreadyRunning' | 'atCapacity';
 
 /**
- * Ordem dos gates: authz (Manage-Guild) ANTES do entitlement (Premium) — a quem não pode
- * gerir o servidor dizemos "não tens permissão", não "compra Premium". Depois disponibilidade
- * (sidecar), presença na call, sessão já a correr NESTA guild e só por fim o cap GLOBAL
- * (atCapacity). O estado por-guild (alreadyRunning) vem ANTES do global de propósito: é mais
- * específico e mais útil para quem invoca ("já está a correr aqui" > "o sistema está cheio")
- * — e evita mostrar "sistema cheio" a quem só teria de facto "already running".
+ * Gate order: authz (Manage-Guild) BEFORE entitlement (Premium) — to whoever cannot manage
+ * the server we say "you don't have permission", not "buy Premium". Then availability
+ * (sidecar), presence in the call, a session already running IN THIS guild, and only last
+ * the GLOBAL cap (atCapacity). The per-guild state (alreadyRunning) comes BEFORE the global
+ * one on purpose: it is more specific and more useful to the caller ("it's already running
+ * here" > "the system is full") — and it avoids showing "system full" to someone who would
+ * in fact just be "already running".
  */
 export function evaluateTranscribeStart(i: TranscribeStartInput): TranscribeStartVerdict {
   if (!i.canManage) return 'noManage';
@@ -48,10 +49,10 @@ export function evaluateTranscribeStart(i: TranscribeStartInput): TranscribeStar
 }
 
 /**
- * Deve a sessão auto-parar? Pára quando a call fica sem HUMANOS, ou — depois de já ter havido
- * pelo menos um consentimento nesta sessão (`everConsented`) — quando não resta ninguém
- * consentido na call. O `everConsented` evita o insta-stop no arranque (antes de alguém
- * carregar no botão, ninguém está consentido, mas isso não é motivo para parar).
+ * Should the session auto-stop? It stops when the call has no HUMANS left, or — after there
+ * has already been at least one consent in this session (`everConsented`) — when no consented
+ * person remains in the call. `everConsented` avoids the insta-stop at startup (before anyone
+ * presses the button, nobody is consented, but that is not a reason to stop).
  */
 export function shouldAutoStop(
   humanIdsInChannel: string[],
@@ -64,9 +65,9 @@ export function shouldAutoStop(
 }
 
 /**
- * Língua a FORÇAR na transcrição: a escolhida no comando (`/transcribe start language:…`)
- * ganha; sem escolha, cai no locale do servidor. Normaliza para minúsculas sem espaços (um
- * código ISO limpo para o sidecar Whisper).
+ * Language to FORCE on transcription: the one chosen in the command (`/transcribe start
+ * language:…`) wins; without a choice, it falls back to the server locale. Normalizes to
+ * lowercase without spaces (a clean ISO code for the Whisper sidecar).
  */
 export function resolveTranscribeLang(
   chosen: string | null | undefined,

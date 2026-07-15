@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { UtteranceCollector } from '../src/voice/utteranceCollector';
 
-// Segmentador de UTTERANCES para o STT: acumula frames PCM e fecha uma utterance quando há
-// um GAP de silêncio depois de fala (ou ao atingir o teto). Ver src/voice/utteranceCollector.
-// Nos testes usamos bytesPerMs=2 (1 sample int16 = 1 ms) para contas simples.
+// UTTERANCE segmenter for STT: accumulates PCM frames and closes an utterance when there is
+// a silence GAP after speech (or when the cap is reached). See src/voice/utteranceCollector.
+// In the tests we use bytesPerMs=2 (1 int16 sample = 1 ms) for simple arithmetic.
 
 const BPM = 2;
-/** Frame PCM de `ms` (int16 LE): amostras a 6000 (fala, RMS>>threshold) ou 0 (silêncio). */
+/** PCM frame of `ms` (int16 LE): samples at 6000 (speech, RMS>>threshold) or 0 (silence). */
 function frame(ms: number, voiced: boolean): Buffer {
   const b = Buffer.alloc(ms * BPM);
   if (voiced) for (let i = 0; i < ms; i++) b.writeInt16LE(6000, i * 2);
@@ -22,22 +22,22 @@ function make() {
   });
 }
 
-describe('UtteranceCollector — segmentação por silêncio', () => {
-  it('só silêncio -> nada (silêncio pré-fala é ignorado)', () => {
+describe('UtteranceCollector — segmentation by silence', () => {
+  it('only silence -> nothing (pre-speech silence is ignored)', () => {
     const c = make();
     expect(c.push(frame(200, false))).toBeNull();
     expect(c.flush()).toBeNull();
   });
 
-  it('fala + gap de silêncio -> emite uma utterance', () => {
+  it('speech + silence gap -> emits an utterance', () => {
     const c = make();
     expect(c.push(frame(200, true))).toBeNull();
-    const u = c.push(frame(100, false)); // 100ms silêncio >= gap 100, voz 200 >= min 50
+    const u = c.push(frame(100, false)); // 100ms silence >= gap 100, voice 200 >= min 50
     expect(u).not.toBeNull();
     expect(u!.voicedMs).toBe(200);
   });
 
-  it('duas utterances separadas por gap -> dois emits', () => {
+  it('two utterances separated by a gap -> two emits', () => {
     const c = make();
     expect(c.push(frame(150, true))).toBeNull();
     const u1 = c.push(frame(120, false));
@@ -47,34 +47,34 @@ describe('UtteranceCollector — segmentação por silêncio', () => {
     expect(u2!.voicedMs).toBe(150);
   });
 
-  it('blip curto (< minUtteranceMs) é descartado', () => {
+  it('short blip (< minUtteranceMs) is discarded', () => {
     const c = make();
-    expect(c.push(frame(30, true))).toBeNull(); // 30ms de fala
-    expect(c.push(frame(120, false))).toBeNull(); // gap, mas 30 < min 50 -> descarta
+    expect(c.push(frame(30, true))).toBeNull(); // 30ms of speech
+    expect(c.push(frame(120, false))).toBeNull(); // gap, but 30 < min 50 -> discards
     expect(c.flush()).toBeNull();
   });
 
-  it('monólogo longo -> fecho forçado ao atingir o teto', () => {
+  it('long monologue -> forced close when the cap is reached', () => {
     const c = make();
     expect(c.push(frame(600, true))).toBeNull();
-    const u = c.push(frame(600, true)); // total 1200 >= max 1000 -> fecha
+    const u = c.push(frame(600, true)); // total 1200 >= max 1000 -> closes
     expect(u).not.toBeNull();
     expect(u!.voicedMs).toBe(1200);
   });
 
-  it('flush emite a utterance final pendente (sem gap)', () => {
+  it('flush emits the pending final utterance (no gap)', () => {
     const c = make();
     expect(c.push(frame(200, true))).toBeNull();
     const u = c.flush();
     expect(u!.voicedMs).toBe(200);
   });
 
-  it('gap NO MEIO da fala não parte a utterance (silêncio curto < gap)', () => {
+  it('gap IN THE MIDDLE of speech does not split the utterance (short silence < gap)', () => {
     const c = make();
     expect(c.push(frame(120, true))).toBeNull();
-    expect(c.push(frame(60, false))).toBeNull(); // 60 < gap 100 -> continua
+    expect(c.push(frame(60, false))).toBeNull(); // 60 < gap 100 -> continues
     expect(c.push(frame(120, true))).toBeNull();
-    const u = c.push(frame(100, false)); // agora fecha
+    const u = c.push(frame(100, false)); // now closes
     expect(u!.voicedMs).toBe(240); // 120 + 120
   });
 });

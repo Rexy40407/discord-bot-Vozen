@@ -8,34 +8,34 @@ import type { MediaKind } from '../language/spokenPhrases';
 
 const RE_CODE_BLOCK = /```[\s\S]*?```/g;
 const RE_INLINE_CODE = /`[^`]*`/g;
-// Spoiler do Discord: ||conteudo oculto||. NAO deve ser LIDO (expor o segredo em voz
-// alta anula o spoiler) — o conteudo e removido do corpo e anunciado como "spoiler".
+// Discord spoiler: ||hidden content||. It must NOT be READ (speaking the secret out
+// loud defeats the spoiler) — the content is removed from the body and announced as "spoiler".
 const RE_SPOILER = /\|\|[\s\S]*?\|\|/g;
 const RE_URL = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
 
-// Um URL e um GIF quando: (a) o caminho termina em .gif (media direta), ou (b) o
-// host e de um provedor de GIFs (Tenor/Giphy). Os GIFs do picker do Discord chegam
-// como link tenor.com no content, por isso esta deteccao cobre o caso dominante.
-// Substring simples em vez de match de host exato — para LEITURA em voz alta um
-// falso-positivo raro ("evil-tenor.com") e inofensivo, e a simplicidade vale mais.
+// A URL is a GIF when: (a) the path ends in .gif (direct media), or (b) the host
+// belongs to a GIF provider (Tenor/Giphy). GIFs from the Discord picker arrive as a
+// tenor.com link in the content, so this detection covers the dominant case.
+// Simple substring instead of exact host match — for reading out loud a rare
+// false positive ("evil-tenor.com") is harmless, and the simplicity is worth more.
 function isGifUrl(url: string): boolean {
   const s = url.toLowerCase();
   return /\.gif\b/.test(s) || s.includes('tenor.com') || s.includes('giphy.com');
 }
 
 /**
- * Recolhe os URLs de `raw` como itens de media a ANUNCIAR (gif vs link), partilhando
- * EXATAMENTE o mesmo RE_URL + isGifUrl que o `cleanText` usa para os REMOVER — assim
- * o que é removido e o que é anunciado nunca dessincronizam. A localização do anúncio
- * ("um link"/"a gif") acontece a jusante (prepareSpeech), quando já se sabe a voz.
- * PURO. Ordem preservada; um item por URL.
+ * Collects the URLs from `raw` as media items to ANNOUNCE (gif vs link), sharing
+ * EXACTLY the same RE_URL + isGifUrl that `cleanText` uses to REMOVE them — so what
+ * is removed and what is announced never go out of sync. Localizing the announcement
+ * ("a link"/"a gif") happens downstream (prepareSpeech), once the voice is known.
+ * PURE. Order preserved; one item per URL.
  */
 export function collectUrlMedia(raw: string): MediaKind[] {
-  // Conta URLs SÓ no que resta depois de tirar spoilers e código — a MESMA ordem de
-  // remoção do cleanText (spoiler -> bloco -> inline -> url). Sem isto, um URL DENTRO
-  // de um bloco de código era anunciado DUAS vezes: como "código"
-  // (collectMarkdownMedia) e como "link"/"gif" aqui. Mantém a paridade exata com o que
-  // o cleanText realmente remove do corpo falado.
+  // Counts URLs ONLY in what remains after stripping spoilers and code — the SAME
+  // removal order as cleanText (spoiler -> block -> inline -> url). Without this, a URL
+  // INSIDE a code block was announced TWICE: as "code" (collectMarkdownMedia) and as
+  // "link"/"gif" here. Keeps exact parity with what cleanText actually removes from the
+  // spoken body.
   const body = raw
     .replace(RE_SPOILER, ' ')
     .replace(RE_CODE_BLOCK, ' ')
@@ -46,17 +46,17 @@ export function collectUrlMedia(raw: string): MediaKind[] {
 }
 
 /**
- * Recolhe SPOILERS e CÓDIGO de `raw` como itens a ANUNCIAR ("spoiler"/"código"), na
- * MESMA ordem de remoção do cleanText (spoiler primeiro, depois blocos e inline code)
- * — por isso código DENTRO de um spoiler não é contado duas vezes. O corpo perde-os
- * (cleanText remove-os); aqui só se anuncia que existiram. A localização é a jusante
- * (prepareSpeech). PURO. Um item por ocorrência.
+ * Collects SPOILERS and CODE from `raw` as items to ANNOUNCE ("spoiler"/"code"), in
+ * the SAME removal order as cleanText (spoiler first, then blocks and inline code) —
+ * so code INSIDE a spoiler is not counted twice. The body loses them (cleanText
+ * removes them); here we only announce that they existed. Localization is downstream
+ * (prepareSpeech). PURE. One item per occurrence.
  */
 export function collectMarkdownMedia(raw: string): MediaKind[] {
   const out: MediaKind[] = [];
   const spoilers = raw.match(RE_SPOILER);
   if (spoilers) for (let n = 0; n < spoilers.length; n++) out.push('spoiler');
-  // Conta código SÓ no que resta depois de tirar os spoilers (evita dupla-contagem).
+  // Counts code ONLY in what remains after stripping the spoilers (avoids double-counting).
   const rest = raw.replace(RE_SPOILER, ' ');
   const blocks = rest.match(RE_CODE_BLOCK)?.length ?? 0;
   const inline = rest.replace(RE_CODE_BLOCK, ' ').match(RE_INLINE_CODE)?.length ?? 0;
@@ -68,19 +68,19 @@ const RE_USER = /<@!?(\d+)>/g;
 const RE_CHANNEL = /<#(\d+)>/g;
 const RE_CUSTOM_EMOJI = /<a?:(\w+):\d+>/g;
 const RE_UNICODE_EMOJI = /\p{Extended_Pictographic}/gu;
-// Componentes zero-width de emoji modernos + regional indicators (bandeiras). O
-// strip de \p{Extended_Pictographic} remove o pictograma BASE mas NAO estes:
-//   U+200D  ZWJ            (junta as partes de sequencias como 👨‍💻)
-//   U+FE0F  VS16           (torna o char anterior "emoji", ex.: ❤️, 1️⃣)
-//   U+20E3  keycap combining (o quadrado do 1️⃣)
-//   U+1F1E6..U+1F1FF        regional indicators -> \p{Regional_Indicator} (bandeiras)
-// Nenhum e \s, por isso sobreviviam ao colapso de whitespace e ao trim, deixando
-// residuo invisivel *truthy* que ia parar ao synth. Escrito com \u (nao os chars
-// literais, que seriam invisiveis no diff). IMPORTANTE: so componentes/RI — o
-// DIGITO/LETRA base fica, por isso "1️⃣" -> "1" (so VS16+keycap sao removidos).
+// Zero-width components of modern emoji + regional indicators (flags). Stripping
+// \p{Extended_Pictographic} removes the BASE pictogram but NOT these:
+//   U+200D  ZWJ            (joins the parts of sequences like 👨‍💻)
+//   U+FE0F  VS16           (makes the previous char "emoji", e.g. ❤️, 1️⃣)
+//   U+20E3  keycap combining (the square of 1️⃣)
+//   U+1F1E6..U+1F1FF        regional indicators -> \p{Regional_Indicator} (flags)
+// None is \s, so they survived the whitespace collapse and the trim, leaving an
+// invisible *truthy* residue that reached the synth. Written with \u (not the literal
+// chars, which would be invisible in the diff). IMPORTANT: only components/RI — the
+// base DIGIT/LETTER stays, so "1️⃣" -> "1" (only VS16+keycap are removed).
 const RE_EMOJI_EXTRA = /[\u200D\uFE0F\u20E3]|\p{Regional_Indicator}/gu;
-// Unicode-aware (\p{Ll}/\p{Lu}, não [a-z]/[A-Z]): sem isto, spam de letras ACENTUADAS
-// ou não-latinas ("ÁÁÁÁÁ…", "ÇÇÇÇ", "ЁЁЁЁ") NÃO era colapsado e ia inteiro para a síntese.
+// Unicode-aware (\p{Ll}/\p{Lu}, not [a-z]/[A-Z]): without this, spam of ACCENTED or
+// non-Latin letters ("ÁÁÁÁÁ…", "ÇÇÇÇ", "ЁЁЁЁ") was NOT collapsed and went whole into synthesis.
 const RE_REPEAT_LOWER = /(\p{Ll})\1{2,}/gu;
 const RE_REPEAT_UPPER = /(\p{Lu})\1{1,}/gu;
 const RE_WS = /\s+/g;
@@ -88,47 +88,47 @@ const RE_WS = /\s+/g;
 export function cleanText(raw: string, opts: CleanOptions): string {
   let t = raw;
 
-  // 0. remover SPOILERS (||...||) do corpo — o conteudo oculto NAO e lido; e anunciado
-  // como "spoiler" a jusante (collectMarkdownMedia). Antes do code para que um bloco de
-  // codigo dentro de um spoiler saia junto (contado como spoiler, nao como codigo).
+  // 0. remove SPOILERS (||...||) from the body — the hidden content is NOT read; it is
+  // announced as "spoiler" downstream (collectMarkdownMedia). Before code so that a code
+  // block inside a spoiler goes out with it (counted as spoiler, not as code).
   t = t.replace(RE_SPOILER, ' ');
 
-  // 1. remover code blocks (fenced primeiro, depois inline)
+  // 1. remove code blocks (fenced first, then inline)
   t = t.replace(RE_CODE_BLOCK, ' ');
   t = t.replace(RE_INLINE_CODE, ' ');
 
-  // 2. URLs -> REMOVIDAS do corpo (o Diogo nao quer o URL cru falado). O ANÚNCIO
-  // ("um link"/"um gif") e feito a jusante, ja localizado na lingua da voz: o
-  // messageHandler/`/tts` recolhem os URLs via `collectUrlMedia` (mesmo RE_URL, sem
-  // dessync) e passam-nos como media ao prepareSpeech, que os acrescenta no fim.
+  // 2. URLs -> REMOVED from the body (Diogo doesn't want the raw URL spoken). The
+  // ANNOUNCEMENT ("a link"/"a gif") is done downstream, already localized in the voice's
+  // language: the messageHandler/`/tts` collect the URLs via `collectUrlMedia` (same
+  // RE_URL, no dessync) and pass them as media to prepareSpeech, which appends them at the end.
   t = t.replace(RE_URL, ' ');
 
-  // 3. mencoes de role (sem resolver: removidas para nao serem lidas como "<@&id>")
+  // 3. role mentions (unresolved: removed so they aren't read as "<@&id>")
   t = t.replace(RE_ROLE, ' ');
 
-  // 4. mencoes de user e canal
+  // 4. user and channel mentions
   t = t.replace(RE_USER, (_m, id: string) => opts.resolveUser(id));
   t = t.replace(RE_CHANNEL, (_m, id: string) => opts.resolveChannel(id));
 
   // 5. emojis:
-  //  - CUSTOM do Discord (<:nome:id> / <a:nome:id>): o Diogo quer que sejam LIDOS,
-  //    por isso substitui-se pelo NOME (underscores -> espacos, ex. party_blob ->
-  //    "party blob"). Espacos a volta para separar do texto adjacente.
-  //  - UNICODE (😀) e os componentes zero-width/bandeiras: REMOVIDOS (o Piper nao
-  //    fala emojis unicode; o Diogo pediu so os custom).
+  //  - Discord CUSTOM (<:name:id> / <a:name:id>): Diogo wants them READ, so they are
+  //    replaced by the NAME (underscores -> spaces, e.g. party_blob -> "party blob").
+  //    Spaces around them to separate from adjacent text.
+  //  - UNICODE (😀) and the zero-width components/flags: REMOVED (Piper doesn't speak
+  //    unicode emojis; Diogo asked for only the custom ones).
   t = t.replace(RE_CUSTOM_EMOJI, (_m, name: string) => ` ${name.replace(/_/g, ' ')} `);
   t = t.replace(RE_UNICODE_EMOJI, ' ');
   t = t.replace(RE_EMOJI_EXTRA, '');
 
-  // 6. colapsar repeticoes (minusculas cap 3, maiusculas cap 2)
+  // 6. collapse repetitions (lowercase cap 3, uppercase cap 2)
   t = t.replace(RE_REPEAT_LOWER, '$1$1$1');
   t = t.replace(RE_REPEAT_UPPER, '$1$1');
 
-  // 7. colapsar whitespace + trim
+  // 7. collapse whitespace + trim
   t = t.replace(RE_WS, ' ').trim();
 
-  // 8. truncar (sem partir surrogate pairs: se o ultimo code unit ficar
-  // um high surrogate orfao, recua um para nao emitir lixo ao Piper)
+  // 8. truncate (without splitting surrogate pairs: if the last code unit is an
+  // orphan high surrogate, step back one so no garbage is emitted to Piper)
   if (t.length > opts.maxChars) {
     let end = opts.maxChars;
     const last = t.charCodeAt(end - 1);
@@ -138,6 +138,6 @@ export function cleanText(raw: string, opts: CleanOptions): string {
     t = t.slice(0, end);
   }
 
-  // 9. vazio -> ''
+  // 9. empty -> ''
   return t;
 }

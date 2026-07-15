@@ -1,20 +1,20 @@
 import type Database from 'better-sqlite3';
 
-// Vozen Premium / Plus: assinaturas baseadas em EXPIRY (unix ms). Sem linha ou expirado =>
-// Free. As features NOVAS (efeitos completos, soundboard, etc.) consultam isGuildPremium/
-// isUserPremium; nada do que já é grátis passa a pago. As compras chegam pelo webhook do
-// Ko-fi (source 'kofi'); o dono também pode conceder à mão com /vozengrant (source 'manual').
+// Vozen Premium / Plus: EXPIRY-based subscriptions (unix ms). No row or expired =>
+// Free. The NEW features (full effects, soundboard, etc.) check isGuildPremium/
+// isUserPremium; nothing that is already free becomes paid. Purchases arrive via the
+// Ko-fi webhook (source 'kofi'); the owner can also grant by hand with /vozengrant (source 'manual').
 
 export type PremiumKind = 'guild' | 'user';
 
 const DAY_MS = 86_400_000;
 
 export function isGuildPremium(db: Database.Database, guildId: string, now: number): boolean {
-  // Premium DIRETO do servidor (redeem/discord/manual)...
+  // DIRECT server premium (redeem/discord/manual)...
   const row = db.prepare('SELECT expires_at FROM premium_guild WHERE guild_id = ?').get(guildId) as
     { expires_at: number } | undefined;
   if (row && row.expires_at > now) return true;
-  // ...OU um PASSE: existe uma ativação deste servidor cujo passe ainda não expirou?
+  // ...OR a PASS: is there an activation of this server whose pass has not expired yet?
   const pass = db
     .prepare(
       `SELECT 1 FROM premium_pass_activation a
@@ -31,7 +31,7 @@ export function isUserPremium(db: Database.Database, userId: string, now: number
   return !!row && row.expires_at > now;
 }
 
-/** Expiry do premium da guild (unix ms) ou null se nunca teve. Pode estar no passado. */
+/** Guild premium expiry (unix ms) or null if it never had one. May be in the past. */
 export function getGuildPremiumExpiry(db: Database.Database, guildId: string): number | null {
   const row = db.prepare('SELECT expires_at FROM premium_guild WHERE guild_id = ?').get(guildId) as
     { expires_at: number } | undefined;
@@ -39,10 +39,10 @@ export function getGuildPremiumExpiry(db: Database.Database, guildId: string): n
 }
 
 /**
- * Fim EFETIVO do Premium do servidor para EXIBIÇÃO (só ativos): o máximo entre o expiry
- * direto (redeem/discord/manual) e o fim de qualquer passe que tenha uma licença ativa
- * aqui. null se o servidor não está Premium agora. (Para ESTENDER usa-se getGuildPremium
- * Expiry, que é só a linha direta.)
+ * EFFECTIVE end of the server's Premium for DISPLAY (active only): the max between the direct
+ * expiry (redeem/discord/manual) and the end of any pass that has an active license
+ * here. null if the server is not Premium now. (To EXTEND, use getGuildPremium
+ * Expiry, which is only the direct row.)
  */
 export function effectiveGuildPremiumExpiry(
   db: Database.Database,
@@ -63,7 +63,7 @@ export function effectiveGuildPremiumExpiry(
   return row.m ?? null;
 }
 
-/** Expiry do Plus do utilizador (unix ms) ou null se nunca teve. Pode estar no passado. */
+/** User Plus expiry (unix ms) or null if it never had one. May be in the past. */
 export function getUserPremiumExpiry(db: Database.Database, userId: string): number | null {
   const row = db.prepare('SELECT expires_at FROM premium_user WHERE user_id = ?').get(userId) as
     { expires_at: number } | undefined;
@@ -71,8 +71,8 @@ export function getUserPremiumExpiry(db: Database.Database, userId: string): num
 }
 
 /**
- * Concede `days` de premium à guild. ESTENDE a partir do máximo entre agora e o expiry
- * atual (renovar antes de expirar acumula, não perde tempo). Devolve o novo expiry (ms).
+ * Grants `days` of premium to the guild. EXTENDS from the max between now and the current
+ * expiry (renewing before expiry accumulates, no time lost). Returns the new expiry (ms).
  */
 export function grantGuildPremium(
   db: Database.Database,
@@ -92,7 +92,7 @@ export function grantGuildPremium(
   return expiresAt;
 }
 
-/** Igual ao grantGuildPremium mas para o Vozen Plus (por-utilizador). */
+/** Same as grantGuildPremium but for Vozen Plus (per-user). */
 export function grantUserPremium(
   db: Database.Database,
   userId: string,
@@ -112,10 +112,10 @@ export function grantUserPremium(
   return expiresAt;
 }
 
-// ── Passe de Premium (Ko-fi): N licenças por-utilizador, ativadas por servidor ───────
-// Uma compra de Premium (guild) dá à PESSOA um passe com `seats` licenças e uma data de
-// fim ABSOLUTA. A pessoa gasta uma licença num servidor (activateSeat) e pode libertá-la
-// (deactivateSeat) para a usar noutro — o relógio corre sempre no passe, não no servidor.
+// ── Premium Pass (Ko-fi): N per-user licenses, activated per server ───────
+// A Premium (guild) purchase gives the PERSON a pass with `seats` licenses and an
+// ABSOLUTE end date. The person spends a license on a server (activateSeat) and can release it
+// (deactivateSeat) to use it on another — the clock always runs on the pass, not the server.
 
 export interface PremiumPass {
   seats: number;
@@ -127,12 +127,12 @@ export type ActivateStatus = 'ok' | 'already' | 'no_pass' | 'expired' | 'no_seat
 
 export interface ActivateResult {
   status: ActivateStatus;
-  seats?: number; // total de licenças do passe
-  used?: number; // licenças em uso após a operação
-  expiresAt?: number; // fim do passe (unix ms)
+  seats?: number; // total licenses of the pass
+  used?: number; // licenses in use after the operation
+  expiresAt?: number; // pass end (unix ms)
 }
 
-/** Passe do utilizador (ou null se nunca comprou). expiresAt pode estar no passado. */
+/** The user's pass (or null if they never bought one). expiresAt may be in the past. */
 export function getPremiumPass(db: Database.Database, userId: string): PremiumPass | null {
   const row = db
     .prepare('SELECT seats, expires_at, source FROM premium_pass WHERE user_id = ?')
@@ -140,7 +140,7 @@ export function getPremiumPass(db: Database.Database, userId: string): PremiumPa
   return row ? { seats: row.seats, expiresAt: row.expires_at, source: row.source } : null;
 }
 
-/** Servidores onde o utilizador tem uma licença ativa (ordem de ativação). */
+/** Servers where the user has an active license (activation order). */
 export function listPassActivations(db: Database.Database, userId: string): string[] {
   return (
     db
@@ -152,12 +152,12 @@ export function listPassActivations(db: Database.Database, userId: string): stri
 }
 
 /**
- * Dono (e nº de seats) do passe ATIVO que cobre esta guild — para saber a que POOL de
- * allowance do Google HD debitar (o pool é do PASSE, partilhado entre os servidores dele,
- * keyed pelo dono). Só passes não-expirados. `premium_pass_activation` não tem UNIQUE em
- * guild_id, por isso dois donos PODERIAM ter ativado a mesma guild — desempate
- * DETERMINÍSTICO pelo `activated_at` mais antigo (o primeiro a cobrir a guild). null se
- * nenhum passe ativo cobre a guild (ex.: Premium direto por redeem/discord, sem passe).
+ * Owner (and seat count) of the ACTIVE pass that covers this guild — to know which Google
+ * HD allowance POOL to debit (the pool belongs to the PASS, shared across its servers,
+ * keyed by owner). Non-expired passes only. `premium_pass_activation` has no UNIQUE on
+ * guild_id, so two owners COULD have activated the same guild — DETERMINISTIC
+ * tiebreak by the oldest `activated_at` (the first to cover the guild). null if
+ * no active pass covers the guild (e.g. direct Premium via redeem/discord, no pass).
  */
 export function resolveGuildPassOwner(
   db: Database.Database,
@@ -177,7 +177,7 @@ export function resolveGuildPassOwner(
   return row ? { ownerId: row.owner, seats: row.seats } : null;
 }
 
-/** Quantas licenças o utilizador tem em uso agora. */
+/** How many licenses the user has in use right now. */
 export function countActiveSeats(db: Database.Database, userId: string): number {
   const row = db
     .prepare('SELECT COUNT(*) AS n FROM premium_pass_activation WHERE user_id = ?')
@@ -186,9 +186,9 @@ export function countActiveSeats(db: Database.Database, userId: string): number 
 }
 
 /**
- * Concede/renova um passe de `seats` licenças por `days` dias. ESTENDE a partir do máximo
- * entre agora e o fim atual (renovar antes de expirar acumula). Nunca REDUZ o nº de
- * licenças (usa o máximo) — subir de plano aumenta, renovar mantém. Devolve o novo fim.
+ * Grants/renews a pass of `seats` licenses for `days` days. EXTENDS from the max
+ * between now and the current end (renewing before expiry accumulates). Never REDUCES the
+ * number of licenses (uses the max) — upgrading the plan increases it, renewing keeps it. Returns the new end.
  */
 export function grantGuildPass(
   db: Database.Database,
@@ -211,9 +211,9 @@ export function grantGuildPass(
 }
 
 /**
- * Gasta uma licença do passe no servidor `guildId`. Transacional (conta-e-insere) para não
- * passar do limite com dois cliques simultâneos. Idempotente: reativar o mesmo servidor
- * devolve 'already' sem gastar outra licença.
+ * Spends a pass license on server `guildId`. Transactional (count-and-insert) so as not
+ * to exceed the limit with two simultaneous clicks. Idempotent: reactivating the same server
+ * returns 'already' without spending another license.
  */
 export function activateSeat(
   db: Database.Database,
@@ -240,7 +240,7 @@ export function activateSeat(
   return tx();
 }
 
-/** Liberta a licença de `guildId`. Devolve true se havia uma ativação para remover. */
+/** Releases the license of `guildId`. Returns true if there was an activation to remove. */
 export function deactivateSeat(db: Database.Database, userId: string, guildId: string): boolean {
   const res = db
     .prepare('DELETE FROM premium_pass_activation WHERE user_id = ? AND guild_id = ?')
@@ -248,11 +248,11 @@ export function deactivateSeat(db: Database.Database, userId: string, guildId: s
   return res.changes > 0;
 }
 
-// ── Vista do estado premium (para o Painel Premium do site) ───────────────────────────
-// Monta, para UM utilizador, tudo o que o painel mostra: Plus (por-utilizador) + passe de
-// Premium (licenças usadas/total, fim, servidores ativados). Função PURA de leitura — a API
-// HTTP (statusApi.ts) só a chama depois de validar a identidade na Discord. Nunca por ID
-// arbitrário: o chamador tem de provar que é o dono do token.
+// ── Premium status view (for the site's Premium Panel) ───────────────────────────
+// Assembles, for ONE user, everything the panel shows: Plus (per-user) + Premium
+// pass (licenses used/total, end, activated servers). PURE read function — the HTTP
+// API (statusApi.ts) only calls it after validating the identity on Discord. Never by
+// arbitrary ID: the caller must prove they own the token.
 
 export interface PremiumStatusView {
   plus: { active: boolean; expiresAt: number | null };
@@ -265,7 +265,7 @@ export interface PremiumStatusView {
   } | null;
 }
 
-/** Estado premium completo de um utilizador (para exibição no painel). */
+/** Complete premium status of a user (for display in the panel). */
 export function buildPremiumStatus(
   db: Database.Database,
   userId: string,
@@ -287,13 +287,13 @@ export function buildPremiumStatus(
   };
 }
 
-// ── Ko-fi: mapa HASH(email) -> Discord ID (para as renovações) ─────────────────────────
-// A 1.ª compra traz o Discord ID na mensagem; guardamo-lo indexado pelo HASH do email. As
-// renovações não reenviam a mensagem, por isso reencontramos o Discord ID pelo hash do
-// email do pagamento. A BD NUNCA guarda o email em claro (minimização de PII) — a chave
-// `emailHash` é opaca (HMAC calculado no webhook, ver hashKofiEmail em premium/kofi.ts).
+// ── Ko-fi: HASH(email) -> Discord ID map (for renewals) ─────────────────────────
+// The 1st purchase carries the Discord ID in the message; we store it indexed by the email HASH. The
+// renewals do not resend the message, so we re-find the Discord ID by the hash of the
+// payment email. The DB NEVER stores the email in clear (PII minimization) — the
+// `emailHash` key is opaque (HMAC computed in the webhook, see hashKofiEmail in premium/kofi.ts).
 
-/** Guarda/atualiza o Discord ID associado ao HASH de um email do Ko-fi. */
+/** Stores/updates the Discord ID associated with the HASH of a Ko-fi email. */
 export function rememberKofiSupporter(
   db: Database.Database,
   emailHash: string,
@@ -307,7 +307,7 @@ export function rememberKofiSupporter(
   ).run(emailHash, discordId, now);
 }
 
-/** Reencontra o Discord ID a partir do HASH de um email do Ko-fi (ou null). */
+/** Re-finds the Discord ID from the HASH of a Ko-fi email (or null). */
 export function lookupKofiSupporter(db: Database.Database, emailHash: string): string | null {
   const row = db
     .prepare('SELECT discord_id FROM kofi_supporter WHERE email_hash = ?')
@@ -316,11 +316,11 @@ export function lookupKofiSupporter(db: Database.Database, emailHash: string): s
 }
 
 /**
- * Regista uma transação Ko-fi como processada (idempotência do webhook). Devolve true
- * na 1.ª vez (a entrega deve ser aplicada) e false num duplicado/retry (já processada
- * — o chamador confirma 200 SEM voltar a aplicar o grant, que acumula expiry).
- * O chamador deve embrulhar registo+grant numa db.transaction para serem atómicos:
- * se o grant falhar, o registo também reverte e um retry legítimo volta a passar.
+ * Records a Ko-fi transaction as processed (webhook idempotency). Returns true
+ * the 1st time (the delivery must be applied) and false on a duplicate/retry (already processed
+ * — the caller confirms 200 WITHOUT applying the grant again, which accumulates expiry).
+ * The caller should wrap record+grant in a db.transaction so they are atomic:
+ * if the grant fails, the record also reverts and a legitimate retry passes again.
  */
 export function recordKofiTransaction(
   db: Database.Database,
@@ -334,15 +334,15 @@ export function recordKofiTransaction(
 }
 
 // ── Discord Premium Apps (entitlements) ──────────────────────────────────────
-// Quando o operador liga a monetização nativa do Discord (SKUs), as compras chegam
-// como "entitlements". Reutilizamos as tabelas premium_* com source='discord' para
-// não duplicar a lógica de gating (isGuildPremium/isUserPremium já bastam). A sync
-// completa (sync*Entitlements) é reconciliadora: concede os ativos e revoga os
-// source='discord' que já não existem (reembolso/cancelamento). Nunca ENCURTA um
-// premium existente (usa o MÁXIMO) e nunca toca em linhas de outra origem (ex.: redeem):
-// se um redeem tiver expiry mais longo, a linha mantém source e é ignorada na revogação.
+// When the operator enables Discord's native monetization (SKUs), purchases arrive
+// as "entitlements". We reuse the premium_* tables with source='discord' to
+// avoid duplicating the gating logic (isGuildPremium/isUserPremium already suffice). The full
+// sync (sync*Entitlements) is reconciling: it grants the active ones and revokes the
+// source='discord' ones that no longer exist (refund/cancellation). It never SHORTENS an
+// existing premium (uses the MAX) and never touches rows of another source (e.g. redeem):
+// if a redeem has a longer expiry, the row keeps its source and is ignored during revocation.
 
-/** Concede/estende premium de guild vindo de um entitlement do Discord (source='discord'). */
+/** Grants/extends guild premium from a Discord entitlement (source='discord'). */
 export function upsertDiscordGuildPremium(
   db: Database.Database,
   guildId: string,
@@ -358,7 +358,7 @@ export function upsertDiscordGuildPremium(
   ).run(guildId, expiresAt);
 }
 
-/** Igual, para o Vozen Plus por-utilizador. */
+/** Same, for per-user Vozen Plus. */
 export function upsertDiscordUserPremium(
   db: Database.Database,
   userId: string,
@@ -376,7 +376,7 @@ export function upsertDiscordUserPremium(
 
 export interface EntitlementGrant {
   kind: PremiumKind;
-  id: string; // guildId (guild) ou userId (user)
+  id: string; // guildId (guild) or userId (user)
   expiresAt: number; // unix ms
 }
 
@@ -387,9 +387,9 @@ export interface EntitlementSyncResult {
 }
 
 /**
- * Reconcilia TODOS os entitlements ativos do Discord com as tabelas premium_*.
- * `grants` tem de ser a lista COMPLETA de entitlements ativos (fetch total) — concede
- * os ativos e revoga (apaga) as linhas source='discord' que já não constam. Transacional.
+ * Reconciles ALL active Discord entitlements with the premium_* tables.
+ * `grants` must be the COMPLETE list of active entitlements (full fetch) — grants
+ * the active ones and revokes (deletes) the source='discord' rows that are no longer present. Transactional.
  */
 export function syncDiscordEntitlements(
   db: Database.Database,
@@ -399,7 +399,7 @@ export function syncDiscordEntitlements(
     const activeGuilds = new Set(grants.filter((g) => g.kind === 'guild').map((g) => g.id));
     const activeUsers = new Set(grants.filter((g) => g.kind === 'user').map((g) => g.id));
 
-    // Revoga o que era 'discord' e já não está ativo (reembolso/cancelamento).
+    // Revoke what was 'discord' and is no longer active (refund/cancellation).
     const staleGuilds = (
       db.prepare("SELECT guild_id FROM premium_guild WHERE source = 'discord'").all() as {
         guild_id: string;
@@ -421,7 +421,7 @@ export function syncDiscordEntitlements(
       );
     }
 
-    // Concede/estende os ativos.
+    // Grant/extend the active ones.
     for (const g of grants) {
       if (g.kind === 'guild') upsertDiscordGuildPremium(db, g.id, g.expiresAt);
       else upsertDiscordUserPremium(db, g.id, g.expiresAt);

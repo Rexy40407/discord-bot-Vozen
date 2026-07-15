@@ -9,7 +9,7 @@ import type { TalkRow } from '../src/store/talkStats';
 
 const G = 'guild-1';
 
-// now e rand injetáveis via refs mutáveis (determinismo total).
+// now and rand injectable via mutable refs (total determinism).
 function makePoster(now: { v: number }, rand: { v: number }): LeaderboardPoster {
   return new LeaderboardPoster(
     () => now.v,
@@ -17,68 +17,68 @@ function makePoster(now: { v: number }, rand: { v: number }): LeaderboardPoster 
   );
 }
 
-describe('LeaderboardPoster.record — limiar + cooldown + sorteio', () => {
-  it('acumula em silêncio até MIN_MESSAGES (mesmo com o sorteio a ganhar)', () => {
+describe('LeaderboardPoster.record — threshold + cooldown + draw', () => {
+  it('accumulates silently until MIN_MESSAGES (even with the draw winning)', () => {
     const now = { v: 1_000_000_000_000 };
-    const rand = { v: 0 }; // 0 < prob -> o sorteio SAI sempre
+    const rand = { v: 0 }; // 0 < prob -> the draw ALWAYS wins
     const p = makePoster(now, rand);
-    // As primeiras MIN_MESSAGES-1 nunca postam (ainda não há atividade suficiente).
+    // The first MIN_MESSAGES-1 never post (not enough activity yet).
     for (let n = 0; n < MIN_MESSAGES - 1; n++) expect(p.record(G)).toBe(false);
-    // A MIN_MESSAGES-ésima já é elegível e o sorteio sai -> posta.
+    // The MIN_MESSAGES-th is now eligible and the draw wins -> posts.
     expect(p.record(G)).toBe(true);
   });
 
-  it('o sorteio pode falhar (rand >= prob) — continua a acumular sem postar', () => {
+  it('the draw can fail (rand >= prob) — keeps accumulating without posting', () => {
     const now = { v: 1_000_000_000_000 };
-    const rand = { v: 0.99 }; // >= prob -> o sorteio nunca sai
+    const rand = { v: 0.99 }; // >= prob -> the draw never wins
     const p = makePoster(now, rand);
     for (let n = 0; n < MIN_MESSAGES + 20; n++) expect(p.record(G)).toBe(false);
-    // Assim que o sorteio passar a sair, posta (já é elegível).
+    // As soon as the draw starts winning, it posts (already eligible).
     rand.v = 0;
     expect(p.record(G)).toBe(true);
   });
 
-  it('após um post, o COOLDOWN bloqueia novos posts até passar o intervalo', () => {
+  it('after a post, the COOLDOWN blocks new posts until the interval passes', () => {
     const now = { v: 1_000_000_000_000 };
     const rand = { v: 0 };
     const p = makePoster(now, rand);
     for (let n = 0; n < MIN_MESSAGES - 1; n++) p.record(G);
-    expect(p.record(G)).toBe(true); // 1.º post (zera o contador, marca o instante)
+    expect(p.record(G)).toBe(true); // 1st post (resets the counter, marks the instant)
 
-    // Mesmo com +MIN_MESSAGES mensagens, DENTRO do cooldown não posta.
+    // Even with +MIN_MESSAGES messages, WITHIN the cooldown it does not post.
     for (let n = 0; n < MIN_MESSAGES; n++) expect(p.record(G)).toBe(false);
 
-    // Passado o cooldown, a próxima mensagem elegível volta a postar.
+    // Once the cooldown passes, the next eligible message posts again.
     now.v += COOLDOWN_MS;
     expect(p.record(G)).toBe(true);
   });
 
-  it('é por-guild (guilds independentes)', () => {
+  it('is per-guild (independent guilds)', () => {
     const now = { v: 1_000_000_000_000 };
     const rand = { v: 0 };
     const p = makePoster(now, rand);
     for (let n = 0; n < MIN_MESSAGES; n++) p.record('g-A');
-    // g-B começa do zero — não herda o contador de g-A.
+    // g-B starts from zero — does not inherit g-A's counter.
     expect(p.record('g-B')).toBe(false);
   });
 });
 
-describe('renderLeaderboard — título + linhas (reutiliza topspeakers.line)', () => {
+describe('renderLeaderboard — title + lines (reuses topspeakers.line)', () => {
   const rows: TalkRow[] = [
     { userId: 'u1', count: 42, streak: 5, bestStreak: 7 },
     { userId: 'u2', count: 30, streak: 2, bestStreak: 4 },
   ];
 
-  it('inclui o título e uma linha por pessoa com a menção e a contagem', () => {
+  it('includes the title and one line per person with the mention and the count', () => {
     const out = renderLeaderboard(rows, 'en');
     expect(out).toContain('Top talkers');
     expect(out).toContain('<@u1>');
     expect(out).toContain('42');
     expect(out).toContain('<@u2>');
-    expect(out.split('\n')).toHaveLength(3); // título + 2 linhas
+    expect(out.split('\n')).toHaveLength(3); // title + 2 lines
   });
 
-  it('localiza (pt)', () => {
+  it('localizes (pt)', () => {
     expect(renderLeaderboard(rows, 'pt')).toContain('Os que mais falam');
   });
 });

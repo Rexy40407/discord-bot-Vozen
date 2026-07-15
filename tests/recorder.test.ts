@@ -3,33 +3,33 @@ import { Readable, Transform } from 'node:stream';
 import { VoicedCollector, recordUserSample } from '../src/voice/recorder';
 import type { VoiceConnection } from '@discordjs/voice';
 
-// 48kHz estéreo 16-bit => 192 bytes/ms (mesma conta de BYTES_PER_MS em recorder.ts).
+// 48kHz stereo 16-bit => 192 bytes/ms (same BYTES_PER_MS math as in recorder.ts).
 const BYTES_PER_MS = 192;
 
-/** Bloco de PCM "falado" (amplitude bem acima do chão de ruído, RMS >= 500). */
+/** Block of "spoken" PCM (amplitude well above the noise floor, RMS >= 500). */
 function voicedChunk(ms: number): Buffer {
   const buf = Buffer.alloc(ms * BYTES_PER_MS);
   for (let i = 0; i + 1 < buf.length; i += 2) buf.writeInt16LE(12000, i);
   return buf;
 }
 
-/** Bloco de PCM "silencioso" (amplitude zero, RMS < 500). */
+/** Block of "silent" PCM (zero amplitude, RMS < 500). */
 function silentChunk(ms: number): Buffer {
   return Buffer.alloc(ms * BYTES_PER_MS);
 }
 
 describe('VoicedCollector', () => {
-  it('só conta bytes VOZEADOS (RMS >= threshold) para o alvo', () => {
-    const c = new VoicedCollector(100); // alvo: 100ms de fala
-    expect(c.push(silentChunk(500))).toBe(false); // silêncio nunca enche o alvo
+  it('only counts VOICED bytes (RMS >= threshold) toward the target', () => {
+    const c = new VoicedCollector(100); // target: 100ms of speech
+    expect(c.push(silentChunk(500))).toBe(false); // silence never fills the target
     expect(c.voicedMs).toBe(0);
     expect(c.push(voicedChunk(50))).toBe(false);
     expect(c.voicedMs).toBe(50);
-    expect(c.push(voicedChunk(50))).toBe(true); // atingiu o alvo agora
+    expect(c.push(voicedChunk(50))).toBe(true); // hit the target now
     expect(c.done).toBe(true);
   });
 
-  it('pcm() concatena só os pedaços vozeados (o silêncio fica de fora)', () => {
+  it('pcm() concatenates only the voiced chunks (silence is left out)', () => {
     const c = new VoicedCollector(1000);
     const v = voicedChunk(10);
     c.push(silentChunk(10));
@@ -37,19 +37,20 @@ describe('VoicedCollector', () => {
     expect(c.pcm()).toEqual(v);
   });
 
-  // Diagnóstico do gate de RMS: com o chão em 350, áudio de nível ~300 (fala fraca / mic com
-  // ganho baixo) é VISTO mas REJEITADO — é exatamente o cenário "gravei 15s, saiu 2s". O teste
-  // prova que framesSeen/framesVoiced/rmsStats distinguem "gate comeu" de "user falou pouco".
-  it('framesSeen conta tudo, framesVoiced só o que passa o gate; rmsStats reporta a distribuição', () => {
+  // RMS gate diagnostics: with the floor at 350, audio at level ~300 (weak speech / mic with
+  // low gain) is SEEN but REJECTED — this is exactly the "I recorded 15s, only 2s came out"
+  // scenario. The test proves framesSeen/framesVoiced/rmsStats distinguish "gate ate it" from
+  // "user barely spoke".
+  it('framesSeen counts everything, framesVoiced only what passes the gate; rmsStats reports the distribution', () => {
     const amp = (level: number, ms: number): Buffer => {
       const buf = Buffer.alloc(ms * BYTES_PER_MS);
       for (let i = 0; i + 1 < buf.length; i += 2) buf.writeInt16LE(level, i);
       return buf;
     };
-    const c = new VoicedCollector(10_000, 350); // chão explícito = 350
-    c.push(amp(300, 20)); // abaixo do gate — visto mas não conta (fala fraca)
+    const c = new VoicedCollector(10_000, 350); // explicit floor = 350
+    c.push(amp(300, 20)); // below the gate — seen but does not count (weak speech)
     c.push(amp(300, 20));
-    c.push(amp(12000, 20)); // bem acima — conta
+    c.push(amp(12000, 20)); // well above — counts
     expect(c.framesSeen).toBe(3);
     expect(c.framesVoiced).toBe(1);
     const s = c.rmsStats();
@@ -59,16 +60,16 @@ describe('VoicedCollector', () => {
   });
 });
 
-// Fake "subscribe": devolve um Readable puro (sem _destroy próprio, como o
-// AudioReceiveStream real) que o teste alimenta manualmente com push().
+// Fake "subscribe": returns a plain Readable (with no _destroy of its own, like the
+// real AudioReceiveStream) that the test feeds manually via push().
 function fakeSubscribe(): Readable {
   return new Readable({ read() {} });
 }
 
-// Fake "decoder": um Transform passthrough puro (sem _destroy próprio, como o
-// prism.opus.Decoder real) — reproduz EXATAMENTE a mesma superfície de stream do
-// código de produção, incluindo a caraterística que causa o bug: destruir a fonte
-// (opus) NÃO propaga para o destino (decoder) via stream.pipe().
+// Fake "decoder": a plain passthrough Transform (with no _destroy of its own, like the
+// real prism.opus.Decoder) — reproduces EXACTLY the same stream surface as the
+// production code, including the trait that causes the bug: destroying the source
+// (opus) does NOT propagate to the destination (decoder) via stream.pipe().
 function fakePassthroughDecoder(): Transform {
   return new Transform({
     transform(chunk, _enc, cb) {
@@ -79,13 +80,13 @@ function fakePassthroughDecoder(): Transform {
 
 const FAKE_CONNECTION = {} as VoiceConnection;
 
-describe('recordUserSample — ronda nunca fica presa (regressão da propagação de destroy())', () => {
-  // Nestes testes, stream.pipe() NÃO propaga destroy() da fonte para o destino (é o
-  // comportamento real do Node — confirmado experimentalmente). Se o código voltar a
-  // destruir só `opus` (sem também destruir `decoder`) em qualquer um dos 3 pontos de
-  // paragem antecipada, estes testes ficam pendurados até ao timeout do teste.
+describe('recordUserSample — a round never gets stuck (regression of destroy() propagation)', () => {
+  // In these tests, stream.pipe() does NOT propagate destroy() from source to destination (this
+  // is Node's real behavior — confirmed experimentally). If the code goes back to destroying only
+  // `opus` (without also destroying `decoder`) at any of the 3 early-stop points, these tests
+  // hang until the test timeout.
 
-  it('o botão "Parar" (shouldStop) termina a gravação rapidamente, mesmo a meio da fala', async () => {
+  it('the "Stop" button (shouldStop) ends the recording quickly, even mid-speech', async () => {
     let stopped = false;
     const opus = fakeSubscribe();
     const promise = recordUserSample(
@@ -94,37 +95,37 @@ describe('recordUserSample — ronda nunca fica presa (regressão da propagaçã
       { targetVoicedMs: 10_000, maxWallMs: 20_000, shouldStop: () => stopped },
       { subscribe: () => opus, makeDecoder: fakePassthroughDecoder },
     );
-    // Fala um pouco (bem longe do alvo de 10s) e só depois pede para parar.
+    // Speak a little (far from the 10s target) and only then ask to stop.
     opus.push(voicedChunk(50));
     await new Promise((r) => setTimeout(r, 250));
-    stopped = true; // simula o clique no botão "Parar"
+    stopped = true; // simulates the click on the "Stop" button
 
     const start = Date.now();
     const result = await promise;
     const elapsed = Date.now() - start;
 
-    expect(elapsed).toBeLessThan(1500); // o poll interno é 200ms — nunca deveria demorar segundos
+    expect(elapsed).toBeLessThan(1500); // the internal poll is 200ms — it should never take seconds
     expect(result.voicedMs).toBeGreaterThan(0);
-    expect(result.voicedMs).toBeLessThan(10_000); // não atingiu o alvo — parou por causa do Stop
+    expect(result.voicedMs).toBeLessThan(10_000); // did not hit the target — stopped because of Stop
   }, 5_000);
 
-  it('atingir o alvo A MEIO de fala contínua (sem pausa natural) termina de imediato', async () => {
+  it('hitting the target IN THE MIDDLE of continuous speech (no natural pause) ends immediately', async () => {
     const opus = fakeSubscribe();
     const promise = recordUserSample(
       FAKE_CONNECTION,
       'user2',
-      { targetVoicedMs: 100, maxWallMs: 10_000 }, // alvo pequeno para o teste ser rápido
+      { targetVoicedMs: 100, maxWallMs: 10_000 }, // small target to keep the test fast
       { subscribe: () => opus, makeDecoder: fakePassthroughDecoder },
     );
-    // Uma única rajada de fala contínua, sem qualquer silêncio a seguir — a fonte
-    // NUNCA chega a um fim natural; só o "alvo atingido -> destroy()" pode terminar isto.
+    // A single burst of continuous speech, with no silence afterward — the source
+    // NEVER reaches a natural end; only "target reached -> destroy()" can finish this.
     opus.push(voicedChunk(200));
 
     const result = await promise;
     expect(result.voicedMs).toBeGreaterThanOrEqual(100);
   }, 5_000);
 
-  it('onProgress é notificado com os ms de fala acumulados enquanto grava', async () => {
+  it('onProgress is notified with the accumulated speech ms while recording', async () => {
     const opus = fakeSubscribe();
     const seen: number[] = [];
     const promise = recordUserSample(
@@ -134,15 +135,15 @@ describe('recordUserSample — ronda nunca fica presa (regressão da propagaçã
       { subscribe: () => opus, makeDecoder: fakePassthroughDecoder },
     );
     opus.push(voicedChunk(120));
-    opus.push(voicedChunk(120)); // passa o alvo de 200ms -> termina
+    opus.push(voicedChunk(120)); // passes the 200ms target -> ends
     const result = await promise;
     expect(result.voicedMs).toBeGreaterThanOrEqual(200);
-    // Reportou progresso pelo menos uma vez e o último valor bate certo com o total.
+    // Reported progress at least once and the last value matches the total.
     expect(seen.length).toBeGreaterThan(0);
     expect(seen[seen.length - 1]).toBe(result.voicedMs);
   }, 5_000);
 
-  it('um erro do decoder destrói a fonte opus (não vaza a subscription)', async () => {
+  it('a decoder error destroys the opus source (does not leak the subscription)', async () => {
     const opuses: Readable[] = [];
     const decoders: Transform[] = [];
     let stop = false;
@@ -163,19 +164,19 @@ describe('recordUserSample — ronda nunca fica presa (regressão da propagaçã
         },
       },
     );
-    // Deixa a 1.ª ronda montar; força um erro DO LADO DO DECODER (não via stopBoth) e
-    // termina o loop antes do poll de 200ms — isola o caminho `finish` (end/close/error).
+    // Let the 1st round set up; force an error ON THE DECODER SIDE (not via stopBoth) and
+    // end the loop before the 200ms poll — isolates the `finish` path (end/close/error).
     await new Promise((r) => setTimeout(r, 60));
     const firstOpus = opuses[0];
-    stop = true; // impede uma nova ronda depois de a atual resolver
+    stop = true; // prevents a new round after the current one resolves
     decoders[0].emit('error', new Error('pacote opus corrompido'));
     await promise;
-    // Sem o fix, o `finish` não destruía o opus → a subscription do receiver vazava.
+    // Without the fix, `finish` did not destroy the opus → the receiver subscription leaked.
     expect(firstOpus.destroyed).toBe(true);
   }, 5_000);
 
-  it('ronda totalmente silenciosa não fica presa — o guarda-tempo de ronda corta e tenta de novo', async () => {
-    const opus = fakeSubscribe(); // nunca recebe push() nenhum — silêncio absoluto
+  it('a fully silent round does not get stuck — the round watchdog cuts it and retries', async () => {
+    const opus = fakeSubscribe(); // never receives any push() — absolute silence
     const start = Date.now();
     const result = await recordUserSample(
       FAKE_CONNECTION,
@@ -186,8 +187,8 @@ describe('recordUserSample — ronda nunca fica presa (regressão da propagaçã
     const elapsed = Date.now() - start;
 
     expect(result.voicedMs).toBe(0);
-    // maxWallMs=300 é o teto; se o guarda-tempo de ronda (60ms) não cortasse a ronda
-    // presa, isto só resolveria quando o vitest desistisse (bem acima de 1s).
+    // maxWallMs=300 is the ceiling; if the round watchdog (60ms) did not cut the stuck
+    // round, this would only resolve when vitest gave up (well above 1s).
     expect(elapsed).toBeLessThan(1500);
   }, 5_000);
 });

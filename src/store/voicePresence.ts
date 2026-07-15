@@ -1,9 +1,9 @@
 import type Database from 'better-sqlite3';
 
-// 24/7 in-call (Premium): persistência do canal de voz do bot por guild, para o repor
-// no arranque (sobrevive a restarts/deploys). Ver a tabela voice_presence em db.ts e o
-// planeamento puro em src/voice/rejoin.ts. Só é escrito para servidores Premium (o gate
-// vive em createVoiceSession); estas funções são o acesso cru à tabela.
+// 24/7 in-call (Premium): persistence of the bot's voice channel per guild, to restore
+// it on startup (survives restarts/deploys). See the voice_presence table in db.ts and
+// the pure planning in src/voice/rejoin.ts. Only written for Premium servers (the gate
+// lives in createVoiceSession); these functions are the raw access to the table.
 
 export interface VoicePresenceRow {
   guildId: string;
@@ -11,7 +11,7 @@ export interface VoicePresenceRow {
   updatedAt: number;
 }
 
-/** Regista/atualiza (upsert) o canal onde o bot está nesta guild. */
+/** Records/updates (upsert) the channel the bot is in for this guild. */
 export function rememberVoicePresence(
   db: Database.Database,
   guildId: string,
@@ -24,12 +24,12 @@ export function rememberVoicePresence(
   ).run(guildId, channelId, now);
 }
 
-/** Esquece a presença desta guild. Idempotente (no-op se não existir). */
+/** Forgets this guild's presence. Idempotent (no-op if it doesn't exist). */
 export function forgetVoicePresence(db: Database.Database, guildId: string): void {
   db.prepare('DELETE FROM voice_presence WHERE guild_id = ?').run(guildId);
 }
 
-/** Todas as presenças persistidas (para o rejoin no arranque). */
+/** All persisted presences (for the rejoin on startup). */
 export function listVoicePresence(db: Database.Database): VoicePresenceRow[] {
   const rows = db.prepare('SELECT guild_id, channel_id, updated_at FROM voice_presence').all() as {
     guild_id: string;

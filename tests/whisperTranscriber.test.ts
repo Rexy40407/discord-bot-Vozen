@@ -2,9 +2,9 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { WhisperTranscriber, resolveSttConcurrency } from '../src/voice/whisperTranscriber';
 
-// Sidecar Whisper FALSO: imprime {ready} SOZINHO ao arrancar (sem warmup prompt, como o
-// tools/whisper_sidecar.py real), depois responde a cada linha (=caminho WAV) com
-// {text,lang} — ou {error} — em 'fail'. 'never-ready' nunca emite {ready}.
+// FAKE Whisper sidecar: prints {ready} BY ITSELF on startup (no warmup prompt, like the
+// real tools/whisper_sidecar.py), then responds to each line (=WAV path) with
+// {text,lang} — or {error} — in 'fail'. 'never-ready' never emits {ready}.
 function fakeSidecar(behavior: 'ok' | 'fail' | 'never-ready' = 'ok', counter?: { spawns: number }) {
   return (() => {
     if (counter) counter.spawns++;
@@ -32,7 +32,7 @@ function fakeSidecar(behavior: 'ok' | 'fail' | 'never-ready' = 'ok', counter?: {
         });
       },
     };
-    // Emite {ready} logo a seguir ao spawn (o sidecar real fá-lo após carregar o modelo).
+    // Emits {ready} right after spawn (the real sidecar does so after loading the model).
     if (behavior !== 'never-ready') {
       queueMicrotask(() =>
         child.stdout.emit(
@@ -52,30 +52,30 @@ describe('WhisperTranscriber', () => {
     t = null;
   });
 
-  it('available=false sem comando (sidecar não instalado)', () => {
+  it('available=false with no command (sidecar not installed)', () => {
     t = new WhisperTranscriber(null);
     expect(t.available).toBe(false);
   });
 
-  it('transcreve um WAV -> {text,lang} depois do {ready}', async () => {
+  it('transcribes a WAV -> {text,lang} after the {ready}', async () => {
     t = new WhisperTranscriber({ exe: 'py', args: ['w.py'] }, fakeSidecar('ok'));
     const r = await t.transcribe('/tmp/a.wav');
     expect(r).toEqual({ text: 't:/tmp/a.wav', lang: 'en' });
   });
 
-  it('serializa os pedidos (cap=1): responde na ordem', async () => {
+  it('serializes the requests (cap=1): responds in order', async () => {
     t = new WhisperTranscriber({ exe: 'py', args: ['w.py'] }, fakeSidecar('ok'));
     const [a, b] = await Promise.all([t.transcribe('/tmp/1.wav'), t.transcribe('/tmp/2.wav')]);
     expect(a.text).toBe('t:/tmp/1.wav');
     expect(b.text).toBe('t:/tmp/2.wav');
   });
 
-  it('erro do sidecar -> rejeita', async () => {
+  it('sidecar error -> rejects', async () => {
     t = new WhisperTranscriber({ exe: 'py', args: ['w.py'] }, fakeSidecar('fail'));
     await expect(t.transcribe('/tmp/a.wav')).rejects.toThrow(/boom/);
   });
 
-  it('reusa o MESMO processo entre pedidos (persistente)', async () => {
+  it('reuses the SAME process across requests (persistent)', async () => {
     const counter = { spawns: 0 };
     t = new WhisperTranscriber({ exe: 'py', args: ['w.py'] }, fakeSidecar('ok', counter));
     await t.transcribe('/tmp/1.wav');
@@ -84,8 +84,8 @@ describe('WhisperTranscriber', () => {
   });
 });
 
-// Cap GLOBAL de concorrência STT (plano 029/ABUSE-01): default 1 (SPIKE-STT), com override
-// por STT_MAX_CONCURRENCY — mesmo padrão de resolvePiperConcurrency (src/tts/piper.ts).
+// GLOBAL STT concurrency cap (plan 029/ABUSE-01): default 1 (SPIKE-STT), with override
+// via STT_MAX_CONCURRENCY — same pattern as resolvePiperConcurrency (src/tts/piper.ts).
 describe('resolveSttConcurrency', () => {
   const ORIGINAL = process.env.STT_MAX_CONCURRENCY;
   afterEach(() => {
@@ -93,17 +93,17 @@ describe('resolveSttConcurrency', () => {
     else process.env.STT_MAX_CONCURRENCY = ORIGINAL;
   });
 
-  it('sem env -> default 1 (cap-1 recomendado pelo SPIKE-STT)', () => {
+  it('no env -> default 1 (cap-1 recommended by SPIKE-STT)', () => {
     delete process.env.STT_MAX_CONCURRENCY;
     expect(resolveSttConcurrency()).toBe(1);
   });
 
-  it('STT_MAX_CONCURRENCY=3 -> respeita o override', () => {
+  it('STT_MAX_CONCURRENCY=3 -> respects the override', () => {
     process.env.STT_MAX_CONCURRENCY = '3';
     expect(resolveSttConcurrency()).toBe(3);
   });
 
-  it('valor inválido (0, negativo, não-inteiro, lixo) -> cai no default 1', () => {
+  it('invalid value (0, negative, non-integer, garbage) -> falls back to default 1', () => {
     for (const bad of ['0', '-1', '1.5', 'abc', '  ']) {
       process.env.STT_MAX_CONCURRENCY = bad;
       expect(resolveSttConcurrency()).toBe(1);

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { MessageFlags } from 'discord.js';
 
-// Mock minimo de @discordjs/voice — o /help nao liga a voz, mas o modulo de
-// comandos importa-o no topo, por isso o import precisa de resolver (sem este
-// mock o import de src/commands/index falha antes de qualquer teste correr).
+// Minimal mock of @discordjs/voice — /help doesn't touch voice, but the commands
+// module imports it at the top, so the import needs to resolve (without this
+// mock the import of src/commands/index fails before any test runs).
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
   getVoiceConnection: () => undefined,
@@ -16,12 +16,12 @@ import { setGuildConfig } from '../src/store/guildConfig';
 
 const GUILD = 'g-help-test';
 
-// O /help agora responde com um EMBED ({ embeds: [embed] }), nao com { content }.
-// Este helper achata o embed.data (title + description + nome/valor de cada field
-// + footer) numa unica string pesquisavel, para que todas as afirmacoes de texto
-// (lista de comandos, cabecalhos de grupo, tagline, GUARD) continuem a correr
-// sobre `i.replies.join('\n')` como antes. Se o handler voltar a { content },
-// tambem e capturado.
+// /help now responds with an EMBED ({ embeds: [embed] }), not { content }.
+// This helper flattens embed.data (title + description + name/value of each field
+// + footer) into a single searchable string, so that all the text assertions
+// (command list, group headers, tagline, GUARD) keep running over
+// `i.replies.join('\n')` as before. If the handler reverts to { content },
+// that is captured too.
 interface FakeInteraction {
   commandName: string;
   guildId: string;
@@ -31,14 +31,14 @@ interface FakeInteraction {
   isRepliable: () => boolean;
   replied: boolean;
   deferred: boolean;
-  // Embeds crus (EmbedBuilder), para exercitar o caminho real de serializacao
-  // (embed.toJSON(), que valida os limites do Discord) num teste.
+  // Raw embeds (EmbedBuilder), to exercise the real serialization path
+  // (embed.toJSON(), which validates Discord's limits) in a test.
   rawEmbeds: unknown[];
 }
 
-// Achata o `.data` de um EmbedBuilder (ou um embed cru) numa string pesquisavel.
+// Flattens the `.data` of an EmbedBuilder (or a raw embed) into a searchable string.
 function flattenEmbed(embed: unknown): string {
-  // EmbedBuilder expoe os dados em `.data`; um embed cru ja e o proprio objeto.
+  // EmbedBuilder exposes the data in `.data`; a raw embed is already the object itself.
   const data = (embed as { data?: unknown }).data ?? embed;
   const d = data as {
     title?: string;
@@ -81,8 +81,8 @@ function makeHelpInteraction(): FakeInteraction {
   };
 }
 
-// O /help agora renderiza via t() no locale da guild, por isso precisa de
-// deps.db para ler getGuildConfig(guildId).locale. Usamos uma DB in-memory real.
+// /help now renders via t() in the guild's locale, so it needs deps.db to read
+// getGuildConfig(guildId).locale. We use a real in-memory DB.
 function makeDeps(): BotDeps {
   return {
     client: { user: { id: 'bot-1' } },
@@ -93,32 +93,32 @@ function makeDeps(): BotDeps {
   } as unknown as BotDeps;
 }
 
-describe('/help — discovery de comandos em-app', () => {
-  it('(a) lista comandos-chave de cada grupo (Geral, Voz, Admin)', async () => {
+describe('/help — in-app command discovery', () => {
+  it('(a) lists key commands from each group (General, Voice, Admin)', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
-    // um representante de cada grupo + os pedidos explicitamente no contrato
-    expect(text).toContain('/tts'); // Geral
-    expect(text).toContain('/join'); // Geral
-    expect(text).toContain('/invite'); // Geral
-    expect(text).toContain('/help'); // Geral (auto-inclusao)
-    expect(text).toContain('/voice'); // Voz
+    // one representative of each group + the ones explicitly required by the contract
+    expect(text).toContain('/tts'); // General
+    expect(text).toContain('/join'); // General
+    expect(text).toContain('/invite'); // General
+    expect(text).toContain('/help'); // General (self-inclusion)
+    expect(text).toContain('/voice'); // Voice
     expect(text).toContain('/setup'); // Admin
     expect(text).toContain('/stats'); // Admin
     expect(text).toContain('/config'); // Admin
   });
 
-  it('(compliance) mostra um canal de suporte/denúncia (requisito da Política de Developer do Discord)', async () => {
+  it('(compliance) shows a support/report channel (Discord Developer Policy requirement)', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
-    // A Política de Developer exige uma forma de reportar problemas; o /help expõe o URL do config.
+    // The Developer Policy requires a way to report problems; /help exposes the config URL.
     expect(text).toContain('https://discord.gg/test');
     expect(text.toLowerCase()).toMatch(/report|reportar/);
   });
 
-  it('reflete os subcomandos de /voice (set, list, preview, optout, optin)', async () => {
+  it('reflects the /voice subcommands (set, list, preview, optout, optin)', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
@@ -127,11 +127,11 @@ describe('/help — discovery de comandos em-app', () => {
     }
   });
 
-  it('mostra os cabecalhos dos grupos em INGLES por defeito', async () => {
+  it('shows the group headers in ENGLISH by default', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
-    // locale default 'en' -> cabecalhos em ingles (5 grupos beginner-friendly)
+    // default locale 'en' -> headers in English (5 beginner-friendly groups)
     expect(text).toContain('Getting started');
     expect(text).toMatch(/Your voice/);
     expect(text).toContain('Fun');
@@ -139,20 +139,20 @@ describe('/help — discovery de comandos em-app', () => {
     expect(text).toContain('More');
   });
 
-  it('renderiza o chrome do /help em PT quando a guild tem locale="pt"', async () => {
+  it('renders the /help chrome in PT when the guild has locale="pt"', async () => {
     const deps = makeDeps();
     setGuildConfig((deps as any).db, GUILD, { locale: 'pt' });
     const i = makeHelpInteraction();
     await handleInteraction(i as any, deps);
     const text = i.replies.join('\n');
-    // O chrome (cabecalhos de grupo) e o que discrimina EN vs PT.
+    // The chrome (group headers) is what distinguishes EN vs PT.
     expect(text).toContain('Primeiros passos');
     expect(text).toMatch(/A tua voz/);
-    // e NAO deve conter o cabecalho ingles neste locale
+    // and must NOT contain the English header in this locale
     expect(text).not.toContain('Getting started');
   });
 
-  it('(b) inclui a marca/tagline Vozen', async () => {
+  it('(b) includes the Vozen brand/tagline', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
@@ -160,66 +160,66 @@ describe('/help — discovery de comandos em-app', () => {
     expect(text).toMatch(/type it, hear it/i);
   });
 
-  it('recomenda o /setup como primeiro passo', async () => {
+  it('recommends /setup as the first step', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
     expect(text).toContain('/setup');
   });
 
-  it('(c) a resposta e ephemeral', async () => {
+  it('(c) the response is ephemeral', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     expect(i.replies.length).toBeGreaterThan(0);
-    // todas as replies deste comando tem de ser ephemeral
+    // all replies from this command must be ephemeral
     for (const f of i.flags) {
       expect(f).toBe(MessageFlags.Ephemeral);
     }
   });
 
-  it('(d) responde com um embed que serializa sem violar limites do Discord', async () => {
+  it('(d) responds with an embed that serializes without violating Discord limits', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
-    // O /help responde com um EmbedBuilder. embed.toJSON() e o caminho REAL de
-    // envio no discord.js e valida os limites (field name/value nao-vazios,
-    // value <=1024, total <=6000). Se algum grupo ficasse vazio ou gigante, isto
-    // lancava — guarda o contrato do embed, nao so o texto achatado.
+    // /help responds with an EmbedBuilder. embed.toJSON() is the REAL send path
+    // in discord.js and validates the limits (field name/value non-empty,
+    // value <=1024, total <=6000). If any group were empty or huge, this would
+    // throw — it guards the embed contract, not just the flattened text.
     expect(i.rawEmbeds.length).toBe(1);
     const embed = i.rawEmbeds[0] as { toJSON: () => { fields?: unknown[] } };
     expect(() => embed.toJSON()).not.toThrow();
     const json = embed.toJSON();
-    // quick-start + cinco grupos -> seis fields
+    // quick-start + five groups -> six fields
     expect(json.fields?.length).toBe(6);
   });
 
-  // GUARD: derivado dos commandDefs reais — cada comando top-level REGISTADO tem
-  // de aparecer no /help. Se alguem adicionar um comando novo a commandDefs e
-  // esquecer de o cobrir no /help (handler hardcoded), este teste parte. So passa
-  // porque o handler constroi o texto a partir de commandDefs (nao hardcoded).
-  it('GUARD: todos os comandos top-level registados aparecem no /help', async () => {
+  // GUARD: derived from the real commandDefs — every REGISTERED top-level command
+  // must appear in /help. If someone adds a new command to commandDefs and forgets
+  // to cover it in /help (hardcoded handler), this test breaks. It only passes
+  // because the handler builds the text from commandDefs (not hardcoded).
+  it('GUARD: every registered top-level command appears in /help', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
     for (const def of commandDefs) {
-      expect(text, `/${def.name} em falta no /help`).toContain('/' + def.name);
+      expect(text, `/${def.name} missing from /help`).toContain('/' + def.name);
     }
   });
 
-  // ── beginner-friendly: quick-start + comandos antes undiscoverable ─────────
-  it('inclui um quick-start de 3 passos', async () => {
+  // ── beginner-friendly: quick-start + previously undiscoverable commands ─────────
+  it('includes a 3-step quick-start', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
-    // titulo do quick-start (EN default) + os tres numeros dos passos
+    // quick-start title (EN default) + the three step numbers
     expect(text).toMatch(/quick start/i);
     expect(text).toContain('1)');
     expect(text).toContain('2)');
     expect(text).toContain('3)');
-    // o primeiro passo tem de mandar juntar-se a voz e correr /join
+    // the first step must tell the user to join voice and run /join
     expect(text).toMatch(/\/join/);
   });
 
-  it('refere os comandos novos antes undiscoverable: /joke, /laugh', async () => {
+  it('mentions the previously undiscoverable new commands: /joke, /laugh', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
@@ -227,22 +227,22 @@ describe('/help — discovery de comandos em-app', () => {
     expect(text).toContain('/laugh');
   });
 
-  it('da pelo menos um exemplo concreto por seccao', async () => {
+  it('gives at least one concrete example per section', async () => {
     const i = makeHelpInteraction();
     await handleInteraction(i as any, makeDeps());
     const text = i.replies.join('\n');
-    // exemplos concretos hand-authored (nao derivaveis das descricoes)
+    // hand-authored concrete examples (not derivable from the descriptions)
     expect(text).toMatch(/\/tts Hello/i);
     expect(text).toMatch(/\/voice set/i);
     expect(text).toMatch(/\/joke /i);
   });
 });
 
-describe('/help — definicao do comando', () => {
-  it('esta registado em commandDefs como comando top-level (NAO admin-only)', () => {
+describe('/help — command definition', () => {
+  it('is registered in commandDefs as a top-level command (NOT admin-only)', () => {
     const def = commandDefs.find((c) => c.name === 'help');
     expect(def).toBeDefined();
-    // top-level, qualquer utilizador: sem restricao de permissoes por defeito
+    // top-level, any user: no permission restriction by default
     expect(def?.default_member_permissions ?? undefined).toBeUndefined();
   });
 });

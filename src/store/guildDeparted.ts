@@ -1,20 +1,20 @@
 // src/store/guildDeparted.ts
 //
-// Retenção de dados por-SERVIDOR (conformidade §5(b)): quando o bot é removido de um
-// servidor, marca-se a saída. Se o servidor não re-convidar o bot dentro de 30 dias, os
-// seus dados são purgados por um job diário. O grace period existe para um kick acidental
-// ou uma migração de servidor não apagarem tudo de imediato.
+// Per-GUILD data retention (compliance §5(b)): when the bot is removed from a
+// guild, the departure is marked. If the guild does not re-invite the bot within 30 days, its
+// data is purged by a daily job. The grace period exists so an accidental kick or a
+// guild migration does not wipe everything immediately.
 //
-// IMPORTANTE: a marcação vem do handler REAL de GuildDelete (client.ts), que já ignora os
-// outages (guild.available === false). Assim uma queda transitória do Discord nunca agenda
-// eliminação de dados de servidores que não saíram.
+// IMPORTANT: the mark comes from the REAL GuildDelete handler (client.ts), which already ignores
+// outages (guild.available === false). This way a transient Discord outage never schedules
+// data deletion for guilds that did not actually leave.
 import type Database from 'better-sqlite3';
 import { purgeGuild } from './dataLifecycle';
 
-/** Janela entre a saída e a purga dos dados (30 dias). */
+/** Window between departure and data purge (30 days). */
 export const DEPARTURE_GRACE_MS = 30 * 24 * 60 * 60 * 1000;
 
-/** Marca (ou re-marca) o momento em que o bot saiu de um servidor. */
+/** Marks (or re-marks) the moment the bot left a guild. */
 export function markGuildDeparted(db: Database.Database, guildId: string, now: number): void {
   db.prepare(
     `INSERT INTO guild_departed (guild_id, left_at) VALUES (?, ?)
@@ -22,15 +22,15 @@ export function markGuildDeparted(db: Database.Database, guildId: string, now: n
   ).run(guildId, now);
 }
 
-/** Remove a marca de saída (bot re-convidado antes da purga). */
+/** Removes the departure mark (bot re-invited before the purge). */
 export function unmarkGuildDeparted(db: Database.Database, guildId: string): void {
   db.prepare('DELETE FROM guild_departed WHERE guild_id = ?').run(guildId);
 }
 
 /**
- * Purga os dados dos servidores cuja saída foi há mais de `graceMs`. Para cada um chama
- * `purgeGuild` (apaga o conteúdo/config/stats, mantém o financeiro) e limpa a marca.
- * Devolve os guildIds purgados (para log). Idempotente: correr duas vezes não repete nada.
+ * Purges data for guilds whose departure was more than `graceMs` ago. For each one it calls
+ * `purgeGuild` (deletes content/config/stats, keeps the financial data) and clears the mark.
+ * Returns the purged guildIds (for logging). Idempotent: running twice repeats nothing.
  */
 export function purgeDepartedGuilds(
   db: Database.Database,
@@ -43,20 +43,20 @@ export function purgeDepartedGuilds(
   }[];
   const purged: string[] = [];
   for (const { guild_id: guildId } of rows) {
-    purgeGuild(db, guildId); // apaga tudo, incl. a própria marca (guild_departed ∈ purga)
-    unmarkGuildDeparted(db, guildId); // rede de segurança caso a marca sobreviva
+    purgeGuild(db, guildId); // deletes everything, incl. the mark itself (guild_departed ∈ purge)
+    unmarkGuildDeparted(db, guildId); // safety net in case the mark survives
     purged.push(guildId);
   }
   return purged;
 }
 
-/** Intervalo do job de purga (1x/dia). */
+/** Purge job interval (once per day). */
 const PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Arranca o job de purga: corre 1x no arranque e depois de 24 em 24h. Nunca lança (um erro
- * numa corrida não pode derrubar o bot). O timer é unref'd (não segura o processo). Devolve
- * um `stop()` para testes/encerramento. A lógica pura está em `purgeDepartedGuilds`.
+ * Starts the purge job: runs once at startup and then every 24h. Never throws (an error
+ * in one run must not bring the bot down). The timer is unref'd (does not keep the process
+ * alive). Returns a `stop()` for tests/shutdown. The pure logic lives in `purgeDepartedGuilds`.
  */
 export function startDepartedPurgeJob(
   db: Database.Database,
@@ -67,7 +67,7 @@ export function startDepartedPurgeJob(
       const ids = purgeDepartedGuilds(db, Date.now());
       if (ids.length > 0) onPurged(ids);
     } catch {
-      // best-effort: nunca crashar o loop de manutenção.
+      // best-effort: never crash the maintenance loop.
     }
   };
   tick();

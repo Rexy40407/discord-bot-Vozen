@@ -1,7 +1,7 @@
 /**
- * Autojoin (Vaga 2): quando o Vozen não está em call e o autor está num canal de voz,
- * entra sozinho (se autojoin ON e tiver Connect/Speak). `createVoiceSession` (que abre
- * a ligação real de voz) é MOCKADA — aqui testamos só a DECISÃO + o encaminhamento.
+ * Autojoin (Wave 2): when Vozen is not in a call and the author is in a voice channel,
+ * it joins on its own (if autojoin ON and it has Connect/Speak). `createVoiceSession` (which opens
+ * the real voice connection) is MOCKED — here we test only the DECISION + the routing.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
@@ -25,7 +25,7 @@ function makeDeps(db: Database.Database): BotDeps {
   return {
     client: { user: { id: BOT_ID }, users: { cache: { get: () => undefined } } },
     db,
-    players: new Map(), // SEM player -> força o caminho de autojoin
+    players: new Map(), // NO player -> forces the autojoin path
     limiters: new Map(),
     lastSpeaker: new Map(),
     availableModels: ['en_US-amy-medium'],
@@ -63,14 +63,14 @@ describe('handleMessage — autojoin', () => {
     vi.mocked(createVoiceSession).mockReset();
     db = initDb(':memory:');
     say = vi.fn().mockResolvedValue(undefined);
-    // createVoiceSession mockada devolve um "player" com say espiado.
+    // mocked createVoiceSession returns a "player" with a spied say.
     vi.mocked(createVoiceSession).mockReturnValue({ say } as never);
     setGuildConfig(db, GUILD, { autoread: true, ttsChannelId: CHAN, enabled: true });
   });
 
   afterEach(() => db.close());
 
-  it('autojoin ON + autor em voz + perms → cria sessão e fala', async () => {
+  it('autojoin ON + author in voice + perms → creates session and speaks', async () => {
     setGuildConfig(db, GUILD, { autojoin: true });
     await handleMessage(makeMessage(), makeDeps(db));
     expect(createVoiceSession).toHaveBeenCalledTimes(1);
@@ -83,21 +83,21 @@ describe('handleMessage — autojoin', () => {
     expect(say).toHaveBeenCalledTimes(1);
   });
 
-  it('autojoin OFF → não entra nem fala (sem player)', async () => {
+  it('autojoin OFF → does not join or speak (no player)', async () => {
     setGuildConfig(db, GUILD, { autojoin: false });
     await handleMessage(makeMessage(), makeDeps(db));
     expect(createVoiceSession).not.toHaveBeenCalled();
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('autojoin ON mas autor FORA de voz → não entra', async () => {
+  it('autojoin ON but author OUT of voice → does not join', async () => {
     setGuildConfig(db, GUILD, { autojoin: true });
     await handleMessage(makeMessage({ inVoice: false }), makeDeps(db));
     expect(createVoiceSession).not.toHaveBeenCalled();
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('autojoin ON mas SEM Connect/Speak → não entra', async () => {
+  it('autojoin ON but WITHOUT Connect/Speak → does not join', async () => {
     setGuildConfig(db, GUILD, { autojoin: true });
     await handleMessage(makeMessage({ canJoin: false }), makeDeps(db));
     expect(createVoiceSession).not.toHaveBeenCalled();

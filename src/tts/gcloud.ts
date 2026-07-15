@@ -1,19 +1,19 @@
-// src/tts/gcloud.ts — motor TTS PREMIUM via API OFICIAL Google Cloud Text-to-Speech
-// (tier STANDARD). É o "Google HD" do /voice set, exclusivo de quem tem Vozen Plus ou
-// Premium do servidor (gate em resolveUserEngine + gcloudUsage). Valor vs o gTTS grátis:
-// API oficial estável (sem os 429/bloqueios do endpoint não-oficial), escolha de género
-// de voz, e latência/fiabilidade consistentes.
+// src/tts/gcloud.ts — PREMIUM TTS engine via the OFFICIAL Google Cloud Text-to-Speech
+// API (STANDARD tier). It is the "Google HD" of /voice set, exclusive to anyone with
+// Vozen Plus or server Premium (gated in resolveUserEngine + gcloudUsage). Value vs the
+// free gTTS: stable official API (without the 429s/blocks of the unofficial endpoint),
+// voice gender choice, and consistent latency/reliability.
 //
-// Formato: pedimos LINEAR16 a 22050Hz mono — o MESMO do Piper/gTTS — por isso o
-// audioContent (base64) já é um WAV pronto que encaixa sem atrito no pipeline (cache,
-// leadSilenceMs, player, concat de silêncio).
+// Format: we request LINEAR16 at 22050Hz mono — the SAME as Piper/gTTS — so the
+// audioContent (base64) is already a ready WAV that fits frictionlessly into the pipeline
+// (cache, leadSilenceMs, player, silence concat).
 //
-// Economia: $4/1M chars, com free tier de 4M chars/mês permanente. Os limites de custo
-// (allowances mensais por pessoa/passe) vivem na Fase 3 (gcloudUsage) — este motor só
-// sintetiza; a contagem entra aqui no chokepoint na Fase 3.
+// Economics: $4/1M chars, with a permanent free tier of 4M chars/month. The cost limits
+// (monthly allowances per person/pass) live in Phase 3 (gcloudUsage) — this engine only
+// synthesizes; the counting happens here at the chokepoint in Phase 3.
 //
-// SEM GOOGLE_TTS_API_KEY, este motor NEM é construído: a factory faz o caminho 'gcloud'
-// ser o próprio gTTS (identidade), por isso escolher Google HD comporta-se como o default.
+// WITHOUT GOOGLE_TTS_API_KEY, this engine is NOT even built: the factory makes the
+// 'gcloud' path be gTTS itself (identity), so choosing Google HD behaves like the default.
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { rmDirSafe } from './cleanupDir';
 import { tmpdir } from 'node:os';
@@ -28,15 +28,16 @@ import { log } from '../logging/logger';
 
 const GCLOUD_TTS_URL = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 const GCLOUD_TIMEOUT_MS = 15000;
-/** Taxa de amostragem pedida à Google — igual ao resto do pipeline (Piper/gTTS = 22050). */
+/** Sample rate requested from Google — same as the rest of the pipeline (Piper/gTTS = 22050). */
 const GCLOUD_SAMPLE_RATE = 22050;
 
 /**
- * `languageCode` BCP-47 a partir de um id de modelo Piper. Os ids são `lang_REGION-voz-
- * qualidade` (ex. 'pt_PT-tuga-medium', 'en_US-amy-medium'); o locale é o 1.º token antes
- * do '-', e trocar o '_' por '-' dá exatamente BCP-47 ('pt_PT' -> 'pt-PT', 'en_US' ->
- * 'en-US'). Sem locale reconhecível -> 'en-US' (fallback seguro). A Google escolhe a voz
- * Standard default dessa língua (não passamos `voice.name`). PURA e determinística.
+ * BCP-47 `languageCode` from a Piper model id. The ids are `lang_REGION-voice-quality`
+ * (e.g. 'pt_PT-tuga-medium', 'en_US-amy-medium'); the locale is the 1st token before the
+ * '-', and swapping the '_' for '-' gives exactly BCP-47 ('pt_PT' -> 'pt-PT', 'en_US' ->
+ * 'en-US'). Without a recognizable locale -> 'en-US' (safe fallback). Google picks the
+ * default Standard voice for that language (we do not pass `voice.name`). PURE and
+ * deterministic.
  */
 export function bcp47OfModel(model: string): string {
   const locale = model.split('-')[0]; // 'pt_PT-tuga-medium' -> 'pt_PT'
@@ -44,42 +45,42 @@ export function bcp47OfModel(model: string): string {
   return locale.replace('_', '-');
 }
 
-/** Contadores mensais persistentes (implementado por store/gcloudUsage sobre SQLite). */
+/** Persistent monthly counters (implemented by store/gcloudUsage over SQLite). */
 export interface GcloudUsage {
   getMonthly(scope: UsageScope, key: string, month: string): number;
   addMonthly(scope: UsageScope, key: string, month: string, chars: number): void;
 }
 
-/** Tetos de custo do Google HD (vêm da config). Ver AppConfig.gcloud*. */
+/** Google HD cost ceilings (come from config). See AppConfig.gcloud*. */
 export interface GcloudLimits {
-  maxChars: number; // pedido acima disto -> gTTS
-  plusMonthly: number; // pool pessoal do Plus
-  pass3Monthly: number; // pool do passe de 3 servidores
-  pass8Monthly: number; // pool do passe de 8 servidores
-  dailyBudget: number; // backstop GLOBAL/dia em memória (0 = desligado)
+  maxChars: number; // request above this -> gTTS
+  plusMonthly: number; // personal Plus pool
+  pass3Monthly: number; // 3-server pass pool
+  pass8Monthly: number; // 8-server pass pool
+  dailyBudget: number; // GLOBAL/day in-memory backstop (0 = disabled)
 }
 
 export interface GCloudOptions {
-  /** fetch injetável (testes). Default: o `fetch` global. */
+  /** injectable fetch (tests). Default: the global `fetch`. */
   fetchImpl?: typeof fetch;
-  /** contadores mensais persistentes; ausente => sem contagem (ex. Fase 1 / testes). */
+  /** persistent monthly counters; absent => no counting (e.g. Phase 1 / tests). */
   usage?: GcloudUsage;
-  /** tetos de custo; ausente => SEM enforcement (comporta-se como Fase 1). */
+  /** cost ceilings; absent => NO enforcement (behaves like Phase 1). */
   limits?: GcloudLimits;
-  /** relógio injetável (testes deterministicos do mês/dia). Default Date.now. */
+  /** injectable clock (deterministic month/day tests). Default Date.now. */
   now?: () => number;
 }
 
-/** Erro de ORÇAMENTO: sinaliza ao RouterEngine que embrulha o motor para cair no gTTS. */
+/** BUDGET error: signals the RouterEngine that wraps the engine to fall back to gTTS. */
 class GcloudBudgetError extends Error {}
 
 /**
- * Motor Google Cloud TTS Standard. Implementa a MESMA interface TTSEngine e partilha a
- * cache por cacheKey (namespace próprio 'gcloud' — ver factory). Um erro HTTP / resposta
- * inválida / ORÇAMENTO esgotado LANÇA, para o RouterEngine que o embrulha cair no gTTS
- * (ninguém fica sem voz). É o CHOKEPOINT de custo: conta os chars SÓ na chamada real à
- * Google (cache-miss), por isso a contagem é exata e cobre TODOS os call sites (todos
- * passam por aqui via deps.engine -> PerUserEngineRouter -> este motor).
+ * Google Cloud TTS Standard engine. Implements the SAME TTSEngine interface and shares
+ * the cache by cacheKey (its own 'gcloud' namespace — see factory). An HTTP error /
+ * invalid response / exhausted BUDGET THROWS, so the RouterEngine that wraps it falls back
+ * to gTTS (nobody is left without a voice). It is the cost CHOKEPOINT: it counts the chars
+ * ONLY on the real call to Google (cache-miss), so the count is exact and covers ALL call
+ * sites (all pass through here via deps.engine -> PerUserEngineRouter -> this engine).
  */
 export class GCloudEngine implements TTSEngine {
   private readonly apiKey: string;
@@ -88,12 +89,12 @@ export class GCloudEngine implements TTSEngine {
   private readonly usage?: GcloudUsage;
   private readonly limits?: GcloudLimits;
   private readonly now: () => number;
-  // Backstop GLOBAL/dia (em memória): disjuntor contra bugs/abuso, reposto quando o dia UTC
-  // muda. Só um teto de segurança ACIMA dos pools mensais persistentes.
+  // GLOBAL/day backstop (in-memory): circuit breaker against bugs/abuse, reset when the UTC
+  // day changes. Just a safety ceiling ABOVE the persistent monthly pools.
   private dailyDay = '';
   private dailyUsed = 0;
-  // Anti-spam do log de recusas: um pool esgotado recusaria CADA mensagem — logar todas
-  // enche o log. Warn no MÁXIMO uma vez por (dia, pool). Limpo quando o dia UTC muda.
+  // Anti-spam for the denial log: an exhausted pool would deny EVERY message — logging them
+  // all floods the log. Warn AT MOST once per (day, pool). Cleared when the UTC day changes.
   private warnedDenials = new Set<string>();
   private warnedDay = '';
 
@@ -106,15 +107,15 @@ export class GCloudEngine implements TTSEngine {
     this.now = opts.now ?? Date.now;
   }
 
-  /** Teto mensal do pool do descritor (o motor é dono da tabela de preços; ver config). */
+  /** Monthly ceiling of the descriptor's pool (the engine owns the price table; see config). */
   private limitFor(budget: NonNullable<SynthRequest['gcloudBudget']>): number {
     const L = this.limits!;
     if (budget.scope === 'user') return L.plusMonthly;
     if (budget.scope === 'pass') return (budget.seats ?? 8) <= 3 ? L.pass3Monthly : L.pass8Monthly;
-    return L.pass3Monthly; // 'guild' (Premium direto sem passe): usa o tier de 3 servidores
+    return L.pass3Monthly; // 'guild' (direct Premium without pass): uses the 3-server tier
   }
 
-  /** Repõe o contador diário em memória quando o dia UTC muda. */
+  /** Resets the in-memory daily counter when the UTC day changes. */
   private rollDaily(dayKey: string): void {
     if (this.dailyDay !== dayKey) {
       this.dailyDay = dayKey;
@@ -123,25 +124,26 @@ export class GCloudEngine implements TTSEngine {
   }
 
   /**
-   * Decide se ESTE pedido pode ir à Google. Lança GcloudBudgetError (-> gTTS) quando: não
-   * há orçamento (fail-safe: um caminho não-gated nunca gasta $), o texto excede maxChars,
-   * o pool mensal esgota, ou o backstop diário estoura. Sem `limits`, é no-op (Fase 1).
+   * Decides whether THIS request can go to Google. Throws GcloudBudgetError (-> gTTS) when:
+   * there is no budget (fail-safe: a non-gated path never spends $), the text exceeds
+   * maxChars, the monthly pool is exhausted, or the daily backstop blows. Without `limits`,
+   * it is a no-op (Phase 1).
    */
   private enforceBudget(req: SynthRequest, chars: number): void {
-    if (!this.limits) return; // sem tetos configurados => comportamento Fase 1 (sem gate)
+    if (!this.limits) return; // no ceilings configured => Phase 1 behavior (no gate)
     const budget = req.gcloudBudget;
     if (!budget) {
       this.deny('gcloud request without a budget (fail-safe)');
     }
     if (chars > this.limits.maxChars) {
-      this.deny(`texto ${chars} chars > máx ${this.limits.maxChars}`);
+      this.deny(`text ${chars} chars > max ${this.limits.maxChars}`);
     }
     const month = monthKeyUTC(this.now());
     const limit = this.limitFor(budget!);
     const used = this.usage ? this.usage.getMonthly(budget!.scope, budget!.key, month) : 0;
     if (used + chars > limit) {
       this.deny(
-        `pool mensal ${budget!.scope}:${budget!.key} esgotado (${used}+${chars}>${limit})`,
+        `monthly pool ${budget!.scope}:${budget!.key} exhausted (${used}+${chars}>${limit})`,
         `pool:${budget!.scope}:${budget!.key}`,
       );
     }
@@ -151,7 +153,7 @@ export class GCloudEngine implements TTSEngine {
       this.rollDaily(dayKey);
       if (this.dailyUsed + chars > this.limits.dailyBudget) {
         this.deny(
-          `backstop diário global estourado (${this.dailyUsed}+${chars}>${this.limits.dailyBudget})`,
+          `global daily backstop blown (${this.dailyUsed}+${chars}>${this.limits.dailyBudget})`,
           'daily',
         );
       }
@@ -159,10 +161,10 @@ export class GCloudEngine implements TTSEngine {
   }
 
   /**
-   * Regista o fallback (métrica) e lança o erro de orçamento (-> gTTS). O `throttleKey`
-   * (quando dado) limita o WARN a uma vez por dia por pool — uma recusa recorrente (pool
-   * esgotado) não spamma o log. Sem `throttleKey` (ex.: fail-safe sem orçamento = sinal de
-   * bug), avisa sempre.
+   * Records the fallback (metric) and throws the budget error (-> gTTS). The `throttleKey`
+   * (when given) limits the WARN to once per day per pool — a recurring denial (exhausted
+   * pool) does not spam the log. Without `throttleKey` (e.g. fail-safe without budget = a
+   * sign of a bug), it always warns.
    */
   private deny(reason: string, throttleKey?: string): never {
     metrics.inc('gcloudFallbacks');
@@ -182,9 +184,10 @@ export class GCloudEngine implements TTSEngine {
   }
 
   /**
-   * Reserva o consumo ANTES da chamada real (cache-miss). Debitar já — em vez de após o
-   * `await` — fecha a race check-then-act: duas sínteses concorrentes do MESMO pool (um
-   * passe cobre várias guilds) veriam ambas o total antigo e ambas passariam o teto.
+   * Reserves the consumption BEFORE the real call (cache-miss). Debiting now — instead of
+   * after the `await` — closes the check-then-act race: two concurrent syntheses from the
+   * SAME pool (a pass covers several guilds) would both see the old total and both pass the
+   * ceiling.
    */
   private reserveUsage(req: SynthRequest, chars: number): void {
     if (this.limits && req.gcloudBudget && this.usage) {
@@ -194,7 +197,7 @@ export class GCloudEngine implements TTSEngine {
     if (this.limits && this.limits.dailyBudget > 0) this.dailyUsed += chars;
   }
 
-  /** Devolve a reserva quando a síntese falha (uma chamada falhada não gasta orçamento). */
+  /** Returns the reservation when synthesis fails (a failed call does not spend budget). */
   private refundUsage(req: SynthRequest, chars: number): void {
     if (this.limits && req.gcloudBudget && this.usage) {
       const month = monthKeyUTC(this.now());
@@ -206,25 +209,25 @@ export class GCloudEngine implements TTSEngine {
   async synth(req: SynthRequest): Promise<string> {
     const key = cacheKey(req);
     const cached = this.cache.get(key);
-    if (cached) return cached; // cache-hit: SEM chamada à Google (sem custo, sem contagem)
+    if (cached) return cached; // cache-hit: NO call to Google (no cost, no counting)
 
-    // Cache-miss => vai haver chamada real. Aplica os tetos ANTES de gastar $.
+    // Cache-miss => there will be a real call. Apply the ceilings BEFORE spending $.
     const chars = req.text.length;
     this.enforceBudget(req, chars);
-    // Reserva o consumo ANTES do await (fecha a race check-then-act — ver reserveUsage).
+    // Reserve the consumption BEFORE the await (closes the check-then-act race — see reserveUsage).
     this.reserveUsage(req, chars);
 
     let wav: Buffer;
     try {
       wav = await this.fetchSpeech(req);
     } catch (err) {
-      this.refundUsage(req, chars); // síntese falhada -> devolve a reserva
+      this.refundUsage(req, chars); // failed synthesis -> return the reservation
       throw err;
     }
-    // Sucesso -> contabiliza as métricas do custo real.
+    // Success -> record the real-cost metrics.
     metrics.inc('gcloudSynths');
     metrics.add('gcloudChars', chars);
-    // Silêncio de arranque (mesma semântica do Piper/gTTS): PREPENDido ao WAV.
+    // Lead silence (same semantics as Piper/gTTS): PREPENDED to the WAV.
     if (req.leadSilenceMs && req.leadSilenceMs > 0) {
       wav = concatWavs([silenceWav(req.leadSilenceMs), wav], { silenceMs: 0 });
     }
@@ -252,14 +255,14 @@ export class GCloudEngine implements TTSEngine {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // lowerAllCapsRuns: evita que um "grito" TODO-MAIÚSCULAS saia soletrado
-          // (mesmo problema do gTTS/Kokoro/Neural — a transformação vive em deCaps.ts).
+          // lowerAllCapsRuns: prevents an ALL-CAPS "shout" from coming out spelled letter
+          // by letter (same problem as gTTS/Kokoro/Neural — the transform lives in deCaps.ts).
           input: { text: lowerAllCapsRuns(req.text) },
           voice: { languageCode: bcp47OfModel(req.model) },
           audioConfig: {
             audioEncoding: 'LINEAR16',
             sampleRateHertz: GCLOUD_SAMPLE_RATE,
-            // speakingRate: velocidade do user (Google aceita 0.25–4.0); 1 = natural.
+            // speakingRate: the user's speed (Google accepts 0.25–4.0); 1 = natural.
             ...(req.speed > 0 && Math.abs(req.speed - 1) > 1e-6
               ? { speakingRate: Math.min(4, Math.max(0.25, req.speed)) }
               : {}),
@@ -282,7 +285,7 @@ export class GCloudEngine implements TTSEngine {
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
       throw new Error(
-        `API Google Cloud TTS devolveu ${res.status} ${res.statusText}${detail ? `: ${detail.trim()}` : ''}`,
+        `Google Cloud TTS API returned ${res.status} ${res.statusText}${detail ? `: ${detail.trim()}` : ''}`,
       );
     }
 

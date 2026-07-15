@@ -1,9 +1,9 @@
 // src/logging/logger.ts
 //
-// Logger central com niveis e timestamps.
-// Lê LOG_LEVEL de process.env directamente (sem depender de AppConfig) para
-// evitar dependência circular.  Niveis: debug < info < warn < error.
-// Default: info.  Valor inválido → info.
+// Central logger with levels and timestamps.
+// Reads LOG_LEVEL from process.env directly (without depending on AppConfig) to
+// avoid a circular dependency.  Levels: debug < info < warn < error.
+// Default: info.  Invalid value → info.
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -14,18 +14,18 @@ const LEVEL_RANK: Record<LogLevel, number> = {
   error: 3,
 };
 
-/** Formata uma linha de log — pura, sem efeitos secundários, testável. */
+/** Formats a log line — pure, side-effect-free, testable. */
 export function formatLine(now: Date, level: LogLevel, message: string): string {
   return `${now.toISOString()} [${level.toUpperCase()}] ${message}`;
 }
 
-/** Resolve o nível mínimo a partir da env (dinamicamente por chamada). */
+/** Resolves the minimum level from the env (dynamically per call). */
 function resolveMinLevel(): number {
   const raw = process.env.LOG_LEVEL?.trim().toLowerCase() as LogLevel | undefined;
   return LEVEL_RANK[raw as LogLevel] ?? LEVEL_RANK.info;
 }
 
-/** Devolve true se a mensagem com este nível deve ser emitida. */
+/** Returns true if a message at this level should be emitted. */
 function shouldLog(level: LogLevel): boolean {
   return LEVEL_RANK[level] >= resolveMinLevel();
 }

@@ -2,17 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { restoreAccents, accentLangOfModel } from '../src/textCleaning/accents';
 import { prepareSpeech } from '../src/commands/prepareSpeech';
 
-describe('restoreAccents — repõe acentos da língua', () => {
-  it('PT: palavras comuns sem acento -> com acento', () => {
+describe('restoreAccents — restores the language accents', () => {
+  it('PT: common words without accents -> with accents', () => {
     expect(restoreAccents('nao', 'por')).toBe('não');
-    expect(restoreAccents('voce e portugues', 'por')).toBe('você e português'); // "e" fica (ambíguo)
+    expect(restoreAccents('voce e portugues', 'por')).toBe('você e português'); // "e" stays (ambiguous)
     expect(restoreAccents('ate amanha', 'por')).toBe('até amanhã');
     expect(restoreAccents('isto e muito rapido e facil', 'por')).toBe(
       'isto e muito rápido e fácil',
     );
   });
 
-  it('PT: cedilha e nasais', () => {
+  it('PT: cedilla and nasals', () => {
     expect(restoreAccents('servico', 'por')).toBe('serviço');
     expect(restoreAccents('vamos comecar', 'por')).toBe('vamos começar');
     expect(restoreAccents('bom preco', 'por')).toBe('bom preço');
@@ -20,46 +20,46 @@ describe('restoreAccents — repõe acentos da língua', () => {
     expect(restoreAccents('a minha mae', 'por')).toBe('a minha mãe');
   });
 
-  it('PT: preserva a capitalização e a fronteira de palavra', () => {
+  it('PT: preserves capitalization and word boundary', () => {
     expect(restoreAccents('Nao', 'por')).toBe('Não');
     expect(restoreAccents('NAO', 'por')).toBe('NÃO');
     expect(restoreAccents('Voce', 'por')).toBe('Você');
     expect(restoreAccents('nao!', 'por')).toBe('não!');
-    expect(restoreAccents('naopode', 'por')).toBe('naopode'); // não casa dentro de palavra
+    expect(restoreAccents('naopode', 'por')).toBe('naopode'); // does not match inside a word
   });
 
-  it('PT: pares AMBÍGUOS NÃO são tocados (não estraga palavras válidas)', () => {
+  it('PT: AMBIGUOUS pairs are NOT touched (does not break valid words)', () => {
     for (const w of ['esta', 'e', 'so', 'musica', 'pratica', 'pais', 'pode', 'publico']) {
       expect(restoreAccents(w, 'por')).toBe(w);
     }
   });
 
-  it('outras línguas: ES/FR restauram; sem dicionário = no-op', () => {
+  it('other languages: ES/FR restore; without a dictionary = no-op', () => {
     expect(restoreAccents('informacion', 'spa')).toBe('información');
     expect(restoreAccents('francais', 'fra')).toBe('français');
-    expect(restoreAccents('nao', 'eng')).toBe('nao'); // inglês não tem dict
-    // alemão TEM dict, mas 'nao' não é chave alemã -> no-op (não toca).
+    expect(restoreAccents('nao', 'eng')).toBe('nao'); // English has no dict
+    // German HAS a dict, but 'nao' is not a German key -> no-op (does not touch).
     expect(restoreAccents('nao', 'deu')).toBe('nao');
     expect(restoreAccents('nao', '')).toBe('nao');
   });
 
-  it('DE: repõe o Umlaut de palavras seguras (forma sem-trema não é palavra alemã)', () => {
+  it('DE: restores the Umlaut of safe words (the un-umlauted form is not a German word)', () => {
     expect(restoreAccents('fur', 'deu')).toBe('für');
     expect(restoreAccents('konnen', 'deu')).toBe('können');
     expect(restoreAccents('grun', 'deu')).toBe('grün');
-    expect(restoreAccents('ich mochte funf', 'deu')).toBe('ich mochte fünf'); // "mochte" fica (ambíguo)
+    expect(restoreAccents('ich mochte funf', 'deu')).toBe('ich mochte fünf'); // "mochte" stays (ambiguous)
     expect(restoreAccents('naturlich', 'deu')).toBe('natürlich');
   });
 
-  it('DE: preserva capitalização e fronteira', () => {
-    expect(restoreAccents('Tur', 'deu')).toBe('Tür'); // 1.ª maiúscula
-    expect(restoreAccents('FUNF', 'deu')).toBe('FÜNF'); // tudo maiúsculas
-    expect(restoreAccents('fur!', 'deu')).toBe('für!'); // pontuação = fronteira
-    expect(restoreAccents('furcht', 'deu')).toBe('furcht'); // não casa dentro de palavra
+  it('DE: preserves capitalization and boundary', () => {
+    expect(restoreAccents('Tur', 'deu')).toBe('Tür'); // 1st letter uppercase
+    expect(restoreAccents('FUNF', 'deu')).toBe('FÜNF'); // all uppercase
+    expect(restoreAccents('fur!', 'deu')).toBe('für!'); // punctuation = boundary
+    expect(restoreAccents('furcht', 'deu')).toBe('furcht'); // does not match inside a word
   });
 
-  it('DE: pares MÍNIMOS ambíguos NÃO são tocados (a forma sem-trema é outra palavra)', () => {
-    // Landmines: cada um é uma palavra alemã comum por si só -> tem de ficar intacto.
+  it('DE: ambiguous MINIMAL pairs are NOT touched (the un-umlauted form is another word)', () => {
+    // Landmines: each is a common German word on its own -> must stay intact.
     for (const w of [
       'schon',
       'wurde',
@@ -78,7 +78,7 @@ describe('restoreAccents — repõe acentos da língua', () => {
     }
   });
 
-  it('accentLangOfModel: prefixo do modelo -> ISO (só línguas com dict)', () => {
+  it('accentLangOfModel: model prefix -> ISO (only languages with a dict)', () => {
     expect(accentLangOfModel('pt_PT-tugao-medium')).toBe('por');
     expect(accentLangOfModel('es_ES-davefx-medium')).toBe('spa');
     expect(accentLangOfModel('fr_FR-siwis-medium')).toBe('fra');
@@ -87,10 +87,10 @@ describe('restoreAccents — repõe acentos da língua', () => {
   });
 });
 
-describe('prepareSpeech — integra o restauro de acentos', () => {
+describe('prepareSpeech — integrates accent restoration', () => {
   const available = ['en_US-amy-medium', 'pt_PT-google-medium', 'es_ES-davefx-medium'];
-  // Sem `as const`: tornava `pronunciations` um readonly [] incompatível com o
-  // PronunciationEntry[] (mutável) do PrepareSpeechInput.
+  // Without `as const`: it made `pronunciations` a readonly [] incompatible with the
+  // PronunciationEntry[] (mutable) of PrepareSpeechInput.
   const base = {
     pronunciations: [] as { term: string; replacement: string }[],
     userVoice: null,
@@ -99,7 +99,7 @@ describe('prepareSpeech — integra o restauro de acentos', () => {
     defaultSpeed: 1,
   };
 
-  it('voz fixa PT => restaura os acentos pela língua da VOZ', () => {
+  it('fixed PT voice => restores accents by the VOICE language', () => {
     const r = prepareSpeech({
       ...base,
       personal: 'nao voce',

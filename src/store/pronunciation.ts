@@ -1,25 +1,25 @@
 import type Database from 'better-sqlite3';
 import type { PronunciationEntry } from '../textCleaning/pronunciation';
-// Tabela CACHEADA (lida a cada mensagem): todo o setter TEM de chamar invalidate.
+// CACHED table (read on every message): every setter MUST call invalidate.
 import { cached, invalidate } from './cache';
 
-// Dois dicionários de pronúncia:
-//  • PESSOAL (/pronunciation, tabela pronunciation_user): só afeta as mensagens do
-//    próprio autor; global (segue o user); limite 3 Free / 50 Premium.
-//  • SERVIDOR (/serverpronunciation, tabela pronunciation): afeta TODA a guild (admin);
-//    limite 3 Free / 50 com a guild Premium. No pipeline aplica-se a PESSOAL primeiro
-//    (o termo do user ganha) e depois a de servidor.
+// Two pronunciation dictionaries:
+//  • PERSONAL (/pronunciation, pronunciation_user table): only affects the author's
+//    own messages; global (follows the user); limit 3 Free / 50 Premium.
+//  • SERVER (/serverpronunciation, pronunciation table): affects the WHOLE guild (admin);
+//    limit 3 Free / 50 with the guild Premium. In the pipeline the PERSONAL one is applied
+//    first (the user's term wins) and then the server one.
 
-/** Limites de pronúncias pessoais por plano. */
+/** Personal pronunciation limits per plan. */
 export const USER_PRON_LIMIT_FREE = 3;
 export const USER_PRON_LIMIT_PREMIUM = 50;
-/** Limites de pronúncias do SERVIDOR por plano da guild. */
+/** SERVER pronunciation limits per guild plan. */
 export const SERVER_PRON_LIMIT = 3;
 export const SERVER_PRON_LIMIT_PREMIUM = 50;
 
 export type AddPronResult = 'ok' | 'limit';
 
-// ── Dicionário de SERVIDOR (/serverpronunciation, admin) ──────────────────────────────
+// ── SERVER dictionary (/serverpronunciation, admin) ──────────────────────────────
 
 export function getServerPronunciations(
   db: Database.Database,
@@ -33,7 +33,7 @@ export function getServerPronunciations(
   return rows.map((e) => ({ ...e }));
 }
 
-/** Adiciona/edita uma pronúncia de servidor. Editar não conta para o limite (é UPDATE). */
+/** Adds/edits a server pronunciation. Editing does not count toward the limit (it's an UPDATE). */
 export function addServerPronunciation(
   db: Database.Database,
   guildId: string,
@@ -58,7 +58,7 @@ export function addServerPronunciation(
   return 'ok';
 }
 
-/** Remove uma pronúncia de servidor. Devolve true se existia. */
+/** Removes a server pronunciation. Returns true if it existed. */
 export function removeServerPronunciation(
   db: Database.Database,
   guildId: string,
@@ -71,7 +71,7 @@ export function removeServerPronunciation(
   return res.changes > 0;
 }
 
-// ── Dicionário PESSOAL (/pronunciation) ───────────────────────────────────────────────
+// ── PERSONAL dictionary (/pronunciation) ───────────────────────────────────────────────
 
 export function getUserPronunciations(db: Database.Database, userId: string): PronunciationEntry[] {
   const rows = cached(db, 'pronunciation_user', userId, () => {
@@ -87,8 +87,8 @@ export function getUserPronunciations(db: Database.Database, userId: string): Pr
 export type AddUserPronResult = 'ok' | 'limit';
 
 /**
- * Adiciona/edita uma pronúncia pessoal. EDITAR um termo existente nunca conta para o
- * limite (é UPDATE); só entradas NOVAS são bloqueadas quando o utilizador já está no cap.
+ * Adds/edits a personal pronunciation. EDITING an existing term never counts toward the
+ * limit (it's an UPDATE); only NEW entries are blocked when the user is already at the cap.
  */
 export function addUserPronunciation(
   db: Database.Database,
@@ -114,7 +114,7 @@ export function addUserPronunciation(
   return 'ok';
 }
 
-/** Remove uma pronúncia pessoal. Devolve true se existia. */
+/** Removes a personal pronunciation. Returns true if it existed. */
 export function removeUserPronunciation(
   db: Database.Database,
   userId: string,

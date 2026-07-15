@@ -16,9 +16,9 @@ import { raceStates } from './raceStates';
 import { log } from '../logging/logger';
 import { metrics } from '../metrics';
 
-// Tempo maximo a esperar que a VoiceConnection fique Ready antes de tocar. Numa
-// ligacao lenta / 1a fala a conexao pode estar em signalling/connecting; tocar
-// nesse instante manda o audio para o vazio (sem som e sem erro).
+// Maximum time to wait for the VoiceConnection to become Ready before playing. On a
+// slow connection / 1st speech the connection may be in signalling/connecting; playing
+// at that instant sends the audio into the void (no sound and no error).
 const CONNECTION_READY_TIMEOUT_MS = 10_000;
 
 export class GuildVoicePlayer {
@@ -26,9 +26,9 @@ export class GuildVoicePlayer {
   private readonly queue: PlayQueue;
   private playing = false;
   private destroyed = false;
-  // /skip disparado DURANTE a janela de sintese (synth + entersState Ready), quando
-  // o AudioPlayer real ainda esta Idle e player.stop() e no-op. Sinaliza que o item
-  // in-flight deve ser DESCARTADO antes de tocar. Ver skip()/playNext().
+  // /skip fired DURING the synthesis window (synth + entersState Ready), when
+  // the real AudioPlayer is still Idle and player.stop() is a no-op. Signals that the
+  // in-flight item must be DISCARDED before playing. See skip()/playNext().
   private pendingSkip = false;
   private reconnecting = false;
 
@@ -47,16 +47,16 @@ export class GuildVoicePlayer {
     });
 
     this.player.on('error', (err) => {
-      // So loga. NAO drena a fila aqui: no @discordjs/voice um erro de stream do
-      // recurso a tocar emite 'error' E DEPOIS transiciona para idle (o setter
-      // emite Idle) — sincrono, para o MESMO recurso. Ter playNext() aqui E no
-      // Idle drenava a fila 2x (double-fire), colapsando a flag `playing` (quebra
-      // single-worker/FIFO) e podendo disparar onIdle() a meio da fala. O Idle
-      // faz o unico drain. Tambem NAO se poe current=null aqui: num erro de
-      // recurso ja substituido (stale) nao ha Idle a seguir (guard resource ===
-      // this.state.resource no onStreamError), logo current aponta para o recurso
-      // NOVO e anula-lo aqui quebraria a reproducao; o reset de current fica so no
-      // Idle, que so ocorre para o recurso corrente.
+      // Just logs. Does NOT drain the queue here: in @discordjs/voice a stream error of
+      // the playing resource emits 'error' AND THEN transitions to idle (the setter
+      // emits Idle) — synchronous, for the SAME resource. Having playNext() here AND in
+      // Idle drained the queue 2x (double-fire), collapsing the `playing` flag (breaks
+      // single-worker/FIFO) and potentially firing onIdle() mid-speech. Idle
+      // does the only drain. Also does NOT set current=null here: on an error of an
+      // already-replaced (stale) resource there is no Idle following (guard resource ===
+      // this.state.resource in onStreamError), so current points at the NEW resource
+      // and nulling it here would break playback; the reset of current stays only in
+      // Idle, which only occurs for the current resource.
       log.error('[player] AudioPlayer error:', err);
     });
 
@@ -66,16 +66,16 @@ export class GuildVoicePlayer {
   }
 
   async say(req: SynthRequest): Promise<boolean> {
-    // Devolve o RESULTADO SINCRONO de enfileirar: true se o pedido entrou na fila,
-    // false se foi descartado (player destruido OU fila no cap). Os comandos
-    // explicitos (/tts, /voice preview) usam este boolean para nao mentir "queued"
-    // quando NADA entrou na fila. NB: so o sinal SINCRONO de fila-cheia — synth-skip
-    // / ligacao-nao-Ready acontecem DEPOIS no worker (playNext), portanto NAO se
-    // refletem aqui (por design; ver comentarios em playNext).
+    // Returns the SYNCHRONOUS RESULT of enqueuing: true if the request entered the queue,
+    // false if it was discarded (player destroyed OR queue at cap). The explicit
+    // commands (/tts, /voice preview) use this boolean to not lie "queued"
+    // when NOTHING entered the queue. NB: only the SYNCHRONOUS full-queue signal — synth-skip
+    // / connection-not-Ready happen LATER in the worker (playNext), so they are NOT
+    // reflected here (by design; see comments in playNext).
     if (this.destroyed) return false;
-    // Enfileira SINCRONAMENTE por ordem de chegada (preserva FIFO da spec §7).
-    // A sintese acontece no worker (playNext), nao aqui, para nao reordenar
-    // pedidos concorrentes pela duracao/cache-hit da sintese.
+    // Enqueues SYNCHRONOUSLY in arrival order (preserves the FIFO of spec §7).
+    // The synthesis happens in the worker (playNext), not here, so as not to reorder
+    // concurrent requests by the synthesis duration/cache-hit.
     const ok = this.queue.enqueue({ req });
     if (!ok) {
       log.warn('[player] queue is full; request dropped');
@@ -87,25 +87,25 @@ export class GuildVoicePlayer {
     return true;
   }
 
-  // Predicado LEVE: ha algo a decorrer? Esta a tocar (playing) OU tem itens na
-  // fila. O /skip le isto ANTES de skip() para distinguir "nada a tocar" de
-  // "saltei" — em vez de fingir sempre que saltou. NAO altera estado.
+  // LIGHT predicate: is something going on? It is playing (playing) OR has items in the
+  // queue. /skip reads this BEFORE skip() to distinguish "nothing playing" from
+  // "I skipped" — instead of always pretending it skipped. Does NOT change state.
   isActive(): boolean {
     return this.playing || this.queue.size() > 0;
   }
 
   skip(): void {
     if (this.destroyed) return;
-    // Caso normal (a tocar): stop() emite Idle -> o handler chama playNext() e
-    // avanca para o proximo item.
+    // Normal case (playing): stop() emits Idle -> the handler calls playNext() and
+    // advances to the next item.
     //
-    // Caso da JANELA DE SINTESE: quando o /skip chega durante synth()/entersState
-    // (playing=true mas play() ainda nao correu), o AudioPlayer REAL esta Idle e
-    // stop() e no-op (no @discordjs/voice, stop() faz `if (idle) return false` —
-    // nao emite Idle). O skip seria PERDIDO e a fala tocava na integra. Detetamos
-    // isso: so esta REALMENTE a tocar se o estado do player e Playing ou Buffering.
-    // Se nao esta -> estamos na janela -> marcamos pendingSkip para que playNext()
-    // descarte o item in-flight antes de o tocar.
+    // SYNTHESIS WINDOW case: when /skip arrives during synth()/entersState
+    // (playing=true but play() has not run yet), the REAL AudioPlayer is Idle and
+    // stop() is a no-op (in @discordjs/voice, stop() does `if (idle) return false` —
+    // does not emit Idle). The skip would be LOST and the speech would play in full. We detect
+    // that: it is REALLY playing only if the player's state is Playing or Buffering.
+    // If it is not -> we are in the window -> we mark pendingSkip so that playNext()
+    // discards the in-flight item before playing it.
     const wasPlaying =
       this.player.state.status === AudioPlayerStatus.Playing ||
       this.player.state.status === AudioPlayerStatus.Buffering;
@@ -116,12 +116,12 @@ export class GuildVoicePlayer {
   }
 
   /**
-   * "Cala-te já": esvazia a fila TODA e pára o que está a tocar, mas FICA na call
-   * (ao contrário de destroy(), que sai). O /shutup usa isto. Depois do stop(), o
-   * player emite Idle -> playNext() encontra a fila vazia -> fica em repouso. Trata a
-   * mesma janela de síntese do skip(): se o AudioPlayer real ainda está Idle (a fala
-   * está a ser sintetizada), stop() é no-op, por isso marcamos pendingSkip para o
-   * item in-flight ser descartado em vez de tocar.
+   * "Shut up now": empties the WHOLE queue and stops what is playing, but STAYS in the call
+   * (unlike destroy(), which leaves). /shutup uses this. After stop(), the
+   * player emits Idle -> playNext() finds the queue empty -> goes to rest. Handles the
+   * same synthesis window as skip(): if the real AudioPlayer is still Idle (the speech
+   * is being synthesized), stop() is a no-op, so we mark pendingSkip for the
+   * in-flight item to be discarded instead of played.
    */
   silence(): void {
     if (this.destroyed) return;
@@ -141,12 +141,12 @@ export class GuildVoicePlayer {
     try {
       this.player.stop(true);
     } catch {
-      // ignorar
+      // ignore
     }
     try {
       this.connection.destroy();
     } catch {
-      // ja pode estar destruida
+      // may already be destroyed
     }
   }
 
@@ -157,23 +157,23 @@ export class GuildVoicePlayer {
       this.playing = false;
       return;
     }
-    // RESET do pendingSkip no INICIO de cada iteracao (logo apos o dequeue, ANTES
-    // dos awaits). Garante que um /skip so afeta o item ATUAL e nunca vaza para o
-    // seguinte: se a janela de sintese de B foi saltada (ou a sintese de B falhou e
-    // drenou C), a iteracao de C limpa a flag e C toca normalmente. INVARIANTE
-    // anti-leak.
+    // RESET pendingSkip at the START of each iteration (right after the dequeue, BEFORE
+    // the awaits). Guarantees a /skip only affects the CURRENT item and never leaks to the
+    // next one: if B's synthesis window was skipped (or B's synthesis failed and
+    // drained C), C's iteration clears the flag and C plays normally. Anti-leak
+    // INVARIANT.
     this.pendingSkip = false;
-    // IMPORTANTE: marcar `playing` ANTES do await da sintese. Isto impede que um
-    // `say()` concorrente (que ve `!this.playing`) arranque um segundo worker de
-    // drain durante a sintese, o que quebraria a ordem FIFO.
+    // IMPORTANT: set `playing` BEFORE the synthesis await. This prevents a
+    // concurrent `say()` (which sees `!this.playing`) from starting a second drain
+    // worker during the synthesis, which would break the FIFO order.
     this.playing = true;
 
     let audioPath: string;
     const synthStart = process.hrtime.bigint();
     if (next.req.assetPath) {
-      // ASSET fixo (ex. efeito sonoro do /rizz): WAV já pronto em disco, tocado DIRETO —
-      // sem motor/cache/efeitos (nada disso se aplica a um clip fixo). Ficheiro em falta =
-      // tratado como falha de síntese (salta o item, não crasha).
+      // Fixed ASSET (e.g. the /rizz sound effect): WAV already ready on disk, played DIRECTLY —
+      // no engine/cache/effects (none of that applies to a fixed clip). Missing file =
+      // treated as a synthesis failure (skips the item, does not crash).
       if (!existsSync(next.req.assetPath)) {
         log.error('[player] audio asset is missing; item skipped:', next.req.assetPath);
         metrics.inc('synthErrors');
@@ -184,83 +184,83 @@ export class GuildVoicePlayer {
     } else {
       try {
         audioPath = await this.engine.synth(next.req);
-        // Latencia de sintese efetiva (inclui cache hit rapido e miss/spawn lento).
+        // Effective synthesis latency (includes fast cache hit and slow miss/spawn).
         metrics.recordSynthMs(Number(process.hrtime.bigint() - synthStart) / 1e6);
       } catch (err) {
         log.error('[player] synthesis error; item skipped:', err);
         metrics.inc('synthErrors');
-        // Salta este item e continua a fila sem crashar (sem crescimento de stack:
-        // estamos depois do await).
+        // Skip this item and continue the queue without crashing (no stack growth:
+        // we are after the await).
         void this.playNext();
         return;
       }
     }
 
-    // A sintese pode ter demorado; o player pode ter sido destruido entretanto.
+    // The synthesis may have taken a while; the player may have been destroyed in the meantime.
     if (this.destroyed) return;
 
-    // Garantir que a ligacao esta Ready ANTES de tocar. Se estiver em
-    // signalling/connecting (ligacao lenta / 1a fala), tocar agora mandaria o
-    // audio para o vazio. entersState resolve logo se ja estiver Ready. Feito
-    // DEPOIS da sintese de proposito: a ligacao estabelece EM PARALELO com a
-    // sintese, portanto esperar aqui aproxima-se de max(ready, synth) em vez de
-    // os somar.
+    // Ensure the connection is Ready BEFORE playing. If it is in
+    // signalling/connecting (slow connection / 1st speech), playing now would send the
+    // audio into the void. entersState resolves immediately if it is already Ready. Done
+    // AFTER the synthesis on purpose: the connection establishes IN PARALLEL with the
+    // synthesis, so waiting here approaches max(ready, synth) instead of
+    // summing them.
     try {
       await entersState(this.connection, VoiceConnectionStatus.Ready, CONNECTION_READY_TIMEOUT_MS);
     } catch (err) {
-      // A rejeicao pode ter sido causada por destroy() (que destroi a ligacao).
+      // The rejection may have been caused by destroy() (which destroys the connection).
       if (this.destroyed) return;
       log.warn('[player] voice connection did not become Ready; speech skipped:', err);
-      // Mesmo tratamento do skip de sintese: nao tocamos para o vazio; saltamos
-      // este item e continuamos a fila (sem crescimento de stack — estamos
-      // depois de um await; sem loop apertado — cada iteracao e gated pelo
-      // timeout). Preserva o single-worker de drain e o FIFO.
+      // Same handling as the synthesis skip: we do not play into the void; we skip
+      // this item and continue the queue (no stack growth — we are
+      // after an await; no tight loop — each iteration is gated by the
+      // timeout). Preserves the single drain worker and the FIFO.
       void this.playNext();
       return;
     }
 
-    // entersState e mais um await; re-verificar destroyed antes de tocar.
+    // entersState is one more await; re-check destroyed before playing.
     if (this.destroyed) return;
 
-    // /skip disparado DURANTE a sintese/entersState deste item (janela em que o
-    // AudioPlayer estava Idle e stop() foi no-op): descartar o item in-flight SEM
-    // tocar e drenar o proximo. Feito ANTES de createAudioResource/messagesSpoken
-    // para que um item saltado nunca conte como falado. O pendingSkip foi setado por
-    // skip() e sera reposto a false no inicio da proxima iteracao (anti-leak).
+    // /skip fired DURING this item's synthesis/entersState (window in which the
+    // AudioPlayer was Idle and stop() was a no-op): discard the in-flight item WITHOUT
+    // playing and drain the next. Done BEFORE createAudioResource/messagesSpoken
+    // so that a skipped item never counts as spoken. pendingSkip was set by
+    // skip() and will be reset to false at the start of the next iteration (anti-leak).
     if (this.pendingSkip) {
       this.pendingSkip = false;
       void this.playNext();
       return;
     }
 
-    // TAIL guardado: createAudioResource()/play() podem lançar SINCRONAMENTE (ex.:
-    // transcoder/prism a falhar). Sem este try/catch, um throw aqui deixava
-    // `playing=true` PARA SEMPRE (o worker nunca reposto -> guild muda até
-    // reiniciar) e rejeitava o `void playNext()` do call-site (unhandledRejection).
-    // Tratamento idêntico ao erro de síntese: salta o item e continua a fila.
+    // Guarded TAIL: createAudioResource()/play() can throw SYNCHRONOUSLY (e.g.:
+    // transcoder/prism failing). Without this try/catch, a throw here left
+    // `playing=true` FOREVER (the worker never reset -> guild goes mute until
+    // restart) and rejected the call-site's `void playNext()` (unhandledRejection).
+    // Handling identical to the synthesis error: skips the item and continues the queue.
     try {
-      // ÊNFASE: "mais alto quando há ! ou MAIÚSCULAS". Ganho calculado do `emphasisSource`
-      // (o que o UTILIZADOR escreveu) e não do req.text decorado — senão um nome/apelido em
-      // MAIÚSCULAS no prefixo xsaid fazia TODAS as mensagens gritar (falso grito). Cai no
-      // req.text quando não há source (jogos, /tts, preview — sem decoração). inlineVolume
-      // só quando há ganho, para não pagar o VolumeTransformer na maioria das falas.
+      // EMPHASIS: "louder when there is ! or UPPERCASE". Gain computed from `emphasisSource`
+      // (what the USER wrote) and not from the decorated req.text — otherwise a name/nickname in
+      // UPPERCASE in the xsaid prefix made ALL messages shout (false shout). Falls back to
+      // req.text when there is no source (games, /tts, preview — no decoration). inlineVolume
+      // only when there is gain, so as not to pay for the VolumeTransformer on most speech.
       const gain = emphasisGain(next.req.emphasisSource ?? next.req.text);
       const resource = createAudioResource(audioPath, {
         inputType: StreamType.Arbitrary,
         inlineVolume: gain !== 1,
       });
       if (gain !== 1) resource.volume?.setVolume(gain);
-      // play() PRIMEIRO: se lançar sincronamente (transcoder/prism a falhar), o catch
-      // conta synthErrors — e NÃO queremos contar essa mensagem como "falada". Por isso
-      // messagesSpoken incrementa SÓ DEPOIS de play() ter sido chamado com sucesso (o
-      // áudio começou a tocar), senão uma falha contava 2× (messagesSpoken + synthErrors).
+      // play() FIRST: if it throws synchronously (transcoder/prism failing), the catch
+      // counts synthErrors — and we do NOT want to count that message as "spoken". So
+      // messagesSpoken increments ONLY AFTER play() has been called successfully (the
+      // audio started playing), otherwise a failure counted 2× (messagesSpoken + synthErrors).
       this.player.play(resource);
       metrics.inc('messagesSpoken');
     } catch (err) {
       log.error('[player] failed to create or play resource; item skipped:', err);
       metrics.inc('synthErrors');
-      // Sem crescimento de stack (estamos depois de awaits); repõe o worker via
-      // a próxima iteração, que fará playing=false se a fila esvaziar.
+      // No stack growth (we are after awaits); resets the worker via
+      // the next iteration, which will set playing=false if the queue empties.
       void this.playNext();
     }
   }
@@ -268,46 +268,46 @@ export class GuildVoicePlayer {
   private async handleDisconnect(): Promise<void> {
     if (this.destroyed || this.reconnecting) return;
     this.reconnecting = true;
-    // Semantica das metricas de voz (P7.4):
-    //  - voiceDrops: conta a QUEDA uma vez por episodio. O guard acima
-    //    (destroyed || reconnecting) impede que eventos Disconnected repetidos
-    //    durante o mesmo episodio de reconexao re-entrem e contem a dobrar.
-    //  - voiceReconnects: conta o SUCESSO uma vez, quando a ligacao confirma
-    //    estar de volta a Ready — seja pela recuperacao "soft" (entersState Ready
-    //    resolve) seja por rejoin manual bem-sucedido (tryRejoin devolve true).
-    //    Como tryRejoin devolve um unico booleano (resultado do loop de backoff),
-    //    o sucesso conta no RESULTADO, nunca por tentativa — um ciclo de backoff
-    //    nunca conta a dobrar. Episodio que falha de vez: drops +1, reconnects +0.
+    // Voice metrics semantics (P7.4):
+    //  - voiceDrops: counts the DROP once per episode. The guard above
+    //    (destroyed || reconnecting) prevents repeated Disconnected events
+    //    during the same reconnection episode from re-entering and double-counting.
+    //  - voiceReconnects: counts the SUCCESS once, when the connection confirms
+    //    it is back to Ready — whether by the "soft" recovery (entersState Ready
+    //    resolves) or by a successful manual rejoin (tryRejoin returns true).
+    //    Since tryRejoin returns a single boolean (the result of the backoff loop),
+    //    the success counts on the RESULT, never per attempt — a backoff cycle
+    //    never double-counts. An episode that fails for good: drops +1, reconnects +0.
     metrics.inc('voiceDrops');
     try {
-      // Reconexao "soft": o gateway esta a renegociar a sessao de voz.
-      // raceStates (e não o race nativo): o entersState PERDEDOR rejeita mais tarde
-      // e sem handler gerava um unhandledRejection espúrio no webhook de erros.
+      // "Soft" reconnection: the gateway is renegotiating the voice session.
+      // raceStates (not the native race): the LOSING entersState rejects later
+      // and without a handler generated a spurious unhandledRejection in the error webhook.
       await raceStates([
         entersState(this.connection, VoiceConnectionStatus.Signalling, 5_000),
         entersState(this.connection, VoiceConnectionStatus.Connecting, 5_000),
       ]);
-      // Recuperou — esperar que volte a Ready.
+      // Recovered — wait for it to return to Ready.
       await entersState(this.connection, VoiceConnectionStatus.Ready, 20_000);
       metrics.inc('voiceReconnects');
     } catch {
-      // Nao recuperou via soft — tentar rejoin manual algumas vezes.
+      // Did not recover via soft — try a manual rejoin a few times.
       const recovered = await this.tryRejoin(3);
       if (!recovered) {
-        // Se ja fomos destruidos EXTERNAMENTE durante a janela de rejoin (ex.:
-        // removePlayer via /join ou /leave, que substitui este player por um novo
-        // no mesmo slot da guild), NAO chamar destroy()/onIdle(): o onIdle e keyed
-        // por guild e derrubaria o SUBSTITUTO + mataria a sessao acabada de criar.
-        // Sair em silencio — o novo player e que manda agora. Guard ANTES de
-        // destroy() (destroy() poe destroyed=true; um guard a seguir romperia
-        // sempre a desistencia legitima). tryRejoin->check->destroy->onIdle e
-        // sincrono, logo o /join nao se pode interpor depois deste guard.
+        // If we were already destroyed EXTERNALLY during the rejoin window (e.g.:
+        // removePlayer via /join or /leave, which replaces this player with a new one
+        // in the same guild slot), do NOT call destroy()/onIdle(): onIdle is keyed
+        // by guild and would tear down the REPLACEMENT + kill the just-created session.
+        // Exit silently — the new player is in charge now. Guard BEFORE
+        // destroy() (destroy() sets destroyed=true; a guard after it would always
+        // break the legitimate giving-up). tryRejoin->check->destroy->onIdle is
+        // synchronous, so /join cannot slip in after this guard.
         if (this.destroyed) return;
         this.destroy();
         this.onIdle();
         return;
       }
-      // Rejoin manual recuperou a ligacao (voltou a Ready) — conta UM sucesso.
+      // Manual rejoin recovered the connection (returned to Ready) — counts ONE success.
       metrics.inc('voiceReconnects');
     } finally {
       this.reconnecting = false;

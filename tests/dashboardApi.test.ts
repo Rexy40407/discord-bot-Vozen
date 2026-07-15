@@ -4,9 +4,9 @@ import { initDb } from '../src/store/db';
 import { getGuildConfig } from '../src/store/guildConfig';
 import { createDashboardApi, sanitizePatch, DASHBOARD_FIELDS } from '../src/premium/dashboardApi';
 
-// Dashboard web de config: núcleo de AUTORIZAÇÃO + escrita whitelisted. Ver
-// docs/COMPLIANCE-VAGA5.md · Dashboard. A identidade/guilds vêm da Discord (fetch
-// injetável); a autz exige MANAGE_GUILD (ou ADMIN) + bot presente na guild.
+// Config web dashboard: AUTHORIZATION core + whitelisted writes. See
+// docs/COMPLIANCE-VAGA5.md · Dashboard. Identity/guilds come from Discord (injectable
+// fetch); authz requires MANAGE_GUILD (or ADMIN) + bot present in the guild.
 
 const TOKEN = 'tok-abc';
 const GUILD = '999999999999999999';
@@ -14,7 +14,7 @@ const MANAGE_GUILD = '0x20'; // 1<<5
 const NONE = '0';
 const ADMIN = '0x8'; // 1<<3
 
-// fetch falso do /users/@me/guilds — devolve as guilds dadas (ou 401 se token != esperado).
+// fake fetch of /users/@me/guilds — returns the given guilds (or 401 if token != expected).
 function fakeGuildsFetch(expected: string, guilds: unknown[]): typeof fetch {
   return (async (_url: string, init?: { headers?: Record<string, string> }) => {
     const auth = init?.headers?.Authorization ?? '';
@@ -39,33 +39,33 @@ function makeApi(
   });
 }
 
-describe('sanitizePatch — whitelist + limites', () => {
-  it('só deixa passar campos conhecidos (ignora ttsChannelId etc.)', () => {
+describe('sanitizePatch — whitelist + limits', () => {
+  it('only lets known fields through (ignores ttsChannelId etc.)', () => {
     const out = sanitizePatch({ xsaid: false, ttsChannelId: 'hack', enabled: false, foo: 1 });
     expect(out).toEqual({ xsaid: false });
     expect('ttsChannelId' in out).toBe(false);
     expect('enabled' in out).toBe(false);
   });
 
-  it('coage booleans e limita números', () => {
+  it('coerces booleans and clamps numbers', () => {
     const out = sanitizePatch({ soundboard: 1, maxChars: 99999, ratePerMin: -3 });
     expect(out.soundboard).toBe(true);
-    expect(out.maxChars).toBe(2000); // clamp ao máximo
-    expect(out.ratePerMin).toBe(1); // clamp ao mínimo
+    expect(out.maxChars).toBe(2000); // clamp to the maximum
+    expect(out.ratePerMin).toBe(1); // clamp to the minimum
   });
 
-  it('locale inválido é descartado; válido passa', () => {
+  it('invalid locale is discarded; valid one passes', () => {
     expect(sanitizePatch({ locale: 'xx-nope' })).toEqual({});
     expect(sanitizePatch({ locale: 'pt' })).toEqual({ locale: 'pt' });
   });
 
-  it('todos os DASHBOARD_FIELDS são campos reais do guild_config', () => {
-    // guarda: cada campo do dashboard tem de existir no GuildConfig (default != undefined)
+  it('all DASHBOARD_FIELDS are real guild_config fields', () => {
+    // guard: each dashboard field must exist in GuildConfig (default != undefined)
     expect(DASHBOARD_FIELDS.length).toBeGreaterThan(0);
   });
 });
 
-describe('createDashboardApi — autorização', () => {
+describe('createDashboardApi — authorization', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -74,58 +74,58 @@ describe('createDashboardApi — autorização', () => {
     db.close();
   });
 
-  it('listGuilds: só servidores com MANAGE_GUILD/ADMIN E com o bot presente', async () => {
+  it('listGuilds: only servers with MANAGE_GUILD/ADMIN AND with the bot present', async () => {
     const api = makeApi(
       db,
       [
         { id: GUILD, name: 'Meu', icon: null, permissions: MANAGE_GUILD }, // ok
-        { id: '111', name: 'Admin sem bot', icon: null, permissions: ADMIN }, // bot ausente
-        { id: '222', name: 'Sem perm', icon: null, permissions: NONE }, // sem perm
+        { id: '111', name: 'Admin sem bot', icon: null, permissions: ADMIN }, // bot absent
+        { id: '222', name: 'Sem perm', icon: null, permissions: NONE }, // no perm
       ],
-      [GUILD], // bot só está no GUILD
+      [GUILD], // bot is only in GUILD
     );
     const list = await api.listGuilds(TOKEN);
     expect(list?.map((g) => g.id)).toEqual([GUILD]);
   });
 
-  it('listGuilds: token inválido -> null', async () => {
+  it('listGuilds: invalid token -> null', async () => {
     const api = makeApi(db, [], [GUILD]);
     expect(await api.listGuilds('token-errado')).toBeNull();
   });
 
-  it('getConfig: guild não gerível -> null (não vaza config)', async () => {
+  it('getConfig: non-manageable guild -> null (does not leak config)', async () => {
     const api = makeApi(db, [{ id: '222', name: 'X', icon: null, permissions: NONE }], [GUILD]);
     expect(await api.getConfig(TOKEN, GUILD)).toBeNull();
   });
 
-  it('getConfig: guild gerível -> devolve só os campos do dashboard', async () => {
+  it('getConfig: manageable guild -> returns only the dashboard fields', async () => {
     const api = makeApi(db, [{ id: GUILD, name: 'Meu', icon: null, permissions: MANAGE_GUILD }]);
     const cfg = await api.getConfig(TOKEN, GUILD);
     expect(cfg).not.toBeNull();
     expect(cfg!.xsaid).toBe(true); // default
-    expect('ttsChannelId' in cfg!).toBe(false); // NÃO expõe campos fora da whitelist
+    expect('ttsChannelId' in cfg!).toBe(false); // does NOT expose fields outside the whitelist
   });
 
-  it('saveConfig: aplica o patch (via setter) e ignora campos fora da whitelist', async () => {
+  it('saveConfig: applies the patch (via setter) and ignores fields outside the whitelist', async () => {
     const api = makeApi(db, [{ id: GUILD, name: 'Meu', icon: null, permissions: MANAGE_GUILD }]);
     const out = await api.saveConfig(TOKEN, GUILD, {
       xsaid: false,
       soundboard: false,
-      ttsChannelId: 'INJECT', // deve ser ignorado
+      ttsChannelId: 'INJECT', // should be ignored
     });
     expect(out).not.toBeNull();
     expect(out!.xsaid).toBe(false);
-    // persistido de verdade + o campo fora da whitelist NÃO foi tocado:
+    // actually persisted + the field outside the whitelist was NOT touched:
     const stored = getGuildConfig(db, GUILD);
     expect(stored.xsaid).toBe(false);
     expect(stored.soundboard).toBe(false);
-    expect(stored.ttsChannelId).toBeNull(); // intacto (default) — a injeção não passou
+    expect(stored.ttsChannelId).toBeNull(); // intact (default) — the injection didn't pass
   });
 
-  it('saveConfig: guild não gerível -> null (não escreve nada)', async () => {
+  it('saveConfig: non-manageable guild -> null (writes nothing)', async () => {
     const api = makeApi(db, [{ id: '222', name: 'X', icon: null, permissions: NONE }], [GUILD]);
     const out = await api.saveConfig(TOKEN, GUILD, { xsaid: false });
     expect(out).toBeNull();
-    expect(getGuildConfig(db, GUILD).xsaid).toBe(true); // não mexeu
+    expect(getGuildConfig(db, GUILD).xsaid).toBe(true); // untouched
   });
 });

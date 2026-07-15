@@ -43,7 +43,7 @@ function makeMsg(): any {
     },
     guildId: GUILD,
     channelId: CHAN,
-    channel: { send: vi.fn().mockResolvedValue(undefined) }, // canal da msg (streak); irrelevante aqui
+    channel: { send: vi.fn().mockResolvedValue(undefined) }, // msg channel (streak); irrelevant here
     content: 'ola malta tudo bem por aqui hoje neste servidor',
     member: { displayName: 'Ana', roles: { cache: { has: () => false } } },
     mentions: { has: () => false, repliedUser: null },
@@ -51,19 +51,19 @@ function makeMsg(): any {
   };
 }
 
-describe('handleMessage — leaderboard automático (F2)', () => {
+describe('handleMessage — automatic leaderboard (F2)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
     setGuildConfig(db, GUILD, { autoread: true, ttsChannelId: CHAN, defaultVoice: '' });
-    // Semeia tagarelas para o getTopSpeakers devolver linhas.
+    // Seed talkers so getTopSpeakers returns rows.
     bumpTalk(db, GUILD, 'top-user', new Date());
   });
   afterEach(() => {
     db.close();
   });
 
-  it('poster decide postar -> envia o leaderboard no canal do /setup, SEM pingar', async () => {
+  it('poster decides to post -> sends the leaderboard in the /setup channel, WITHOUT pinging', async () => {
     const lbSend = vi.fn().mockResolvedValue(undefined);
     const say = vi.fn().mockResolvedValue(true);
     await handleMessage(makeMsg(), makeDeps(db, say, { record: true, lbSend }));
@@ -71,10 +71,10 @@ describe('handleMessage — leaderboard automático (F2)', () => {
     expect(lbSend).toHaveBeenCalledTimes(1);
     const payload = lbSend.mock.calls[0][0];
     expect(String(payload.content)).toContain('Top talkers');
-    expect(payload.allowedMentions).toEqual({ parse: [] }); // não pinga ninguém
+    expect(payload.allowedMentions).toEqual({ parse: [] }); // pings no one
   });
 
-  it('poster decide NÃO postar -> não envia nada', async () => {
+  it('poster decides NOT to post -> sends nothing', async () => {
     const lbSend = vi.fn().mockResolvedValue(undefined);
     const say = vi.fn().mockResolvedValue(true);
     await handleMessage(makeMsg(), makeDeps(db, say, { record: false, lbSend }));
@@ -82,7 +82,7 @@ describe('handleMessage — leaderboard automático (F2)', () => {
     expect(lbSend).not.toHaveBeenCalled();
   });
 
-  it('fila cheia (say false) -> não conta nem posta (record nem é chamado)', async () => {
+  it('queue full (say false) -> does not count or post (record is not even called)', async () => {
     const lbSend = vi.fn().mockResolvedValue(undefined);
     const say = vi.fn().mockResolvedValue(false);
     const deps = makeDeps(db, say, { record: true, lbSend });

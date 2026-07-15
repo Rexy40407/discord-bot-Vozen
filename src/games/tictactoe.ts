@@ -7,19 +7,19 @@ type Mark = 'X' | 'O';
 const LINES = [
   [0, 1, 2],
   [3, 4, 5],
-  [6, 7, 8], // linhas
+  [6, 7, 8], // rows
   [0, 3, 6],
   [1, 4, 7],
-  [2, 5, 8], // colunas
+  [2, 5, 8], // columns
   [0, 4, 8],
-  [2, 4, 6], // diagonais
+  [2, 4, 6], // diagonals
 ];
 
 /**
- * "Galo" (tic-tac-toe) — 2 jogadores: os 2 PRIMEIROS a jogar ficam X e O (X comeca).
- * Joga-se escrevendo o numero da casa (1-9). O vencedor ganha 1 ponto; empate nao
- * pontua. Jogo de TEXTO, tabuleiro renderizado num bloco de codigo. So numeros 1-9 de
- * quem esta em jogo, na sua vez, contam.
+ * Tic-tac-toe — 2 players: the FIRST 2 to play become X and O (X starts).
+ * You play by typing the cell number (1-9). The winner earns 1 point; a draw does
+ * not score. TEXT game, board rendered in a code block. Only numbers 1-9 from
+ * whoever is in the game, on their turn, count.
  */
 class TicTacToeGame implements Game {
   readonly id = 'tictactoe';
@@ -56,10 +56,10 @@ class TicTacToeGame implements Game {
   onMessage(ctx: GameContext, msg: GameMessage): void {
     if (this.over) return;
     const n = firstInteger(msg.content);
-    if (n === null || n < 1 || n > 9) return; // so jogadas 1-9 contam
+    if (n === null || n < 1 || n > 9) return; // only moves 1-9 count
     this.names[msg.authorId] = msg.authorName;
 
-    // Atribuicao de assentos: 1o jogador -> X; 2o jogador DISTINTO -> O; restantes = espetadores.
+    // Seat assignment: 1st player -> X; 2nd DISTINCT player -> O; the rest = spectators.
     let mark = this.markOf(msg.authorId);
     if (!mark) {
       if (!this.xId) {
@@ -69,7 +69,7 @@ class TicTacToeGame implements Game {
         this.oId = msg.authorId;
         mark = 'O';
       } else {
-        return; // lugares cheios -> espetador, ignora
+        return; // seats full -> spectator, ignore
       }
     }
 
@@ -108,7 +108,7 @@ class TicTacToeGame implements Game {
   }
 
   private render(ctx: GameContext): string {
-    // Tiles-emoji (tx/to/t1..t9) quando instalados; senão a grelha ASCII de sempre.
+    // Emoji tiles (tx/to/t1..t9) when installed; otherwise the usual ASCII grid.
     if (ctx.emoji('t1')) {
       const cell = (i: number): string => {
         const m = this.cells[i];

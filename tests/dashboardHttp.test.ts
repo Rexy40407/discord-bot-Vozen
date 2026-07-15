@@ -1,7 +1,7 @@
-// tests/dashboardHttp.test.ts — rotas HTTP do dashboard web (/api/dashboard/*).
+// tests/dashboardHttp.test.ts — web dashboard HTTP routes (/api/dashboard/*).
 //
-// CORS restrito, Bearer obrigatório, autz (MANAGE_GUILD + bot presente) no dashboardApi.
-// Corre o servidor real (startKofiWebhook) com um dashboardApi real + fetch falso da Discord.
+// Restricted CORS, Bearer required, authz (MANAGE_GUILD + bot present) in dashboardApi.
+// Runs the real server (startKofiWebhook) with a real dashboardApi + fake Discord fetch.
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Server } from 'node:http';
 import type Database from 'better-sqlite3';
@@ -24,13 +24,13 @@ function fakeFetch(): typeof fetch {
       status: 200,
       json: async () => [
         { id: GUILD, name: 'Meu', icon: null, permissions: '0x20' }, // MANAGE_GUILD + bot
-        { id: OTHER, name: 'Outro', icon: null, permissions: '0' }, // sem perm
+        { id: OTHER, name: 'Outro', icon: null, permissions: '0' }, // no perm
       ],
     } as unknown as Response;
   }) as unknown as typeof fetch;
 }
 
-describe('/api/dashboard/* — rotas HTTP', () => {
+describe('/api/dashboard/* — HTTP routes', () => {
   let db: Database.Database;
   let server: Server | null = null;
 
@@ -50,7 +50,7 @@ describe('/api/dashboard/* — rotas HTTP', () => {
       db,
       now: () => 1_000,
       fetchImpl: fakeFetch(),
-      botHasGuild: (id) => id === GUILD, // o bot só está no GUILD
+      botHasGuild: (id) => id === GUILD, // the bot is only in GUILD
     });
     server = startKofiWebhook({
       db,
@@ -71,12 +71,12 @@ describe('/api/dashboard/* — rotas HTTP', () => {
 
   const auth = { authorization: `Bearer ${TOKEN}` };
 
-  it('GET /guilds sem token -> 401', async () => {
+  it('GET /guilds without token -> 401', async () => {
     const base = await start();
     expect((await fetch(`${base}/api/dashboard/guilds`)).status).toBe(401);
   });
 
-  it('GET /guilds token inválido -> 401', async () => {
+  it('GET /guilds invalid token -> 401', async () => {
     const base = await start();
     const res = await fetch(`${base}/api/dashboard/guilds`, {
       headers: { authorization: 'Bearer mau' },
@@ -84,7 +84,7 @@ describe('/api/dashboard/* — rotas HTTP', () => {
     expect(res.status).toBe(401);
   });
 
-  it('GET /guilds -> 200 só com os servidores geríveis (MANAGE_GUILD + bot)', async () => {
+  it('GET /guilds -> 200 only with the manageable servers (MANAGE_GUILD + bot)', async () => {
     const base = await start();
     const res = await fetch(`${base}/api/dashboard/guilds`, { headers: auth });
     expect(res.status).toBe(200);
@@ -93,7 +93,7 @@ describe('/api/dashboard/* — rotas HTTP', () => {
     expect(res.headers.get('access-control-allow-origin')).toBe('https://vozen.org');
   });
 
-  it('GET /guild/<gerível> -> 200 com a config; guild não gerível -> 403', async () => {
+  it('GET /guild/<manageable> -> 200 with the config; non-manageable guild -> 403', async () => {
     const base = await start();
     const ok = await fetch(`${base}/api/dashboard/guild/${GUILD}`, { headers: auth });
     expect(ok.status).toBe(200);
@@ -101,12 +101,12 @@ describe('/api/dashboard/* — rotas HTTP', () => {
     expect(forbidden.status).toBe(403);
   });
 
-  it('GET /guild/<não-numérico> -> 400', async () => {
+  it('GET /guild/<non-numeric> -> 400', async () => {
     const base = await start();
     expect((await fetch(`${base}/api/dashboard/guild/abc`, { headers: auth })).status).toBe(400);
   });
 
-  it('POST /guild/<gerível> aplica o patch e persiste', async () => {
+  it('POST /guild/<manageable> applies the patch and persists', async () => {
     const base = await start();
     const res = await fetch(`${base}/api/dashboard/guild/${GUILD}`, {
       method: 'POST',
@@ -115,11 +115,11 @@ describe('/api/dashboard/* — rotas HTTP', () => {
     });
     expect(res.status).toBe(200);
     const cfg = getGuildConfig(db, GUILD);
-    expect(cfg.xsaid).toBe(false); // aplicado
-    expect(cfg.ttsChannelId).toBeNull(); // injeção fora da whitelist ignorada
+    expect(cfg.xsaid).toBe(false); // applied
+    expect(cfg.ttsChannelId).toBeNull(); // injection outside the whitelist ignored
   });
 
-  it('POST /guild/<não gerível> -> 403 (não escreve)', async () => {
+  it('POST /guild/<non-manageable> -> 403 (does not write)', async () => {
     const base = await start();
     const res = await fetch(`${base}/api/dashboard/guild/${OTHER}`, {
       method: 'POST',
@@ -129,7 +129,7 @@ describe('/api/dashboard/* — rotas HTTP', () => {
     expect(res.status).toBe(403);
   });
 
-  it('POST com JSON inválido -> 400', async () => {
+  it('POST with invalid JSON -> 400', async () => {
     const base = await start();
     const res = await fetch(`${base}/api/dashboard/guild/${GUILD}`, {
       method: 'POST',

@@ -1,32 +1,32 @@
 /**
- * integration.pipeline.test.ts — teste de integracao END-TO-END (P10.2).
+ * integration.pipeline.test.ts — END-TO-END integration test (P10.2).
  *
- * Ao contrario das suites existentes (que exercitam modulos ISOLADOS ou ramos
- * especificos do messageHandler), este teste percorre o CAMINHO CENTRAL COMPLETO
- * de auto-leitura de ponta a ponta, com dependencias REAIS:
+ * Unlike the existing suites (which exercise ISOLATED modules or specific
+ * branches of the messageHandler), this test walks the COMPLETE CENTRAL PATH
+ * of auto-read end to end, with REAL dependencies:
  *
  *   handleMessage (trigger/gating/rate-limit)
- *     -> cleanText        (limpeza real: URL, emoji, mencoes)
- *     -> applyPronunciation(dicionario real da guild, via store SQLite)
- *     -> isBlocked         (blocklist real da guild, via store SQLite)
+ *     -> cleanText        (real cleanup: URL, emoji, mentions)
+ *     -> applyPronunciation(real guild dictionary, via SQLite store)
+ *     -> isBlocked         (real guild blocklist, via SQLite store)
  *     -> resolveSynth      (detectLang via franc + pickVoice)
- *     -> player.say(req)   (capturado por um spy observavel)
+ *     -> player.say(req)   (captured by an observable spy)
  *
- * O store e um SQLite :memory: real (initDb), configurado com guild_config,
- * blocklist, opt-out e pronuncia conforme cada caso. So o player (e portanto o
- * Piper/Discord reais) e que e falso: capturamos o SynthRequest passado a say()
- * — que carrega `text` E `model` — e e ai que afirmamos "fala o texto certo na
- * voz certa". Esse req e o FIM do pipeline central, por isso o spy NAO e hollow.
+ * The store is a real SQLite :memory: (initDb), configured with guild_config,
+ * blocklist, opt-out and pronunciation according to each case. Only the player (and
+ * therefore the real Piper/Discord) is fake: we capture the SynthRequest passed to say()
+ * — which carries `text` AND `model` — and that is where we assert "speaks the right text in
+ * the right voice". That req is the END of the central pipeline, so the spy is NOT hollow.
  *
- * Armadilhas evitadas (ver porque o teste e real e nao passa por engano):
- *  - franc precisa de texto LONGO: frases curtas devolvem '' e cairiam no
- *    fallback. As frases PT/EN sao longas e foram verificadas (por/eng).
- *  - contaminacao de fallback: o fallback global e uma TERCEIRA lingua
- *    (de_DE-...), e a guild nao define default_voice. Assim, se a deteccao
- *    falhasse silenciosamente, a voz cairia em `de_` — e as asercoes de prefixo
- *    pt_/en_ FALHAVAM em vez de passar por acidente.
- *  - cada `it()` usa db + deps frescos (limiters Map novo) para nao haver
- *    contaminacao de rate-limit ou estado entre casos.
+ * Pitfalls avoided (why the test is real and does not pass by accident):
+ *  - franc needs LONG text: short sentences return '' and would fall into the
+ *    fallback. The PT/EN sentences are long and were verified (por/eng).
+ *  - fallback contamination: the global fallback is a THIRD language
+ *    (de_DE-...), and the guild does not define default_voice. Thus, if detection
+ *    failed silently, the voice would fall into `de_` — and the pt_/en_ prefix
+ *    assertions would FAIL instead of passing by accident.
+ *  - each `it()` uses fresh db + deps (new limiters Map) so there is no
+ *    rate-limit or state contamination between cases.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -44,19 +44,19 @@ const CHAN = 'chan-autoread';
 const BOT_ID = 'bot-1';
 const USER = 'user-1';
 
-// Modelos disponiveis no "Piper" falso: PT europeu + EN. Inclui pt_ e en_ para
-// que pickVoice consiga escolher por prefixo quando a deteccao acerta.
+// Models available in the fake "Piper": European PT + EN. Includes pt_ and en_ so
+// pickVoice can choose by prefix when detection gets it right.
 const AVAILABLE = ['pt_PT-google-medium', 'en_US-amy-medium'];
-// Fallback GLOBAL deliberadamente numa TERCEIRA lingua (alemao). A guild NAO
-// define default_voice (fica ''), por isso uma deteccao falhada cairia em de_ —
-// nunca em pt_/en_ — tornando as asercoes de voz significativas.
+// GLOBAL fallback deliberately in a THIRD language (German). The guild does NOT
+// define default_voice (stays ''), so a failed detection would fall into de_ —
+// never into pt_/en_ — making the voice assertions meaningful.
 const GLOBAL_FALLBACK = 'de_DE-thorsten-medium';
 
 // ---------------------------------------------------------------------------
-// Helpers (mesmos padroes das suites messageHandler*.test.ts)
+// Helpers (same patterns as the messageHandler*.test.ts suites)
 // ---------------------------------------------------------------------------
 
-/** deps com um player FALSO observavel (say spy) e store/config reais. */
+/** deps with an observable FAKE player (say spy) and real store/config. */
 function makeDeps(db: Database.Database, say: ReturnType<typeof vi.fn>): BotDeps {
   const players = new Map<string, unknown>();
   players.set(GUILD, { say });
@@ -74,10 +74,10 @@ function makeDeps(db: Database.Database, say: ReturnType<typeof vi.fn>): BotDeps
 }
 
 /**
- * Mensagem de auto-leitura no canal CHAN. `resolveUser`/`resolveChannel` do
- * handler leem destas caches reais da "guild", por isso uma mencao numerica
- * `<@123>` resolve para o displayName aqui definido — provando a integracao
- * cleanText <-> caches da guild.
+ * Auto-read message in the CHAN channel. The handler's `resolveUser`/`resolveChannel`
+ * read from these real "guild" caches, so a numeric mention
+ * `<@123>` resolves to the displayName defined here — proving the
+ * cleanText <-> guild caches integration.
  */
 function makeMessage(opts: {
   content: string;
@@ -115,16 +115,16 @@ function makeMessage(opts: {
 
 // ---------------------------------------------------------------------------
 
-describe('pipeline central — integracao end-to-end (store real + player falso)', () => {
+describe('central pipeline — end-to-end integration (real store + fake player)', () => {
   let db: Database.Database;
   let say: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     db = initDb(':memory:');
     say = vi.fn().mockResolvedValue(undefined);
-    // Auto-leitura ligada no canal CHAN. A deteção automática de língua foi REMOVIDA:
-    // a voz é SEMPRE a fixa. Damos à guild uma default_voice pt_ para que o pipeline
-    // leia tudo em português (localização de media "um link", etc.) de forma previsível.
+    // Auto-read enabled in the CHAN channel. Automatic language detection was REMOVED:
+    // the voice is ALWAYS the fixed one. We give the guild a pt_ default_voice so the pipeline
+    // reads everything in Portuguese (media localization "um link", etc.) predictably.
     setGuildConfig(db, GUILD, {
       autoread: true,
       ttsChannelId: CHAN,
@@ -137,8 +137,8 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
     db.close();
   });
 
-  // ── 1. CAMINHO FELIZ PT (voz fixa pt_) ────────────────────────────────────
-  it('mensagem em portugues -> texto limpo + voz FIXA pt_', async () => {
+  // ── 1. PT HAPPY PATH (fixed pt_ voice) ────────────────────────────────────
+  it('message in Portuguese -> clean text + FIXED pt_ voice', async () => {
     const deps = makeDeps(db, say);
     const content =
       'bom dia a todos os membros deste servidor espero que estejam todos bem e com muita saude';
@@ -147,16 +147,16 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
 
     expect(say).toHaveBeenCalledTimes(1);
     const req = say.mock.calls[0][0];
-    // TEXTO: sem alteracoes de limpeza/pronuncia neste caso => identico.
+    // TEXT: no cleanup/pronunciation changes in this case => identical.
     expect(req.text).toBe(content);
-    // VOZ: a voz FIXA da guild (pt_), singleVoice (deteção removida).
+    // VOICE: the guild's FIXED voice (pt_), singleVoice (detection removed).
     expect(req.model).toBe('pt_PT-google-medium');
     expect(req.singleVoice).toBe(true);
     expect(req.speed).toBe(1.0);
   });
 
-  // ── 2. Texto de OUTRA língua -> continua na voz FIXA (sem deteção) ─────────
-  it('mensagem em ingles -> lida na MESMA voz fixa pt_ (deteção removida)', async () => {
+  // ── 2. Text in ANOTHER language -> stays on the FIXED voice (no detection) ─────────
+  it('message in English -> read in the SAME fixed pt_ voice (detection removed)', async () => {
     const deps = makeDeps(db, say);
     const content =
       'good morning to all the members of this server i hope you are all doing well and feeling great';
@@ -166,14 +166,14 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
     expect(say).toHaveBeenCalledTimes(1);
     const req = say.mock.calls[0][0];
     expect(req.text).toBe(content);
-    // Sem deteção: texto inglês sai na voz FIXA pt_ (não muda de locutor).
+    // No detection: English text comes out in the FIXED pt_ voice (does not change speaker).
     expect(req.model).toBe('pt_PT-google-medium');
     expect(req.singleVoice).toBe(true);
     expect(req.speed).toBe(1.0);
   });
 
-  // ── 3. BLOCKLIST corta ────────────────────────────────────────────────────
-  it('palavra da blocklist -> REDIGIDA do texto, o resto e falado', async () => {
+  // ── 3. BLOCKLIST cuts ─────────────────────────────────────────────────────
+  it('blocklisted word -> REDACTED from the text, the rest is spoken', async () => {
     addBlockword(db, GUILD, 'spam');
     const deps = makeDeps(db, say);
     const content =
@@ -181,14 +181,14 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
 
     await handleMessage(makeMessage({ content }), deps);
 
-    // A mensagem e falada, mas SEM a palavra bloqueada.
+    // The message is spoken, but WITHOUT the blocked word.
     expect(say).toHaveBeenCalledTimes(1);
     const spokenText = say.mock.calls[0][0].text as string;
     expect(spokenText).not.toMatch(/\bspam\b/i);
     expect(spokenText).toContain('isto aqui e claramente e');
   });
 
-  it('mensagem que e SO a palavra bloqueada -> player NAO recebe say()', async () => {
+  it('message that is ONLY the blocked word -> player does NOT receive say()', async () => {
     addBlockword(db, GUILD, 'spam');
     const deps = makeDeps(db, say);
 
@@ -197,8 +197,8 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 4. OPT-OUT corta a leitura passiva ────────────────────────────────────
-  it('utilizador opted-out -> leitura passiva do canal NAO fala', async () => {
+  // ── 4. OPT-OUT cuts passive reading ───────────────────────────────────────
+  it('opted-out user -> passive channel reading does NOT speak', async () => {
     setOptOut(db, GUILD, USER);
     const deps = makeDeps(db, say);
     const content =
@@ -209,7 +209,7 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('opted-out MAS com mencao explicita ao bot -> ainda fala (accao explicita)', async () => {
+  it('opted-out BUT with an explicit mention of the bot -> still speaks (explicit action)', async () => {
     setOptOut(db, GUILD, USER);
     const deps = makeDeps(db, say);
     const content =
@@ -223,25 +223,25 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
     expect(req.model.startsWith('pt_')).toBe(true);
   });
 
-  // ── 5. LIMPEZA real (URL/emoji/mencoes) chega limpa ao player ─────────────
-  it('URL + emoji + mencao de user/canal -> player recebe o TEXTO LIMPO', async () => {
+  // ── 5. Real CLEANUP (URL/emoji/mentions) reaches the player clean ─────────────
+  it('URL + emoji + user/channel mention -> player receives the CLEAN TEXT', async () => {
     const deps = makeDeps(db, say);
-    // <@123> resolve para "Diogo" e <#456> para "geral" via caches da guild.
+    // <@123> resolves to "Diogo" and <#456> to "geral" via the guild caches.
     const content = 'olha este link https://exemplo.pt/artigo 🎉 que o <@123> mandou no <#456>';
 
     await handleMessage(makeMessage({ content }), deps);
 
     expect(say).toHaveBeenCalledTimes(1);
     const req = say.mock.calls[0][0];
-    // URL removida do corpo; emoji removido; <@123> -> Diogo; <#456> -> geral. O
-    // anúncio do link é ACRESCENTADO no fim e LOCALIZADO na voz (texto PT -> voz pt_
-    // -> "um link"). Prova o pipeline end-to-end da media localizada.
+    // URL removed from the body; emoji removed; <@123> -> Diogo; <#456> -> geral. The
+    // link announcement is APPENDED at the end and LOCALIZED in the voice (PT text -> pt_ voice
+    // -> "um link"). Proves the end-to-end pipeline of localized media.
     expect(req.text).toBe('olha este link que o Diogo mandou no geral um link');
     expect(req.model.startsWith('pt_')).toBe(true);
   });
 
-  // ── 6. PRONUNCIA real aplicada antes do synth ─────────────────────────────
-  it('pronuncia PESSOAL do autor -> termo substituido no texto falado', async () => {
+  // ── 6. Real PRONUNCIATION applied before synth ────────────────────────────
+  it("author's PERSONAL pronunciation -> term replaced in the spoken text", async () => {
     addUserPronunciation(db, USER, 'JS', 'JavaScript', 50);
     const deps = makeDeps(db, say);
     const content =
@@ -251,17 +251,17 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
 
     expect(say).toHaveBeenCalledTimes(1);
     const req = say.mock.calls[0][0];
-    // "JS" -> "JavaScript" (pronuncia aplicada DEPOIS do cleanText, ANTES do synth).
+    // "JS" -> "JavaScript" (pronunciation applied AFTER cleanText, BEFORE synth).
     expect(req.text).toBe(
       'eu adoro programar em JavaScript todos os dias da semana porque e muito divertido e produtivo sempre',
     );
-    // Continua a detetar PT apos a substituicao.
+    // Still detects PT after the substitution.
     expect(req.model.startsWith('pt_')).toBe(true);
   });
 
-  // ── 7. PRECEDENCIA: /pronunciation pessoal > giria embutida ───────────────
-  it('pronuncia PESSOAL SOMBREIA uma giria EN embutida (a do user vence)', async () => {
-    // 'brb' e giria embutida ("be right back"), mas o user redefine-a via /pronunciation.
+  // ── 7. PRECEDENCE: personal /pronunciation > built-in slang ───────────────
+  it("PERSONAL pronunciation SHADOWS a built-in EN slang (the user's wins)", async () => {
+    // 'brb' is built-in slang ("be right back"), but the user redefines it via /pronunciation.
     addUserPronunciation(db, USER, 'brb', 'bora rapaz', 50);
     const deps = makeDeps(db, say);
     const content = 'brb';
@@ -270,7 +270,7 @@ describe('pipeline central — integracao end-to-end (store real + player falso)
 
     expect(say).toHaveBeenCalledTimes(1);
     const req = say.mock.calls[0][0];
-    // Pronuncia aplicada ANTES do embutido: sai o texto da guild, NAO "be right back".
+    // Pronunciation applied BEFORE the built-in: the user's text comes out, NOT "be right back".
     expect(req.text).toBe('bora rapaz');
     expect(req.text).not.toContain('be right back');
   });

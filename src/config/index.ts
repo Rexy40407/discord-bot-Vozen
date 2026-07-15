@@ -13,112 +13,112 @@ export interface AppConfig {
   dbPath: string;
   defaultVoice: string;
   defaultSpeed: number;
-  /** Silêncio (ms) PREPENDido a cada mensagem lida — o bot só começa a falar depois. */
+  /** Silence (ms) PREPENDED to each message read — the bot only starts speaking after it. */
   messageLeadMs: number;
   queueCap: number;
   maxChars: number;
   ratePerMin: number;
   ttsEngine: TtsEngineKind;
   openaiApiKey?: string;
-  // Motor "Google HD" por-utilizador (Google Cloud TTS Standard, perk Premium). API key
-  // (Google Cloud > Text-to-Speech). AUSENTE => o caminho 'gcloud' É o gTTS (identidade):
-  // escolher Google HD comporta-se como o default e NÃO há custo. A key vive SÓ no .env
-  // do VPS (nunca no repo), restrita à API TTS. Env: GOOGLE_TTS_API_KEY.
+  // Per-user "Google HD" engine (Google Cloud TTS Standard, Premium perk). API key
+  // (Google Cloud > Text-to-Speech). ABSENT => the 'gcloud' path IS gTTS (identity):
+  // choosing Google HD behaves like the default and there is NO cost. The key lives ONLY
+  // in the VPS .env (never in the repo), restricted to the TTS API. Env: GOOGLE_TTS_API_KEY.
   googleTtsApiKey?: string;
-  // Salvaguardas de custo do Google HD (allowances). Todas ajustáveis por env SEM deploy.
-  // Economia: $4/1M chars, free tier 4M/mês. Pior caso (allowance esgotado, free tier
-  // gasto): Plus $0.40 vs €1.99; passe 3s $1.60 vs €3.99; passe 8s $4.00 vs €7.99.
-  gcloudMaxChars: number; // pedido acima disto -> gTTS direto (default 500)
-  gcloudPlusMonthlyChars: number; // pool PESSOAL do Plus, por pessoa/mês (default 100 000)
-  gcloudPass3MonthlyChars: number; // pool do passe de 3 servidores/mês (default 400 000)
-  gcloudPass8MonthlyChars: number; // pool do passe de 8 servidores/mês (default 1 000 000)
-  gcloudDailyCharBudget: number; // backstop GLOBAL/dia em memória (0 = desligado; default 300 000)
+  // Google HD cost safeguards (allowances). All adjustable by env WITHOUT a deploy.
+  // Economics: $4/1M chars, free tier 4M/month. Worst case (allowance exhausted, free tier
+  // spent): Plus $0.40 vs €1.99; 3-server pass $1.60 vs €3.99; 8-server pass $4.00 vs €7.99.
+  gcloudMaxChars: number; // request above this -> gTTS directly (default 500)
+  gcloudPlusMonthlyChars: number; // PERSONAL Plus pool, per person/month (default 100 000)
+  gcloudPass3MonthlyChars: number; // pool of the 3-server pass/month (default 400 000)
+  gcloudPass8MonthlyChars: number; // pool of the 8-server pass/month (default 1 000 000)
+  gcloudDailyCharBudget: number; // GLOBAL in-memory backstop/day (0 = off; default 300 000)
   presenceText?: string;
   healthPort?: number;
   shards?: string;
-  // P11.5 — webhook top.gg OPCIONAL. Porta ausente => sem servidor (default).
-  // Secret ausente => webhook sem auth (inseguro; recomenda-se sempre defini-lo).
+  // P11.5 — OPTIONAL top.gg webhook. Port absent => no server (default).
+  // Secret absent => webhook without auth (insecure; always recommended to set it).
   topggWebhookPort?: number;
   topggWebhookSecret?: string;
-  // SEC-01 — opt-in EXPLÍCITO para correr o webhook top.gg SEM secret (inseguro:
-  // qualquer um que descubra a porta forja votos). Default false => sem secret,
-  // o listener NÃO arranca. Env: TOPGG_WEBHOOK_ALLOW_INSECURE=true.
+  // SEC-01 — EXPLICIT opt-in to run the top.gg webhook WITHOUT a secret (insecure:
+  // anyone who discovers the port forges votes). Default false => without a secret,
+  // the listener does NOT start. Env: TOPGG_WEBHOOK_ALLOW_INSECURE=true.
   topggWebhookAllowInsecure: boolean;
-  // Vaga 3 — auto-post da contagem de servidores para o top.gg (ranking/descoberta).
-  // Token da API do top.gg (TOPGG_TOKEN). Ausente => o updater NAO arranca (opt-in).
+  // Wave 3 — auto-post of the server count to top.gg (ranking/discovery).
+  // top.gg API token (TOPGG_TOKEN). Absent => the updater does NOT start (opt-in).
   topggToken?: string;
-  // Vaga 3 — webhook do Discord para onde enviar erros INESPERADOS (monitorizacao em
-  // escala). URL ausente => sem envio (opt-in). Ver src/errorReporter.ts.
+  // Wave 3 — Discord webhook to send UNEXPECTED errors to (monitoring at
+  // scale). URL absent => no sending (opt-in). See src/errorReporter.ts.
   errorWebhookUrl?: string;
-  // Sintese multi-lingua por-segmento (default ON). Quando ON, textos com mais do
-  // que uma lingua sao sintetizados POR-SEGMENTO (voz certa por lingua) e os WAVs
-  // concatenados — o Vozen mistura vozes como uma pessoa real. Pode ser FORCADA a
-  // OFF globalmente via env MULTILINGUAL_SEGMENTS=false (voz unica por frase).
+  // Per-segment multilingual synthesis (default ON). When ON, texts with more than
+  // one language are synthesized PER-SEGMENT (the right voice per language) and the
+  // WAVs concatenated — Vozen mixes voices like a real person. Can be FORCED OFF
+  // globally via env MULTILINGUAL_SEGMENTS=false (single voice per sentence).
   multilingualSegments: boolean;
-  // Params de QUALIDADE de sintese do Piper, configuraveis globalmente. Defaults =
-  // preset ORGANICO "forte" (0.75 / 0.95 / 0.4s), escolhido em A/B pelo operador
-  // para um som mais natural (fonte unica em PIPER_DEFAULT_SYNTH_PARAMS). Sao a
-  // superficie global; a afinacao por-voz vive em VOICE_PARAM_OVERRIDES
-  // (src/tts/calibration.ts). Continuam env-overridable via NOISE_*/SENTENCE_SILENCE.
+  // Piper synthesis QUALITY params, configurable globally. Defaults =
+  // "strong" ORGANIC preset (0.75 / 0.95 / 0.4s), chosen in A/B by the operator
+  // for a more natural sound (single source in PIPER_DEFAULT_SYNTH_PARAMS). They are
+  // the global surface; per-voice tuning lives in VOICE_PARAM_OVERRIDES
+  // (src/tts/calibration.ts). Still env-overridable via NOISE_*/SENTENCE_SILENCE.
   noiseScale: number;
   noiseW: number;
   sentenceSilence: number;
-  // Circuit-breaker do gTTS: após N falhas CONSECUTIVAS da Google (bloqueio/timeout
-  // de ~15s), o motor "abre" e serve o Piper diretamente durante o cooldown, sem
-  // voltar a tentar o gTTS — para não acumular stalls de 15s por mensagem. Uma
-  // síntese bem-sucedida fecha-o. Env: GTTS_BREAKER_THRESHOLD / GTTS_BREAKER_COOLDOWN_MS.
+  // gTTS circuit-breaker: after N CONSECUTIVE Google failures (block/timeout
+  // of ~15s), the engine "opens" and serves Piper directly during the cooldown, without
+  // retrying gTTS — to avoid piling up 15s stalls per message. A successful synthesis
+  // closes it. Env: GTTS_BREAKER_THRESHOLD / GTTS_BREAKER_COOLDOWN_MS.
   gttsBreakerThreshold: number;
   gttsBreakerCooldownMs: number;
-  // Máx. de pedaços do gTTS buscados EM PARALELO à Google (mensagens longas partem-se
-  // em ≤200 chars). Default 3; 1 reproduz o comportamento serial antigo. Concorrência
-  // alta multiplica a taxa instantânea de pedidos (mais risco de 429). Env: GTTS_CHUNK_CONCURRENCY.
+  // Max gTTS chunks fetched IN PARALLEL from Google (long messages are split
+  // into ≤200 chars). Default 3; 1 reproduces the old serial behavior. High
+  // concurrency multiplies the instantaneous request rate (more 429 risk). Env: GTTS_CHUNK_CONCURRENCY.
   gttsChunkConcurrency: number;
-  // Clone de voz (/voice clone): comando que lança o sidecar Python do motor de
-  // cloning (ex. "C:\\...\\venv\\Scripts\\python.exe C:\\...\\tools\\clone_server.py").
-  // AUSENTE => a gravação/gestão de amostras funciona, mas a síntese clonada fica
-  // desativada (fallback à voz normal) até o operador instalar o motor (setup na
-  // Vaga 2). Env: CLONE_CMD.
+  // Voice clone (/voice clone): command that launches the Python sidecar of the
+  // cloning engine (e.g. "C:\\...\\venv\\Scripts\\python.exe C:\\...\\tools\\clone_server.py").
+  // ABSENT => sample recording/management works, but cloned synthesis is
+  // disabled (fallback to the normal voice) until the operator installs the engine (setup in
+  // Wave 2). Env: CLONE_CMD.
   cloneCmd?: string;
-  // Chave (derivada) para cifrar as amostras de clone (.wav) EM REPOUSO — dado biométrico
-  // (ToS §5(c) + RGPD). Env CLONE_KEY (passphrase); ausente => sem cifra (em claro,
-  // retrocompatível com self-hosters que não a definam). Ver tts/cloneCrypto.
+  // (Derived) key to encrypt the clone samples (.wav) AT REST — biometric data
+  // (ToS §5(c) + GDPR). Env CLONE_KEY (passphrase); absent => no encryption (in the clear,
+  // backward-compatible with self-hosters who do not set it). See tts/cloneCrypto.
   cloneKey?: Buffer;
-  // Kokoro (motor neural OPT-IN, /voice set engine:Kokoro): comando do sidecar Python
-  // (auto-deteta tools/kokoro-venv + modelo se ausente). SEM sidecar => escolher Kokoro
-  // serve o gTTS (nunca silêncio). Env: KOKORO_CMD.
+  // Kokoro (OPT-IN neural engine, /voice set engine:Kokoro): Python sidecar command
+  // (auto-detects tools/kokoro-venv + model if absent). WITHOUT a sidecar => choosing Kokoro
+  // serves gTTS (never silence). Env: KOKORO_CMD.
   kokoroCmd?: string;
-  // Línguas que o Kokoro serve (as outras caem no gTTS via RouterEngine). Prefixos de
-  // locale (o que langKeyOfModel devolve). Default = as validadas no spike (sem 'zh',
-  // que precisa de misaki[zh]). Env KOKORO_LANGS = csv, ex. "en,pt,es".
+  // Languages that Kokoro serves (the others fall back to gTTS via RouterEngine). Locale
+  // prefixes (what langKeyOfModel returns). Default = those validated in the spike (without 'zh',
+  // which needs misaki[zh]). Env KOKORO_LANGS = csv, e.g. "en,pt,es".
   kokoroLangs: Set<string>;
-  // Canal de suporte/denúncia mostrado no /help. A Política de Desenvolvedor do
-  // Discord exige que o utilizador tenha uma forma de reportar problemas/violações;
-  // este link satisfaz esse requisito. Default = servidor de suporte oficial do
-  // Vozen; um self-hoster aponta o SEU via env SUPPORT_URL.
+  // Support/report channel shown in /help. Discord's Developer Policy
+  // requires that the user has a way to report problems/violations;
+  // this link satisfies that requirement. Default = Vozen's official support
+  // server; a self-hoster points to THEIR OWN via env SUPPORT_URL.
   supportUrl: string;
-  // Premium Apps do Discord (monetização nativa). IDs dos SKUs criados no Developer
-  // Portal DEPOIS de a app estar verificada e a onboarding de monetização feita.
-  // AUSENTES => o subsistema de entitlements fica INERTE (só /redeem). Env:
-  // PREMIUM_GUILD_SKU_ID (subscrição por-servidor ≙ Premium) e PREMIUM_USER_SKU_ID
-  // (subscrição por-utilizador ≙ Plus).
+  // Discord Premium Apps (native monetization). IDs of the SKUs created in the Developer
+  // Portal AFTER the app is verified and the monetization onboarding is done.
+  // ABSENT => the entitlements subsystem stays INERT (only /redeem). Env:
+  // PREMIUM_GUILD_SKU_ID (per-server subscription ≙ Premium) and PREMIUM_USER_SKU_ID
+  // (per-user subscription ≙ Plus).
   premiumGuildSkuId?: string;
   premiumUserSkuId?: string;
-  // Página do Ko-fi onde se compra o Premium/Plus. Mostrada no /premium info e nos erros
-  // "não tens passe". Env KOFI_URL; default = página genérica (o operador põe a sua).
+  // Ko-fi page where Premium/Plus is bought. Shown in /premium info and in the
+  // "you have no pass" errors. Env KOFI_URL; default = generic page (the operator sets theirs).
   kofiUrl: string;
-  // Comandos OWNER-ONLY (/vozengrant): defesa em profundidade. O comando é registado SÓ
-  // na OWNER_GUILD_ID (guild command) — o público nem o vê. Além disso o handler verifica
-  // o invocador contra o dono REAL resolvido via client.application (User/Team) no arranque;
-  // OWNER_ID é um fallback explícito. Sem OWNER_GUILD_ID o comando não é registado.
+  // OWNER-ONLY commands (/vozengrant): defense in depth. The command is registered ONLY
+  // in OWNER_GUILD_ID (guild command) — the public does not even see it. In addition the handler
+  // checks the invoker against the REAL owner resolved via client.application (User/Team) at startup;
+  // OWNER_ID is an explicit fallback. Without OWNER_GUILD_ID the command is not registered.
   ownerGuildId?: string;
   ownerId?: string;
-  // Webhook do Ko-fi (compras -> premium). Token de verificação (Ko-fi > Settings > API);
-  // AUSENTE => o servidor de webhook NÃO arranca (inerte). Porta do endpoint HTTP local.
+  // Ko-fi webhook (purchases -> premium). Verification token (Ko-fi > Settings > API);
+  // ABSENT => the webhook server does NOT start (inert). Port of the local HTTP endpoint.
   kofiWebhookToken?: string;
   kofiWebhookPort: number;
-  // Painel Premium do site (login com Discord -> GET /api/me/premium no MESMO servidor HTTP).
-  // OPT-IN: PREMIUM_API_ENABLED=true monta a API. PREMIUM_API_ORIGIN é a origem do site
-  // permitida no CORS (só ela pode chamar a API do browser). Sem enable => inerte.
+  // Site Premium Panel (login with Discord -> GET /api/me/premium on the SAME HTTP server).
+  // OPT-IN: PREMIUM_API_ENABLED=true mounts the API. PREMIUM_API_ORIGIN is the site origin
+  // allowed in CORS (only it can call the API from the browser). Without enable => inert.
   premiumApiEnabled: boolean;
   premiumApiOrigin: string;
 }
@@ -145,12 +145,12 @@ function numEnv(name: string, fallback: number): number {
 }
 
 /**
- * Numero que TEM de ser POSITIVO (> 0). Ausente/vazio => fallback. Valor
- * nao-numerico, <= 0, ou (se `integer`) nao-inteiro => AVISA e usa o fallback, em
- * vez de aceitar em silencio. Racional: `RATE_PER_MIN=0` / `QUEUE_CAP=0` /
- * `MAX_CHARS=0` (typo) tornavam o bot silenciosamente MUDO (fila/limitador rejeitam
- * tudo) sem explicacao. Degradar para o default seguro + avisar e melhor do que um
- * bot morto silencioso OU um crash-loop de arranque.
+ * Number that MUST be POSITIVE (> 0). Absent/empty => fallback. A non-numeric
+ * value, <= 0, or (if `integer`) non-integer => WARNS and uses the fallback, instead
+ * of silently accepting it. Rationale: `RATE_PER_MIN=0` / `QUEUE_CAP=0` /
+ * `MAX_CHARS=0` (typo) made the bot silently MUTE (queue/limiter reject
+ * everything) with no explanation. Degrading to the safe default + warning is better
+ * than a silently dead bot OR a startup crash-loop.
  */
 function numEnvPositive(name: string, fallback: number, opts: { integer?: boolean } = {}): number {
   const raw = process.env[name];
@@ -168,10 +168,10 @@ function numEnvPositive(name: string, fallback: number, opts: { integer?: boolea
 }
 
 /**
- * Numero OPCIONAL: ausente/vazio => undefined (ao contrario de numEnv, que tem
- * sempre fallback). Valor nao-numerico tambem => undefined — a escolha
- * defensiva, consistente com o resto do modulo: nao arrancamos um servidor por
- * causa de um typo na env. Usado por HEALTH_PORT (sem porta => sem servidor).
+ * OPTIONAL number: absent/empty => undefined (unlike numEnv, which always has
+ * a fallback). A non-numeric value also => undefined — the defensive choice,
+ * consistent with the rest of the module: we do not start a server because of
+ * a typo in the env. Used by HEALTH_PORT (no port => no server).
  */
 function numEnvOptional(name: string): number | undefined {
   const raw = process.env[name];
@@ -181,11 +181,11 @@ function numEnvOptional(name: string): number | undefined {
 }
 
 /**
- * Flag booleana OPT-OUT (default `true`): a feature esta LIGADA a menos que a env
- * a desligue EXPLICITAMENTE. So o valor exato 'false' (case-insensitive) desliga;
- * qualquer outra coisa (ausente, vazio, 'true', '1', typo) fica ON. E o espelho do
- * boolEnv para features que sao o comportamento por defeito mas queremos um
- * kill-switch global via env.
+ * OPT-OUT boolean flag (default `true`): the feature is ON unless the env
+ * turns it off EXPLICITLY. Only the exact value 'false' (case-insensitive) turns it off;
+ * anything else (absent, empty, 'true', '1', typo) stays ON. It is the mirror of
+ * boolEnv for features that are the default behavior but where we want a global
+ * kill-switch via env.
  */
 function boolEnvDefaultOn(name: string): boolean {
   const raw = process.env[name];
@@ -194,9 +194,9 @@ function boolEnvDefaultOn(name: string): boolean {
 }
 
 /**
- * Flag booleana OPT-IN (default `false`): a feature está DESLIGADA a menos que a
- * env a ligue EXPLICITAMENTE com o valor exato 'true' (case-insensitive). Espelho
- * do boolEnvDefaultOn, para opt-ins perigosos que nunca devem ligar por typo.
+ * OPT-IN boolean flag (default `false`): the feature is OFF unless the
+ * env turns it on EXPLICITLY with the exact value 'true' (case-insensitive). Mirror
+ * of boolEnvDefaultOn, for dangerous opt-ins that must never turn on by a typo.
  */
 function boolEnvDefaultOff(name: string): boolean {
   const raw = process.env[name];
@@ -205,11 +205,11 @@ function boolEnvDefaultOff(name: string): boolean {
 }
 
 /**
- * Le TTS_ENGINE. Default 'piper'. Valor invalido (que nao 'piper'/'neural')
- * cai em 'piper' com um aviso no stderr — o Piper e o default seguro e nunca
- * precisa de API key, por isso degradar para ele e preferivel a crashar o
- * arranque por um typo na env. (A combinacao 'neural' sem OPENAI_API_KEY essa
- * sim falha rapido — ver createEngine.)
+ * Reads TTS_ENGINE. Default 'piper'. An invalid value (other than 'piper'/'neural')
+ * falls back to 'piper' with a warning on stderr — Piper is the safe default and never
+ * needs an API key, so degrading to it is preferable to crashing the
+ * startup over a typo in the env. (The 'neural' combination without OPENAI_API_KEY does
+ * fail fast — see createEngine.)
  */
 function engineEnv(): TtsEngineKind {
   const raw = process.env.TTS_ENGINE;
@@ -223,41 +223,41 @@ function engineEnv(): TtsEngineKind {
   return 'piper';
 }
 
-/** Um problema de configuração detetado por `validateConfigEnv`. */
+/** A configuration problem detected by `validateConfigEnv`. */
 export interface ConfigFinding {
   level: 'warn' | 'error';
   message: string;
 }
 
-// Vars de segredo/token que, se PRESENTES mas VAZIAS, indicam um clobber por
-// linha duplicada no .env (dotenv v16: chaves duplicadas => a ÚLTIMA ganha) em
-// vez de "feature desligada de propósito" (que é a env AUSENTE). Qualquer
-// segredo novo com o mesmo risco deve ser acrescentado aqui.
+// Secret/token vars that, if PRESENT but EMPTY, indicate a clobber by a
+// duplicate line in the .env (dotenv v16: duplicate keys => the LAST one wins) rather
+// than "feature intentionally turned off" (which is the ABSENT env). Any
+// new secret with the same risk must be added here.
 const EMPTY_SECRET_VARS = [
   'TOPGG_WEBHOOK_SECRET',
   'KOFI_WEBHOOK_TOKEN',
-  // Chaves de API PAGAS: se uma linha residual `CHAVE=` vazia sobrepuser a boa, o motor
-  // Premium respetivo cai em silêncio para o default gratuito (Google HD) ou falha o
-  // arranque (OpenAI neural) — nos dois casos vale avisar em vez de degradar sem rasto.
+  // PAID API keys: if a residual empty `KEY=` line overrides the good one, the respective
+  // Premium engine silently falls back to the free default (Google HD) or fails
+  // startup (OpenAI neural) — in both cases it is worth warning instead of degrading without a trace.
   'GOOGLE_TTS_API_KEY',
   'OPENAI_API_KEY',
 ] as const;
 
 /**
- * Plano 024 (SECRET-01) — validação PURA da env crua: não lê `process.env`
- * diretamente (recebe um record) nem tem side-effects, para ser testável em
- * isolamento. Devolve findings a logar por quem chama (`loadConfig`), nunca
- * o valor do segredo em si (só o NOME da var).
+ * Plan 024 (SECRET-01) — PURE validation of the raw env: it does not read `process.env`
+ * directly (it receives a record) nor has side-effects, so it is testable in
+ * isolation. Returns findings for the caller (`loadConfig`) to log, never
+ * the secret value itself (only the var NAME).
  *
- * Dois casos cobertos:
- *  1. Segredo PRESENTE mas VAZIO (`CHAVE in env && CHAVE.trim() === ''`):
- *     distinto de AUSENTE (que é "feature desligada", um estado legítimo).
- *     Sintoma típico: uma linha `TOPGG_WEBHOOK_SECRET=` residual/duplicada
- *     a seguir à boa apaga o valor real em silêncio (dotenv last-wins) —
- *     ver src/vote.ts:113, que trata secret === '' como "sem auth".
- *  2. Listener dedicado do top.gg redundante: TOPGG_WEBHOOK_PORT definido
- *     ao mesmo tempo que um TOPGG_WEBHOOK_SECRET não-vazio — a rota
- *     partilhada /webhook/topgg na API já cobre o caso autenticado.
+ * Two cases covered:
+ *  1. Secret PRESENT but EMPTY (`KEY in env && KEY.trim() === ''`):
+ *     distinct from ABSENT (which is "feature off", a legitimate state).
+ *     Typical symptom: a residual/duplicate `TOPGG_WEBHOOK_SECRET=` line
+ *     after the good one silently wipes the real value (dotenv last-wins) —
+ *     see src/vote.ts:113, which treats secret === '' as "no auth".
+ *  2. Redundant dedicated top.gg listener: TOPGG_WEBHOOK_PORT set
+ *     at the same time as a non-empty TOPGG_WEBHOOK_SECRET — the shared
+ *     /webhook/topgg route on the API already covers the authenticated case.
  */
 export function validateConfigEnv(env: Record<string, string | undefined>): ConfigFinding[] {
   const findings: ConfigFinding[] = [];
@@ -296,18 +296,18 @@ export function loadConfig(): AppConfig {
     modelsDir: strEnv('MODELS_DIR', './models'),
     dbPath: strEnv('DB_PATH', './tts.db'),
     defaultVoice: strEnv('DEFAULT_VOICE', 'en_US-amy-medium'),
-    defaultSpeed: numEnvPositive('DEFAULT_SPEED', 1), // > 0 (fracionario ok: 0.5–2.0)
-    messageLeadMs: numEnv('MESSAGE_LEAD_MS', 200), // 0.20s (0 = sem espera, por isso NÃO exige > 0)
+    defaultSpeed: numEnvPositive('DEFAULT_SPEED', 1), // > 0 (fractional ok: 0.5–2.0)
+    messageLeadMs: numEnv('MESSAGE_LEAD_MS', 200), // 0.20s (0 = no wait, so it does NOT require > 0)
     queueCap: numEnvPositive('QUEUE_CAP', 20, { integer: true }),
     maxChars: numEnvPositive('MAX_CHARS', 300, { integer: true }),
     ratePerMin: numEnvPositive('RATE_PER_MIN', 8, { integer: true }),
     ttsEngine: engineEnv(),
     openaiApiKey: strEnv('OPENAI_API_KEY', '') || undefined,
-    // Google HD (Google Cloud TTS Standard). Ausente => caminho 'gcloud' = gTTS (inerte).
+    // Google HD (Google Cloud TTS Standard). Absent => 'gcloud' path = gTTS (inert).
     googleTtsApiKey: strEnv('GOOGLE_TTS_API_KEY', '') || undefined,
-    // Allowances do Google HD (ver comentário na interface). numEnvPositive: env
-    // inválida/<=0 cai no default seguro com aviso. O backstop diário permite 0 (desligado),
-    // por isso usa numEnv (não exige > 0).
+    // Google HD allowances (see the comment on the interface). numEnvPositive: an
+    // invalid/<=0 env falls into the safe default with a warning. The daily backstop allows 0 (off),
+    // so it uses numEnv (does not require > 0).
     gcloudMaxChars: numEnvPositive('GCLOUD_MAX_CHARS', 500, { integer: true }),
     gcloudPlusMonthlyChars: numEnvPositive('GCLOUD_PLUS_MONTHLY_CHARS', 100_000, { integer: true }),
     gcloudPass3MonthlyChars: numEnvPositive('GCLOUD_PASS3_MONTHLY_CHARS', 400_000, {
@@ -317,58 +317,58 @@ export function loadConfig(): AppConfig {
       integer: true,
     }),
     gcloudDailyCharBudget: numEnv('GCLOUD_DAILY_CHAR_BUDGET', 300_000),
-    // P9.3 — texto opcional da presenca; vazio/ausente => undefined e buildPresence
-    // usa o seu default de marca. Override exato quando definido.
+    // P9.3 — optional presence text; empty/absent => undefined and buildPresence
+    // uses its brand default. Exact override when set.
     presenceText: strEnv('PRESENCE_TEXT', '') || undefined,
-    // P9.7 — porta OPCIONAL do health endpoint HTTP (uptime monitors). Ausente
-    // => undefined => NAO arranca servidor nenhum (default). Definida => numero.
+    // P9.7 — OPTIONAL port for the HTTP health endpoint (uptime monitors). Absent
+    // => undefined => does NOT start any server (default). Set => number.
     healthPort: numEnvOptional('HEALTH_PORT'),
-    // P11.4 — valor CRU do BOT_SHARDS (opt-in de sharding). Ausente/vazio =>
-    // undefined => single-process (default). A interpretacao (auto / N / single) e
-    // feita por resolveShardCount no launcher src/shard.ts — aqui so transportamos
-    // a string.
-    // NB: a env chama-se BOT_SHARDS e NAO `SHARDS` de proposito. `SHARDS` (e
-    // `SHARD_COUNT`) sao reservadas: o construtor do Client do discord.js le-as
-    // diretamente de process.env. Num arranque single-process (`npm start`),
-    // `SHARDS=auto` faria `JSON.parse('auto')` crashar o Client, e `SHARDS=N`
-    // configuraria o processo como um shard isolado — partindo o default. Manter
-    // o nome distinto isola o opt-in do mecanismo interno do discord.js.
+    // P11.4 — RAW value of BOT_SHARDS (sharding opt-in). Absent/empty =>
+    // undefined => single-process (default). The interpretation (auto / N / single) is
+    // done by resolveShardCount in the launcher src/shard.ts — here we only carry
+    // the string.
+    // NB: the env is called BOT_SHARDS and NOT `SHARDS` on purpose. `SHARDS` (and
+    // `SHARD_COUNT`) are reserved: the discord.js Client constructor reads them
+    // directly from process.env. In a single-process startup (`npm start`),
+    // `SHARDS=auto` would make `JSON.parse('auto')` crash the Client, and `SHARDS=N`
+    // would configure the process as an isolated shard — breaking the default. Keeping
+    // the distinct name isolates the opt-in from discord.js's internal mechanism.
     shards: strEnv('BOT_SHARDS', '') || undefined,
-    // P11.5 — webhook top.gg OPCIONAL. TOPGG_WEBHOOK_PORT ausente/vazio/invalido
-    // => undefined => NAO arranca servidor de webhook (default), igual ao
-    // HEALTH_PORT. TOPGG_WEBHOOK_SECRET ausente/vazio => undefined => webhook sem
-    // auth (inseguro; ver startVoteWebhookServer, que avisa nesse caso). Porta
-    // dedicada, separada do HEALTH_PORT de proposito.
+    // P11.5 — OPTIONAL top.gg webhook. TOPGG_WEBHOOK_PORT absent/empty/invalid
+    // => undefined => does NOT start a webhook server (default), just like
+    // HEALTH_PORT. TOPGG_WEBHOOK_SECRET absent/empty => undefined => webhook without
+    // auth (insecure; see startVoteWebhookServer, which warns in that case). Dedicated
+    // port, separate from HEALTH_PORT on purpose.
     topggWebhookPort: numEnvOptional('TOPGG_WEBHOOK_PORT'),
     topggWebhookSecret: strEnv('TOPGG_WEBHOOK_SECRET', '') || undefined,
     topggWebhookAllowInsecure: boolEnvDefaultOff('TOPGG_WEBHOOK_ALLOW_INSECURE'),
     topggToken: strEnv('TOPGG_TOKEN', '') || undefined,
     errorWebhookUrl: strEnv('ERROR_WEBHOOK_URL', '') || undefined,
-    // Sintese multi-lingua por-segmento — LIGADA por defeito: sem esta env (ou com
-    // qualquer valor != 'false'), o Vozen mistura vozes por lingua. Kill-switch
-    // global: MULTILINGUAL_SEGMENTS=false forca voz unica por frase.
+    // Per-segment multilingual synthesis — ON by default: without this env (or with
+    // any value != 'false'), Vozen mixes voices per language. Global kill-switch:
+    // MULTILINGUAL_SEGMENTS=false forces a single voice per sentence.
     multilingualSegments: boolEnvDefaultOn('MULTILINGUAL_SEGMENTS'),
-    // Params de qualidade Piper. Defaults = preset ORGANICO (fonte unica em
-    // PIPER_DEFAULT_SYNTH_PARAMS = 0.75/0.95/0.4). numEnv faz parsing seguro:
-    // env ausente/vazia/nao-numerica cai no default; env valida ganha por cima.
+    // Piper quality params. Defaults = ORGANIC preset (single source in
+    // PIPER_DEFAULT_SYNTH_PARAMS = 0.75/0.95/0.4). numEnv does safe parsing:
+    // absent/empty/non-numeric env falls into the default; a valid env wins over it.
     noiseScale: numEnv('NOISE_SCALE', PIPER_DEFAULT_SYNTH_PARAMS.noiseScale),
     noiseW: numEnv('NOISE_W', PIPER_DEFAULT_SYNTH_PARAMS.noiseW),
     sentenceSilence: numEnv('SENTENCE_SILENCE', PIPER_DEFAULT_SYNTH_PARAMS.sentenceSilence),
-    // Circuit-breaker do gTTS: 3 falhas consecutivas -> abre 60s (usa o Piper). Ambos
-    // > 0 (numEnvPositive): um threshold/cooldown 0 desligaria a proteção sem querer.
+    // gTTS circuit-breaker: 3 consecutive failures -> opens for 60s (uses Piper). Both
+    // > 0 (numEnvPositive): a threshold/cooldown of 0 would disable the protection by accident.
     gttsBreakerThreshold: numEnvPositive('GTTS_BREAKER_THRESHOLD', 3, { integer: true }),
     gttsBreakerCooldownMs: numEnvPositive('GTTS_BREAKER_COOLDOWN_MS', 60_000, { integer: true }),
     gttsChunkConcurrency: numEnvPositive('GTTS_CHUNK_CONCURRENCY', 3, { integer: true }),
-    // Clone de voz: comando do sidecar Python (ausente => síntese clonada desativada;
-    // a gravação/gestão de amostras funciona na mesma).
+    // Voice clone: Python sidecar command (absent => cloned synthesis disabled;
+    // sample recording/management still works).
     cloneCmd: process.env.CLONE_CMD?.trim() || undefined,
     cloneKey: (() => {
       const s = process.env.CLONE_KEY?.trim();
       return s ? deriveCloneKey(s) : undefined;
     })(),
-    // Kokoro: comando do sidecar (ausente => auto-deteta tools/kokoro-venv).
+    // Kokoro: sidecar command (absent => auto-detects tools/kokoro-venv).
     kokoroCmd: process.env.KOKORO_CMD?.trim() || undefined,
-    // Línguas do Kokoro: csv KOKORO_LANGS (prefixos), ou as validadas no spike por defeito.
+    // Kokoro languages: csv KOKORO_LANGS (prefixes), or those validated in the spike by default.
     kokoroLangs: new Set(
       (process.env.KOKORO_LANGS?.trim()
         ? process.env.KOKORO_LANGS.split(',')
@@ -377,22 +377,22 @@ export function loadConfig(): AppConfig {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
     ),
-    // Canal de suporte/denúncia (requisito da Política de Desenvolvedor do Discord).
-    // Default = servidor de suporte oficial do Vozen; override por SUPPORT_URL.
+    // Support/report channel (Discord Developer Policy requirement).
+    // Default = Vozen's official support server; override with SUPPORT_URL.
     supportUrl: strEnv('SUPPORT_URL', 'https://discord.gg/V6PZYZmhcQ'),
-    // Premium Apps (monetização nativa). Ausentes => entitlements inertes (só /redeem).
+    // Premium Apps (native monetization). Absent => inert entitlements (only /redeem).
     premiumGuildSkuId: strEnv('PREMIUM_GUILD_SKU_ID', '') || undefined,
     premiumUserSkuId: strEnv('PREMIUM_USER_SKU_ID', '') || undefined,
-    // Página do Ko-fi (compra do Premium/Plus). O operador define KOFI_URL com a sua.
+    // Ko-fi page (Premium/Plus purchase). The operator sets KOFI_URL to theirs.
     kofiUrl: strEnv('KOFI_URL', 'https://ko-fi.com/'),
-    // Owner-only: servidor de controlo (onde o /vozengrant é registado) + dono explícito.
+    // Owner-only: control server (where /vozengrant is registered) + explicit owner.
     ownerGuildId: strEnv('OWNER_GUILD_ID', '') || undefined,
     ownerId: strEnv('OWNER_ID', '') || undefined,
-    // Webhook do Ko-fi: sem token => não arranca. Porta local do endpoint.
+    // Ko-fi webhook: no token => does not start. Local endpoint port.
     kofiWebhookToken: strEnv('KOFI_WEBHOOK_TOKEN', '') || undefined,
     kofiWebhookPort: numEnvPositive('KOFI_WEBHOOK_PORT', 3001, { integer: true }),
-    // Painel Premium: opt-in explícito (default off). Origem = domínio do site (vozen.org).
-    // Produção deve definir PREMIUM_API_ORIGIN no .env; o default segue o domínio atual.
+    // Premium Panel: explicit opt-in (default off). Origin = site domain (vozen.org).
+    // Production must set PREMIUM_API_ORIGIN in .env; the default follows the current domain.
     premiumApiEnabled: boolEnvDefaultOff('PREMIUM_API_ENABLED'),
     premiumApiOrigin: strEnv('PREMIUM_API_ORIGIN', 'https://vozen.org'),
   };

@@ -4,19 +4,19 @@ import { wordsForLocale } from './content/words';
 import { normalizeAnswer, seededIndex } from './util';
 
 const MAX_WRONG = 6;
-const IDLE_MS = 180_000; // 3 min sem jogadas validas -> termina (nao fica pendurado)
-/** Letras aceites (a-z + acentuadas latinas), sobre a forma ja normalizada. */
+const IDLE_MS = 180_000; // 3 min without valid moves -> ends (does not hang)
+/** Accepted letters (a-z + Latin accented), over the already-normalized form. */
 const LETTER = /^[a-zà-ſ]$/;
 
 /**
- * "Forca" (Hangman) — colaborativo: qualquer um escreve UMA letra; quem revelar a
- * ultima letra (ou acertar a palavra inteira) ganha o ponto. 6 erros e perde-se. Jogo
- * de TEXTO (sem voz), renderizado no canal. A palavra vem do banco na lingua da
- * INTERFACE da guild. Comparacao normalizada (sem acentos) para ser amigavel.
+ * "Forca" (Hangman) — collaborative: anyone types ONE letter; whoever reveals the
+ * last letter (or guesses the whole word) wins the point. 6 wrong guesses loses. A TEXT
+ * game (no voice), rendered in the channel. The word comes from the bank in the guild's
+ * INTERFACE language. Normalized comparison (accent-free) to be friendly.
  *
- * O timeout de inatividade re-arma-se a cada jogada valida via um contador (`moves`):
- * o timer captura o valor e so age se `moves` nao mudou — o mesmo padrao de guarda dos
- * jogos de voz, aqui a servir de "sem jogadas ha 3 min -> termina".
+ * The idle timeout re-arms on every valid move via a counter (`moves`):
+ * the timer captures the value and only acts if `moves` did not change — the same guard
+ * pattern as the voice games, here serving as "no moves for 3 min -> ends".
  */
 class HangmanGame implements Game {
   readonly id = 'hangman';
@@ -49,14 +49,14 @@ class HangmanGame implements Game {
     const g = normalizeAnswer(msg.content);
     if (g.length === 0) return;
 
-    // Palpite da PALAVRA inteira: so importa se acertar (nao pune o chat normal).
+    // Guess of the whole WORD: only matters if correct (does not punish normal chat).
     if (g.length > 1) {
       if (g === this.word) this.win(ctx, msg);
       return;
     }
-    // Uma letra.
+    // A single letter.
     if (!LETTER.test(g)) return;
-    if (this.revealed.has(g) || this.wrong.has(g)) return; // ja tentada
+    if (this.revealed.has(g) || this.wrong.has(g)) return; // already tried
     this.armIdle(ctx);
     if (this.word.includes(g)) {
       this.revealed.add(g);
@@ -91,7 +91,7 @@ class HangmanGame implements Game {
 
   private win(ctx: GameContext, msg: GameMessage): void {
     this.over = true;
-    for (const ch of this.word) this.revealed.add(ch); // revela tudo no resumo
+    for (const ch of this.word) this.revealed.add(ch); // reveal everything in the summary
     ctx.award(msg.authorId, 1);
     void ctx.send(
       this.render(
@@ -110,8 +110,8 @@ class HangmanGame implements Game {
     const lives = '❤️'.repeat(MAX_WRONG - this.wrong.size) + '🖤'.repeat(this.wrong.size);
     const wrong = [...this.wrong].join(' ').toUpperCase();
     const wrongLine = wrong ? `\n${ctx.t('game.hangman.wrongLetters', { letters: wrong })}` : '';
-    // Boneco da forca em estágios (h0..h6 = nº de erros) quando os tiles existem; a linha
-    // de corações ❤️/🖤 mantém-se por baixo. Sem tiles, só os corações (como antes).
+    // Staged hangman figure (h0..h6 = number of wrong guesses) when the tiles exist; the
+    // hearts line ❤️/🖤 stays below. Without tiles, just the hearts (as before).
     const figure = ctx.emoji(`h${this.wrong.size}`);
     const figLine = figure ? `${figure}\n` : '';
     return `${header}\n${figLine}\`${masked}\`\n${lives}${wrongLine}`;

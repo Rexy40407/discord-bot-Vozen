@@ -1,34 +1,34 @@
 // src/premium/kofi.ts
 //
-// Lógica PURA do webhook do Ko-fi (opção A: Discord ID na mensagem da compra). Sem IO —
-// recebe o corpo do POST e devolve o grant a aplicar. O servidor HTTP fino (kofiWebhook.ts)
-// verifica o token, chama isto e aplica no store. INERTE sem KOFI_WEBHOOK_TOKEN.
+// PURE logic of the Ko-fi webhook (option A: Discord ID in the purchase message). No IO —
+// receives the POST body and returns the grant to apply. The thin HTTP server (kofiWebhook.ts)
+// verifies the token, calls this and applies it to the store. INERT without KOFI_WEBHOOK_TOKEN.
 //
-// O Ko-fi faz POST `application/x-www-form-urlencoded` com um único campo `data` = JSON.
-// Campos que usamos: verification_token, type, message (onde o comprador põe o Discord ID),
-// is_subscription_payment, tier_name (memberships) e shop_items (compras únicas → anual).
+// Ko-fi POSTs `application/x-www-form-urlencoded` with a single field `data` = JSON.
+// Fields we use: verification_token, type, message (where the buyer puts the Discord ID),
+// is_subscription_payment, tier_name (memberships) and shop_items (one-off purchases → annual).
 
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
-/** Nº de licenças (servidores) de um passe de Premium. Decisão de produto: paga 1, usa 3. */
+/** Number of licenses (servers) of a Premium pass. Product decision: pay for 1, use 3. */
 export const PREMIUM_PASS_SEATS = 3;
-/** Licenças do tier "Premium Max" (nome do produto Ko-fi contém "max"): paga 1, usa 8.
- * (Deal grande reduzido de 10 para 8 servidores a 2026-07-11; produtos novos usam
- * "(8 servers)" no nome — este fallback só apanha nomes legados com "max".) */
+/** Licenses of the "Premium Max" tier (Ko-fi product name contains "max"): pay for 1, use 8.
+ * (Big deal reduced from 10 to 8 servers on 2026-07-11; new products use
+ * "(8 servers)" in the name — this fallback only catches legacy names with "max".) */
 export const PREMIUM_MAX_SEATS = 8;
 
 export type KofiPlan = 'premium' | 'plus';
 
-/** Subconjunto do payload do Ko-fi de que precisamos (o resto é ignorado). */
+/** Subset of the Ko-fi payload we need (the rest is ignored). */
 export interface KofiEvent {
   verificationToken: string;
   type: string; // Donation | Subscription | Shop Order | Commission
   message: string | null;
   isSubscriptionPayment: boolean;
   tierName: string | null;
-  /** Nomes/códigos dos itens de loja concatenados, para casar palavras-chave (anual, plus…). */
+  /** Concatenated shop item names/codes, to match keywords (annual, plus…). */
   shopItemsText: string;
-  /** Email do comprador (do Ko-fi). Chave para reencontrar o Discord ID nas renovações. */
+  /** Buyer's email (from Ko-fi). Key to re-find the Discord ID on renewals. */
   email: string | null;
   amount: string | null;
   transactionId: string | null;
@@ -37,16 +37,16 @@ export interface KofiEvent {
 export interface KofiGrant {
   plan: KofiPlan;
   days: number;
-  seats: number; // relevante só para 'premium'
-  /** Discord ID extraído da mensagem; null => não deu para associar (grant manual). */
+  seats: number; // relevant only for 'premium'
+  /** Discord ID extracted from the message; null => could not be associated (manual grant). */
   discordId: string | null;
-  /** Rótulo do produto (para logs). */
+  /** Product label (for logs). */
   label: string;
 }
 
 /**
- * Faz parse do corpo do POST do Ko-fi. Aceita tanto o formato oficial
- * (`data=<json url-encoded>`) como JSON puro (útil em testes). Devolve null se não der.
+ * Parses the Ko-fi POST body. Accepts both the official format
+ * (`data=<json url-encoded>`) and plain JSON (useful in tests). Returns null if it fails.
  */
 export function parseKofiPayload(raw: string): KofiEvent | null {
   try {
@@ -70,8 +70,8 @@ export function parseKofiPayload(raw: string): KofiEvent | null {
       isSubscriptionPayment: o.is_subscription_payment === true,
       tierName: o.tier_name == null ? null : String(o.tier_name),
       shopItemsText,
-      // from_name (nome do comprador) NÃO é capturado — minimização de PII; o Ko-fi
-      // guarda-o do lado deles e o tx id chega para reconciliar.
+      // from_name (buyer's name) is NOT captured — PII minimization; Ko-fi
+      // keeps it on their side and the tx id is enough to reconcile.
       email: o.email == null ? null : String(o.email),
       amount: o.amount == null ? null : String(o.amount),
       transactionId: o.kofi_transaction_id == null ? null : String(o.kofi_transaction_id),
@@ -82,11 +82,11 @@ export function parseKofiPayload(raw: string): KofiEvent | null {
 }
 
 /**
- * true se o token do payload bate certo com o esperado (e o esperado não é vazio).
- * Comparação em TEMPO CONSTANTE: `===` short-circuita no 1.º byte diferente e vaza um
- * oráculo de prefixo por timing. Hashamos ambos os lados para SHA-256 (comprimento fixo,
- * também não vaza o tamanho do secret) e usamos timingSafeEqual — o mesmo padrão do
- * webhook do top.gg (authMatches em src/vote.ts).
+ * true if the payload token matches the expected one (and the expected one is not empty).
+ * CONSTANT-TIME comparison: `===` short-circuits at the 1st differing byte and leaks a
+ * prefix oracle via timing. We hash both sides to SHA-256 (fixed length,
+ * so it also doesn't leak the secret's size) and use timingSafeEqual — the same pattern as the
+ * top.gg webhook (authMatches in src/vote.ts).
  */
 export function verifyKofiToken(event: KofiEvent, expected: string | undefined): boolean {
   if (!expected) return false;
@@ -97,18 +97,18 @@ export function verifyKofiToken(event: KofiEvent, expected: string | undefined):
 
 /**
  * Opaque key for the Ko-fi buyer email: HMAC-SHA256(token, normalized email).
- * Guardamos ISTO na BD (tabela kofi_supporter) em vez do email em claro — minimização de
- * PII. As renovações reenviam o email → hasheia-se e casa com o hash guardado, por isso a
- * associação email→Discord ID continua a funcionar sem nunca reter o email. O token do
- * webhook serve de chave secreta (alta entropia ⇒ sem rainbow tables sobre emails).
- * NOTA: se rodares o KOFI_WEBHOOK_TOKEN, os hashes antigos deixam de casar (renovações
- * desses supporters voltam a precisar do Discord ID na mensagem).
+ * We store THIS in the DB (kofi_supporter table) instead of the plaintext email — PII
+ * minimization. Renewals resend the email → it is hashed and matches the stored hash, so the
+ * email→Discord ID association keeps working without ever retaining the email. The webhook
+ * token serves as the secret key (high entropy ⇒ no rainbow tables over emails).
+ * NOTE: if you rotate KOFI_WEBHOOK_TOKEN, the old hashes stop matching (renewals
+ * of those supporters need the Discord ID in the message again).
  */
 export function hashKofiEmail(webhookToken: string, email: string): string {
   return createHmac('sha256', webhookToken).update(email.trim().toLowerCase()).digest('hex');
 }
 
-/** Extrai o 1.º Discord ID (17–20 dígitos) da mensagem, ou null. */
+/** Extracts the 1st Discord ID (17–20 digits) from the message, or null. */
 export function extractDiscordId(message: string | null): string | null {
   if (!message) return null;
   const m = message.match(/\b(\d{17,20})\b/);
@@ -116,15 +116,15 @@ export function extractDiscordId(message: string | null): string | null {
 }
 
 /**
- * Decide o grant a partir do evento, por PALAVRAS-CHAVE no nome do tier/itens (robusto a
- * nomes exatos): "plus" => Plus (user); "premium" => passe de Premium (guild), com "max"
- * => 10 licenças (Premium Max) e senão as 3 default. "annual"/"anual"/"year"/"ano" => 365
- * dias, senão 30 (mensal). Devolve null se não for um produto reconhecível (ex.: donativo
- * avulso) — esses são ignorados. ORDEM CRÍTICA: o "plus" é testado ANTES do "premium", por
- * isso um produto Premium Max NUNCA pode conter a palavra "plus" no nome.
+ * Decides the grant from the event, by KEYWORDS in the tier/item name (robust to
+ * exact names): "plus" => Plus (user); "premium" => Premium pass (guild), with "max"
+ * => 10 licenses (Premium Max) and otherwise the default 3. "annual"/"anual"/"year"/"ano" => 365
+ * days, otherwise 30 (monthly). Returns null if it is not a recognizable product (e.g. a one-off
+ * donation) — those are ignored. CRITICAL ORDER: "plus" is tested BEFORE "premium", so
+ * a Premium Max product can NEVER contain the word "plus" in its name.
  */
 export function mapKofiToGrant(event: KofiEvent, now: number): KofiGrant | null {
-  void now; // reservado (datas são calculadas no store ao aplicar)
+  void now; // reserved (dates are computed in the store when applying)
   const label = `${event.tierName ?? ''} ${event.shopItemsText}`.trim();
   const lower = label.toLowerCase();
   let plan: KofiPlan | null = null;
@@ -133,7 +133,7 @@ export function mapKofiToGrant(event: KofiEvent, now: number): KofiGrant | null 
   if (!plan) return null;
   const annual = /(annual|anual|yearly|year|ano)/.test(lower);
   const days = annual ? 365 : 30;
-  // Licenças (só para 'premium'; o Plus é por-utilizador). O Plus é irrelevante -> 3.
+  // Licenses (only for 'premium'; Plus is per-user). Plus is irrelevant -> 3.
   const seats = plan === 'premium' ? premiumSeats(lower) : PREMIUM_PASS_SEATS;
   return {
     plan,
@@ -145,11 +145,11 @@ export function mapKofiToGrant(event: KofiEvent, now: number): KofiGrant | null 
 }
 
 /**
- * Nº de licenças de um passe Premium, LIDO do nome do produto: "(N servers)" -> N
- * (ex.: "Vozen Premium (8 servers)" -> 8; "(3 servers)" -> 3; compras antigas "(10 servers)"
- * continuam a renovar com 10 — grandfathering). Fallback histórico para a
- * palavra "max" (8). Default 3. O N é limitado a 1..100 para um nome com gralha não gerar
- * um passe absurdo (o nome é do operador, mas isto é defesa barata).
+ * Number of licenses of a Premium pass, READ from the product name: "(N servers)" -> N
+ * (e.g. "Vozen Premium (8 servers)" -> 8; "(3 servers)" -> 3; old purchases "(10 servers)"
+ * keep renewing with 10 — grandfathering). Historical fallback to the
+ * word "max" (8). Default 3. N is capped to 1..100 so a name with a typo doesn't generate
+ * an absurd pass (the name is the operator's, but this is cheap defense).
  */
 function premiumSeats(lower: string): number {
   const m = lower.match(/(\d+)\s*servers?\b/);

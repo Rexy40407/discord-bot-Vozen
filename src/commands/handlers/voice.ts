@@ -1,4 +1,4 @@
-// src/commands/handlers/voice.ts — handler de /voice (set/list/reset/optout/optin/preview/detection/nickname/effect + grupo clone) extraído de index.ts (plano 015).
+// src/commands/handlers/voice.ts — /voice handler (set/list/reset/optout/optin/preview/detection/nickname/effect + clone group) extracted from index.ts (plan 015).
 import {
   ChatInputCommandInteraction,
   MessageFlags,
@@ -38,25 +38,25 @@ import { log } from '../../logging/logger';
 import { t } from '../../i18n/index';
 import { localeFor, localeForUser, reply } from '../helpers';
 
-// Utilizadores com uma gravação /voice clone record EM CURSO. BUG real descoberto
-// (auditoria): connection.receiver.subscribe(userId, ...) do @discordjs/voice devolve
-// SEMPRE o MESMO stream partilhado para um userId já subscrito — duas invocações
-// concorrentes do MESMO utilizador (duplo-toque, duas sessões) partilhavam o áudio e
-// corrompiam-se mutuamente (a primeira a terminar destruía o stream da segunda a meio).
-// Este guard bloqueia a 2.ª invocação com uma mensagem clara em vez de deixar as duas
-// gravações pisarem-se. Limpo SEMPRE no finally da 1.ª (sucesso, "curto demais" ou erro).
+// Users with a /voice clone record IN PROGRESS. Real BUG discovered
+// (audit): connection.receiver.subscribe(userId, ...) from @discordjs/voice ALWAYS
+// returns the SAME shared stream for an already-subscribed userId — two concurrent
+// invocations by the SAME user (double-tap, two sessions) shared the audio and
+// corrupted each other (the first to finish destroyed the second's stream mid-way).
+// This guard blocks the 2nd invocation with a clear message instead of letting the two
+// recordings step on each other. ALWAYS cleared in the 1st one's finally (success, "too short" or error).
 const activeCloneRecordings = new Set<string>();
 
 /**
- * /voice clone record|use|status|delete — clone da PRÓPRIA voz, consent-first:
- *   - record: grava SÓ o áudio do invocador (receiver por-user) durante ~15s de fala;
- *     o próprio comando é o consentimento (registado com timestamp). O bot vive
- *     ensurdecido e só "destapa os ouvidos" durante a janela de gravação.
- *   - use: liga/desliga a leitura das PRÓPRIAS mensagens com o clone (ninguém mais
- *     pode usar o clone de outra pessoa). Sem motor instalado (config.cloneCmd), o
- *     toggle fica guardado mas avisa que a síntese ainda não está ativa.
- *   - delete: apaga amostra + registo, sem rasto.
- * record/use são 💎 Premium (Plus do próprio OU Premium do servidor).
+ * /voice clone record|use|status|delete — clone of one's OWN voice, consent-first:
+ *   - record: records ONLY the invoker's audio (per-user receiver) during ~15s of speech;
+ *     the command itself is the consent (recorded with a timestamp). The bot lives
+ *     deafened and only "uncovers its ears" during the recording window.
+ *   - use: toggles reading of one's OWN messages with the clone (nobody else
+ *     can use someone else's clone). Without an installed engine (config.cloneCmd), the
+ *     toggle is saved but warns that synthesis is not active yet.
+ *   - delete: deletes sample + record, leaving no trace.
+ * record/use are 💎 Premium (own Plus OR the server's Premium).
  */
 async function handleVoiceClone(
   i: ChatInputCommandInteraction,
@@ -72,7 +72,7 @@ async function handleVoiceClone(
       await reply(i, t('clone.none', locale));
       return;
     }
-    // Cartão: verde quando o clone está LIGADO, blurple quando só gravado.
+    // Card: green when the clone is ON, blurple when only recorded.
     const embed = brandEmbed(c.enabled ? 'success' : 'brand').setDescription(
       t('clone.status', locale, {
         date: `<t:${Math.floor(c.consentAt / 1000)}:D>`,
@@ -84,8 +84,8 @@ async function handleVoiceClone(
   }
 
   if (sub === 'delete') {
-    // Apaga o MEU clone (sou o dono) E revoga qualquer clone feito a partir da MINHA voz
-    // por outra pessoa (sou o alvo) — a pessoa gravada pode sempre retirar o consentimento.
+    // Deletes MY clone (I am the owner) AND revokes any clone made from MY voice
+    // by someone else (I am the target) — the recorded person can always withdraw consent.
     const ownPath = deleteClone(deps.db, userId);
     const revoked = deleteClonesByTarget(deps.db, userId);
     for (const p of [ownPath, ...revoked.map((r) => r.samplePath)]) {
@@ -93,19 +93,19 @@ async function handleVoiceClone(
       try {
         unlinkSync(p);
       } catch {
-        // ficheiro já removido — o registo é o que importa
+        // file already removed — the record is what matters
       }
     }
     if (!ownPath && revoked.length === 0) {
       await reply(i, t('clone.none', locale));
       return;
     }
-    // "Sem rasto": além da amostra e do registo, purga a cache de ÁUDIO clonado gerado
-    // (audio-cache/clone/ E audio-cache/fx/ — o EffectEngine envolve o CloneEngine, por
-    // isso áudio clone+efeito fica no namespace 'fx'). As chaves são hashes irreversíveis,
-    // não dá para apagar só as desta voz, por isso limpamos os namespaces inteiros. É
-    // regenerável e o clone é a única feature que grava a voz real de alguém — direito ao
-    // apagamento (RGPD) exige não deixar áudio derivado para trás.
+    // "No trace": besides the sample and the record, purges the generated cloned AUDIO cache
+    // (audio-cache/clone/ AND audio-cache/fx/ — the EffectEngine wraps the CloneEngine, so
+    // clone+effect audio ends up in the 'fx' namespace). The keys are irreversible hashes,
+    // so we cannot delete only this voice's entries, hence we clear the whole namespaces. It is
+    // regenerable and the clone is the only feature that records someone's real voice — the right to
+    // erasure (GDPR) requires leaving no derived audio behind.
     purgeCloneDerivedAudio(join(dirname(deps.config.dbPath), 'audio-cache'));
     const parts: string[] = [];
     if (ownPath) parts.push(t('clone.deleted', locale));
@@ -114,7 +114,7 @@ async function handleVoiceClone(
     return;
   }
 
-  // record e use exigem Premium (é o exemplo canónico de "extras que custam computação").
+  // record and use require Premium (the canonical example of "extras that cost compute").
   const now = Date.now();
   const premium = isUserPremium(deps.db, userId, now) || isGuildPremium(deps.db, i.guildId!, now);
   if (!premium) {
@@ -129,8 +129,8 @@ async function handleVoiceClone(
       await reply(i, t('clone.noSample', locale));
       return;
     }
-    // Disponibilidade REAL do motor (inclui o venv auto-detetado), não só o env CLONE_CMD —
-    // senão dizíamos "motor não instalado" com o sidecar detetado e o clone a funcionar.
+    // REAL engine availability (includes the auto-detected venv), not just the CLONE_CMD env —
+    // otherwise we'd say "engine not installed" with the sidecar detected and the clone working.
     const engineAvailable = deps.cloneAvailable ?? !!deps.config.cloneCmd;
     if (on && !engineAvailable) {
       await reply(i, t('clone.enabledNoEngine', locale));
@@ -141,11 +141,11 @@ async function handleVoiceClone(
   }
 
   // ── record ──
-  // Alvo escolhível: por defeito o próprio invocador (auto-clone, o caso consent-first
-  // trivial); se `user` for outra pessoa, gravamos a voz DELA — mas só com o consentimento
-  // explícito dela (botão), preservando a invariante "nunca gravar terceiros em silêncio".
-  // A opção `user` é STRING+autocomplete (id da pessoa na call); vazio = o próprio. Se
-  // vier texto que não é um id (escreveram à mão sem escolher da lista), pede para escolher.
+  // Choosable target: by default the invoker themselves (auto-clone, the trivial consent-first
+  // case); if `user` is someone else, we record THEIR voice — but only with their explicit
+  // consent (button), preserving the invariant "never record third parties silently".
+  // The `user` option is STRING+autocomplete (the id of the person in the call); empty = self. If
+  // text that is not an id comes through (typed by hand without picking from the list), it asks to pick.
   const rawTarget = i.options.getString('user')?.trim();
   if (rawTarget && !/^\d{5,25}$/.test(rawTarget)) {
     await reply(i, t('clone.pickFromList', locale));
@@ -154,8 +154,8 @@ async function handleVoiceClone(
   const targetId = rawTarget || userId;
   const isSelf = targetId === userId;
   const who = `<@${targetId}>`;
-  // Duração escolhível: segundos de FALA real a apanhar (5–30, default 15). O relógio-teto
-  // e o mínimo aceitável derivam do alvo, para amostras curtas poderem funcionar.
+  // Choosable duration: seconds of real SPEECH to capture (5–30, default 15). The wall-clock cap
+  // and the acceptable minimum derive from the target, so short samples can still work.
   const seconds = Math.min(30, Math.max(5, i.options.getInteger('seconds') ?? 15));
   const targetVoicedMs = seconds * 1000;
   const maxWallMs = Math.min(90_000, Math.max(30_000, targetVoicedMs * 3));
@@ -183,15 +183,15 @@ async function handleVoiceClone(
     await i.editReply({ content: t('clone.alreadyRecording', locale) });
     return;
   }
-  // Reserva o alvo JÁ (antes da janela de consentimento de 60s), senão duas pessoas a
-  // apontar à mesma vítima passavam ambas o has() e disparavam dois pedidos. Libertado em
-  // TODAS as saídas: nos returns antecipados do consentimento e no finally da gravação.
+  // Reserve the target NOW (before the 60s consent window), otherwise two people pointing
+  // at the same victim would both pass the has() and fire two requests. Released on
+  // ALL exits: in the early consent returns and in the recording's finally.
   activeCloneRecordings.add(targetId);
 
   const { channelId } = connection.joinConfig;
 
-  // CONSENTIMENTO (só quando o alvo não é o próprio): pede o OK explícito ao alvo com um
-  // botão numa mensagem pública (que também o notifica). Sem "sim" dele, não se grava nada.
+  // CONSENT (only when the target is not the invoker): asks the target for explicit OK with a
+  // button on a public message (which also notifies them). Without their "yes", nothing is recorded.
   if (!isSelf) {
     const ch = i.channel;
     if (!ch || !ch.isTextBased() || ch.isDMBased()) {
@@ -199,7 +199,7 @@ async function handleVoiceClone(
       await i.editReply({ content: t('clone.failed', locale) });
       return;
     }
-    // O alvo lê isto — usa o locale da guild (neutro), não o do invocador.
+    // The target reads this — use the guild locale (neutral), not the invoker's.
     const gLocale = localeFor(deps, i.guildId);
     const consentRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
@@ -246,28 +246,28 @@ async function handleVoiceClone(
     if (!granted) {
       activeCloneRecordings.delete(targetId);
       await i.editReply({ content: t('clone.consentRefused', locale, { who }) }).catch(() => {});
-      await consentMsg.edit({ components: [] }).catch(() => {}); // limpa botões se foi timeout
+      await consentMsg.edit({ components: [] }).catch(() => {}); // clear buttons if it was a timeout
       return;
     }
   }
 
-  // Handle mínimo (só o .stop() que o finally precisa) guardado FORA do try, para o
-  // finally poder parar o collector em QUALQUER saída — incluindo se recordUserSample
-  // lançar antes do collector.stop('done') normal. .stop() é idempotente (chamar de novo
-  // onde já corre não faz mal); isto só cobre a saída que faltava. Tipo minimo em vez do
-  // ReturnType real (que é uma UNIÃO de todos os componentType possíveis e não estreita
-  // bem para o Button específico usado aqui) — mesmo padrão do `ChildLike` em piperPool.ts.
+  // Minimal handle (just the .stop() the finally needs) kept OUTSIDE the try, so the
+  // finally can stop the collector on ANY exit — including if recordUserSample
+  // throws before the normal collector.stop('done'). .stop() is idempotent (calling it again
+  // where it already ran does no harm); this just covers the missing exit. Minimal type instead of the
+  // real ReturnType (which is a UNION of all possible componentTypes and does not narrow
+  // well to the specific Button used here) — same pattern as `ChildLike` in piperPool.ts.
   let collectorHandle: { stop(reason?: string): void } | undefined;
   try {
-    // Botão "Parar já": para além do auto-stop (alvo de FALA ou relógio-teto), tanto o
-    // invocador como o alvo podem terminar quando quiserem.
+    // "Stop now" button: besides the auto-stop (SPEECH target or wall-clock cap), both the
+    // invoker and the target can end whenever they want.
     const stopBtn = new ButtonBuilder()
       .setCustomId(`clonestop:${targetId}`)
       .setLabel(t('clone.stopBtn', locale))
       .setStyle(ButtonStyle.Danger)
       .setEmoji('⏹️');
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(stopBtn);
-    // Destapa os ouvidos SÓ para esta janela (selfDeaf false), gravando apenas o alvo.
+    // Uncover the ears ONLY for this window (selfDeaf false), recording only the target.
     connection.rejoin({ channelId, selfDeaf: false, selfMute: false });
     const msg = await i.editReply({
       content: isSelf
@@ -276,7 +276,7 @@ async function handleVoiceClone(
       components: [row],
     });
 
-    // Sinal de paragem manual: o coletor de botões liga-o; o recorder faz poll dele.
+    // Manual stop signal: the button collector sets it; the recorder polls it.
     let stopped = false;
     const collector = msg.createMessageComponentCollector({
       componentType: ComponentType.Button,
@@ -293,8 +293,8 @@ async function handleVoiceClone(
       collector.stop('user');
     });
 
-    // Feedback ao vivo com throttle (~2.5s) — ajuda quem grava a saber que precisa de
-    // continuar a falar até ao alvo (a causa nº1 de amostras curtas de mais).
+    // Live feedback with throttle (~2.5s) — helps whoever is recording know they need to
+    // keep speaking until the target (the #1 cause of samples that are too short).
     let lastEdit = Date.now();
     const { pcm, voicedMs, diag } = await recordUserSample(connection, targetId, {
       targetVoicedMs,
@@ -316,9 +316,9 @@ async function handleVoiceClone(
       },
     });
     collector.stop('done');
-    // DIAGNÓSTICO da causa de amostras curtas (evidência real > teoria): se framesSeen for
-    // alto mas framesVoiced baixo, é o gate de RMS a comer o áudio (não o user a falar pouco).
-    // rmsMedian vs threshold diz logo se o chão está mal calibrado para este mic/canal.
+    // DIAGNOSTIC of the short-sample cause (real evidence > theory): if framesSeen is
+    // high but framesVoiced is low, it is the RMS gate eating the audio (not the user speaking little).
+    // rmsMedian vs threshold tells right away if the floor is mis-calibrated for this mic/channel.
     log.info(
       `[clone] diag user=${userId} target=${targetId} voicedMs=${voicedMs} ` +
         `framesSeen=${diag.framesSeen} framesVoiced=${diag.framesVoiced} ` +
@@ -336,24 +336,24 @@ async function handleVoiceClone(
       });
       return;
     }
-    // Ficheiro VERSIONADO por timestamp: uma re-gravação é um path novo -> chave de cache
-    // nova (cacheKey inclui o basename do ref) -> não se ouve a voz velha. Apaga a amostra
-    // anterior a seguir (o ficheiro antigo deixa de ser referenciado). O clone é SEMPRE do
-    // invocador (é ele que vai falar com esta voz), mesmo quando gravou a voz de outra pessoa.
+    // File VERSIONED by timestamp: a re-recording is a new path -> new cache key
+    // (cacheKey includes the ref's basename) -> the old voice is never heard. Deletes the previous
+    // sample afterward (the old file is no longer referenced). The clone is ALWAYS the
+    // invoker's (it is they who will speak with this voice), even when they recorded someone else's voice.
     const stamp = Date.now();
     const prev = getClone(deps.db, userId);
     const outPath = join(dirname(deps.config.dbPath), 'voice-clones', `${userId}-${stamp}.wav`);
     await pcmToWavFile(pcm, outPath);
-    // Cifra a amostra biométrica EM REPOUSO (ToS §5(c)). No-op sem CLONE_KEY (em claro).
+    // Encrypts the biometric sample AT REST (ToS §5(c)). No-op without CLONE_KEY (in the clear).
     encryptSampleFileInPlace(outPath, deps.config.cloneKey);
-    // targetId = a pessoa cuja voz foi gravada (o próprio num auto-clone). Fica registado
-    // para que essa pessoa possa revogar o clone com /voice clone delete (Fase 2 compliance).
+    // targetId = the person whose voice was recorded (the invoker in an auto-clone). It is recorded
+    // so that person can revoke the clone with /voice clone delete (Phase 2 compliance).
     saveClone(deps.db, userId, outPath, stamp, targetId);
     if (prev && prev.samplePath !== outPath) {
       try {
         unlinkSync(prev.samplePath);
       } catch {
-        // ficheiro antigo já removido — inofensivo
+        // old file already removed — harmless
       }
     }
     await i.editReply({
@@ -367,11 +367,11 @@ async function handleVoiceClone(
     await i.editReply({ content: t('clone.failed', locale), components: [] }).catch(() => {});
   } finally {
     collectorHandle?.stop('finally');
-    // Volta SEMPRE a ensurdecer (privacidade por defeito), aconteça o que acontecer.
+    // ALWAYS deafen again (privacy by default), no matter what happens.
     try {
       connection.rejoin({ channelId, selfDeaf: true, selfMute: false });
     } catch {
-      // ligação pode ter morrido entretanto — inofensivo
+      // the connection may have died in the meantime — harmless
     }
     activeCloneRecordings.delete(targetId);
   }
@@ -379,8 +379,8 @@ async function handleVoiceClone(
 
 export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
-  // Grupo /voice clone despacha para o handler próprio (getSubcommand() devolveria o
-  // sub DENTRO do grupo e colidiria com os nomes de topo).
+  // The /voice clone group dispatches to its own handler (getSubcommand() would return the
+  // sub INSIDE the group and collide with the top-level names).
   if (i.options.getSubcommandGroup(false) === 'clone') {
     await handleVoiceClone(i, deps, locale);
     return;
@@ -392,30 +392,30 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
       await reply(i, t('voice.unknownModel', locale));
       return;
     }
-    // Guard beginner-friendly de intervalo: o builder do `speed` NAO tem min/max, por
-    // isso o Discord NAO rejeita client-side (ex. speed:5). Antes fazia-se silent-clamp
-    // (5 -> 2×) e respondia-se "sucesso" — uma surpresa silenciosa. So valida quando o
-    // valor FOI fornecido (getNumber devolve null se omitido) E cai FORA de 0.5–2.0;
-    // nesse caso erro amigavel com o intervalo e NADA gravado (rejeicao, nao clamp).
-    // Boundaries 0.5 e 2.0 continuam validos. Omitido -> cai no defaultSpeed (inalterado).
+    // Beginner-friendly range guard: the `speed` builder has NO min/max, so
+    // Discord does NOT reject client-side (e.g. speed:5). Previously it did a silent clamp
+    // (5 -> 2×) and replied "success" — a silent surprise. It only validates when the
+    // value WAS provided (getNumber returns null if omitted) AND it falls OUTSIDE 0.5–2.0;
+    // in that case a friendly error with the range and NOTHING saved (rejection, not clamp).
+    // Boundaries 0.5 and 2.0 remain valid. Omitted -> falls to defaultSpeed (unchanged).
     const rawSpeed = i.options.getNumber('speed');
     if (rawSpeed !== null && (rawSpeed < 0.5 || rawSpeed > 2.0)) {
       await reply(i, t('voice.badSpeed', locale));
       return;
     }
     const speed = rawSpeed ?? deps.config.defaultSpeed;
-    // Clamp preservado: no-op para valores fornecidos validos (ja em [0.5,2.0]); mantem
-    // o comportamento antigo para o caminho omitido->defaultSpeed.
+    // Clamp preserved: no-op for valid provided values (already in [0.5,2.0]); keeps
+    // the old behavior for the omitted->defaultSpeed path.
     const clamped = Math.min(2.0, Math.max(0.5, speed));
-    // Motor por-utilizador: opção nova (google/piper/kokoro/gcloud). Se OMITIDA, PRESERVA
-    // o motor atual do user — senão mudar só a voz reporia o motor para Google (read-first).
+    // Per-user engine: new option (google/piper/kokoro/gcloud). If OMITTED, PRESERVES
+    // the user's current engine — otherwise changing only the voice would reset the engine to Google (read-first).
     const engineOpt = i.options.getString('engine') as
       'google' | 'piper' | 'kokoro' | 'gcloud' | null;
     const currentEngine = getUserVoice(deps.db, i.guildId!, i.user.id)?.engine ?? 'google';
     const engine = engineOpt ?? currentEngine;
-    // GATE Premium: o motor Google HD (gcloud) exige Vozen Plus (user) OU Premium do
-    // servidor. Só aqui, ao GUARDAR — em runtime o resolveUserEngine revalida (Premium
-    // expirado -> gTTS). Mesmo padrão dos efeitos premium (voice.effect.locked).
+    // Premium GATE: the Google HD engine (gcloud) requires Vozen Plus (user) OR the server's
+    // Premium. Only here, when SAVING — at runtime resolveUserEngine revalidates (expired
+    // Premium -> gTTS). Same pattern as the premium effects (voice.effect.locked).
     if (engine === 'gcloud') {
       const now = Date.now();
       const unlocked =
@@ -426,8 +426,8 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
       }
     }
     setUserVoice(deps.db, i.guildId!, i.user.id, model, clamped, engine);
-    // Copy beginner-friendly: nome da voz NA LÍNGUA DO UTILIZADOR (i.locale) + id cru
-    // copy-pasteável. Inclui o motor escolhido.
+    // Beginner-friendly copy: voice name IN THE USER'S LANGUAGE (i.locale) + raw
+    // copy-pasteable id. Includes the chosen engine.
     await reply(
       i,
       t('voice.set', locale, {
@@ -445,34 +445,34 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
       }),
     );
   } else if (sub === 'list') {
-    // Beginner-friendly: em vez de uma lista plana de ids Piper, agrupa por lingua
-    // com nomes humanos (formatVoiceList). O id cru fica entre parenteses para
-    // /voice set continuar copy-pasteavel. Cabeçalhos das línguas NA LÍNGUA DO
-    // UTILIZADOR (i.locale); cabeçalho da mensagem i18n.
+    // Beginner-friendly: instead of a flat list of Piper ids, groups by language
+    // with human names (formatVoiceList). The raw id stays in parentheses so
+    // /voice set remains copy-pasteable. Language headers IN THE USER'S
+    // LANGUAGE (i.locale); message header i18n.
     const list = deps.availableModels.length
       ? formatVoiceList(deps.availableModels, i.locale)
       : t('voice.listEmpty', locale);
-    // Cartão: cabe bem nos 4096 chars da descrição de um embed (grupos por língua).
+    // Card: fits comfortably in an embed description's 4096 chars (groups by language).
     const embed = brandEmbed().setDescription(`${t('voice.listHeader', locale)}\n${list}`);
     await i.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   } else if (sub === 'reset') {
     resetUserVoice(deps.db, i.guildId!, i.user.id);
     await reply(i, t('voice.reset', locale));
   } else if (sub === 'optout') {
-    // Por-utilizador (sem gate de admin): cada um gere o seu opt-out da auto-leitura.
+    // Per-user (no admin gate): each person manages their own opt-out of auto-read.
     setOptOut(deps.db, i.guildId!, i.user.id);
     await reply(i, t('voice.optout', locale));
   } else if (sub === 'optin') {
     setOptIn(deps.db, i.guildId!, i.user.id);
     await reply(i, t('voice.optin', locale));
   } else if (sub === 'nickname') {
-    // Apelido FONETICO para o xsaid. Vazio/omitido -> limpa (volta ao nome do servidor).
+    // PHONETIC nickname for xsaid. Empty/omitted -> clears (back to the server name).
     const raw = i.options.getString('name');
     if (raw === null || raw.trim() === '') {
       clearNickname(deps.db, i.guildId!, i.user.id);
       await reply(i, t('voice.nickname.cleared', locale));
     } else {
-      // Guarda JA sanitizado (tira emojis/simbolos); se nada legivel sobra, recusa.
+      // Saves ALREADY sanitized (strips emojis/symbols); if nothing legible remains, refuses.
       const clean = sanitizeSpeakerName(raw);
       if (!clean) {
         await reply(i, t('voice.nickname.invalid', locale));
@@ -484,8 +484,8 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
   } else if (sub === 'effect') {
     const raw = i.options.getString('effect', true);
     const effect: VoiceEffect = isVoiceEffect(raw) ? raw : 'none';
-    // GATE premium: efeitos premium exigem Vozen Premium (servidor) OU Vozen Plus (user).
-    // Só aqui, ao GUARDAR — o player aplica cegamente o que estiver guardado.
+    // Premium GATE: premium effects require Vozen Premium (server) OR Vozen Plus (user).
+    // Only here, when SAVING — the player blindly applies whatever is saved.
     if (isPremiumEffect(effect)) {
       const now = Date.now();
       const unlocked =
@@ -506,7 +506,7 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
     const SAMPLE = t('preview.sample', locale);
     const explicitModel = i.options.getString('model');
 
-    // Valida o model explícito ANTES de verificar o player.
+    // Validates the explicit model BEFORE checking the player.
     if (explicitModel !== null && !deps.availableModels.includes(explicitModel)) {
       await reply(i, t('voice.unknownModel', locale));
       return;
@@ -520,10 +520,10 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
 
     const cfg = getGuildConfig(deps.db, i.guildId!);
 
-    // rate-limit por-utilizador (MESMO limiter do /tts e /laugh — ABUSE-03): sem isto
-    // o preview enfileirava sem limite -> monopolizava a fila de voz (1 worker por
-    // guild) e forçava sinteses cache-miss ao ciclar a opcao `model:`. Mesmo padrao
-    // do handleLaugh em fun.ts.
+    // Per-user rate-limit (SAME limiter as /tts and /laugh — ABUSE-03): without this
+    // the preview would queue without limit -> monopolize the voice queue (1 worker per
+    // guild) and force cache-miss syntheses by cycling the `model:` option. Same pattern
+    // as handleLaugh in fun.ts.
     const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
     if (!rl.allow(i.user.id, Date.now())) {
       await reply(i, t('tts.tooFast', locale));
@@ -531,32 +531,32 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
     }
 
     const stored = getUserVoice(deps.db, i.guildId!, i.user.id);
-    // Preview NAO passa por resolveSynth de proposito: resolveSynth agora deixa a
-    // LINGUA da mensagem decidir a voz, mas o /voice preview e um DEMO de UMA voz
-    // especifica — tem de tocar exatamente o model pedido (ou o guardado/default),
-    // independentemente da lingua da frase-amostra. Por isso construimos o
-    // SynthRequest diretamente. Precedencia: model explicito > voz guardada do
-    // user > default_voice da guild > .env > amy. Velocidade: a do user, senao a default.
+    // Preview does NOT go through resolveSynth on purpose: resolveSynth now lets the
+    // message LANGUAGE decide the voice, but /voice preview is a DEMO of ONE specific
+    // voice — it must play exactly the requested model (or the saved/default one),
+    // regardless of the sample-phrase language. So we build the
+    // SynthRequest directly. Precedence: explicit model > user's saved voice >
+    // guild default_voice > .env > amy. Speed: the user's, otherwise the default.
     const model =
       (explicitModel ?? stored?.model) ||
       cfg.defaultVoice ||
       deps.config.defaultVoice ||
       'en_US-amy-medium';
     const speed = stored?.speed ?? deps.config.defaultSpeed;
-    // singleVoice: o preview e um DEMO de UMA voz especifica; a deteccao nunca deve
-    // sobrepor-se nem partir a frase-amostra por lingua. O motor e o do user (o preview
-    // tem de soar ao que ele vai ouvir de facto).
+    // singleVoice: the preview is a DEMO of ONE specific voice; detection must never
+    // override it nor split the sample phrase by language. The engine is the user's (the preview
+    // must sound like what they will actually hear).
     const req: SynthRequest = {
       text: SAMPLE,
       model,
       speed,
       singleVoice: true,
-      // o preview tem de soar ao que o user vai ouvir; o resolver aplica o gate gcloud
-      // (->google sem Premium) e o orçamento (Fase 3) — engine + gcloudBudget.
+      // the preview must sound like what the user will hear; the resolver applies the gcloud gate
+      // (->google without Premium) and the budget (Phase 3) — engine + gcloudBudget.
       ...resolveUserEngine(deps.db, i.guildId!, i.user.id, stored?.engine, Date.now()),
     };
-    // say() devolve false quando a fila esta no cap: nesse caso NAO mentir "a
-    // reproduzir" — reutilizamos a mesma chave tts.busy do /tts (consistencia).
+    // say() returns false when the queue is at the cap: in that case do NOT lie "now
+    // playing" — we reuse the same tts.busy key as /tts (consistency).
     const queued = await player.say(req);
     await reply(i, queued ? t('voice.previewPlaying', locale) : t('tts.busy', locale));
   }

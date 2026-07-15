@@ -24,7 +24,7 @@ function makeInteraction(commandName: string) {
       embeds?: { data?: { description?: string } }[];
       flags?: number;
     }) => {
-      // Regista texto OU a descrição do embed (o /botstats e /stats passaram a embeds).
+      // Records text OR the embed description (/botstats and /stats moved to embeds).
       const fromEmbeds = (o.embeds ?? []).map((e) => e?.data?.description ?? '').join('\n');
       replies.push(o.content ?? fromEmbeds);
     },
@@ -42,7 +42,7 @@ function makeDeps(servers: number, players: number): BotDeps {
 }
 
 describe('formatDuration', () => {
-  it('formata dias/horas/minutos, omite zeros à cabeça', () => {
+  it('formats days/hours/minutes, omits leading zeros', () => {
     expect(formatDuration(0)).toBe('<1m');
     expect(formatDuration(59)).toBe('<1m');
     expect(formatDuration(60)).toBe('1m');
@@ -53,35 +53,35 @@ describe('formatDuration', () => {
   });
 });
 
-describe('/uptime — público', () => {
-  it('responde com o tempo online', async () => {
+describe('/uptime — public', () => {
+  it('responds with the online time', async () => {
     const i = makeInteraction('uptime');
     await handleInteraction(i as any, makeDeps(5, 2));
     expect(i.replies.length).toBe(1);
     expect(i.replies[0]).toMatch(/online/i);
   });
 
-  it('é top-level, NÃO admin-only', () => {
+  it('is top-level, NOT admin-only', () => {
     const def = commandDefs.find((c) => c.name === 'uptime');
     expect(def).toBeDefined();
     expect(def?.default_member_permissions ?? undefined).toBeUndefined();
   });
 });
 
-describe('/botstats — público', () => {
-  it('mostra os números de servidores e sessões de voz', async () => {
+describe('/botstats — public', () => {
+  it('shows the server and voice-session numbers', async () => {
     const i = makeInteraction('botstats');
     await handleInteraction(i as any, makeDeps(42, 3));
     const text = i.replies.join('\n');
-    expect(text).toContain('42'); // servidores
-    expect(text).toContain('3'); // sessões de voz agora
+    expect(text).toContain('42'); // servers
+    expect(text).toContain('3'); // voice sessions now
   });
 
-  it('é top-level, NÃO admin-only (ao contrário do /stats)', () => {
+  it('is top-level, NOT admin-only (unlike /stats)', () => {
     const botstats = commandDefs.find((c) => c.name === 'botstats');
     const stats = commandDefs.find((c) => c.name === 'stats');
     expect(botstats?.default_member_permissions ?? undefined).toBeUndefined();
-    // /stats CONTINUA admin-only — a diferença é intencional.
+    // /stats STAYS admin-only — the difference is intentional.
     expect(stats?.default_member_permissions).toBeDefined();
   });
 });

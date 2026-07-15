@@ -1,8 +1,8 @@
 // src/premium/kofiWebhook.ts
 //
-// Servidor HTTP FINO do webhook do Ko-fi. Recebe o POST, verifica o token, e aplica o
-// grant (via a lógica pura em ./kofi). INERTE sem KOFI_WEBHOOK_TOKEN. Responde sempre
-// depressa (o Ko-fi re-tenta em não-2xx). O host aponta o domínio para esta porta.
+// THIN HTTP server for the Ko-fi webhook. Receives the POST, verifies the token, and applies the
+// grant (via the pure logic in ./kofi). INERT without KOFI_WEBHOOK_TOKEN. Always responds
+// quickly (Ko-fi retries on non-2xx). The host points the domain at this port.
 
 import { createServer, type Server } from 'node:http';
 import type Database from 'better-sqlite3';
@@ -35,32 +35,32 @@ export interface KofiWebhookDeps {
   now: () => number;
   logInfo: (m: string) => void;
   logError: (m: string, err: unknown) => void;
-  // Painel Premium: API de leitura opcional montada no MESMO servidor (GET /api/me/premium).
-  // Ausente => só o webhook. Presente => também responde à API com CORS restrito a `apiOrigin`.
+  // Premium panel: optional read API mounted on the SAME server (GET /api/me/premium).
+  // Absent => only the webhook. Present => also serves the API with CORS restricted to `apiOrigin`.
   statusApi?: StatusApi;
   apiOrigin?: string;
-  // Dashboard web de config (opcional): rotas /api/dashboard/* no MESMO servidor, mesmo CORS.
-  // Ausente => sem dashboard. Requer também `apiOrigin`.
+  // Web config dashboard (optional): /api/dashboard/* routes on the SAME server, same CORS.
+  // Absent => no dashboard. Also requires `apiOrigin`.
   dashboardApi?: DashboardApi;
-  /** Limite defensivo do mapa de rate-limit da API. Default 2048. */
+  /** Defensive limit of the API rate-limit map. Default 2048. */
   apiRateMaxEntries?: number;
-  // Webhook top.gg (recompensa de voto) montado no MESMO servidor público (POST /webhook/topgg)
-  // — evita uma porta dedicada + rota de Caddy nova. Ausente/vazio => a rota NÃO é servida
-  // (sem secret qualquer um forjaria votos). Ver ./vote (handleVoteWebhook, auth constant-time).
+  // top.gg webhook (vote reward) mounted on the SAME public server (POST /webhook/topgg)
+  // — avoids a dedicated port + new Caddy route. Absent/empty => the route is NOT served
+  // (without a secret anyone would forge votes). See ./vote (handleVoteWebhook, constant-time auth).
   topggWebhookSecret?: string;
-  /** Chamado com o id de quem votou em cada upvote válido (liga o grant da recompensa). */
+  /** Called with the id of whoever voted on each valid upvote (wires the reward grant). */
   onUpvote?: (userId: string) => void;
 }
 
-// Rate-limit simples por IP para a API do painel (janela deslizante). Sem dependências:
-// um Map em memória chega — reinicia com o processo, é best-effort anti-abuso.
-const API_RATE_MAX = 30; // pedidos
-const API_RATE_WINDOW_MS = 10_000; // por 10s
+// Simple per-IP rate limit for the panel API (sliding window). No dependencies:
+// an in-memory Map is enough — resets with the process, it's best-effort anti-abuse.
+const API_RATE_MAX = 30; // requests
+const API_RATE_WINDOW_MS = 10_000; // per 10s
 const API_RATE_MAX_ENTRIES = 2048;
 
-// Claim (POST /api/link): limite MUITO mais apertado — é anti-brute-force do código da
-// transação. 5 tentativas / 10 min / IP: chega de sobra para um comprador legítimo e torna
-// impraticável adivinhar um tx id (UUID) por força bruta.
+// Claim (POST /api/link): MUCH tighter limit — it's anti-brute-force for the transaction
+// code. 5 attempts / 10 min / IP: more than enough for a legitimate buyer and makes it
+// impractical to brute-force a tx id (UUID).
 const CLAIM_RATE_MAX = 5;
 const CLAIM_RATE_WINDOW_MS = 10 * 60 * 1000;
 
@@ -75,8 +75,8 @@ const API_SECURITY_HEADERS: Readonly<Record<string, string>> = {
 };
 
 /**
- * Aplica um grant do Ko-fi no store (estende/acumula, nunca reduz). Sem Discord ID
- * associado devolve null (o chamador loga para grant manual com /vozengrant).
+ * Applies a Ko-fi grant to the store (extends/accumulates, never reduces). Without an associated
+ * Discord ID it returns null (the caller logs it for a manual grant with /vozengrant).
  */
 export function applyKofiGrant(
   db: Database.Database,
@@ -90,8 +90,8 @@ export function applyKofiGrant(
 }
 
 /**
- * Resolve o Discord ID de um evento: da MENSAGEM (1.ª compra) — e memoriza-o por email —
- * ou, se a mensagem não o trouxer (RENOVAÇÕES não reenviam a nota), pelo EMAIL guardado.
+ * Resolves the Discord ID of an event: from the MESSAGE (1st purchase) — and memorizes it by email —
+ * or, if the message doesn't carry it (RENEWALS don't resend the note), by the stored EMAIL.
  */
 export function resolveKofiDiscordId(
   db: Database.Database,
@@ -100,9 +100,9 @@ export function resolveKofiDiscordId(
   now: number,
   webhookToken: string | undefined,
 ): string | null {
-  // Indexamos pelo HASH do email (nunca o email em claro) — ver hashKofiEmail. O token do
-  // webhook é a chave do HMAC; ele autentica o pedido (verifyKofiToken), logo está sempre
-  // presente quando chegamos aqui. Sem token não hashamos (degrada em segurança, nunca vaza).
+  // We index by the email HASH (never the plaintext email) — see hashKofiEmail. The webhook
+  // token is the HMAC key; it authenticates the request (verifyKofiToken), so it is always
+  // present when we get here. Without a token we don't hash (degrades safely, never leaks).
   const emailHash = event.email && webhookToken ? hashKofiEmail(webhookToken, event.email) : null;
   if (grant.discordId) {
     if (emailHash) rememberKofiSupporter(db, emailHash, grant.discordId, now);
@@ -111,15 +111,15 @@ export function resolveKofiDiscordId(
   return emailHash ? lookupKofiSupporter(db, emailHash) : null;
 }
 
-/** IP do pedido (respeita o X-Forwarded-For do reverse proxy; senão o socket). */
+/** Request IP (respects the reverse proxy's X-Forwarded-For; otherwise the socket). */
 function clientIp(req: import('node:http').IncomingMessage): string {
   const xff = req.headers['x-forwarded-for'];
   if (typeof xff === 'string' && xff.length) {
-    // O ÚLTIMO elemento do X-Forwarded-For é o acrescentado pelo proxy confiável
-    // (Caddy no mesmo host, que faz append do peer real); os anteriores vêm do
-    // cliente e são forjáveis — usar o leftmost deixava rodar buckets do rate-limit
-    // à vontade (1 header novo = 1 janela nova). Pressuposto documentado: exatamente
-    // UM proxy confiável à frente (ver docs/DEPLOY-VPS.md, Caddy -> localhost:3001).
+    // The LAST element of X-Forwarded-For is the one appended by the trusted proxy
+    // (Caddy on the same host, which appends the real peer); the earlier ones come from
+    // the client and are forgeable — using the leftmost would let rate-limit buckets be
+    // rotated at will (1 new header = 1 new window). Documented assumption: exactly
+    // ONE trusted proxy in front (see docs/DEPLOY-VPS.md, Caddy -> localhost:3001).
     const parts = xff.split(',');
     const last = parts[parts.length - 1].trim();
     if (last) return last;
@@ -139,8 +139,8 @@ function pruneRateMap(rate: Map<string, RateState>, now: number, maxEntries: num
 }
 
 /**
- * true se o IP passou do limite `max` na janela `windowMs` (e regista o pedido). Parametrizável
- * para servir tanto a leitura do painel (30/10s) como o claim (5/10min).
+ * true if the IP exceeded the `max` limit in the `windowMs` window (and records the request). Parameterizable
+ * to serve both the panel read (30/10s) and the claim (5/10min).
  */
 function isRateLimited(
   rate: Map<string, RateState>,
@@ -170,7 +170,7 @@ interface ApiCtx {
   logError: (m: string, err: unknown) => void;
 }
 
-/** Trata GET/OPTIONS /api/me/premium: CORS restrito, rate-limit, e delega ao statusApi. */
+/** Handles GET/OPTIONS /api/me/premium: restricted CORS, rate-limit, and delegates to statusApi. */
 function handleApiRequest(
   req: import('node:http').IncomingMessage,
   res: import('node:http').ServerResponse,
@@ -181,7 +181,7 @@ function handleApiRequest(
     Vary: 'Origin',
     ...API_SECURITY_HEADERS,
   };
-  // Preflight do browser.
+  // Browser preflight.
   if (req.method === 'OPTIONS') {
     res
       .writeHead(204, {
@@ -227,7 +227,7 @@ function handleApiRequest(
           .writeHead(500, { ...cors, 'Content-Type': 'application/json' })
           .end('{"error":"internal"}');
       } catch {
-        /* resposta já enviada */
+        /* response already sent */
       }
     });
 }
@@ -243,10 +243,10 @@ interface ClaimCtx {
 }
 
 /**
- * Trata POST /api/link: o comprador (logado com Discord) cola o código do recibo e reclama a
- * compra pendente. CORS restrito, rate-limit apertado (anti-brute-force do código), valida a
- * identidade na Discord (statusApi.resolveIdentity) e delega em claimPendingGrant. 404 genérico
- * para não dar um oráculo de códigos válidos.
+ * Handles POST /api/link: the buyer (logged in with Discord) pastes the receipt code and claims the
+ * pending purchase. Restricted CORS, tight rate-limit (anti-brute-force for the code), validates the
+ * identity on Discord (statusApi.resolveIdentity) and delegates to claimPendingGrant. Generic 404
+ * so as not to give an oracle of valid codes.
  */
 function handleClaimRequest(
   req: import('node:http').IncomingMessage,
@@ -295,9 +295,9 @@ function handleClaimRequest(
   let body = '';
   let aborted = false;
   req.on('data', (chunk) => {
-    // HTTP-01: guarda defensivo — se o pedido já foi abortado (413), ignora chunks
-    // adicionais (o mesmo padrão de vote.ts). Hoje inofensivo (req.destroy() já parou os
-    // eventos 'data'), mas protege contra um refactor futuro que faça `await` antes do
+    // HTTP-01: defensive guard — if the request was already aborted (413), ignore additional
+    // chunks (the same pattern as vote.ts). Harmless today (req.destroy() already stopped the
+    // 'data' events), but protects against a future refactor that does `await` before the
     // destroy().
     if (aborted) return;
     body += chunk;
@@ -339,8 +339,8 @@ function handleClaimRequest(
         }
         const outcome = claimPendingGrant(ctx.db, identity.id, code!, ctx.now());
         if (!outcome.ok) {
-          // use_receipt_code (plano 021): o input parecia um email — pede o código do recibo
-          // em vez de um 404 genérico, para o site conseguir mostrar uma mensagem útil.
+          // use_receipt_code (plan 021): the input looked like an email — ask for the receipt code
+          // instead of a generic 404, so the site can show a useful message.
           if (outcome.reason === 'use_receipt_code') {
             respond(400, { error: 'use_receipt_code' });
             return;
@@ -355,7 +355,7 @@ function handleClaimRequest(
         try {
           respond(500, { error: 'internal' });
         } catch {
-          /* resposta já enviada */
+          /* response already sent */
         }
       });
   });
@@ -372,14 +372,14 @@ interface DashboardCtx {
 }
 
 const DASHBOARD_GUILD_PREFIX = '/api/dashboard/guild/';
-const MAX_DASHBOARD_BODY = 8_000; // um patch de config é minúsculo
+const MAX_DASHBOARD_BODY = 8_000; // a config patch is tiny
 
 /**
- * Rotas do dashboard web (config da guild). CORS restrito a `apiOrigin`, rate-limit e Bearer
- * obrigatório; a AUTORIZAÇÃO real (MANAGE_GUILD + bot presente) vive no dashboardApi. Rotas:
- *   GET  /api/dashboard/guilds       -> servidores geríveis (401 se token inválido)
- *   GET  /api/dashboard/guild/<id>   -> config (whitelist)  (403 se não autorizado)
- *   POST /api/dashboard/guild/<id>   -> aplica patch (whitelist) (403 se não autorizado)
+ * Web dashboard routes (guild config). CORS restricted to `apiOrigin`, rate-limit and Bearer
+ * required; the real AUTHORIZATION (MANAGE_GUILD + bot present) lives in dashboardApi. Routes:
+ *   GET  /api/dashboard/guilds       -> manageable servers (401 if token invalid)
+ *   GET  /api/dashboard/guild/<id>   -> config (whitelist)  (403 if not authorized)
+ *   POST /api/dashboard/guild/<id>   -> applies patch (whitelist) (403 if not authorized)
  */
 function handleDashboardRequest(
   req: import('node:http').IncomingMessage,
@@ -428,7 +428,7 @@ function handleDashboardRequest(
     return;
   }
 
-  // GET /api/dashboard/guilds -> lista de servidores geríveis (ponto de entrada; 401 no token).
+  // GET /api/dashboard/guilds -> list of manageable servers (entry point; 401 on token).
   if (req.method === 'GET' && path === '/api/dashboard/guilds') {
     ctx.dashboardApi
       .listGuilds(bearer)
@@ -440,13 +440,13 @@ function handleDashboardRequest(
         try {
           json(500, { error: 'internal' });
         } catch {
-          /* resposta já enviada */
+          /* response already sent */
         }
       });
     return;
   }
 
-  // /api/dashboard/guild/<id> -> GET (ler) ou POST (guardar). 403 quando não autorizado.
+  // /api/dashboard/guild/<id> -> GET (read) or POST (save). 403 when not authorized.
   if (path.startsWith(DASHBOARD_GUILD_PREFIX)) {
     const guildId = path.slice(DASHBOARD_GUILD_PREFIX.length);
     if (!/^\d{1,20}$/.test(guildId)) {
@@ -465,7 +465,7 @@ function handleDashboardRequest(
           try {
             json(500, { error: 'internal' });
           } catch {
-            /* resposta já enviada */
+            /* response already sent */
           }
         });
       return;
@@ -475,7 +475,7 @@ function handleDashboardRequest(
       let body = '';
       let aborted = false;
       req.on('data', (chunk) => {
-        // HTTP-01: guarda defensivo (ver claim acima) — ignora chunks pós-abort.
+        // HTTP-01: defensive guard (see claim above) — ignore post-abort chunks.
         if (aborted) return;
         body += chunk;
         if (body.length > MAX_DASHBOARD_BODY) {
@@ -503,7 +503,7 @@ function handleDashboardRequest(
             try {
               json(500, { error: 'internal' });
             } catch {
-              /* resposta já enviada */
+              /* response already sent */
             }
           });
       });
@@ -525,10 +525,10 @@ interface TopggCtx {
 }
 
 /**
- * Trata POST /webhook/topgg (recompensa de voto): recolhe o corpo e delega no handler PURO
- * handleVoteWebhook (mesma lógica/segurança do servidor dedicado — auth constant-time, parse
- * defensivo). Só é montado quando há `topggWebhookSecret`; sem secret NÃO se aceitam votos
- * (qualquer um forjaria a recompensa). Cap de 64KB anti-DoS, como o webhook do Ko-fi.
+ * Handles POST /webhook/topgg (vote reward): collects the body and delegates to the PURE handler
+ * handleVoteWebhook (same logic/security as the dedicated server — constant-time auth, defensive
+ * parse). Only mounted when there is a `topggWebhookSecret`; without a secret votes are NOT accepted
+ * (anyone would forge the reward). 64KB anti-DoS cap, like the Ko-fi webhook.
  */
 function handleTopggRequest(
   req: import('node:http').IncomingMessage,
@@ -542,7 +542,7 @@ function handleTopggRequest(
   let body = '';
   let aborted = false;
   req.on('data', (chunk) => {
-    // HTTP-01: guarda defensivo (ver claim acima) — ignora chunks pós-abort.
+    // HTTP-01: defensive guard (see claim above) — ignore post-abort chunks.
     if (aborted) return;
     body += chunk;
     if (body.length > 64_000) {
@@ -566,11 +566,11 @@ function handleTopggRequest(
 }
 
 /**
- * Arranca o servidor HTTP do Premium. Roteia:
- *   - GET/OPTIONS /api/me/premium -> Painel Premium (se `statusApi` presente), com CORS
- *   - POST /webhook/topgg -> recompensa de voto (se `topggWebhookSecret` presente)
- *   - POST (qualquer outro caminho) -> webhook do Ko-fi (se `token` presente)
- * No-op (devolve null) se não houver webhook Ko-fi, API do painel nem webhook top.gg.
+ * Starts the Premium HTTP server. Routes:
+ *   - GET/OPTIONS /api/me/premium -> Premium panel (if `statusApi` present), with CORS
+ *   - POST /webhook/topgg -> vote reward (if `topggWebhookSecret` present)
+ *   - POST (any other path) -> Ko-fi webhook (if `token` present)
+ * No-op (returns null) if there is no Ko-fi webhook, panel API, or top.gg webhook.
  */
 export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
   const { db, token, port, now, logInfo, logError, statusApi, apiOrigin, dashboardApi } = deps;
@@ -582,19 +582,19 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
     return null;
   }
   const rate = new Map<string, RateState>();
-  const claimRate = new Map<string, RateState>(); // bucket SEPARADO do claim (limite apertado)
+  const claimRate = new Map<string, RateState>(); // SEPARATE bucket for the claim (tight limit)
   const rateMaxEntries = Math.max(1, Math.floor(deps.apiRateMaxEntries ?? API_RATE_MAX_ENTRIES));
 
   const server = createServer((req, res) => {
     const path = (req.url ?? '').split('?')[0];
 
-    // ── Painel Premium: GET/OPTIONS /api/me/premium ────────────────────────────────
+    // ── Premium panel: GET/OPTIONS /api/me/premium ─────────────────────────────────
     if (statusApi && apiOrigin && path === '/api/me/premium') {
       handleApiRequest(req, res, { statusApi, apiOrigin, now, rate, rateMaxEntries, logError });
       return;
     }
 
-    // ── Claim de compra pendente: POST/OPTIONS /api/link ───────────────────────────
+    // ── Pending purchase claim: POST/OPTIONS /api/link ─────────────────────────────
     if (statusApi && apiOrigin && path === '/api/link') {
       handleClaimRequest(req, res, {
         statusApi,
@@ -625,16 +625,16 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
       return;
     }
 
-    // ── Webhook top.gg (recompensa de voto): POST /webhook/topgg ────────────────────
-    // Viaja no MESMO servidor público (api.vozen.org) para não exigir porta+Caddy dedicados.
-    // ANTES do catch-all do Ko-fi (que apanha QUALQUER POST) — senão um POST /webhook/topgg
-    // seria tratado como payload do Ko-fi. Só ativo com secret (senão qualquer um forja votos).
+    // ── top.gg webhook (vote reward): POST /webhook/topgg ───────────────────────────
+    // Rides on the SAME public server (api.vozen.org) so as not to require a dedicated port+Caddy.
+    // BEFORE the Ko-fi catch-all (which catches ANY POST) — otherwise a POST /webhook/topgg
+    // would be treated as a Ko-fi payload. Only active with a secret (otherwise anyone forges votes).
     if (topggWebhookSecret && path === '/webhook/topgg') {
       handleTopggRequest(req, res, { secret: topggWebhookSecret, onUpvote, logError });
       return;
     }
 
-    // ── Webhook do Ko-fi: POST ─────────────────────────────────────────────────────
+    // ── Ko-fi webhook: POST ────────────────────────────────────────────────────────
     if (req.method !== 'POST' || !token) {
       res.writeHead(404).end('not found');
       return;
@@ -642,7 +642,7 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
     let body = '';
     let aborted = false;
     req.on('data', (chunk) => {
-      // HTTP-01: guarda defensivo (ver claim acima) — ignora chunks pós-abort.
+      // HTTP-01: defensive guard (see claim above) — ignore post-abort chunks.
       if (aborted) return;
       body += chunk;
       if (body.length > 64_000) {
@@ -659,7 +659,7 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
           res.writeHead(400).end('bad payload');
           return;
         }
-        // Segurança: só aceitamos payloads com o NOSSO token de verificação do Ko-fi.
+        // Security: we only accept payloads with OUR Ko-fi verification token.
         if (!verifyKofiToken(event, token)) {
           logError('[kofi] invalid verification token; request ignored', event.transactionId);
           res.writeHead(401).end('bad token');
@@ -671,28 +671,28 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
           res.writeHead(200).end('ok');
           return;
         }
-        // Discord ID: da mensagem (1.ª compra, memorizada por email) ou pelo email (renovação).
+        // Discord ID: from the message (1st purchase, memorized by email) or by email (renewal).
         const resolved: KofiGrant = {
           ...grant,
           discordId: resolveKofiDiscordId(db, event, grant, now(), token),
         };
-        // HASH do email (nunca em claro) para indexar um eventual pendente — ver hashKofiEmail.
+        // HASH the email (never in plaintext) to index a possible pending grant — see hashKofiEmail.
         const emailHash = event.email && token ? hashKofiEmail(token, event.email) : null;
-        // IDEMPOTÊNCIA: o Ko-fi reentrega em timeout/não-2xx. Registo do tx + grant são
-        // UMA transação: num duplicado confirmamos 200 sem re-aplicar (o grant acumula
-        // expiry — ver kofi_transaction em db.ts); se o grant falhar, o registo reverte
-        // e um retry legítimo volta a ser aceite. Sem tx id (payload atípico) aplica na
-        // mesma — fica o log para auditoria manual.
+        // IDEMPOTENCY: Ko-fi redelivers on timeout/non-2xx. Recording the tx + the grant are
+        // ONE transaction: on a duplicate we confirm 200 without re-applying (the grant accumulates
+        // expiry — see kofi_transaction in db.ts); if the grant fails, the record reverts
+        // and a legitimate retry is accepted again. Without a tx id (atypical payload) it applies
+        // anyway — the log remains for manual auditing.
         const applied = db.transaction(
           (): { dup: boolean; exp: number | null; pending: boolean } => {
             if (event.transactionId && !recordKofiTransaction(db, event.transactionId, now())) {
               return { dup: true, exp: null, pending: false };
             }
             const exp = applyKofiGrant(db, resolved, now());
-            // Sem Discord ID associável (o checkout de subscrição do Ko-fi não tem caixa de
-            // mensagem): em vez de perder a compra, guardamo-la como PENDENTE para o comprador a
-            // RECLAMAR no site (login Discord + código do recibo). Precisa do tx id como chave
-            // (o comprador tem-no no recibo); sem tx id (atípico) fica só o log/grant manual.
+            // Without an associable Discord ID (the Ko-fi subscription checkout has no message
+            // box): instead of losing the purchase, we store it as PENDING for the buyer to
+            // CLAIM on the site (Discord login + receipt code). It needs the tx id as the key
+            // (the buyer has it on the receipt); without a tx id (atypical) only the log/manual grant remains.
             let pending = false;
             if (exp == null && event.transactionId) {
               pending = recordPendingGrant(
@@ -717,10 +717,10 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         }
         const exp = applied.exp;
         if (exp == null) {
-          // Comprou mas não pôs o Discord ID (o normal nas subscrições): fica PENDENTE, o
-          // comprador reclama no site; em último caso resolve-se à mão com /vozengrant.
-          // Minimização de PII: NÃO registamos o nome do comprador; o tx id chega para
-          // reconciliar a compra no painel do Ko-fi (onde o nome/email vivem).
+          // Bought but didn't put the Discord ID (the norm on subscriptions): stays PENDING, the
+          // buyer claims it on the site; as a last resort it is resolved by hand with /vozengrant.
+          // PII minimization: we do NOT record the buyer's name; the tx id is enough to
+          // reconcile the purchase in the Ko-fi panel (where the name/email live).
           logError(
             `[kofi] purchase without a Discord ID; ${applied.pending ? 'PENDING (claimable on the site)' : 'MANUAL grant'}: ` +
               `${grant.plan} ${grant.days}d, tx=${event.transactionId ?? '?'}`,
@@ -733,25 +733,25 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         }
         res.writeHead(200).end('ok');
       } catch (err) {
-        // Distinguir "payload não-processável" de "falha ao PERSISTIR": os primeiros já
-        // responderam acima (400/401/200) e nunca chegam aqui; um throw aqui é a transação
-        // do grant a rebentar (SQLITE_BUSY, disco cheio, I/O). Responder 200 diria ao Ko-fi
-        // "recebido" e ele NÃO re-tentava → compra paga perdida. Respondemos 5xx para o
-        // Ko-fi reentregar; o ledger kofi_transaction torna o retry idempotente.
+        // Distinguish "unprocessable payload" from "failure to PERSIST": the former already
+        // responded above (400/401/200) and never reach here; a throw here is the grant
+        // transaction blowing up (SQLITE_BUSY, disk full, I/O). Responding 200 would tell Ko-fi
+        // "received" and it would NOT retry → paid purchase lost. We respond 5xx for
+        // Ko-fi to redeliver; the kofi_transaction ledger makes the retry idempotent.
         logError('[kofi] failed to persist grant; returning 503 for Ko-fi to retry', err);
         try {
           res.writeHead(503).end('retry');
         } catch {
-          /* resposta já enviada */
+          /* response already sent */
         }
       }
     });
     req.on('error', (err) => logError('[kofi] webhook request error', err));
   });
   server.on('error', (err) => logError('[kofi] webhook server error', err));
-  hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
-  // Loopback-only: o mundo exterior chega via Caddy (reverse_proxy localhost:3001).
-  // Assim a garantia não depende só da firewall (defesa em profundidade).
+  hardenServerTimeouts(server); // short timeouts (anti-slowloris)
+  // Loopback-only: the outside world arrives via Caddy (reverse_proxy localhost:3001).
+  // This way the guarantee doesn't depend only on the firewall (defense in depth).
   server.listen(port, '127.0.0.1', () => logInfo(`[kofi] webhook à escuta em 127.0.0.1:${port}.`));
   return server;
 }

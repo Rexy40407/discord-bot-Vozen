@@ -4,23 +4,23 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-// --- Mock de @discordjs/voice -------------------------------------------------
-// Um AudioPlayer falso (EventEmitter) cujo play() regista o recurso tocado e
-// agenda a emissao de Idle para drenar o proximo item da fila, imitando o ciclo
-// real (tocar -> acabar -> Idle -> playNext). createAudioResource devolve o
-// proprio path para podermos ler a identidade/ordem de reproducao.
-// NOTA: vi.mock e hoisted para o topo do ficheiro, por isso a factory NAO pode
-// referenciar variaveis de nivel-superior — tudo o que precisa vive aqui dentro.
+// --- @discordjs/voice mock ----------------------------------------------------
+// A fake AudioPlayer (EventEmitter) whose play() records the resource played and
+// schedules the Idle emission to drain the next queue item, mimicking the real
+// cycle (play -> finish -> Idle -> playNext). createAudioResource returns the
+// path itself so we can read the playback identity/order.
+// NOTE: vi.mock is hoisted to the top of the file, so the factory CANNOT
+// reference top-level variables — everything it needs lives in here.
 vi.mock('@discordjs/voice', async () => {
   const { EventEmitter: EE } = await import('node:events');
   const IDLE = 'idle';
   class FakeAudioPlayer extends EE {
     play(resource: { path: string }): void {
-      // Regista a ordem de reproducao real.
+      // Records the real playback order.
       (globalThis as Record<string, unknown>).__playOrder ??= [];
       ((globalThis as Record<string, unknown>).__playOrder as string[]).push(resource.path);
-      // Termina o "audio" no proximo tick -> dispara o handler de Idle do player,
-      // que chama playNext() para drenar o item seguinte.
+      // Ends the "audio" on the next tick -> fires the player's Idle handler,
+      // which calls playNext() to drain the next item.
       setTimeout(() => this.emit(IDLE), 0);
     }
     stop(): void {
@@ -55,13 +55,13 @@ function makeConnection() {
   return conn;
 }
 
-describe('GuildVoicePlayer FIFO (synth no worker)', () => {
-  it('reproduz por ordem de chegada de say(), nao por ordem de conclusao da sintese', async () => {
+describe('GuildVoicePlayer FIFO (synth in the worker)', () => {
+  it('plays in say() arrival order, not in synthesis completion order', async () => {
     (globalThis as Record<string, unknown>).__playOrder = [];
 
-    // Engine falso: o PRIMEIRO pedido demora MAIS a sintetizar que o segundo.
-    // Se a sintese acontecesse antes do enqueue (bug), 'segundo' enfileiraria
-    // primeiro e tocaria a frente. Com synth-no-worker, a ordem mantem-se.
+    // Fake engine: the FIRST request takes LONGER to synthesize than the second.
+    // If synthesis happened before enqueue (bug), 'segundo' would enqueue
+    // first and play ahead. With synth-in-the-worker, the order is preserved.
     const delays: Record<string, number> = { primeiro: 40, segundo: 5, terceiro: 5 };
     const engine: TTSEngine = {
       synth: (req: SynthRequest) =>
@@ -71,12 +71,12 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
-    // Tres say() CONCORRENTES, por ordem de chamada: primeiro, segundo, terceiro.
-    // NAO se faz await individual — disparam-se quase em simultaneo, como mensagens
-    // concorrentes reais. No bug antigo (synth ANTES do enqueue) o pedido com
-    // sintese mais rapida ('segundo') enfileiraria a frente do 'primeiro' (mais
-    // lento) e tocaria fora de ordem. Com synth-no-worker, o enqueue e sincrono
-    // por ordem de chamada e a ordem mantem-se.
+    // Three CONCURRENT say() calls, in call order: primeiro, segundo, terceiro.
+    // We do NOT await individually — they fire almost simultaneously, like real
+    // concurrent messages. In the old bug (synth BEFORE enqueue) the request with
+    // faster synthesis ('segundo') would enqueue ahead of 'primeiro' (slower) and
+    // play out of order. With synth-in-the-worker, the enqueue is synchronous in
+    // call order and the order is preserved.
     const pending = [
       player.say({ text: 'primeiro', model: 'm', speed: 1 }),
       player.say({ text: 'segundo', model: 'm', speed: 1 }),
@@ -84,7 +84,7 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     ];
     await Promise.all(pending);
 
-    // Esperar que a fila drene completamente.
+    // Wait for the queue to drain completely.
     await vi.waitFor(
       () => {
         const order = (globalThis as Record<string, unknown>).__playOrder as string[];
@@ -94,26 +94,26 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     );
 
     const order = (globalThis as Record<string, unknown>).__playOrder as string[];
-    // A prova: ordem de reproducao == ordem de say(), apesar de 'primeiro' ter a
-    // sintese mais lenta.
+    // The proof: playback order == say() order, even though 'primeiro' has the
+    // slower synthesis.
     expect(order).toEqual(['primeiro', 'segundo', 'terceiro']);
 
     player.destroy();
   });
 
-  it('salta item cuja sintese rejeita e continua a fila (sem travar nem unhandledRejection)', async () => {
+  it('skips an item whose synthesis rejects and continues the queue (without stalling or unhandledRejection)', async () => {
     (globalThis as Record<string, unknown>).__playOrder = [];
 
-    // Engine falso: o 1o pedido REJEITA a sintese, o 2o resolve normalmente.
-    // Se o erro travasse a fila (bug), o 2o nunca tocaria. Com o skip do worker,
-    // o 1o e saltado e o 2o toca — a prova e __playOrder === ['ok'].
+    // Fake engine: the 1st request REJECTS synthesis, the 2nd resolves normally.
+    // If the error stalled the queue (bug), the 2nd would never play. With the
+    // worker's skip, the 1st is skipped and the 2nd plays — the proof is __playOrder === ['ok'].
     const engine: TTSEngine = {
       synth: (req: SynthRequest) =>
         req.text === 'falha' ? Promise.reject(new Error('synth boom')) : Promise.resolve(req.text),
     };
 
-    // Captura unhandledRejection durante o teste — nao deve ocorrer nenhuma:
-    // o catch do playNext trata a rejeicao.
+    // Captures unhandledRejection during the test — none should occur:
+    // playNext's catch handles the rejection.
     const unhandled: unknown[] = [];
     const onUnhandled = (reason: unknown): void => {
       unhandled.push(reason);
@@ -136,25 +136,25 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
       { timeout: 1000 },
     );
 
-    // Dar uma volta extra ao event loop para apanhar qualquer rejeicao tardia.
+    // Give an extra event-loop turn to catch any late rejection.
     await new Promise((r) => setTimeout(r, 0));
     process.off('unhandledRejection', onUnhandled);
 
     const order = (globalThis as Record<string, unknown>).__playOrder as string[];
-    // O item que falhou foi saltado; o seguinte tocou — a fila nao travou.
+    // The failed item was skipped; the next one played — the queue did not stall.
     expect(order).toEqual(['ok']);
     expect(unhandled).toEqual([]);
 
     player.destroy();
   });
 
-  it('assetPath toca o ficheiro DIRETO (efeito sonoro do /rizz), sem chamar engine.synth', async () => {
+  it('assetPath plays the file DIRECTLY (/rizz sound effect), without calling engine.synth', async () => {
     (globalThis as Record<string, unknown>).__playOrder = [];
     const dir = mkdtempSync(join(tmpdir(), 'player-asset-'));
     const asset = join(dir, 'sfx.wav');
     writeFileSync(asset, 'RIFFfake-wav');
 
-    // Engine espia: NÃO deve ser chamado para o item de asset (só para 'normal').
+    // Spy engine: must NOT be called for the asset item (only for 'normal').
     const synth = vi.fn((req: SynthRequest) => Promise.resolve(req.text));
     const engine: TTSEngine = { synth };
     const conn = makeConnection() as any;
@@ -174,7 +174,7 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     );
 
     const order = (globalThis as Record<string, unknown>).__playOrder as string[];
-    // O asset tocou pelo caminho DIRETO; o engine só sintetizou o item 'normal'.
+    // The asset played via the DIRECT path; the engine only synthesized the 'normal' item.
     expect(order).toEqual(['normal', asset]);
     expect(synth).toHaveBeenCalledTimes(1);
     expect(synth.mock.calls[0][0].text).toBe('normal');
@@ -183,7 +183,7 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('assetPath inexistente é saltado (não crasha, drena o seguinte)', async () => {
+  it('nonexistent assetPath is skipped (does not crash, drains the next one)', async () => {
     (globalThis as Record<string, unknown>).__playOrder = [];
     const engine: TTSEngine = { synth: (req: SynthRequest) => Promise.resolve(req.text) };
     const conn = makeConnection() as any;

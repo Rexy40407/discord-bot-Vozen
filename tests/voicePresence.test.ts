@@ -8,32 +8,32 @@ import {
 } from '../src/store/voicePresence';
 import { planRejoin, type ChannelState } from '../src/voice/rejoin';
 
-describe('voice_presence — store (persistência 24/7)', () => {
+describe('voice_presence — store (24/7 persistence)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
   });
 
-  it('remember insere e list devolve', () => {
+  it('remember inserts and list returns', () => {
     rememberVoicePresence(db, 'G1', 'C1', 1000);
     expect(listVoicePresence(db)).toEqual([{ guildId: 'G1', channelId: 'C1', updatedAt: 1000 }]);
   });
 
-  it('remember é upsert (mesma guild -> atualiza canal, não duplica)', () => {
+  it('remember is upsert (same guild -> updates channel, does not duplicate)', () => {
     rememberVoicePresence(db, 'G1', 'C1', 1000);
     rememberVoicePresence(db, 'G1', 'C2', 2000);
     expect(listVoicePresence(db)).toEqual([{ guildId: 'G1', channelId: 'C2', updatedAt: 2000 }]);
   });
 
-  it('forget apaga (idempotente)', () => {
+  it('forget deletes (idempotent)', () => {
     rememberVoicePresence(db, 'G1', 'C1', 1000);
     forgetVoicePresence(db, 'G1');
     expect(listVoicePresence(db)).toEqual([]);
-    forgetVoicePresence(db, 'G1'); // 2.ª vez -> no-op
+    forgetVoicePresence(db, 'G1'); // 2nd time -> no-op
     expect(listVoicePresence(db)).toEqual([]);
   });
 
-  it('guarda várias guilds independentes', () => {
+  it('stores several independent guilds', () => {
     rememberVoicePresence(db, 'G1', 'C1', 1000);
     rememberVoicePresence(db, 'G2', 'C2', 1000);
     expect(
@@ -44,7 +44,7 @@ describe('voice_presence — store (persistência 24/7)', () => {
   });
 });
 
-describe('planRejoin — política pura do rejoin no arranque', () => {
+describe('planRejoin — pure policy of the startup rejoin', () => {
   const rows = [
     { guildId: 'PREM-READY', channelId: 'c', updatedAt: 0 },
     { guildId: 'PREM-GONE', channelId: 'c', updatedAt: 0 },
@@ -55,31 +55,31 @@ describe('planRejoin — política pura do rejoin no arranque', () => {
     'PREM-READY': 'ready',
     'PREM-GONE': 'gone',
     'PREM-NOPERMS': 'no-perms',
-    FREE: 'ready', // irrelevante: será esquecida por não ser Premium
+    FREE: 'ready', // irrelevant: it will be forgotten because it is not Premium
   };
   const plan = planRejoin(rows, {
     stayInCall: (g) => g.startsWith('PREM'),
     channelState: (g) => states[g],
   });
 
-  it('Premium + canal pronto -> repõe', () => {
+  it('Premium + channel ready -> rejoins', () => {
     expect(plan.rejoin.map((r) => r.guildId)).toEqual(['PREM-READY']);
   });
 
-  it('não-Premium -> esquece (rede de segurança)', () => {
+  it('non-Premium -> forgets (safety net)', () => {
     expect(plan.forget).toContain('FREE');
   });
 
-  it('Premium + canal apagado -> esquece', () => {
+  it('Premium + deleted channel -> forgets', () => {
     expect(plan.forget).toContain('PREM-GONE');
   });
 
-  it('Premium + sem permissões -> nem repõe nem esquece (tenta no próximo arranque)', () => {
+  it('Premium + no permissions -> neither rejoins nor forgets (retries on next startup)', () => {
     expect(plan.rejoin.map((r) => r.guildId)).not.toContain('PREM-NOPERMS');
     expect(plan.forget).not.toContain('PREM-NOPERMS');
   });
 
-  it('lista vazia -> plano vazio', () => {
+  it('empty list -> empty plan', () => {
     expect(planRejoin([], { stayInCall: () => true, channelState: () => 'ready' })).toEqual({
       rejoin: [],
       forget: [],

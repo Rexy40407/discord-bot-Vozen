@@ -10,17 +10,17 @@ import { applyPronunciation, type PronunciationEntry } from '../textCleaning/pro
 import { redactBlocked } from '../moderation/filter';
 import type { SynthRequest } from '../tts/engine';
 
-/** Há pelo menos uma letra ou número (algo legível para falar)? */
+/** Is there at least one letter or number (something readable to speak)? */
 export function hasReadableText(s: string): boolean {
   return /[\p{L}\p{N}]/u.test(s);
 }
 
 /**
- * Aplica a REDAÇÃO da blocklist a um SynthRequest: remove as palavras bloqueadas do
- * texto a sintetizar (req.text) e de cada segmento (síntese multi-voz), mantendo o
- * resto — o Vozen lê a mensagem SEM dizer as palavras banidas. Segmentos que ficam sem
- * nada legível são retirados. Blocklist vazia -> req inalterado. Se o resultado ficar
- * sem nada legível, o chamador deteta (hasReadableText) e não fala. PURA.
+ * Applies the blocklist REDACTION to a SynthRequest: removes the blocked words from the text
+ * to synthesize (req.text) and from each segment (multi-voice synthesis), keeping the rest —
+ * Vozen reads the message WITHOUT saying the banned words. Segments left with nothing readable
+ * are removed. Empty blocklist -> req unchanged. If the result ends up with nothing readable,
+ * the caller detects it (hasReadableText) and does not speak. PURE.
  */
 export function redactRequest(req: SynthRequest, blocklist: string[]): SynthRequest {
   if (blocklist.length === 0) return req;
@@ -32,65 +32,66 @@ export function redactRequest(req: SynthRequest, blocklist: string[]): SynthRequ
 }
 
 export interface PrepareSpeechInput {
-  /** Texto JA com as abreviaturas PESSOAIS do user aplicadas (antes da expansao EN). */
+  /** Text ALREADY with the user's PERSONAL abbreviations applied (before the EN expansion). */
   personal: string;
-  /** Pronúncias PESSOAIS do autor (getUserPronunciations) — individuais desde o plano v4. */
+  /** The author's PERSONAL pronunciations (getUserPronunciations) — individual since plan v4. */
   pronunciations: PronunciationEntry[];
   userVoice: { model: string; speed: number } | null;
   available: string[];
-  /** Voz default por-guild (`default_voice`); vazio = a guild nao definiu. */
+  /** Per-guild default voice (`default_voice`); empty = the guild did not set one. */
   guildDefaultVoice?: string;
-  /** Voz default global do .env (DEFAULT_VOICE). */
+  /** Global default voice from .env (DEFAULT_VOICE). */
   defaultVoice: string;
   defaultSpeed: number;
   /**
-   * Media a ANUNCIAR no fim da fala (links, gifs, anexos por tipo, stickers). É
-   * acrescentada DEPOIS de resolvida a voz e localizada na LÍNGUA DESSA voz (ex.
-   * gif -> "um gif" em voz PT). Não passa por gírias/pronúncia (são palavras nossas,
-   * já corretas) e NÃO entra na deteção de língua (esta corre só sobre `personal`).
+   * Media to ANNOUNCE at the end of the speech (links, gifs, attachments by type, stickers).
+   * It is appended AFTER the voice is resolved and localized in the LANGUAGE OF THAT voice
+   * (e.g. gif -> "a gif" in a PT voice). It does not go through slang/pronunciation (they are
+   * our own words, already correct) and does NOT enter language detection (that runs only over
+   * `personal`).
    */
   media?: MediaItem[];
   /**
-   * Nome do autor a anunciar ANTES da mensagem — o "xsaid": "{nome} disse …". Vazio/
-   * undefined = sem anúncio (xsaid OFF ou não aplicável, ex. /tts). O "disse" é
-   * localizado na língua da voz (spokenPhrases.said); o nome sai tal e qual.
+   * The author's name to announce BEFORE the message — the "xsaid": "{name} said …".
+   * Empty/undefined = no announcement (xsaid OFF or not applicable, e.g. /tts). The "said" is
+   * localized in the voice's language (spokenPhrases.said); the name comes out as-is.
    */
   announceSpeaker?: string;
 }
 
 export interface PreparedSpeech {
-  /** Texto FALADO (girias expandidas + pronuncia), usado para a blocklist. */
+  /** SPOKEN text (expanded slang + pronunciation), used for the blocklist. */
   spoken: string;
-  /** Pedido de sintese ja com a voz resolvida. */
+  /** Synthesis request already with the voice resolved. */
   req: SynthRequest;
 }
 
 /**
- * Transforma o texto (ja com abreviaturas pessoais) num SynthRequest, resolvendo a
- * voz — e, quando a deteccao esta ON e a mensagem MISTURA uma lingua-base com girias
- * EN conhecidas (btw, lol, omg...), produz VOZES MISTURADAS: a parte non-slang e
- * detetada por si e falada na voz da lingua detetada; as girias EN sao um segmento
- * SEPARADO em voz inglesa. Substitui o "btw"->"by the way" a poluir a deteccao e a
- * ler a mensagem toda numa voz (muitas vezes errada).
+ * Transforms the text (already with personal abbreviations) into a SynthRequest, resolving the
+ * voice — and, when detection is ON and the message MIXES a base language with known EN slang
+ * (btw, lol, omg...), it produces MIXED VOICES: the non-slang part is detected on its own and
+ * spoken in the detected language's voice; the EN slang is a SEPARATE segment in an English
+ * voice. It replaces "btw"->"by the way" polluting the detection and reading the whole message
+ * in one voice (often the wrong one).
  *
- * A pronuncia acontece AQUI (antes da blocklist a montante correr sobre `spoken`).
- * PURA: sem efeitos secundarios.
+ * Pronunciation happens HERE (before the upstream blocklist runs over `spoken`).
+ * PURE: no side effects.
  */
 /**
- * Teto RÍGIDO de caracteres do texto que vai para a SÍNTESE. O cleanText limita o texto
- * de ENTRADA (`maxChars` ≤ 2000), mas as expansões a jusante (pronúncia, gírias EN,
- * acentos, prefixo xsaid + sufixo de media) CRESCEM a string sem re-cap. Sem este teto,
- * uma mensagem de 2000 chars de gíria ("imho imho…") expandia ~5× → ~10k chars →
- * chunkText partia isso em ~50 pedidos HTTP ao gTTS por UMA mensagem → 429 da Google
- * para a guild toda (amplificação/auto-DoS). 2400 dá folga para as expansões legítimas
- * sobre um input no máximo (2000) + anúncios, e limita o fan-out a ~12 pedidos/mensagem.
+ * HARD character cap on the text that goes to SYNTHESIS. cleanText limits the INPUT text
+ * (`maxChars` ≤ 2000), but the downstream expansions (pronunciation, EN slang, accents, xsaid
+ * prefix + media suffix) GROW the string without re-capping. Without this cap, a 2000-char
+ * message of slang ("imho imho…") would expand ~5× → ~10k chars → chunkText split that into
+ * ~50 HTTP requests to gTTS for ONE message → a Google 429 for the whole guild
+ * (amplification/auto-DoS). 2400 gives room for the legitimate expansions over an input at the
+ * max (2000) + announcements, and limits the fan-out to ~12 requests/message.
  */
 const MAX_SYNTH_CHARS = 2400;
 
 /**
- * Aplica o teto de saída ao `req` (texto e segmentos) — o que efetivamente é
- * sintetizado. NÃO mexe no `spoken` (usado pela blocklist a jusante), para não perder
- * precisão na verificação de palavras bloqueadas. Trunca por CODE POINT (surrogate-safe).
+ * Applies the output cap to `req` (text and segments) — what is effectively synthesized. Does
+ * NOT touch `spoken` (used by the downstream blocklist), so as not to lose precision in the
+ * blocked-word check. Truncates by CODE POINT (surrogate-safe).
  */
 function capSynth(result: PreparedSpeech): PreparedSpeech {
   const text = result.req.text;
@@ -123,15 +124,15 @@ export function prepareSpeech(input: PrepareSpeechInput): PreparedSpeech {
 }
 
 /**
- * Envolve a fala já resolvida com os ANÚNCIOS, ambos localizados na língua da VOZ-BASE
- * (`req.model`) — a mesma voz que fala a mensagem di-los:
- *   - PREFIXO xsaid: "{nome} {said}" (quem falou), quando `announceSpeaker` presente.
- *   - SUFIXO media:  "…um gif" no fim, quando há `media`.
- * Resultado: "{nome} disse {corpo} {media}". No caminho MISTURADO (com `segments`) os
- * anúncios entram como segmentos extra na voz-base — senão não seriam falados (o motor
- * usa `segments`, não `text`). `text` leva sempre tudo (fallback single-voice + base da
- * cache). Corpo vazio (ex. só um gif) -> "{nome} disse um gif". PURA. Sem anúncios ->
- * devolve o resultado intacto.
+ * Wraps the already-resolved speech with the ANNOUNCEMENTS, both localized in the BASE VOICE's
+ * language (`req.model`) — the same voice that speaks the message says them:
+ *   - xsaid PREFIX: "{name} {said}" (who spoke), when `announceSpeaker` is present.
+ *   - media SUFFIX: "…a gif" at the end, when there is `media`.
+ * Result: "{name} said {body} {media}". In the MIXED path (with `segments`) the announcements
+ * enter as extra segments in the base voice — otherwise they would not be spoken (the engine
+ * uses `segments`, not `text`). `text` always carries everything (single-voice fallback + cache
+ * base). Empty body (e.g. just a gif) -> "{name} said a gif". PURE. With no announcements ->
+ * returns the result intact.
  */
 function decorateAnnouncements(result: PreparedSpeech, input: PrepareSpeechInput): PreparedSpeech {
   const phrases = spokenPhrasesFor(langKeyOfModel(result.req.model));
@@ -165,13 +166,13 @@ function prepareSpeechCore(input: PrepareSpeechInput): PreparedSpeech {
     configured[0] ??
     'en_US-amy-medium';
 
-  // Voz FIXA sempre (a deteção automática de língua foi removida): a voz escolhida
-  // (user > guild > .env > amy) lê TUDO, singleVoice, sem detetar a língua do texto nem
-  // partir por segmento — a pessoa soa sempre igual. A língua para o restauro de acentos
-  // vem da VOZ (não do texto): "nao"->"não" se a voz for PT.
-  // ORDEM: pronúncia da guild ANTES das gírias embutidas — assim uma /pronunciation como
-  // btw->batata GANHA ao "by the way". Precedência final (o pessoal já foi aplicado a
-  // montante no messageHandler): pessoal > /pronunciation > gírias.
+  // Always a FIXED voice (automatic language detection was removed): the chosen voice
+  // (user > guild > .env > amy) reads EVERYTHING, singleVoice, without detecting the text's
+  // language or splitting by segment — the person always sounds the same. The language for
+  // accent restoration comes from the VOICE (not the text): "nao"->"não" if the voice is PT.
+  // ORDER: guild pronunciation BEFORE the built-in slang — so a /pronunciation like
+  // btw->batata WINS over "by the way". Final precedence (the personal one was already applied
+  // upstream in the messageHandler): personal > /pronunciation > slang.
   const spokenRaw = expandAbbreviations(applyPronunciation(input.personal, input.pronunciations));
   const spoken = restoreAccents(spokenRaw, accentLangOfModel(preferred));
   return {

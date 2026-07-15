@@ -1,4 +1,4 @@
-// src/commands/handlers/meta.ts — handlers informativos/de crescimento: /help, /invite, /vote, /uptime, /botstats, /topspeakers, /premium, /vozengrant (extraídos de index.ts, plano 015).
+// src/commands/handlers/meta.ts — informational/growth handlers: /help, /invite, /vote, /uptime, /botstats, /topspeakers, /premium, /vozengrant (extracted from index.ts, plan 015).
 import {
   ChatInputCommandInteraction,
   GuildMember,
@@ -37,13 +37,13 @@ import { generateCodeString, normalizeCode } from '../../premium/codeGen';
 import { voteRewardStatus } from '../../store/voteReward';
 import { voteUpsellLine } from '../voteUpsell';
 
-/** Repo público (AGPL-3.0 §13: oferta de Corresponding Source in-product, ver /help). */
+/** Public repo (AGPL-3.0 §13: in-product Corresponding Source offer, see /help). */
 const SOURCE_URL = 'https://github.com/Rexy40407/discord-bot-Vozen';
 
 /**
- * /topspeakers — ranking público de quem teve mais mensagens LIDAS pelo Vozen nesta guild,
- * com o streak (dias seguidos a falar) de cada um. Mesma renderização do game leaderboard
- * (<@id> + linhas i18n). Vazio -> mensagem a convidar a falar.
+ * /topspeakers — public ranking of who had the most messages READ by Vozen in this guild,
+ * with each one's streak (consecutive days speaking). Same rendering as the game leaderboard
+ * (<@id> + i18n lines). Empty -> a message inviting people to speak.
  */
 export async function handleTopSpeakers(
   i: ChatInputCommandInteraction,
@@ -67,10 +67,11 @@ export async function handleTopSpeakers(
 }
 
 /**
- * /serverstats — estatísticas AGREGADAS do servidor. Perk Premium: um servidor Premium (ou
- * um utilizador Plus) vê tudo (leitura + streaks + jogos); free vê um TEASER (top-3 tagarelas
- * + upsell) para descobrir o perk. Só agrega dados JÁ guardados (talk_stats + game_score) —
- * sem recolha nova; ver docs/COMPLIANCE-VAGA5.md. As <@id> NÃO fazem ping (allowedMentions []).
+ * /serverstats — AGGREGATED server statistics. Premium perk: a Premium server (or a Plus
+ * user) sees everything (reads + streaks + games); free sees a TEASER (top-3 talkers +
+ * upsell) to discover the perk. Only aggregates data that is ALREADY stored (talk_stats +
+ * game_score) — no new collection; see docs/COMPLIANCE-VAGA5.md. The <@id> do NOT ping
+ * (allowedMentions []).
  */
 export async function handleServerStats(
   i: ChatInputCommandInteraction,
@@ -106,7 +107,7 @@ export async function handleServerStats(
   }
 
   if (premium) {
-    // Premium: streak vivo + resumo de jogos + top jogadores.
+    // Premium: live streak + games summary + top players.
     lines.push(t('serverstats.streak', locale, { days: s.topStreak }));
     lines.push(
       t('serverstats.games', locale, {
@@ -129,7 +130,7 @@ export async function handleServerStats(
       );
     }
   } else {
-    // Free: teaser -> upsell (descoberta do perk) + convite a votar (24h de Plus grátis).
+    // Free: teaser -> upsell (perk discovery) + invitation to vote (24h of free Plus).
     lines.push(t('serverstats.upsell', locale));
     const vote = voteUpsellLine(locale, deps.config.clientId);
     if (vote) lines.push(vote);
@@ -138,17 +139,17 @@ export async function handleServerStats(
   await i.reply({ content: lines.join('\n'), allowedMentions: { parse: [] } });
 }
 
-// Discord renderiza <t:SEGUNDOS:D> como data localizada por-utilizador.
+// Discord renders <t:SECONDS:D> as a per-user localized date.
 const stampDate = (ms: number): string => `<t:${Math.floor(ms / 1000)}:D>`;
-// <t:SEGUNDOS:R> = tempo RELATIVO localizado ("daqui a 3 dias").
+// <t:SECONDS:R> = localized RELATIVE time ("in 3 days").
 const stampRelative = (ms: number): string => `<t:${Math.floor(ms / 1000)}:R>`;
 
-/** Nomes dos servidores (best-effort via cache; fallback = id) para as mensagens do passe. */
+/** Server names (best-effort via cache; fallback = id) for the pass messages. */
 function serverNames(deps: BotDeps, ids: string[]): string {
   return ids.map((id) => deps.client.guilds.cache.get(id)?.name ?? id).join(', ');
 }
 
-/** /premium — despacha os subcomandos info | activate | deactivate. */
+/** /premium — dispatches the info | activate | deactivate subcommands. */
 export async function handlePremium(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const sub = i.options.getSubcommand(false) ?? 'info';
   if (sub === 'activate') return handlePremiumActivate(i, deps);
@@ -156,7 +157,7 @@ export async function handlePremium(i: ChatInputCommandInteraction, deps: BotDep
   return handlePremiumInfo(i, deps);
 }
 
-/** /premium info — estado (servidor + passe + Plus) OU montra + link de compra. */
+/** /premium info — status (server + pass + Plus) OR showcase + purchase link. */
 async function handlePremiumInfo(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const now = Date.now();
@@ -200,8 +201,9 @@ async function handlePremiumInfo(i: ChatInputCommandInteraction, deps: BotDeps):
   const desc = anyActive
     ? lines
     : [t('premium.pitch', locale), '', t('premium.buyHint', locale, { link: deps.config.kofiUrl })];
-  // Sem Plus: oferece a via GRÁTIS (votar → 24h). Se já ganhou a recompensa este mês,
-  // mostra QUANDO volta a poder — para não mandar votar em vão (cooldown de 30 dias).
+  // Without Plus: offers the FREE path (vote → 24h). If the reward was already earned this
+  // month, shows WHEN it becomes available again — so it doesn't send people to vote in vain
+  // (30-day cooldown).
   if (!anyActive) {
     const vs = voteRewardStatus(deps.db, i.user.id, now);
     if (vs.eligible) {
@@ -232,9 +234,9 @@ async function handlePremiumInfo(i: ChatInputCommandInteraction, deps: BotDeps):
 }
 
 /**
- * /premium activate — gasta 1 licença do passe NESTE servidor, com pop-up de confirmação.
- * Precisa de Gerir Servidor (ativar Premium afeta o servidor inteiro). A confirmação é
- * efémera (só o invocador a vê), por isso não é preciso filtrar cliques de terceiros.
+ * /premium activate — spends 1 pass licence ON THIS server, with a confirmation pop-up.
+ * Needs Manage Server (activating Premium affects the whole server). The confirmation is
+ * ephemeral (only the invoker sees it), so there's no need to filter third-party clicks.
  */
 async function handlePremiumActivate(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
@@ -292,7 +294,7 @@ async function handlePremiumActivate(i: ChatInputCommandInteraction, deps: BotDe
     await btn.update({ content: t('premium.activateCancelled', locale), components: [] });
     return;
   }
-  // Re-verifica e gasta numa transação (o estado pode ter mudado nos 30s da confirmação).
+  // Re-checks and spends in a transaction (the state may have changed during the 30s confirmation).
   const res = activateSeat(deps.db, i.user.id, i.guildId, Date.now());
   let out: string;
   if (res.status === 'ok') {
@@ -314,7 +316,7 @@ async function handlePremiumActivate(i: ChatInputCommandInteraction, deps: BotDe
   await btn.update({ content: out, components: [] });
 }
 
-/** /premium deactivate — liberta a licença deste servidor (ação reversível e segura). */
+/** /premium deactivate — frees this server's licence (reversible and safe action). */
 async function handlePremiumDeactivate(
   i: ChatInputCommandInteraction,
   deps: BotDeps,
@@ -330,17 +332,17 @@ async function handlePremiumDeactivate(
 }
 
 /**
- * /vozengrant — OWNER-ONLY. Concede um passe de Premium (guild) ou Plus (user) a alguém,
- * por N dias. Defesa em profundidade: (1) o comando é registado SÓ na OWNER_GUILD_ID, por
- * isso o público nem o vê; (2) AQUI recusa quem não estiver em deps.ownerIds — o dono REAL
- * resolvido do Discord no arranque, não falsificável por env; (3) resposta sempre efémera.
+ * /vozengrant — OWNER-ONLY. Grants a Premium pass (guild) or Plus (user) to someone,
+ * for N days. Defense in depth: (1) the command is registered ONLY on OWNER_GUILD_ID, so
+ * the public doesn't even see it; (2) HERE it refuses anyone not in deps.ownerIds — the REAL
+ * owner resolved from Discord at startup, not spoofable via env; (3) response always ephemeral.
  */
 export async function handleVozenGrant(
   i: ChatInputCommandInteraction,
   deps: BotDeps,
 ): Promise<void> {
   const locale = localeForUser(deps, i);
-  // Camada 2: só o(s) dono(s) real(is). Sem ownerIds resolvidos, ninguém passa.
+  // Layer 2: only the real owner(s). Without resolved ownerIds, nobody passes.
   if (!deps.ownerIds || !deps.ownerIds.has(i.user.id)) {
     await reply(i, t('grant.denied', locale));
     return;
@@ -363,10 +365,10 @@ export async function handleVozenGrant(
 }
 
 /**
- * /gencode — OWNER-ONLY: gera código(s) de presente. Defesa em profundidade igual ao
- * /vozengrant: (1) registado só na OWNER_GUILD_ID (invisível ao público); (2) gate por
- * dono real aqui; (3) resposta efémera. Cada código é uso único; resgata-se com /redeem.
- * `seats` só conta para premium (0 para plus). Regenera em colisão de PK (praticamente nula).
+ * /gencode — OWNER-ONLY: generates gift code(s). Defense in depth same as
+ * /vozengrant: (1) registered only on OWNER_GUILD_ID (invisible to the public); (2) real-owner
+ * gate here; (3) ephemeral response. Each code is single-use; redeemed with /redeem.
+ * `seats` only counts for premium (0 for plus). Regenerates on a PK collision (practically nil).
  */
 export async function handleGenCode(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
@@ -412,16 +414,16 @@ export async function handleGenCode(i: ChatInputCommandInteraction, deps: BotDep
 }
 
 /**
- * /redeem — PÚBLICO: resgata um código de presente (uso único, resgate atómico no store).
- * Concede à CONTA de quem resgata — Plus direto, ou um passe Premium que ativa com
- * /premium activate. Resposta efémera. source 'code' (distingue de kofi/manual).
+ * /redeem — PUBLIC: redeems a gift code (single-use, atomic redemption in the store).
+ * Grants to the redeemer's ACCOUNT — Plus directly, or a Premium pass activated with
+ * /premium activate. Ephemeral response. source 'code' (distinguishes from kofi/manual).
  */
 export async function handleRedeem(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const code = normalizeCode(i.options.getString('code', true));
   const now = Date.now();
-  // O grant corre DENTRO da transação do resgate (via callback): se falhar, o código NÃO
-  // fica queimado. Capturamos o expiry no closure para a mensagem de sucesso.
+  // The grant runs INSIDE the redemption transaction (via callback): if it fails, the code is
+  // NOT burned. We capture the expiry in the closure for the success message.
   let exp = 0;
   const res = redeemPremiumCode(deps.db, code, i.user.id, now, (db, claim) => {
     exp =
@@ -449,13 +451,13 @@ export async function handleRedeem(i: ChatInputCommandInteraction, deps: BotDeps
   }
 }
 
-/** /uptime — PÚBLICO: há quanto tempo o Vozen está online. */
+/** /uptime — PUBLIC: how long Vozen has been online. */
 export async function handleUptime(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   await reply(i, t('uptime.text', locale, { uptime: formatDuration(process.uptime()) }));
 }
 
-/** /botstats — PÚBLICO: números de confiança (servidores, sessões de voz, uptime). */
+/** /botstats — PUBLIC: trust numbers (servers, voice sessions, uptime). */
 export async function handleBotstats(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const snap = metrics.snapshot();
@@ -473,21 +475,21 @@ export async function handleBotstats(i: ChatInputCommandInteraction, deps: BotDe
 }
 
 /**
- * /invite — devolve o URL de convite OAuth2 do bot, construido a partir do
- * CLIENT_ID da config. Gatilho do "loop viral".
+ * /invite — returns the bot's OAuth2 invite URL, built from the config's
+ * CLIENT_ID. Trigger of the "viral loop".
  *
- * Decisoes de design:
- *  - Reply NORMAL (nao ephemeral): o objetivo do comando e partilhar o link, por
- *    isso queremos que fique visivel no canal para quem mais quiser adicionar o
- *    Vozen. Por isso NAO usamos o helper reply() (que e ephemeral) — chamamos
- *    i.reply() diretamente sem flags.
- *  - O URL e montado com URLSearchParams para escapar corretamente os valores; o
- *    scope "bot applications.commands" fica codificado (o espaco vira '+'), o que
- *    e valido para o endpoint OAuth2.
- *  - permissions = INVITE_PERMISSIONS (inteiro derivado dos 5 bits, ver topo).
- *  - Sem CLIENT_ID configurado: respondemos com uma mensagem clara em vez de
- *    gerar um link partido (client_id vazio). Verificamos com !clientId para
- *    apanhar tanto undefined como string vazia.
+ * Design decisions:
+ *  - NORMAL reply (not ephemeral): the command's goal is to share the link, so
+ *    we want it visible in the channel for whoever else wants to add Vozen.
+ *    That's why we do NOT use the reply() helper (which is ephemeral) — we call
+ *    i.reply() directly without flags.
+ *  - The URL is built with URLSearchParams to escape the values correctly; the
+ *    scope "bot applications.commands" gets encoded (the space becomes '+'), which
+ *    is valid for the OAuth2 endpoint.
+ *  - permissions = INVITE_PERMISSIONS (integer derived from the 5 bits, see top).
+ *  - Without a configured CLIENT_ID: we respond with a clear message instead of
+ *    generating a broken link (empty client_id). We check with !clientId to
+ *    catch both undefined and empty string.
  */
 export async function handleInvite(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
@@ -502,8 +504,8 @@ export async function handleInvite(i: ChatInputCommandInteraction, deps: BotDeps
     permissions: INVITE_PERMISSIONS,
   });
   const url = `https://discord.com/oauth2/authorize?${params.toString()}`;
-  // Botão de link + o URL no texto (fica clicável e copiável). ButtonStyle.Link não tem
-  // customId — leva só o URL, por isso não precisa de coletor.
+  // Link button + the URL in the text (clickable and copyable). ButtonStyle.Link has no
+  // customId — it carries only the URL, so it needs no collector.
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setStyle(ButtonStyle.Link)
@@ -515,19 +517,19 @@ export async function handleInvite(i: ChatInputCommandInteraction, deps: BotDeps
 }
 
 /**
- * /vote — devolve o link da pagina de voto do Vozen no top.gg (P11.5),
- * construido a partir do CLIENT_ID da config. Gatilho de crescimento, irmao do
+ * /vote — returns the link to Vozen's vote page on top.gg (P11.5),
+ * built from the config's CLIENT_ID. Growth trigger, sibling of
  * /invite.
  *
- * Decisoes de design (espelham o /invite):
- *  - Reply NORMAL (nao ephemeral): o objetivo e PARTILHAR o link para que mais
- *    gente vote, por isso fica visivel no canal — NAO usamos o helper reply()
- *    (ephemeral); chamamos i.reply() diretamente sem flags.
- *  - URL = https://top.gg/bot/<CLIENT_ID>/vote. O CLIENT_ID e o id da aplicacao
- *    (o mesmo do /invite); o top.gg usa-o como id do bot na sua listagem.
- *  - Sem CLIENT_ID configurado: mensagem clara ephemeral em vez de um link
- *    partido (top.gg/bot//vote). Verificamos com !clientId (apanha undefined e
- *    string vazia), tal como o /invite.
+ * Design decisions (mirror /invite):
+ *  - NORMAL reply (not ephemeral): the goal is to SHARE the link so more
+ *    people vote, so it stays visible in the channel — we do NOT use the reply()
+ *    helper (ephemeral); we call i.reply() directly without flags.
+ *  - URL = https://top.gg/bot/<CLIENT_ID>/vote. The CLIENT_ID is the application id
+ *    (the same one as /invite); top.gg uses it as the bot's id in its listing.
+ *  - Without a configured CLIENT_ID: a clear ephemeral message instead of a broken
+ *    link (top.gg/bot//vote). We check with !clientId (catches undefined and
+ *    empty string), just like /invite.
  */
 export async function handleVote(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
@@ -548,34 +550,34 @@ export async function handleVote(i: ChatInputCommandInteraction, deps: BotDeps):
 }
 
 /**
- * /help — discovery de comandos em-app, pensado para PRINCIPIANTES (dono de
- * servidor ou membro que nunca usou o bot). Responde com um EMBED beginner-friendly:
- * intro do que o Vozen faz + um "Quick start (3 steps)" + comandos AGRUPADOS por
- * tarefa (Getting started / Your voice / Fun / Server admin / More), cada linha com
- * um one-liner amigavel e pelo menos um exemplo concreto.
+ * /help — in-app command discovery, designed for BEGINNERS (server owner or
+ * member who has never used the bot). Responds with a beginner-friendly EMBED:
+ * an intro of what Vozen does + a "Quick start (3 steps)" + commands GROUPED by
+ * task (Getting started / Your voice / Fun / Server admin / More), each line with
+ * a friendly one-liner and at least one concrete example.
  *
- * Decisoes de design:
- *  - TODO o texto e renderizado via t(key, locale) no locale da guild
- *    (getGuildConfig.locale). Por defeito (locale 'en') sai em INGLES; ha traducao
- *    'pt' para tudo. Os corpos dos grupos sao HAND-AUTHORED no catalogo (nao
- *    derivados das descricoes de commandDefs) porque "um exemplo concreto por
- *    seccao" nao se consegue derivar de uma descricao curta.
- *  - GUARD de cobertura: como os corpos sao hand-authored, corremos o risco de um
- *    comando NOVO em commandDefs ficar de fora. Para o /help continuar a ser a
- *    fonte de discovery, verificamos em runtime que TODOS os nomes top-level
- *    aparecem no texto montado; qualquer um que falte e APENSADO ao grupo "More".
- *    Assim o teste-guard (cada comando top-level aparece no /help) continua
- *    genuinamente protetor sem obrigar a listar tudo a mao.
- *  - Reply ephemeral para nao poluir o canal.
+ * Design decisions:
+ *  - ALL text is rendered via t(key, locale) in the guild's locale
+ *    (getGuildConfig.locale). By default (locale 'en') it comes out in ENGLISH; there's
+ *    a 'pt' translation for everything. The group bodies are HAND-AUTHORED in the
+ *    catalog (not derived from the commandDefs descriptions) because "one concrete
+ *    example per section" cannot be derived from a short description.
+ *  - Coverage GUARD: since the bodies are hand-authored, we risk a NEW command in
+ *    commandDefs being left out. For /help to remain the discovery source, we verify
+ *    at runtime that ALL top-level names appear in the assembled text; any that are
+ *    missing are APPENDED to the "More" group. This way the guard test (every
+ *    top-level command appears in /help) stays genuinely protective without forcing
+ *    us to list everything by hand.
+ *  - Ephemeral reply so the channel isn't cluttered.
  */
 export async function handleHelp(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
-  // Locale da INTERFACE do UTILIZADOR que pediu ajuda (o /help e ephemeral, so ele
-  // o ve): usa o Discord locale do cliente dele (localeForUser), com fallback para o
-  // locale da guild e depois DEFAULT_LOCALE. Nunca lanca.
+  // INTERFACE locale of the USER who asked for help (/help is ephemeral, only they
+  // see it): uses their client's Discord locale (localeForUser), falling back to the
+  // guild locale and then DEFAULT_LOCALE. Never throws.
   const locale = localeForUser(deps, i);
 
-  // Cada FIELD tem um nome (cabecalho traduzido) e um value (corpo traduzido). O
-  // quick-start vem primeiro para o principiante arrancar sem ler tudo.
+  // Each FIELD has a name (translated header) and a value (translated body). The
+  // quick-start comes first so the beginner can get going without reading everything.
   const fields: { name: string; value: string }[] = [
     { name: t('help.quickStartTitle', locale), value: t('help.quickStartBody', locale) },
     { name: t('help.groupStarted', locale), value: t('help.groupStartedBody', locale) },
@@ -585,10 +587,10 @@ export async function handleHelp(i: ChatInputCommandInteraction, deps: BotDeps):
     { name: t('help.groupMore', locale), value: t('help.groupMoreBody', locale) },
   ];
 
-  // GUARD de cobertura: garante que nenhum comando top-level fica invisivel. Junta
-  // todos os values numa string e, para cada commandDef, se `/nome` nao aparecer,
-  // apensa-o ao grupo "More" (o ultimo field). Mantem o /help como discovery real
-  // sem repetir a lista a mao.
+  // Coverage GUARD: ensures no top-level command stays invisible. Joins all the
+  // values into a string and, for each commandDef, if `/name` doesn't appear,
+  // appends it to the "More" group (the last field). Keeps /help as real discovery
+  // without repeating the list by hand.
   const mentioned = fields.map((f) => f.value).join('\n');
   const missing = commandDefs.map((d) => d.name).filter((name) => !mentioned.includes(`/${name}`));
   if (missing.length) {
@@ -596,19 +598,19 @@ export async function handleHelp(i: ChatInputCommandInteraction, deps: BotDeps):
     more.value += '\n' + missing.map((name) => `• /${name}`).join('\n');
   }
 
-  // Linha de suporte/denúncia (requisito da Política de Desenvolvedor do Discord:
-  // dar ao utilizador uma forma de reportar problemas). Vem do config (env
-  // SUPPORT_URL; default = servidor de suporte oficial).
+  // Support/report line (Discord Developer Policy requirement: give the user a way
+  // to report problems). Comes from the config (env SUPPORT_URL; default = official
+  // support server).
   const supportLine = t('help.support', locale, { url: deps.config.supportUrl });
-  // AGPL-3.0 §13: oferece o Corresponding Source dentro do próprio produto (Discord), para
-  // quem nunca abre o site. URL público e estável do repo.
+  // AGPL-3.0 §13: offers the Corresponding Source inside the product itself (Discord), for
+  // those who never open the site. Public and stable repo URL.
   const sourceLine = t('help.source', locale, { url: SOURCE_URL });
 
   const embed = new EmbedBuilder()
-    .setColor(0x5865f2) // blurple — parece intencional, nao o cinzento default
+    .setColor(0x5865f2) // blurple — looks intentional, not the default gray
     .setTitle(t('help.embedTitle', locale))
-    // Descricao: tagline da marca + o que o Vozen faz (intro) + o diferenciador
-    // (voz neural gratis) — a mesma chave do welcome embed — + suporte + fonte (AGPL §13).
+    // Description: brand tagline + what Vozen does (intro) + the differentiator
+    // (free neural voice) — the same key as the welcome embed — + support + source (AGPL §13).
     .setDescription(
       `${t('help.title', locale)}\n${t('help.intro', locale)}\n\n${t('welcome.tagline', locale)}\n\n${supportLine}\n${sourceLine}`,
     )

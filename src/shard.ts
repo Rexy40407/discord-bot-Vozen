@@ -1,24 +1,24 @@
 /**
- * P11.4 — Launcher de SHARDING (opt-in). NÃO e o entrypoint default.
+ * P11.4 — SHARDING launcher (opt-in). It is NOT the default entrypoint.
  *
- * O entrypoint de sempre continua a ser `src/index.ts` (um unico processo). Este
- * ficheiro e um arranque ALTERNATIVO, acessivel via `npm run start:sharded`
- * (= `node dist/shard.js`), pensado para escalar perto dos ~1000+ guilds, onde o
- * Discord exige multiplos gateway shards (≈1 shard / 1000 guilds).
+ * The usual entrypoint remains `src/index.ts` (a single process). This file is an
+ * ALTERNATIVE startup, reachable via `npm run start:sharded`
+ * (= `node dist/shard.js`), intended to scale near ~1000+ guilds, where Discord
+ * requires multiple gateway shards (≈1 shard / 1000 guilds).
  *
- * Decisao (delegada a resolveShardCount, a partir de config.shards / env
- * BOT_SHARDS — NAO `SHARDS`, que e reservada pelo discord.js; ver src/config):
- *   - SEM sharding (null): corre o bot single-process DIRETAMENTE, com um
- *     `require('./index')` PREGUICOSO — assim `start:sharded` funciona mesmo sem
- *     BOT_SHARDS definido, sem obrigar ninguem a trocar de script.
- *   - COM sharding ('auto' | N): cria um ShardingManager que faz spawn de N
- *     processos-filho, cada um a correr `index.js` (o MESMO entrypoint de sempre).
+ * Decision (delegated to resolveShardCount, from config.shards / env
+ * BOT_SHARDS — NOT `SHARDS`, which is reserved by discord.js; see src/config):
+ *   - WITHOUT sharding (null): runs the bot single-process DIRECTLY, with a
+ *     LAZY `require('./index')` — so `start:sharded` works even without
+ *     BOT_SHARDS set, without forcing anyone to switch scripts.
+ *   - WITH sharding ('auto' | N): creates a ShardingManager that spawns N
+ *     child processes, each running `index.js` (the SAME usual entrypoint).
  *
- * INVARIANTE CRITICA (evita spawn infinito): o ShardingManager so e construido
- * AQUI. O `index.ts` nunca constroi um manager — os filhos correm index.js e
- * ligam-se ao Discord como bots normais. Por isso o `require('./index')` so pode
- * acontecer no ramo single-process, e o ShardingManager aponta para index.js, NÃO
- * para este ficheiro.
+ * CRITICAL INVARIANT (avoids infinite spawn): the ShardingManager is only built
+ * HERE. `index.ts` never builds a manager — the children run index.js and
+ * connect to Discord as normal bots. That is why `require('./index')` can only
+ * happen in the single-process branch, and the ShardingManager points at index.js, NOT
+ * at this file.
  */
 import path from 'node:path';
 import { ShardingManager } from 'discord.js';
@@ -27,27 +27,27 @@ import { log } from './logging/logger';
 import { resolveShardCount } from './sharding';
 
 /**
- * Arranque efetivo. Separado do guard `require.main` para que os testes possam
- * importar este modulo sem disparar login/spawn (modulo import-safe).
+ * Actual startup. Separated from the `require.main` guard so tests can
+ * import this module without triggering login/spawn (import-safe module).
  */
 export function runShardLauncher(): void {
   const config = loadConfig();
   const totalShards = resolveShardCount(config.shards);
 
   if (totalShards === null) {
-    // SEM sharding: corre o bot single-process. require PREGUICOSO — importar
-    // ./index no topo executaria main() (login no Discord) sempre, inclusive no
-    // ramo de sharding, o que NÃO queremos.
+    // WITHOUT sharding: runs the bot single-process. LAZY require — importing
+    // ./index at the top would execute main() (Discord login) always, including in
+    // the sharding branch, which we do NOT want.
     log.info('[shard] BOT_SHARDS is unset or disabled; running as a single process.');
     require('./index');
     return;
   }
 
-  // COM sharding. O alvo e index.js (o entrypoint de cada filho), resolvido a
-  // partir de __dirname para ser robusto ao cwd: em runtime este ficheiro vive em
-  // dist/, logo __dirname/index.js => dist/index.js independentemente de onde o
-  // processo foi lancado. O token e necessario para totalShards:'auto' (o manager
-  // pergunta ao Discord a contagem recomendada).
+  // WITH sharding. The target is index.js (each child's entrypoint), resolved from
+  // __dirname to be robust to the cwd: at runtime this file lives in
+  // dist/, so __dirname/index.js => dist/index.js regardless of where the
+  // process was launched. The token is required for totalShards:'auto' (the manager
+  // asks Discord for the recommended count).
   const file = path.join(__dirname, 'index.js');
   const manager = new ShardingManager(file, {
     token: config.token,
@@ -65,8 +65,8 @@ export function runShardLauncher(): void {
   });
 }
 
-// So arranca quando executado diretamente (`node dist/shard.js`). Um teste que
-// importe este modulo NÃO dispara o arranque.
+// Only starts when executed directly (`node dist/shard.js`). A test that
+// imports this module does NOT trigger startup.
 if (require.main === module) {
   runShardLauncher();
 }

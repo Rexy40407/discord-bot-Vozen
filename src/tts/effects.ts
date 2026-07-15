@@ -8,19 +8,19 @@ import { AudioCache, cacheKey } from './cache';
 import { rmDirSafe } from './cleanupDir';
 import { log } from '../logging/logger';
 
-// Efeitos de voz (feature premium, com 2 amostras grátis): transformam o WAV já
-// sintetizado com um filtro ffmpeg, DEPOIS de toda a cadeia (cache incluída). Aplicados
-// por um EffectEngine que envolve o motor por FORA — com a sua PRÓPRIA cache (o áudio com
-// efeito nunca colide com o limpo). QUALQUER falha do ffmpeg cai na voz limpa, nunca em
-// silêncio (crítico: uma síntese que lança faz o player SALTAR o item).
+// Voice effects (premium feature, with 2 free samples): transform the already
+// synthesized WAV with an ffmpeg filter, AFTER the whole chain (cache included). Applied
+// by an EffectEngine that wraps the engine from the OUTSIDE — with its OWN cache (the
+// effected audio never collides with the clean one). ANY ffmpeg failure falls back to the
+// clean voice, never to silence (critical: a synth that throws makes the player SKIP the item).
 
 export type VoiceEffect =
   'none' | 'robot' | 'echo' | 'deep' | 'chipmunk' | 'radio' | 'phone' | 'underwater' | 'demon';
 
-// Ambos os motores (Piper nativo, gTTS via mp3ToWav) produzem WAV 22050Hz mono, por isso
-// os filtros de pitch (asetrate) usam 22050 com segurança. Só filtros CORE do ffmpeg
-// (aecho/asetrate/aresample/atempo/highpass/lowpass/tremolo/volume) — nada de afftfilt/
-// acrusher/rubberband, que podem não estar compilados no ffmpeg-static.
+// Both engines (native Piper, gTTS via mp3ToWav) produce 22050Hz mono WAV, so the pitch
+// filters (asetrate) safely use 22050. Only CORE ffmpeg filters
+// (aecho/asetrate/aresample/atempo/highpass/lowpass/tremolo/volume) — no afftfilt/
+// acrusher/rubberband, which may not be compiled into ffmpeg-static.
 const FILTERS: Record<Exclude<VoiceEffect, 'none'>, string> = {
   robot: 'tremolo=f=30:d=0.7,aecho=0.8:0.88:6:0.5',
   echo: 'aecho=0.8:0.9:500:0.4',
@@ -32,10 +32,10 @@ const FILTERS: Record<Exclude<VoiceEffect, 'none'>, string> = {
   demon: 'asetrate=22050*0.75,aresample=22050,atempo=1.1,aecho=0.8:0.9:70:0.4',
 };
 
-/** Efeitos GRÁTIS (amostra). Os restantes são premium. */
+/** FREE effects (sample). The rest are premium. */
 export const FREE_EFFECTS: readonly VoiceEffect[] = ['none', 'robot', 'echo'];
 
-/** Todos os efeitos (ordem das choices do /voice effect). */
+/** All effects (order of the /voice effect choices). */
 export const VOICE_EFFECTS: readonly VoiceEffect[] = [
   'none',
   'robot',
@@ -52,12 +52,12 @@ export function isVoiceEffect(s: string): s is VoiceEffect {
   return (VOICE_EFFECTS as readonly string[]).includes(s);
 }
 
-/** É um efeito só-premium (i.e. não está na lista grátis)? */
+/** Is this a premium-only effect (i.e. not in the free list)? */
 export function isPremiumEffect(effect: VoiceEffect): boolean {
   return !FREE_EFFECTS.includes(effect);
 }
 
-/** Filtro ffmpeg do efeito, ou null para 'none'/desconhecido (=> voz limpa). */
+/** ffmpeg filter for the effect, or null for 'none'/unknown (=> clean voice). */
 export function ffmpegFilterFor(effect: string): string | null {
   if (!isVoiceEffect(effect) || effect === 'none') return null;
   return FILTERS[effect as Exclude<VoiceEffect, 'none'>];
@@ -75,21 +75,21 @@ const LABELS: Record<VoiceEffect, string> = {
   demon: '😈 Demon',
 };
 
-/** Label legível de um efeito (para as respostas). */
+/** Human-readable label for an effect (for the replies). */
 export function effectLabel(effect: VoiceEffect): string {
   return LABELS[effect] ?? effect;
 }
 
 /**
- * Choices do /voice effect: os premium levam 💎 no nome para se perceber que precisam de
- * Premium (o gate real é validado no handler). ≤25 choices, ok.
+ * /voice effect choices: premium ones carry 💎 in the name so it's clear they need
+ * Premium (the real gate is validated in the handler). ≤25 choices, ok.
  */
 export const EFFECT_CHOICES: { name: string; value: VoiceEffect }[] = VOICE_EFFECTS.map((e) => ({
   name: isPremiumEffect(e) ? `💎 ${LABELS[e]}` : LABELS[e],
   value: e,
 }));
 
-/** Tempo máximo do passo ffmpeg de efeito (mesmo teto do resto do pipeline). */
+/** Max time for the effect ffmpeg step (same ceiling as the rest of the pipeline). */
 const FX_TIMEOUT_MS = 15_000;
 
 export interface ApplyEffectDeps {
@@ -98,9 +98,10 @@ export interface ApplyEffectDeps {
 }
 
 /**
- * Aplica um filtro ffmpeg a um WAV, devolvendo o caminho de um NOVO WAV temporário. Mirror
- * do runner do gtts: timeout+kill, cleanup best-effort, latch `settled` para nunca deixar a
- * Promise pendente. Rejeita em erro (o chamador — EffectEngine — apanha e cai na voz limpa).
+ * Applies an ffmpeg filter to a WAV, returning the path of a NEW temporary WAV. Mirror of
+ * the gtts runner: timeout+kill, best-effort cleanup, `settled` latch to never leave the
+ * Promise pending. Rejects on error (the caller — EffectEngine — catches it and falls back
+ * to the clean voice).
  */
 export function applyEffect(
   inputWav: string,
@@ -144,7 +145,7 @@ export function applyEffect(
       try {
         child.kill('SIGKILL');
       } catch {
-        // já morto
+        // already dead
       }
       reject(new Error(`fx: ffmpeg excedeu ${FX_TIMEOUT_MS}ms`));
       rmDirSafe(workDir);
@@ -165,8 +166,8 @@ export function applyEffect(
       clearTimeout(timer);
       if (code === 0) {
         resolve(outPath);
-        // NB: NÃO limpamos workDir aqui — o chamador copia o outPath (cache.put) e só
-        // depois limpa (a limpeza fica a cargo do EffectEngine).
+        // NB: we do NOT clean workDir here — the caller copies outPath (cache.put) and only
+        // then cleans up (cleanup is the EffectEngine's responsibility).
       } else {
         reject(new Error(`fx: ffmpeg saiu com ${code}: ${stderr.trim()}`));
         rmDirSafe(workDir);
@@ -176,11 +177,11 @@ export function applyEffect(
 }
 
 /**
- * Motor decorador que aplica o efeito de voz (req.effect) DEPOIS da síntese, com cache
- * própria (namespace 'fx') keyed por cacheKey(req)+efeito — o áudio com efeito é
- * partilhado por reqs idênticas e a LRU limpa-o (sem leak de temporários). 'none'/sem
- * efeito -> devolve o WAV base tal e qual. Qualquer erro do ffmpeg -> voz LIMPA (nunca
- * lança: senão o player saltava a fala e o user premium ouvia silêncio).
+ * Decorator engine that applies the voice effect (req.effect) AFTER synthesis, with its own
+ * cache (namespace 'fx') keyed by cacheKey(req)+effect — the effected audio is shared across
+ * identical reqs and the LRU cleans it up (no temp leak). 'none'/no effect -> returns the
+ * base WAV as-is. Any ffmpeg error -> CLEAN voice (never throws: otherwise the player would
+ * skip the speech and the premium user would hear silence).
  */
 export class EffectEngine implements TTSEngine {
   constructor(
@@ -193,7 +194,7 @@ export class EffectEngine implements TTSEngine {
     const base = await this.inner.synth(req);
     const effect = req.effect ?? 'none';
     const filter = ffmpegFilterFor(effect);
-    if (!filter) return base; // 'none' ou desconhecido -> voz limpa
+    if (!filter) return base; // 'none' or unknown -> clean voice
 
     const key = `${cacheKey(req)}_${effect}`;
     const hit = this.cache.get(key);
@@ -207,7 +208,7 @@ export class EffectEngine implements TTSEngine {
       log.warn('[fx] effect failed; using clean voice:', err);
       return base;
     } finally {
-      // Limpa o DIR temporário do applyEffect (a cache já tem a sua própria cópia do WAV).
+      // Clean up applyEffect's temp DIR (the cache already has its own copy of the WAV).
       if (tmp) rmDirSafe(dirname(tmp));
     }
   }

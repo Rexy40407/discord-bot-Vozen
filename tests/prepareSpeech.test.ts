@@ -3,12 +3,12 @@ import { prepareSpeech, redactRequest, hasReadableText } from '../src/commands/p
 import { emphasisGain } from '../src/tts/emphasis';
 import type { SynthRequest } from '../src/tts/engine';
 
-// Catalogo de modelos (usado só como strings — a deteção automática foi removida, por isso
-// a voz é SEMPRE a preferida, nunca escolhida pela língua do texto).
+// Model catalog (used only as strings — automatic detection was removed, so
+// the voice is ALWAYS the preferred one, never chosen by the text's language).
 const AVAILABLE = ['en_US-amy-medium', 'pt_PT-google-medium', 'es_ES-davefx-medium'];
 
-// Sem `as const`: mantê-lo tornava `pronunciations` um `readonly []` que não encaixa
-// no PronunciationEntry[] (mutável) esperado pelo PrepareSpeechInput.
+// Without `as const`: keeping it made `pronunciations` a `readonly []` that does not fit
+// the PronunciationEntry[] (mutable) expected by PrepareSpeechInput.
 const BASE = {
   pronunciations: [] as { term: string; replacement: string }[],
   userVoice: null,
@@ -17,19 +17,19 @@ const BASE = {
   defaultSpeed: 1,
 };
 
-describe('prepareSpeech — voz FIXA (deteção removida)', () => {
-  it('lê SEMPRE na voz preferida, singleVoice, sem segments — mesmo texto de outra língua', () => {
+describe('prepareSpeech — FIXED voice (detection removed)', () => {
+  it('always reads in the preferred voice, singleVoice, no segments — even text in another language', () => {
     const { req } = prepareSpeech({
       ...BASE,
       personal: 'isto e uma frase em portugues bem comprida que ANTES era detetada como portugues',
     });
-    // Sem deteção: a voz é a preferida (.env => en_US-amy), não a da língua do texto.
+    // No detection: the voice is the preferred one (.env => en_US-amy), not the text's language.
     expect(req.model).toBe('en_US-amy-medium');
     expect(req.singleVoice).toBe(true);
     expect(req.segments).toBeUndefined();
   });
 
-  it('honra a voz do user (user > guild > .env)', () => {
+  it('honors the user voice (user > guild > .env)', () => {
     const { req } = prepareSpeech({
       ...BASE,
       personal: 'texto qualquer',
@@ -62,29 +62,29 @@ describe('prepareSpeech — voz FIXA (deteção removida)', () => {
     expect(req.model).toBe(AVAILABLE[0]);
   });
 
-  it('expande gírias embutidas no texto falado (btw -> by the way)', () => {
+  it('expands built-in slang in the spoken text (btw -> by the way)', () => {
     const { req, spoken } = prepareSpeech({ ...BASE, personal: 'brb omg' });
     expect(req.segments).toBeUndefined();
     expect(spoken).toBe('be right back oh my god');
   });
 });
 
-describe('prepareSpeech — teto de saída (anti-amplificação)', () => {
-  it('limita o req.text a 2400 chars; o spoken fica inteiro (blocklist)', () => {
+describe('prepareSpeech — output cap (anti-amplification)', () => {
+  it('caps req.text at 2400 chars; the spoken stays whole (blocklist)', () => {
     const long = 'palavra '.repeat(500); // ~4000 chars
     const { req, spoken } = prepareSpeech({ ...BASE, personal: long });
-    expect(req.text.length).toBe(2400); // o que vai para a síntese é limitado
-    expect(spoken.length).toBeGreaterThan(2400); // o spoken (blocklist) NÃO é truncado
+    expect(req.text.length).toBe(2400); // what goes to synthesis is capped
+    expect(spoken.length).toBeGreaterThan(2400); // the spoken (blocklist) is NOT truncated
   });
 
-  it('não mexe em texto normal (abaixo do teto)', () => {
+  it('does not touch normal text (below the cap)', () => {
     const { req } = prepareSpeech({ ...BASE, personal: 'uma frase normal e curta' });
     expect(req.text.length).toBeLessThan(2400);
   });
 });
 
-describe('prepareSpeech — anúncios (xsaid + media) localizados na voz', () => {
-  it('xsaid: prefixo "{nome} said" na língua da voz (voz EN)', () => {
+describe('prepareSpeech — announcements (xsaid + media) localized to the voice', () => {
+  it('xsaid: "{name} said" prefix in the voice language (EN voice)', () => {
     const { req, spoken } = prepareSpeech({
       ...BASE,
       personal: 'hello there',
@@ -94,21 +94,21 @@ describe('prepareSpeech — anúncios (xsaid + media) localizados na voz', () =>
     expect(req.text).toBe('Alex said hello there');
   });
 
-  it('emphasisSource = SÓ o corpo (sem o nome xsaid) — anti falso-grito', () => {
-    // Bug: um nome/apelido em MAIÚSCULAS no prefixo xsaid fazia TODAS as mensagens
-    // gritar. O emphasisSource tem de ser só o que o utilizador escreveu.
+  it('emphasisSource = ONLY the body (without the xsaid name) — anti false-shout', () => {
+    // Bug: a name/nickname in UPPERCASE in the xsaid prefix made ALL messages
+    // shout. The emphasisSource must be only what the user wrote.
     const { req } = prepareSpeech({
       ...BASE,
       personal: 'hello there',
-      announceSpeaker: 'DIOGO', // nome em MAIÚSCULAS
+      announceSpeaker: 'DIOGO', // name in UPPERCASE
     });
-    expect(req.text).toBe('DIOGO said hello there'); // o texto sintetizado leva o nome
-    expect(req.emphasisSource).toBe('hello there'); // mas a ênfase vem só do corpo
-    expect(emphasisGain(req.emphasisSource ?? req.text)).toBe(1); // corpo calmo -> não grita
-    expect(emphasisGain(req.text)).toBeGreaterThan(1); // o texto decorado gritaria (bug antigo)
+    expect(req.text).toBe('DIOGO said hello there'); // the synthesized text carries the name
+    expect(req.emphasisSource).toBe('hello there'); // but the emphasis comes only from the body
+    expect(emphasisGain(req.emphasisSource ?? req.text)).toBe(1); // calm body -> does not shout
+    expect(emphasisGain(req.text)).toBeGreaterThan(1); // the decorated text would shout (old bug)
   });
 
-  it('xsaid localizado na língua da VOZ: voz PT -> "disse"', () => {
+  it('xsaid localized to the VOICE language: PT voice -> "disse"', () => {
     const { spoken } = prepareSpeech({
       ...BASE,
       personal: 'uma frase qualquer',
@@ -118,7 +118,7 @@ describe('prepareSpeech — anúncios (xsaid + media) localizados na voz', () =>
     expect(spoken.startsWith('Alex disse ')).toBe(true);
   });
 
-  it('media: sufixo no fim, corpo vazio -> "{nome} said a gif"', () => {
+  it('media: suffix at the end, empty body -> "{name} said a gif"', () => {
     const { spoken } = prepareSpeech({
       ...BASE,
       personal: '',
@@ -129,8 +129,8 @@ describe('prepareSpeech — anúncios (xsaid + media) localizados na voz', () =>
   });
 });
 
-describe('prepareSpeech — /pronunciation sobrepoe a lista de girias embutida', () => {
-  it('pronuncia btw->batata GANHA a giria (nao "by the way")', () => {
+describe('prepareSpeech — /pronunciation overrides the built-in slang list', () => {
+  it('pronunciation btw->batata BEATS the slang (not "by the way")', () => {
     const { spoken, req } = prepareSpeech({
       ...BASE,
       personal: 'btw',
@@ -141,7 +141,7 @@ describe('prepareSpeech — /pronunciation sobrepoe a lista de girias embutida',
     expect(req.singleVoice).toBe(true);
   });
 
-  it('SEM pronuncia, btw expande normalmente para "by the way"', () => {
+  it('WITHOUT a pronunciation, btw expands normally to "by the way"', () => {
     const { spoken } = prepareSpeech({
       ...BASE,
       personal: 'btw',
@@ -151,33 +151,33 @@ describe('prepareSpeech — /pronunciation sobrepoe a lista de girias embutida',
   });
 });
 
-describe('hasReadableText — ha letra ou numero?', () => {
-  it('true quando ha letra/numero', () => {
+describe('hasReadableText — is there a letter or number?', () => {
+  it('true when there is a letter/number', () => {
     expect(hasReadableText('abc')).toBe(true);
     expect(hasReadableText('  1  ')).toBe(true);
   });
-  it('false quando so ha espacos/pontuacao', () => {
+  it('false when there are only spaces/punctuation', () => {
     expect(hasReadableText('')).toBe(false);
     expect(hasReadableText('   ')).toBe(false);
     expect(hasReadableText('!!! ,. ')).toBe(false);
   });
 });
 
-describe('redactRequest — redige a blocklist no SynthRequest', () => {
+describe('redactRequest — redacts the blocklist in the SynthRequest', () => {
   const base: SynthRequest = { text: 'ola palavrao mundo', model: 'en_US-amy-medium', speed: 1 };
 
-  it('blocklist vazia -> req inalterado (mesma referencia)', () => {
+  it('empty blocklist -> req unchanged (same reference)', () => {
     expect(redactRequest(base, [])).toBe(base);
   });
 
-  it('remove a palavra do req.text', () => {
+  it('removes the word from req.text', () => {
     const out = redactRequest(base, ['palavrao']);
     expect(out.text).toBe('ola mundo');
     expect(out.model).toBe('en_US-amy-medium');
     expect(out.speed).toBe(1);
   });
 
-  it('redige cada segmento e mantem os que ficam com texto', () => {
+  it('redacts each segment and keeps those left with text', () => {
     const req: SynthRequest = {
       text: 'ola palavrao hi',
       model: 'en_US-amy-medium',
@@ -194,7 +194,7 @@ describe('redactRequest — redige a blocklist no SynthRequest', () => {
     ]);
   });
 
-  it('segmento que fica sem nada legivel e retirado', () => {
+  it('a segment left with nothing readable is removed', () => {
     const req: SynthRequest = {
       text: 'palavrao hi',
       model: 'en_US-amy-medium',
@@ -208,7 +208,7 @@ describe('redactRequest — redige a blocklist no SynthRequest', () => {
     expect(out.segments).toEqual([{ text: 'hi', model: 'en_US-amy-medium' }]);
   });
 
-  it('se todos os segmentos ficam vazios, segments vira undefined', () => {
+  it('if all segments become empty, segments turns undefined', () => {
     const req: SynthRequest = {
       text: 'palavrao',
       model: 'en_US-amy-medium',
@@ -217,6 +217,6 @@ describe('redactRequest — redige a blocklist no SynthRequest', () => {
     };
     const out = redactRequest(req, ['palavrao']);
     expect(out.segments).toBeUndefined();
-    expect(hasReadableText(out.text)).toBe(false); // chamador nao fala
+    expect(hasReadableText(out.text)).toBe(false); // caller does not speak
   });
 });

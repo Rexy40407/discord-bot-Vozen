@@ -1,41 +1,41 @@
 // src/metrics.ts
-// Singleton simples de contadores em memória para observabilidade.
-// Sem dependências externas; reset() disponível para isolamento em testes.
+// Simple singleton of in-memory counters for observability.
+// No external dependencies; reset() available for isolation in tests.
 
 export interface MetricsSnapshot {
   messagesSpoken: number;
   cacheHits: number;
   cacheMisses: number;
   synthErrors: number;
-  // Mensagens SALTADAS por rate-limit (limite N/min por-user). Antes o drop era
-  // silencioso (sem log, sem métrica) — parecia "o bot não fala". Agora é observável.
+  // Messages SKIPPED by rate-limit (N/min per-user limit). Previously the drop was
+  // silent (no log, no metric) — it looked like "the bot doesn't speak". Now it's observable.
   messagesRateLimited: number;
-  // Reconexao a voz (P7.4): quedas detetadas e reconexoes com sucesso.
+  // Voice reconnection (P7.4): drops detected and successful reconnections.
   voiceDrops: number;
   voiceReconnects: number;
-  // Votos top.gg (P11.5): upvotes validos recebidos via webhook. Pings de "test"
-  // do dashboard top.gg NAO contam (so type === "upvote").
+  // top.gg votes (P11.5): valid upvotes received via webhook. "test" pings from the
+  // top.gg dashboard DON'T count (only type === "upvote").
   votes: number;
-  // Bloqueios do event-loop detetados (health/loopLag). Um loop bloqueado >~400ms
-  // atrasa TUDO — em especial o autocomplete, que tem ~3s de orcamento sem defer.
+  // Event-loop stalls detected (health/loopLag). A loop blocked >~400ms delays
+  // EVERYTHING — especially autocomplete, which has a ~3s budget without a defer.
   loopStalls: number;
-  // Latencia de sintese (T0.2): nº total de sinteses medidas + p50/p95 (ms) das
-  // ULTIMAS N amostras (janela deslizante). p50/p95 = 0 se ainda nao ha amostras.
+  // Synthesis latency (T0.2): total number of syntheses measured + p50/p95 (ms) of the
+  // LAST N samples (sliding window). p50/p95 = 0 if there are no samples yet.
   synthCount: number;
   synthP50Ms: number;
   synthP95Ms: number;
-  // Motor Google HD (gcloud, perk Premium): sinteses REAIS feitas a Google (cache-miss),
-  // total de chars faturados a Google, e quantas vezes caiu no gTTS por orcamento/limite
-  // (fallback). Observabilidade de CUSTO — cada char conta ($4/1M).
+  // Google HD engine (gcloud, Premium perk): REAL syntheses done via Google (cache-miss),
+  // total chars billed to Google, and how many times it fell back to gTTS due to
+  // budget/limit (fallback). COST observability — every char counts ($4/1M).
   gcloudSynths: number;
   gcloudChars: number;
   gcloudFallbacks: number;
 }
 
-/** Tamanho da janela deslizante de latencias mantida em memoria. */
+/** Size of the sliding window of latencies kept in memory. */
 const SYNTH_SAMPLE_WINDOW = 512;
 
-/** Percentil `p` (0-100) de um array JA ordenado; 0 se vazio. */
+/** Percentile `p` (0-100) of an ALREADY-sorted array; 0 if empty. */
 function percentileOf(sortedMs: number[], p: number): number {
   if (sortedMs.length === 0) return 0;
   const idx = Math.min(sortedMs.length - 1, Math.floor((p / 100) * sortedMs.length));
@@ -55,19 +55,19 @@ class Metrics {
   gcloudSynths = 0;
   gcloudChars = 0;
   gcloudFallbacks = 0;
-  // Latencia: contador total + janela deslizante das ultimas amostras (ms).
+  // Latency: total counter + sliding window of the last samples (ms).
   synthCount = 0;
   private synthMs: number[] = [];
 
   /**
-   * Incrementa um contador escalar pelo nome. NOTA: so os contadores puramente
-   * numericos-escalares (nao os de latencia) — a latencia usa recordSynthMs().
+   * Increments a scalar counter by name. NOTE: only the purely numeric-scalar counters
+   * (not the latency ones) — latency uses recordSynthMs().
    */
   inc(counter: Exclude<keyof MetricsSnapshot, 'synthCount' | 'synthP50Ms' | 'synthP95Ms'>): void {
     (this[counter] as number)++;
   }
 
-  /** Soma `amount` a um contador escalar (ex.: gcloudChars, que cresce por N chars). */
+  /** Adds `amount` to a scalar counter (e.g. gcloudChars, which grows by N chars). */
   add(
     counter: Exclude<keyof MetricsSnapshot, 'synthCount' | 'synthP50Ms' | 'synthP95Ms'>,
     amount: number,
@@ -75,7 +75,7 @@ class Metrics {
     (this[counter] as number) += amount;
   }
 
-  /** Regista a latencia (ms) de UMA sintese. Mantem uma janela deslizante. */
+  /** Records the latency (ms) of ONE synthesis. Keeps a sliding window. */
   recordSynthMs(ms: number): void {
     if (!Number.isFinite(ms) || ms < 0) return;
     this.synthCount++;
@@ -83,7 +83,7 @@ class Metrics {
     if (this.synthMs.length > SYNTH_SAMPLE_WINDOW) this.synthMs.shift();
   }
 
-  /** Devolve uma cópia instantânea dos contadores (leitura não-destrutiva). */
+  /** Returns an instant copy of the counters (non-destructive read). */
   snapshot(): MetricsSnapshot {
     const sorted = [...this.synthMs].sort((a, b) => a - b);
     return {
@@ -105,7 +105,7 @@ class Metrics {
     };
   }
 
-  /** Repõe todos os contadores a zero. Usado nos testes para isolar casos. */
+  /** Resets all counters to zero. Used in tests to isolate cases. */
   reset(): void {
     this.messagesSpoken = 0;
     this.cacheHits = 0;

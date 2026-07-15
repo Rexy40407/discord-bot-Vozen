@@ -1,21 +1,21 @@
 // src/premium/dashboardApi.ts
 //
-// Núcleo do DASHBOARD WEB de configuração da guild (login com Discord no site).
-// Segurança (ver docs/COMPLIANCE-VAGA5.md · Dashboard):
-//  - A identidade e a lista de servidores vêm SEMPRE da Discord com o Bearer token do
-//    utilizador (scope `guilds`) — nunca confiamos num ID vindo do cliente.
-//  - Só quem tem MANAGE_GUILD (ou ADMINISTRATOR) NESSE servidor E onde o bot está presente
-//    pode ler/escrever a config. Um `guildId` fora desse conjunto -> null (não vaza nada).
-//  - A escrita é WHITELISTED (só os DASHBOARD_FIELDS) e passa pelo setter do store
-//    (`setGuildConfig`) que invalida a cache write-through e impõe os defaults/limites —
-//    nunca SQL direto. Injetar `ttsChannelId`/`enabled`/etc. é ignorado.
-// Puro/testável (fetch injetável); isolado do servidor HTTP (montado em kofiWebhook.ts).
+// Core of the WEB DASHBOARD for guild configuration (login with Discord on the site).
+// Security (see docs/COMPLIANCE-VAGA5.md · Dashboard):
+//  - The identity and the server list ALWAYS come from Discord with the user's Bearer
+//    token (scope `guilds`) — we never trust an ID coming from the client.
+//  - Only someone with MANAGE_GUILD (or ADMINISTRATOR) IN THAT server AND where the bot is
+//    present can read/write the config. A `guildId` outside that set -> null (leaks nothing).
+//  - Writes are WHITELISTED (only the DASHBOARD_FIELDS) and go through the store setter
+//    (`setGuildConfig`), which invalidates the write-through cache and enforces the
+//    defaults/limits — never direct SQL. Injecting `ttsChannelId`/`enabled`/etc. is ignored.
+// Pure/testable (injectable fetch); isolated from the HTTP server (mounted in kofiWebhook.ts).
 
 import type Database from 'better-sqlite3';
 import { getGuildConfig, setGuildConfig, type GuildConfig } from '../store/guildConfig';
 import { SUPPORTED_LOCALES } from '../i18n/index';
 
-/** Toggles booleanos que o dashboard expõe (subconjunto de GuildConfig). */
+/** Boolean toggles the dashboard exposes (subset of GuildConfig). */
 const BOOL_FIELDS = [
   'autoread',
   'xsaid',
@@ -28,14 +28,14 @@ const BOOL_FIELDS = [
   'greetOnJoin',
 ] as const;
 
-/** Todos os campos editáveis pelo dashboard (whitelist). */
+/** All fields editable by the dashboard (whitelist). */
 export const DASHBOARD_FIELDS = [...BOOL_FIELDS, 'maxChars', 'ratePerMin', 'locale'] as const;
 type DashboardField = (typeof DASHBOARD_FIELDS)[number];
 
-/** A vista da config que o dashboard lê/escreve — só a whitelist. */
+/** The config view the dashboard reads/writes — only the whitelist. */
 export type DashboardConfig = Pick<GuildConfig, DashboardField>;
 
-// Limites de sanidade (espelham os do bot; o setter aplica os defaults do resto).
+// Sanity limits (mirror the bot's; the setter applies the defaults for the rest).
 const MAX_CHARS_MIN = 1;
 const MAX_CHARS_MAX = 2000;
 const RATE_MIN = 1;
@@ -45,9 +45,9 @@ const clampInt = (v: number, lo: number, hi: number): number =>
   Math.max(lo, Math.min(hi, Math.floor(v)));
 
 /**
- * Filtra um corpo cru do cliente para um patch SEGURO: só campos da whitelist, booleans
- * coagidos, números limitados a intervalos sãos, locale validado. Tudo o resto (ex.
- * `ttsChannelId`, `enabled`, chaves desconhecidas) é DESCARTADO. PURA/testável.
+ * Filters a raw client body into a SAFE patch: only whitelist fields, coerced booleans,
+ * numbers clamped to sane ranges, validated locale. Everything else (e.g.
+ * `ttsChannelId`, `enabled`, unknown keys) is DISCARDED. PURE/testable.
  */
 export function sanitizePatch(input: unknown): Partial<DashboardConfig> {
   const src = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
@@ -70,7 +70,7 @@ export function sanitizePatch(input: unknown): Partial<DashboardConfig> {
   return out;
 }
 
-/** Um servidor gerível para o seletor do dashboard. */
+/** A manageable server for the dashboard selector. */
 export interface ManageableGuild {
   id: string;
   name: string;
@@ -80,23 +80,23 @@ export interface ManageableGuild {
 export interface DashboardApiDeps {
   db: Database.Database;
   now: () => number;
-  /** Injetável para testes; em produção é o fetch global do Node. */
+  /** Injectable for tests; in production it is Node's global fetch. */
   fetchImpl: typeof fetch;
-  /** true se o BOT está nesta guild (client.guilds.cache.has). */
+  /** true if the BOT is in this guild (client.guilds.cache.has). */
   botHasGuild: (guildId: string) => boolean;
-  /** TTL da cache token->servidores geríveis (ms). Default 60s. */
+  /** TTL of the token->manageable-servers cache (ms). Default 60s. */
   guildsTtlMs?: number;
-  /** Limite defensivo da cache. Default 512. */
+  /** Defensive cache limit. Default 512. */
   cacheMaxEntries?: number;
   logError?: (m: string, err: unknown) => void;
 }
 
 export interface DashboardApi {
-  /** Servidores onde o utilizador é admin E o bot está. null = token inválido. */
+  /** Servers where the user is an admin AND the bot is present. null = invalid token. */
   listGuilds(token: string): Promise<ManageableGuild[] | null>;
-  /** Config (whitelist) de um servidor gerível. null = token inválido OU não autorizado. */
+  /** Config (whitelist) of a manageable server. null = invalid token OR not authorized. */
   getConfig(token: string, guildId: string): Promise<DashboardConfig | null>;
-  /** Aplica um patch (whitelist) e devolve a config nova. null = não autorizado. */
+  /** Applies a patch (whitelist) and returns the new config. null = not authorized. */
   saveConfig(token: string, guildId: string, patch: unknown): Promise<DashboardConfig | null>;
 }
 
@@ -105,14 +105,14 @@ const MANAGE_GUILD = 0x20n; // 1<<5
 const ADMINISTRATOR = 0x8n; // 1<<3
 const FETCH_TIMEOUT_MS = 5_000;
 
-/** Projeta a config completa na vista do dashboard (só a whitelist). */
+/** Projects the full config into the dashboard view (only the whitelist). */
 function projectConfig(cfg: GuildConfig): DashboardConfig {
   const out = {} as DashboardConfig;
   for (const f of DASHBOARD_FIELDS) (out as Record<string, unknown>)[f] = cfg[f];
   return out;
 }
 
-/** Tem MANAGE_GUILD ou ADMINISTRATOR (ou é dono)? `permissions` é string dec/hex da Discord. */
+/** Has MANAGE_GUILD or ADMINISTRATOR (or is owner)? `permissions` is Discord's dec/hex string. */
 function canManage(permissions: unknown, owner: unknown): boolean {
   if (owner === true) return true;
   if (typeof permissions !== 'string' && typeof permissions !== 'number') return false;
@@ -139,8 +139,8 @@ export function createDashboardApi(deps: DashboardApiDeps): DashboardApi {
     }
   }
 
-  // Busca à Discord os servidores geríveis (MANAGE_GUILD/ADMIN + bot presente). Cacheia por
-  // token (TTL curto). null => token inválido / erro (o chamador trata como 401).
+  // Fetches from Discord the manageable servers (MANAGE_GUILD/ADMIN + bot present). Caches by
+  // token (short TTL). null => invalid token / error (the caller treats it as 401).
   async function fetchManageable(token: string): Promise<ManageableGuild[] | null> {
     const now = deps.now();
     const hit = cache.get(token);
@@ -169,7 +169,7 @@ export function createDashboardApi(deps: DashboardApiDeps): DashboardApi {
             icon: typeof g.icon === 'string' ? g.icon : null,
           }));
       }
-      // res.ok false (ex. 401) => guilds fica null (token inválido/expirado).
+      // res.ok false (e.g. 401) => guilds stays null (invalid/expired token).
     } catch (err) {
       deps.logError?.('[dashboard] failed to list Discord guilds', err);
       guilds = null;
@@ -183,7 +183,7 @@ export function createDashboardApi(deps: DashboardApiDeps): DashboardApi {
 
   async function authorize(token: string, guildId: string): Promise<boolean | null> {
     const guilds = await fetchManageable(token);
-    if (guilds === null) return null; // token inválido
+    if (guilds === null) return null; // invalid token
     return guilds.some((g) => g.id === guildId);
   }
 
@@ -192,7 +192,7 @@ export function createDashboardApi(deps: DashboardApiDeps): DashboardApi {
 
     async getConfig(token, guildId) {
       const ok = await authorize(token, guildId);
-      if (!ok) return null; // null (inválido) ou false (não autorizado) -> null
+      if (!ok) return null; // null (invalid) or false (not authorized) -> null
       return projectConfig(getGuildConfig(deps.db, guildId));
     },
 
@@ -200,8 +200,8 @@ export function createDashboardApi(deps: DashboardApiDeps): DashboardApi {
       const ok = await authorize(token, guildId);
       if (!ok) return null;
       const clean = sanitizePatch(patch);
-      // setGuildConfig aceita Partial<GuildConfig>; os DASHBOARD_FIELDS são um subconjunto.
-      // Invalida a cache write-through e impõe os defaults do resto (nunca SQL direto).
+      // setGuildConfig accepts Partial<GuildConfig>; the DASHBOARD_FIELDS are a subset.
+      // Invalidates the write-through cache and enforces the defaults for the rest (never direct SQL).
       setGuildConfig(deps.db, guildId, clean);
       return projectConfig(getGuildConfig(deps.db, guildId));
     },

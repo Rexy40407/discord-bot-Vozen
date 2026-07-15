@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3';
 import { DEFAULT_LOCALE } from '../i18n/index';
-// Tabela CACHEADA (lida a cada mensagem): todo o setter TEM de chamar invalidate.
+// CACHED table (read on every message): every setter MUST call invalidate.
 import { cached, invalidate } from './cache';
 
 export interface GuildConfig {
@@ -11,69 +11,69 @@ export interface GuildConfig {
   ratePerMin: number;
   enabled: boolean;
   ttsRoleId: string | null;
-  // Idioma da INTERFACE (texto) por guild. 'en' = default/base. Independente do
-  // idioma da VOZ/TTS. Ver src/i18n. P16.1: coluna + storage; o comando de troca
-  // e P16.3.
+  // INTERFACE (text) language per guild. 'en' = default/base. Independent of the
+  // VOICE/TTS language. See src/i18n. P16.1: column + storage; the switch command
+  // is P16.3.
   locale: string;
-  // xsaid: anunciar "{nome} disse" antes de cada mensagem lida (quem falou). LIGADO
-  // por defeito (decisão do Diogo); desligável com /config xsaid. O anúncio é
-  // localizado na língua da voz (spokenPhrases.said).
+  // xsaid: announce "{name} said" before each read message (who spoke). ON
+  // by default (Diogo's decision); can be turned off with /config xsaid. The announcement is
+  // localized in the voice language (spokenPhrases.said).
   xsaid: boolean;
-  // autojoin: o Vozen entra sozinho no canal de voz do autor quando chega uma mensagem
-  // para ler e ele ainda não está numa call. DESLIGADO por defeito (opt-in).
+  // autojoin: Vozen joins the author's voice channel by itself when a message arrives
+  // to be read and it is not in a call yet. OFF by default (opt-in).
   autojoin: boolean;
-  // readBots: ler mensagens de OUTROS bots/webhooks (ex.: bridges, notificações).
-  // DESLIGADO por defeito (comportamento histórico: ignora bots). O próprio Vozen NUNCA
-  // se lê a si mesmo, independentemente disto (anti-loop).
+  // readBots: read messages from OTHER bots/webhooks (e.g. bridges, notifications).
+  // OFF by default (historic behavior: ignores bots). Vozen NEVER
+  // reads itself, regardless of this (anti-loop).
   readBots: boolean;
-  // textInVoice: ler também as mensagens do chat de texto EMBUTIDO no canal de voz onde
-  // o Vozen está (o texto dos canais de voz do Discord). DESLIGADO por defeito.
+  // textInVoice: also read messages from the text chat EMBEDDED in the voice channel where
+  // Vozen is (Discord voice-channel text). OFF by default.
   textInVoice: boolean;
-  // greetOnJoin: o Vozen diz "Olá {nome}" quando alguém ENTRA no canal de voz onde ele
-  // está. LIGADO por defeito (desligável com /config greet). greetLocale = língua da
-  // saudação (a principal é sempre inglês, 'en').
+  // greetOnJoin: Vozen says "Hi {name}" when someone JOINS the voice channel it
+  // is in. ON by default (can be turned off with /config greet). greetLocale = greeting
+  // language (the main one is always English, 'en').
   greetOnJoin: boolean;
   greetLocale: string;
-  // antispam: quando LIGADO, o Vozen não lê mensagens spamadas — repetição massiva da
-  // mesma palavra/frase (ex. "POKEBOLAS ×39") nem a mesma mensagem grande repetida em
-  // janela curta. DESLIGADO por defeito (opt-in). Ver src/moderation/antispam.
+  // antispam: when ON, Vozen does not read spammed messages — massive repetition of the
+  // same word/phrase (e.g. "POKEBOLAS ×39") nor the same large message repeated in a
+  // short window. OFF by default (opt-in). See src/moderation/antispam.
   antispam: boolean;
-  // stayInCall: 24/7 in-call — o Vozen fica no canal de voz mesmo quando esvazia (não sai
-  // por ficar sozinho) e é reposto no arranque após restarts/deploys. DESLIGADO por defeito
-  // (opt-in, mesmo com Premium — a pessoa liga com /config always-on). Só tem EFEITO se a
-  // guild for Premium (o gate no AloneWatcher/rejoin exige Premium E este toggle).
+  // stayInCall: 24/7 in-call — Vozen stays in the voice channel even when it empties (does not leave
+  // for being alone) and is restored at startup after restarts/deploys. OFF by default
+  // (opt-in, even with Premium — the person turns it on with /config always-on). It only takes EFFECT if the
+  // guild is Premium (the gate in AloneWatcher/rejoin requires Premium AND this toggle).
   stayInCall: boolean;
-  // streakAnnounce: mostrar o aviso "🔥 Dia N" na PRIMEIRA mensagem lida do dia de cada
-  // pessoa (streak de dias seguidos, estilo TikTok). LIGADO por defeito; desliga-se com
-  // /config streaks. O streak em si é sempre calculado (alimenta o /topspeakers).
+  // streakAnnounce: show the "🔥 Day N" notice on each person's FIRST read message of the day
+  // (streak of consecutive days, TikTok style). ON by default; turned off with
+  // /config streaks. The streak itself is always computed (feeds /topspeakers).
   streakAnnounce: boolean;
-  // soundboard: permite o /sound (clips de som na call). LIGADO por defeito; um admin
-  // pode desligá-lo com /config soundboard. O rate-limit por-utilizador já limita o
-  // spam; este toggle é o kill-switch por-servidor.
+  // soundboard: enables /sound (sound clips in the call). ON by default; an admin
+  // can turn it off with /config soundboard. The per-user rate-limit already limits
+  // spam; this toggle is the per-server kill-switch.
   soundboard: boolean;
 }
 
 const DEFAULTS: GuildConfig = {
   ttsChannelId: null,
   autoread: false,
-  // Vazio = a guild nao definiu voz default; a precedencia em resolveSynth cai
-  // entao para config.defaultVoice (.env). Ver /config default-voice.
+  // Empty = the guild has not set a default voice; the precedence in resolveSynth then
+  // falls to config.defaultVoice (.env). See /config default-voice.
   defaultVoice: '',
   maxChars: 300,
   ratePerMin: 8,
   enabled: true,
   ttsRoleId: null,
-  locale: DEFAULT_LOCALE, // 'en' — ingles como idioma da interface por defeito
-  xsaid: true, // anunciar "{nome} disse" LIGADO por defeito
-  autojoin: false, // entrar sozinho na call DESLIGADO por defeito (opt-in)
-  readBots: false, // NÃO ler outros bots por defeito (comportamento histórico)
-  textInVoice: false, // NÃO ler o chat-em-voz por defeito (opt-in)
-  greetOnJoin: true, // saudar quem entra na call LIGADO por defeito
-  greetLocale: DEFAULT_LOCALE, // 'en' — inglês como língua da saudação por defeito
-  antispam: false, // NÃO filtrar spam por defeito (opt-in, decisão do Diogo)
-  stayInCall: false, // 24/7 in-call DESLIGADO por defeito (opt-in, mesmo com Premium)
-  streakAnnounce: true, // aviso de streak 🔥 LIGADO por defeito
-  soundboard: true, // /sound LIGADO por defeito (admin desliga com /config soundboard)
+  locale: DEFAULT_LOCALE, // 'en' — English as the default interface language
+  xsaid: true, // announce "{name} said" ON by default
+  autojoin: false, // auto-join the call OFF by default (opt-in)
+  readBots: false, // do NOT read other bots by default (historic behavior)
+  textInVoice: false, // do NOT read voice-channel text chat by default (opt-in)
+  greetOnJoin: true, // greet whoever joins the call ON by default
+  greetLocale: DEFAULT_LOCALE, // 'en' — English as the default greeting language
+  antispam: false, // do NOT filter spam by default (opt-in, Diogo's decision)
+  stayInCall: false, // 24/7 in-call OFF by default (opt-in, even with Premium)
+  streakAnnounce: true, // streak 🔥 notice ON by default
+  soundboard: true, // /sound ON by default (admin turns off with /config soundboard)
 };
 
 interface GuildConfigRow {
@@ -101,34 +101,34 @@ interface GuildConfigRow {
 type SqlValue = string | number | null;
 
 /**
- * Descritor de UMA coluna de guild_config. ACRESCENTAR UM CAMPO NOVO =
- *   1) uma entrada aqui,
- *   2) o campo em `GuildConfig`,
- *   3) o campo em `GuildConfigRow`,
- *   4) o default em `DEFAULTS`,
- *   5) a coluna no CREATE TABLE de `db.ts`.
- * Os testes de paridade em tests/store.test.ts rebentam se algum dos cinco
- * faltar — é esse o objetivo. A migração idempotente (ALTER) e o UPSERT são
- * DERIVADOS deste array; não há SQL escrito à mão por campo.
+ * Descriptor for ONE guild_config column. ADDING A NEW FIELD =
+ *   1) an entry here,
+ *   2) the field in `GuildConfig`,
+ *   3) the field in `GuildConfigRow`,
+ *   4) the default in `DEFAULTS`,
+ *   5) the column in `db.ts`'s CREATE TABLE.
+ * The parity tests in tests/store.test.ts blow up if any of the five
+ * is missing — that is the point. The idempotent migration (ALTER) and the UPSERT are
+ * DERIVED from this array; there is no hand-written SQL per field.
  */
 interface GuildConfigColumn {
-  /** nome da propriedade em GuildConfig */
+  /** property name in GuildConfig */
   prop: keyof GuildConfig;
-  /** nome da coluna SQL */
+  /** SQL column name */
   column: string;
-  /** tipo+constraints para o ALTER de migração (idêntico ao CREATE TABLE) */
+  /** type+constraints for the migration ALTER (identical to CREATE TABLE) */
   sqlType: string;
-  /** JS -> SQL (booleans viram 1/0; strings/números/null passam tal e qual) */
+  /** JS -> SQL (booleans become 1/0; strings/numbers/null pass as-is) */
   toDb: (v: unknown) => SqlValue;
-  /** SQL -> JS com o fallback defensivo por-coluna (DBs antigas podem ter null) */
+  /** SQL -> JS with the defensive per-column fallback (old DBs may have null) */
   fromDb: (raw: unknown) => unknown;
 }
 
 const asBool = (v: unknown): SqlValue => (v ? 1 : 0);
 const asIs = (v: unknown): SqlValue => v as SqlValue;
 
-// Ordem = ordem das colunas no CREATE TABLE (sem `guild_id`, que é a PK e é
-// tratada à parte no INSERT/migração). Manter a ordem para diffs legíveis.
+// Order = column order in CREATE TABLE (without `guild_id`, which is the PK and is
+// handled separately in the INSERT/migration). Keep the order for readable diffs.
 export const GUILD_CONFIG_COLUMNS: GuildConfigColumn[] = [
   { prop: 'ttsChannelId', column: 'tts_channel_id', sqlType: 'TEXT', toDb: asIs, fromDb: (r) => r },
   {
@@ -154,9 +154,9 @@ export const GUILD_CONFIG_COLUMNS: GuildConfigColumn[] = [
   },
   {
     prop: 'ratePerMin',
-    // DEFAULT 8: alinhado com o CREATE TABLE (db.ts) e com DEFAULTS.ratePerMin. Estava
-    // 5 (drift inerte — setGuildConfig escreve sempre a coluna, o default nunca era lido),
-    // agora coberto pelo teste de paridade de dflt_value.
+    // DEFAULT 8: aligned with the CREATE TABLE (db.ts) and with DEFAULTS.ratePerMin. It was
+    // 5 (inert drift — setGuildConfig always writes the column, the default was never read),
+    // now covered by the dflt_value parity test.
     column: 'rate_per_min',
     sqlType: 'INTEGER NOT NULL DEFAULT 8',
     toDb: asIs,
@@ -249,9 +249,9 @@ export const GUILD_CONFIG_COLUMNS: GuildConfigColumn[] = [
   },
 ];
 
-// UPSERT derivado do descritor (construído uma vez). Escreve TODAS as colunas em
-// cada set — a semântica byte-a-byte do handwritten anterior: cada coluna via
-// excluded.<coluna>, booleans já serializados a 1/0 pelo toDb.
+// UPSERT derived from the descriptor (built once). Writes ALL columns on
+// each set — the byte-for-byte semantics of the previous handwritten one: each column via
+// excluded.<column>, booleans already serialized to 1/0 by toDb.
 const UPSERT_SQL = (() => {
   const cols = GUILD_CONFIG_COLUMNS.map((c) => c.column);
   const placeholders = ['?', ...cols.map(() => '?')].join(', ');
@@ -264,8 +264,8 @@ const UPSERT_SQL = (() => {
 })();
 
 export function getGuildConfig(db: Database.Database, guildId: string): GuildConfig {
-  // Cópia rasa do valor cacheado: o chamador (ex.: setGuildConfig, /config show) não
-  // deve mutar o objeto guardado na cache. O loader devolve o objeto imutável.
+  // Shallow copy of the cached value: the caller (e.g. setGuildConfig, /config show) must
+  // not mutate the object stored in the cache. The loader returns the immutable object.
   return { ...cached(db, 'guild_config', guildId, () => loadGuildConfig(db, guildId)) };
 }
 
@@ -273,8 +273,8 @@ function loadGuildConfig(db: Database.Database, guildId: string): GuildConfig {
   const row = db.prepare('SELECT * FROM guild_config WHERE guild_id = ?').get(guildId) as
     GuildConfigRow | undefined;
   if (!row) return { ...DEFAULTS };
-  // Mapeamento row->objeto guiado pelo descritor: cada coluna aplica o seu
-  // fromDb (com o fallback defensivo por-coluna para DBs antigas com null).
+  // row->object mapping driven by the descriptor: each column applies its
+  // fromDb (with the defensive per-column fallback for old DBs with null).
   const out = {} as Record<string, unknown>;
   const raw = row as unknown as Record<string, unknown>;
   for (const col of GUILD_CONFIG_COLUMNS) {
@@ -295,8 +295,8 @@ export function setGuildConfig(
 ): void {
   const current = getGuildConfig(db, guildId);
   const next: GuildConfig = { ...current, ...patch };
-  // Args na ordem do descritor (= ordem das colunas no UPSERT_SQL). O toDb de
-  // cada coluna serializa (booleans -> 1/0; resto tal e qual).
+  // Args in the descriptor order (= column order in UPSERT_SQL). Each column's
+  // toDb serializes (booleans -> 1/0; the rest as-is).
   db.prepare(UPSERT_SQL).run(guildId, ...GUILD_CONFIG_COLUMNS.map((c) => c.toDb(next[c.prop])));
   invalidate(db, 'guild_config', guildId);
 }

@@ -1,6 +1,6 @@
 import type { Game, GameContext, GameEnv, GameMessage, Sendable, TimerHandle } from './types';
 
-/** Estado interno de uma partida ativa (uma por guild). */
+/** Internal state of an active match (one per guild). */
 interface Session {
   guildId: string;
   channelId: string;
@@ -8,26 +8,26 @@ interface Session {
   starterId?: string;
   game: Game;
   timers: Set<TimerHandle>;
-  /** Pontos acumulados nesta partida (userId -> pontos), persistidos no fim. */
+  /** Points accumulated in this match (userId -> points), persisted at the end. */
   points: Map<string, number>;
   ended: boolean;
   seed: number;
-  /** O jogo usa a call (jogos de voz) ? Decide se uma SAÍDA DE VOZ o deve terminar. */
+  /** Does the game use the call (voice games)? Decides whether a VOICE EXIT should end it. */
   needsVoice: boolean;
-  /** Locale do jogo (o de QUEM iniciou) — decide o idioma do texto E do conteúdo. */
+  /** Game locale (that of WHOEVER started it) — decides the language of the text AND the content. */
   locale: string;
   /**
-   * Canal-PAI quando o jogo corre numa THREAD descartável (channelId = id da thread).
-   * undefined = jogo no próprio canal (sem thread). Ao terminar, o resumo do vencedor
-   * vai para o pai (sobrevive) e a thread é apagada 5s depois.
+   * PARENT channel when the game runs in a disposable THREAD (channelId = the thread's id).
+   * undefined = game in the channel itself (no thread). On end, the winner summary
+   * goes to the parent (survives) and the thread is deleted 5s later.
    */
   parentChannelId?: string;
 }
 
-/** Atraso (ms) entre o fim do jogo e apagar a thread — dá tempo de ver o resultado. */
+/** Delay (ms) between the game ending and deleting the thread — gives time to see the result. */
 const THREAD_DELETE_DELAY_MS = 5000;
 
-/** Mensagem crua que chega ao manager a partir do handler de mensagens. */
+/** Raw message that reaches the manager from the message handler. */
 export interface IncomingMessage {
   guildId: string;
   channelId: string;
@@ -39,34 +39,34 @@ export interface IncomingMessage {
 export type StartResult = 'started' | 'already-active';
 
 /**
- * GameManager — o coracao do /game. Garante UM jogo ativo por GUILD (nao por canal):
- * ha uma so ligacao de voz por guild (deps.players e keyed por guildId), e os jogos
- * de voz falam por essa ligacao — dois jogos em canais diferentes da mesma guild
- * baralhariam o audio. Os jogos de tabuleiro (texto puro, futura Vaga 3) poderao
- * relaxar para por-canal, mas o lock base e por-guild.
+ * GameManager — the heart of /game. Ensures ONE active game per GUILD (not per channel):
+ * there is a single voice connection per guild (deps.players is keyed by guildId), and voice
+ * games speak over that connection — two games in different channels of the same guild
+ * would scramble the audio. Board games (pure text, future Wave 3) may
+ * relax to per-channel, but the base lock is per-guild.
  *
- * Responsabilidades:
- *  - lock por-guild (start recusa se ja ha jogo);
- *  - encaminhar mensagens do CANAL do jogo para a partida (e sinalizar "consumida"
- *    ao handler, que entao NAO le a mensagem em voz alta);
- *  - possuir os timers da sessao e CANCELA-LOS SEMPRE no fim (o bug classico do
- *    timer-fantasma: o AloneWatcher agora sai imediatamente quando o canal esvazia,
- *    por isso uma partida pode ser abortada a meio — endGuild trata disso);
- *  - persistir os pontos no fim NORMAL (end); descartar no fim FORCADO (stop/endGuild).
+ * Responsibilities:
+ *  - per-guild lock (start refuses if there is already a game);
+ *  - route messages from the game's CHANNEL to the match (and signal "consumed"
+ *    to the handler, which then does NOT read the message aloud);
+ *  - own the session's timers and ALWAYS CANCEL THEM at the end (the classic
+ *    ghost-timer bug: the AloneWatcher now leaves immediately when the channel empties,
+ *    so a match can be aborted mid-way — endGuild handles that);
+ *  - persist the points on a NORMAL end (end); discard on a FORCED end (stop/endGuild).
  *
- * Nada aqui toca discord.js/SQLite diretamente: tudo passa pelo GameEnv injetado.
+ * Nothing here touches discord.js/SQLite directly: everything goes through the injected GameEnv.
  */
 export class GameManager {
   private readonly sessions = new Map<string, Session>();
 
   constructor(private readonly env: GameEnv) {}
 
-  /** Ha um jogo ativo nesta guild? */
+  /** Is there an active game in this guild? */
   active(guildId: string): boolean {
     return this.sessions.has(guildId);
   }
 
-  /** Canal onde decorre o jogo ativo desta guild (null se nao ha jogo). */
+  /** Channel where this guild's active game is running (null if there is no game). */
   channelOf(guildId: string): string | null {
     return this.sessions.get(guildId)?.channelId ?? null;
   }
@@ -77,9 +77,9 @@ export class GameManager {
   }
 
   /**
-   * Inicia `game` no canal indicado. Devolve 'already-active' se ja houver um jogo
-   * nesta guild (o chamador traduz para uma mensagem amigavel). O `game.start` pode
-   * ser async; um erro nele e engolido+logado (nunca crasha o comando).
+   * Starts `game` in the given channel. Returns 'already-active' if there is already a game
+   * in this guild (the caller translates that into a friendly message). `game.start` may
+   * be async; an error in it is swallowed+logged (never crashes the command).
    */
   start(
     guildId: string,
@@ -101,9 +101,9 @@ export class GameManager {
       ended: false,
       seed: this.env.clock.now(),
       needsVoice,
-      // Locale de quem iniciou (ex.: 'pt'); sem ele cai no locale da guild.
+      // Locale of whoever started it (e.g. 'pt'); without it, falls back to the guild's locale.
       locale: locale || this.env.localeOf(guildId),
-      // Se channelId é uma thread, parentChannelId é o canal onde o /game play foi dado.
+      // If channelId is a thread, parentChannelId is the channel where /game play was issued.
       parentChannelId,
     };
     this.sessions.set(guildId, session);
@@ -115,14 +115,14 @@ export class GameManager {
   }
 
   /**
-   * Uma mensagem chegou. Devolve TRUE se foi CONSUMIDA — ou seja, ha um jogo ativo NO
-   * CANAL dela — caso em que o handler de mensagens NAO a deve ler em voz alta (as
-   * respostas dos jogadores nao sao TTS). Mensagens noutros canais da guild (ou sem
-   * jogo) devolvem false e seguem o fluxo normal de auto-leitura.
+   * A message arrived. Returns TRUE if it was CONSUMED — i.e. there is an active game IN
+   * ITS CHANNEL — in which case the message handler must NOT read it aloud (players'
+   * answers are not TTS). Messages in other channels of the guild (or with no
+   * game) return false and follow the normal auto-read flow.
    *
-   * O manager NAO deve receber as proprias mensagens do bot (o handler ja as filtra
-   * antes de chamar isto), por isso qualquer mensagem que aqui chega no canal certo e
-   * um potencial palpite.
+   * The manager must NOT receive the bot's own messages (the handler already filters them
+   * before calling this), so any message arriving here in the right channel is
+   * a potential guess.
    */
   handleMessage(msg: IncomingMessage): boolean {
     const session = this.sessions.get(msg.guildId);
@@ -141,8 +141,8 @@ export class GameManager {
   }
 
   /**
-   * Para o jogo ativo da guild (comando /game stop de um admin). Descarta os pontos
-   * acumulados (partida abortada, nao conta). Devolve false se nao havia jogo.
+   * Stops the guild's active game (an admin's /game stop command). Discards the accumulated
+   * points (aborted match, does not count). Returns false if there was no game.
    */
   stop(guildId: string): boolean {
     const s = this.sessions.get(guildId);
@@ -152,11 +152,11 @@ export class GameManager {
   }
 
   /**
-   * O bot SAIU DA CALL desta guild (funil de saida `removePlayer`: /leave, sozinho,
-   * desistencia-de-reconexao). So termina o jogo se ELE PRECISAR de voz — um jogo de
-   * tabuleiro (texto) nao deve morrer porque a call esvaziou. Para jogos de voz, mata
-   * os timers de ronda para nao ficarem a chamar `player.say` num player destruido (o
-   * bug timer-fantasma). Nao persiste (partida interrompida).
+   * The bot LEFT THE CALL of this guild (exit funnel `removePlayer`: /leave, alone,
+   * reconnection-giving-up). Only ends the game if IT NEEDS voice — a board
+   * game (text) must not die because the call emptied. For voice games, it kills
+   * the round timers so they don't keep calling `player.say` on a destroyed player (the
+   * ghost-timer bug). Does not persist (interrupted match).
    */
   onVoiceLeft(guildId: string): void {
     const s = this.sessions.get(guildId);
@@ -164,8 +164,8 @@ export class GameManager {
   }
 
   /**
-   * Teardown FORCADO de QUALQUER jogo ativo: a guild foi removida (kick/leave) ou um
-   * shutdown. Chamado do `handleGuildDelete`. Nao persiste — partida interrompida.
+   * FORCED teardown of ANY active game: the guild was removed (kick/leave) or a
+   * shutdown. Called from `handleGuildDelete`. Does not persist — interrupted match.
    */
   endGuild(guildId: string): void {
     const s = this.sessions.get(guildId);
@@ -185,21 +185,21 @@ export class GameManager {
         this.env.logError('[game] persistScores', err);
       }
     }
-    // Jogo em THREAD: o resumo vai para o canal-PAI (a thread vai desaparecer) e a
-    // thread é apagada com um pequeno atraso, para dar tempo de ver o resultado.
+    // Game in a THREAD: the summary goes to the PARENT channel (the thread will disappear) and the
+    // thread is deleted after a small delay, to give time to see the result.
     if (s.parentChannelId) this.finishThread(s, persist);
   }
 
   /**
-   * Fecho de um jogo em thread: anuncia no canal-pai (vencedor por pontos, ou "terminou"
-   * se não houve pontos/foi abortado) e agenda o apagar da thread. O timer do delete é
-   * DELIBERADAMENTE independente da sessão (que já foi removida e teve os timers limpos):
-   * um one-shot no clock do env, não rastreado. Tudo best-effort — nunca lança.
+   * Closing a game in a thread: announces in the parent channel (winner by points, or "ended"
+   * if there were no points/it was aborted) and schedules the thread deletion. The delete timer is
+   * DELIBERATELY independent of the session (which has already been removed and had its timers cleared):
+   * a one-shot on the env's clock, not tracked. All best-effort — never throws.
    */
   private finishThread(s: Session, persist: boolean): void {
     const parent = s.parentChannelId!;
     const threadId = s.channelId;
-    // Vencedor = quem mais pontuou (o mention <@id> renderiza o nome sem o precisarmos).
+    // Winner = whoever scored the most (the mention <@id> renders the name without us needing it).
     let summary: Sendable;
     if (persist && s.points.size > 0) {
       let winnerId = '';
@@ -234,8 +234,8 @@ export class GameManager {
             text,
             model: opts?.model || env.defaultVoiceOf(s.guildId),
             speed: opts?.speed ?? env.defaultSpeed,
-            // A lingua/voz de um anuncio de jogo e DELIBERADA — a deteccao nunca deve
-            // sobrepor-se (como no /joke, /laugh, /voice preview).
+            // The language/voice of a game announcement is DELIBERATE — detection must never
+            // override it (as in /joke, /laugh, /voice preview).
             singleVoice: true,
           });
         } catch (err) {

@@ -1,9 +1,9 @@
 // src/voice/recorder.ts
 //
-// Gravação da PRÓPRIA voz para o clone (/voice clone record). CONSENT-FIRST por
-// construção: subscrevemos APENAS o áudio do invocador (receiver.subscribe(userId)),
-// nunca o canal inteiro; o bot vive ensurdecido (selfDeaf) e só o chamador o
-// "destapa" durante a janela explícita de gravação, voltando a ensurdecer no fim.
+// Recording the user's OWN voice for the clone (/voice clone record). CONSENT-FIRST by
+// design: we subscribe ONLY to the invoker's audio (receiver.subscribe(userId)),
+// never the whole channel; the bot lives deafened (selfDeaf) and only the caller
+// "uncovers" it during the explicit recording window, deafening again at the end.
 
 import { EndBehaviorType, type VoiceConnection } from '@discordjs/voice';
 import prism from 'prism-media';
@@ -15,26 +15,26 @@ import type { Readable, Duplex } from 'node:stream';
 import ffmpegStatic from 'ffmpeg-static';
 import { rmDirSafe } from '../tts/cleanupDir';
 
-/** PCM s16le 48kHz estéreo => 192 bytes por milissegundo. */
+/** PCM s16le 48kHz stereo => 192 bytes per millisecond. */
 const BYTES_PER_MS = (48000 * 2 * 2) / 1000;
 
 /**
- * Acumula só os frames COM VOZ (RMS acima do chão de ruído) até atingir o alvo de
- * milissegundos falados. Pausas/respiração não contam — assim "15s de amostra" são
- * 15s de FALA, não de silêncio. PURA (alimentada com buffers), logo testável.
+ * Accumulates only the frames WITH VOICE (RMS above the noise floor) until reaching the
+ * target of spoken milliseconds. Pauses/breathing don't count — so "15s of sample" is
+ * 15s of SPEECH, not of silence. PURE (fed with buffers), hence testable.
  */
-/** Chão de ruído (RMS int16) acima do qual um frame conta como FALA. ~350 ≈ −39 dBFS.
- * NOTA: era 500 (~−36 dBFS); baixado como HIPÓTESE para a amostra de clone sair curta —
- * fala normal (vogais fortes) passava, mas caudas de frase / consoantes suaves / mic com
- * ganho baixo ficavam abaixo e não contavam. A prova está nos diagnósticos por-gravação
- * (framesSeen vs framesVoiced + distribuição de RMS) que o recorder devolve. */
+/** Noise floor (RMS int16) above which a frame counts as SPEECH. ~350 ≈ −39 dBFS.
+ * NOTE: was 500 (~−36 dBFS); lowered as a HYPOTHESIS for the clone sample coming out short —
+ * normal speech (strong vowels) passed, but sentence tails / soft consonants / low-gain
+ * mics fell below and didn't count. The proof is in the per-recording diagnostics
+ * (framesSeen vs framesVoiced + RMS distribution) that the recorder returns. */
 const DEFAULT_RMS_THRESHOLD = 350;
 
 export class VoicedCollector {
   private chunks: Buffer[] = [];
   private voicedBytes = 0;
-  /** Diagnóstico: total de frames vistos e a distribuição de RMS (para confirmar se é o
-   *  gate a comer o áudio vs o utilizador simplesmente falar pouco). */
+  /** Diagnostic: total frames seen and the RMS distribution (to confirm whether it's the
+   *  gate eating the audio vs the user simply speaking too little). */
   framesSeen = 0;
   framesVoiced = 0;
   private readonly rmsSamples: number[] = [];
@@ -44,7 +44,7 @@ export class VoicedCollector {
     private readonly rmsThreshold: number = DEFAULT_RMS_THRESHOLD,
   ) {}
 
-  /** Alimenta um frame PCM; devolve true quando o alvo foi atingido. */
+  /** Feeds a PCM frame; returns true when the target has been reached. */
   push(buf: Buffer): boolean {
     this.framesSeen++;
     const rms = this.rmsOf(buf);
@@ -69,7 +69,7 @@ export class VoicedCollector {
     return Buffer.concat(this.chunks);
   }
 
-  /** min/mediana/max do RMS dos frames vistos (0s se não viu nenhum). */
+  /** min/median/max of the RMS of the frames seen (0s if none were seen). */
   rmsStats(): { min: number; median: number; max: number } {
     if (this.rmsSamples.length === 0) return { min: 0, median: 0, max: 0 };
     const sorted = [...this.rmsSamples].sort((a, b) => a - b);
@@ -109,11 +109,11 @@ export interface RecordDiag {
 export interface RecordResult {
   pcm: Buffer;
   voicedMs: number;
-  /** Diagnóstico da gravação — quem chama regista-o para confirmar a causa de amostras curtas. */
+  /** Recording diagnostic — the caller logs it to confirm the cause of short samples. */
   diag: RecordDiag;
 }
 
-/** Dependências injetáveis (testes): como subscrever o SSRC e como construir o descodificador. */
+/** Injectable dependencies (tests): how to subscribe to the SSRC and how to build the decoder. */
 export interface RecordDeps {
   subscribe?: (connection: VoiceConnection, userId: string) => Readable;
   makeDecoder?: () => Duplex;
@@ -130,11 +130,11 @@ function defaultMakeDecoder(): Duplex {
 }
 
 /**
- * Grava a voz de UM utilizador a partir da ligação de voz: subscreve o SSRC dele
- * (e só dele), descodifica opus->PCM 48k estéreo e acumula até `targetVoicedMs` de
- * fala ou `maxWallMs` de relógio. O Discord fecha o stream em cada pausa (DTX), por
- * isso RE-subscrevemos em loop até o alvo/tempo acabar. Nunca lança por silêncio —
- * devolve o que apanhou (o chamador decide se chega).
+ * Records ONE user's voice from the voice connection: subscribes to their SSRC
+ * (and only theirs), decodes opus->PCM 48k stereo and accumulates until `targetVoicedMs` of
+ * speech or `maxWallMs` of wall clock. Discord closes the stream on each pause (DTX), so
+ * we RE-subscribe in a loop until the target/time runs out. Never throws on silence —
+ * returns what it captured (the caller decides if it's enough).
  */
 export async function recordUserSample(
   connection: VoiceConnection,
@@ -143,9 +143,9 @@ export async function recordUserSample(
     targetVoicedMs?: number;
     maxWallMs?: number;
     shouldStop?: () => boolean;
-    /** Guarda-tempo de ronda-sem-áudio-nenhum (testável; produção usa o default 5s). */
+    /** Watchdog for a round with no audio at all (testable; production uses the 5s default). */
     roundSilenceMs?: number;
-    /** Notificado com os ms de FALA acumulados a cada frame vozeado (feedback ao vivo). */
+    /** Notified with the accumulated SPEECH ms on each voiced frame (live feedback). */
     onProgress?: (voicedMs: number) => void;
   } = {},
   deps: RecordDeps = {},
@@ -167,20 +167,20 @@ export async function recordUserSample(
       let received = false;
       const opus = subscribe(connection, userId);
       const decoder = makeDecoder();
-      // CRÍTICO: `stream.pipe()` NÃO propaga destroy() da fonte para o destino — é
-      // Readable→Writable de baixo nível, sem a limpeza do stream.pipeline(). Se só
-      // destruíssemos `opus`, o `decoder` nunca emitia 'end'/'close' e a Promise da
-      // ronda ficava PENDENTE PARA SEMPRE (bug real: era por isto que nem o botão
-      // "Parar" nem o guarda-tempo de silêncio funcionavam — a gravação simplesmente
-      // não parava). Por isso destruímos SEMPRE os dois em conjunto.
+      // CRITICAL: `stream.pipe()` does NOT propagate destroy() from source to
+      // destination — it's low-level Readable→Writable, without stream.pipeline()'s
+      // cleanup. If we only destroyed `opus`, the `decoder` would never emit 'end'/'close'
+      // and the round's Promise would stay PENDING FOREVER (real bug: this is why neither
+      // the "Stop" button nor the silence watchdog worked — the recording simply
+      // wouldn't stop). So we ALWAYS destroy both together.
       const stopBoth = (): void => {
         opus.destroy();
         decoder.destroy();
       };
-      // Guarda-tempo da RONDA: se o user não falar de todo, o AfterSilence nunca arma
-      // (só conta após o 1.º pacote nalgumas versões) — corta a ronda ao fim de
-      // `roundSilenceMs`. Também faz poll do shouldStop (botão "Parar") para fechar a
-      // ronda em curso ~200ms depois.
+      // ROUND watchdog: if the user doesn't speak at all, AfterSilence never arms
+      // (in some versions it only counts after the 1st packet) — it cuts the round after
+      // `roundSilenceMs`. It also polls shouldStop (the "Stop" button) to close the
+      // in-progress round ~200ms later.
       const roundTimer = setTimeout(stopBoth, roundSilenceMs);
       const stopPoll = setInterval(() => {
         if (shouldStop()) stopBoth();
@@ -189,16 +189,16 @@ export async function recordUserSample(
       decoder.on('data', (chunk: Buffer) => {
         received = true;
         const done = collector.push(chunk);
-        onProgress(collector.voicedMs); // feedback ao vivo (o chamador faz throttle)
-        if (done) stopBoth(); // alvo atingido -> fecha já
+        onProgress(collector.voicedMs); // live feedback (the caller throttles)
+        if (done) stopBoth(); // target reached -> close now
       });
       const finish = (): void => {
         clearTimeout(roundTimer);
         clearInterval(stopPoll);
         decoder.removeAllListeners();
-        // Destruir SEMPRE a fonte: um erro do lado do decoder chega aqui sem passar pelo
-        // stopBoth, e sem isto a subscription do receiver (opus) ficava viva (leak).
-        // Idempotente — quando `finish` vem de stopBoth, o opus já está destruído.
+        // ALWAYS destroy the source: an error on the decoder side reaches here without
+        // going through stopBoth, and without this the receiver subscription (opus) would
+        // stay alive (leak). Idempotent — when `finish` comes from stopBoth, opus is already destroyed.
         opus.destroy();
         resolve(received);
       };
@@ -207,8 +207,8 @@ export async function recordUserSample(
       decoder.once('error', finish);
       opus.once('error', stopBoth);
     });
-    // Ronda sem um único frame (user calado): espera um nadinha antes de re-subscrever
-    // para não fazer busy-loop de subscribe/destroy.
+    // Round without a single frame (user silent): wait a tiny bit before re-subscribing
+    // to avoid a subscribe/destroy busy-loop.
     if (!gotAudio && !collector.done && !shouldStop()) await new Promise((r) => setTimeout(r, 400));
   }
 
@@ -236,9 +236,9 @@ export interface PcmToWavDeps {
 }
 
 /**
- * Converte o PCM cru (s16le 48k estéreo) num WAV 24kHz mono — o formato de referência
- * do motor de cloning — e grava-o em `outPath` (cria o diretório). Mesmo padrão de
- * runner ffmpeg do resto do pipeline: temp dir, timeout+kill, cleanup best-effort.
+ * Converts the raw PCM (s16le 48k stereo) into a 24kHz mono WAV — the cloning engine's
+ * reference format — and writes it to `outPath` (creates the directory). Same ffmpeg
+ * runner pattern as the rest of the pipeline: temp dir, timeout+kill, best-effort cleanup.
  */
 export function pcmToWavFile(
   pcm: Buffer,
@@ -292,7 +292,7 @@ export function pcmToWavFile(
       try {
         child.kill('SIGKILL');
       } catch {
-        // já morto
+        // already dead
       }
       reject(new Error(`recorder: ffmpeg excedeu ${FF_TIMEOUT_MS}ms`));
       rmDirSafe(workDir);

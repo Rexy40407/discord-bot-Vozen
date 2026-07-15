@@ -1,41 +1,41 @@
 // src/voice/aloneWatcher.ts
 //
-// Regra de saída do Vozen: SÓ sai do canal de voz quando fica SOZINHO — zero membros
-// humanos (não-bots) no seu canal. Por DEFEITO sai IMEDIATAMENTE (ALONE_LEAVE_MS=0).
-// Já NÃO sai por inatividade de TTS (essa saída foi removida do player): por mais tempo
-// que passe sem falar, fica na call enquanto houver pelo menos 1 humano. Reage a
-// VoiceStateUpdate.
+// Vozen's leave rule: it ONLY leaves the voice channel when it is ALONE — zero human
+// members (non-bots) in its channel. By DEFAULT it leaves IMMEDIATELY (ALONE_LEAVE_MS=0).
+// It NO LONGER leaves on TTS inactivity (that exit was removed from the player): however
+// long it goes without speaking, it stays in the call as long as there is at least 1 human.
+// Reacts to VoiceStateUpdate.
 //
-// Tolerância opcional: com um `leaveMs` > 0 (injetável), espera essa janela antes de
-// sair e RE-VERIFICA no disparo se ainda está sozinho (defesa contra sair quando alguém
-// reentra no último instante). Com leaveMs <= 0 (default) sai já — não há janela onde
-// alguém possa reentrar, por isso não é preciso timer nem re-check.
+// Optional tolerance: with a `leaveMs` > 0 (injectable), it waits that window before
+// leaving and RE-CHECKS on firing whether it is still alone (defense against leaving when
+// someone re-enters at the last moment). With leaveMs <= 0 (default) it leaves right away —
+// there is no window where someone could re-enter, so no timer or re-check is needed.
 //
-// Defesa contra o bug "timer-fantasma mata a sessão NOVA": o timer (quando existe) é
-// limpo em `removePlayer` (o funil de TODAS as saídas — /leave, guildDelete, desistência
-// de reconexão, e a própria saída-por-sozinho). PURO/testável: injeta-se a contagem de
-// humanos, a saída e os timers (default = setTimeout/clearTimeout globais).
+// Defense against the "ghost-timer kills the NEW session" bug: the timer (when it exists) is
+// cleared in `removePlayer` (the funnel of ALL exits — /leave, guildDelete, reconnection
+// giving up, and the alone-leave itself). PURE/testable: the human count, the leave, and the
+// timers are injected (default = global setTimeout/clearTimeout).
 
-/** Sozinho na call -> sai. 0 = imediato (default); > 0 = tolerância antes de sair. */
+/** Alone in the call -> leaves. 0 = immediate (default); > 0 = tolerance before leaving. */
 export const ALONE_LEAVE_MS = 0;
 
 export interface AloneWatcherDeps {
-  /** ms sozinho até sair (default ALONE_LEAVE_MS). */
+  /** ms alone until leaving (default ALONE_LEAVE_MS). */
   leaveMs?: number;
   /**
-   * Nº de humanos (não-bots) no canal de voz do bot nesta guild. `null` = o bot NÃO
-   * está num canal de voz (nada a vigiar -> qualquer timer é cancelado).
+   * Number of humans (non-bots) in the bot's voice channel in this guild. `null` = the bot
+   * is NOT in a voice channel (nothing to watch -> any timer is cancelled).
    */
   humansInBotChannel: (guildId: string) => number | null;
-  /** Executa a saída da guild (removePlayer + destroy da ligação). */
+  /** Performs the guild leave (removePlayer + destroy the connection). */
   leave: (guildId: string) => void;
   /**
-   * 24/7 in-call (Premium): true => a guild FICA no canal mesmo sozinha (nunca é
-   * expulsa pela regra do "sozinho"). Default = () => false (comportamento Free
-   * inalterado; todos os testes existentes continuam iguais).
+   * 24/7 in-call (Premium): true => the guild STAYS in the channel even when alone (never
+   * kicked by the "alone" rule). Default = () => false (Free behavior unchanged; all
+   * existing tests remain the same).
    */
   stayInCall?: (guildId: string) => boolean;
-  /** Injetáveis para testes; default = setTimeout/clearTimeout globais. */
+  /** Injectable for tests; default = global setTimeout/clearTimeout. */
   setTimer?: (fn: () => void, ms: number) => ReturnType<typeof setTimeout>;
   clearTimer?: (t: ReturnType<typeof setTimeout>) => void;
 }
@@ -59,9 +59,9 @@ export class AloneWatcher {
   }
 
   /**
-   * Re-avalia a guild após uma mudança de estado de voz. Arma o timer se o bot ficou
-   * SOZINHO; cancela-o se há alguém (ou se o bot já não está na voz). Idempotente:
-   * estar já a contar não re-arma (não estica a janela dos 5 min a cada mute/deafen).
+   * Re-evaluates the guild after a voice-state change. Arms the timer if the bot became
+   * ALONE; cancels it if there is someone (or if the bot is no longer in voice). Idempotent:
+   * already counting does not re-arm (does not stretch the 5-min window on every mute/deafen).
    */
   evaluate(guildId: string): void {
     const n = this.humans(guildId);
@@ -69,35 +69,35 @@ export class AloneWatcher {
       this.clear(guildId);
       return;
     }
-    // n === 0 -> sozinho.
-    // 24/7 in-call (Premium): a guild fica no canal mesmo sozinha — NUNCA sai por
-    // esta regra. Cancela qualquer timer pendente (ex.: perdeu Premium e voltou a ter)
-    // e devolve sem expulsar. Free continua a sair como antes.
+    // n === 0 -> alone.
+    // 24/7 in-call (Premium): the guild stays in the channel even when alone — NEVER leaves
+    // by this rule. Cancels any pending timer (e.g. lost Premium and got it back) and returns
+    // without kicking. Free keeps leaving as before.
     if (this.stayInCall(guildId)) {
       this.clear(guildId);
       return;
     }
-    // Saída IMEDIATA (leaveMs <= 0, o default): acabámos de LER 0 humanos agora mesmo,
-    // por isso saímos já — sem timer nem re-check (não há janela onde alguém reentre).
+    // IMMEDIATE leave (leaveMs <= 0, the default): we just READ 0 humans right now, so we
+    // leave right away — no timer or re-check (there is no window for someone to re-enter).
     if (this.leaveMs <= 0) {
-      this.clear(guildId); // cancela um timer pendente de uma config anterior (defensivo)
+      this.clear(guildId); // cancels a pending timer from an earlier config (defensive)
       this.doLeave(guildId);
       return;
     }
-    // leaveMs > 0: janela de tolerância com re-check no disparo.
+    // leaveMs > 0: tolerance window with re-check on firing.
     if (this.timers.has(guildId)) return;
     const t = this.set(() => {
       this.timers.delete(guildId);
-      // RE-VERIFICA no disparo: alguém pode ter entrado no último instante (antes de
-      // a VoiceStateUpdate correspondente cancelar o timer). Só sai se AINDA sozinho.
+      // RE-CHECKS on firing: someone may have entered at the last moment (before the
+      // corresponding VoiceStateUpdate cancels the timer). Only leaves if STILL alone.
       if (this.humans(guildId) === 0) this.doLeave(guildId);
     }, this.leaveMs);
     this.timers.set(guildId, t);
   }
 
   /**
-   * Cancela o timer de "sozinho" de uma guild. Chamado por `removePlayer` (todos os
-   * caminhos de saída) para o timer nunca sobreviver a uma nova sessão. Idempotente.
+   * Cancels a guild's "alone" timer. Called by `removePlayer` (all exit paths) so the timer
+   * never survives into a new session. Idempotent.
    */
   clear(guildId: string): void {
     const t = this.timers.get(guildId);
@@ -107,7 +107,7 @@ export class AloneWatcher {
     }
   }
 
-  /** Nº de guilds com timer de saída armado (para testes/telemetria). */
+  /** Number of guilds with a leave timer armed (for tests/telemetry). */
   pendingCount(): number {
     return this.timers.size;
   }

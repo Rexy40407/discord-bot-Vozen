@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock minimo de @discordjs/voice — o /game play nao liga a voz aqui (tictactoe é
-// needsVoice:false), mas o modulo de comandos importa-o no topo.
+// Minimal mock of @discordjs/voice — /game play doesn't touch voice here (tictactoe is
+// needsVoice:false), but the commands module imports it at the top.
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
   getVoiceConnection: () => undefined,
@@ -26,7 +26,7 @@ function makeDeps(db: Database.Database, games: unknown): BotDeps {
   } as unknown as BotDeps;
 }
 
-/** Interação falsa do /game play com deferReply/editReply e um log de ordem. */
+/** Fake /game play interaction with deferReply/editReply and an ordering log. */
 function makePlayInteraction(opts: { gameId?: string; channel?: unknown; calls?: string[] }) {
   const calls = opts.calls ?? [];
   const edits: string[] = [];
@@ -51,7 +51,7 @@ function makePlayInteraction(opts: { gameId?: string; channel?: unknown; calls?:
       edits.push(typeof content === 'string' ? content : content.content);
     },
     reply: async () => {
-      calls.push('reply'); // o ramo play NÃO pode usar isto depois do fix
+      calls.push('reply'); // the play branch must NOT use this after the fix
     },
     options: {
       getSubcommand: () => 'play',
@@ -62,7 +62,7 @@ function makePlayInteraction(opts: { gameId?: string; channel?: unknown; calls?:
   return self;
 }
 
-describe('/game play — deferReply antes do REST + respostas via editReply', () => {
+describe('/game play — deferReply before the REST + responses via editReply', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -71,7 +71,7 @@ describe('/game play — deferReply antes do REST + respostas via editReply', ()
     db.close();
   });
 
-  it('happy path com thread: defer ANTES do createThread, sucesso via editReply', async () => {
+  it('happy path with thread: defer BEFORE createThread, success via editReply', async () => {
     const calls: string[] = [];
     const channel = {
       type: 0, // GuildText
@@ -86,15 +86,15 @@ describe('/game play — deferReply antes do REST + respostas via editReply', ()
     const i = makePlayInteraction({ channel, calls });
     await handleInteraction(i as any, makeDeps(db, games));
 
-    // O ack (defer) tem de vir ANTES da chamada REST de criar a thread — era o bug.
+    // The ack (defer) must come BEFORE the REST call that creates the thread — that was the bug.
     expect(calls[0]).toBe('defer');
     expect(calls.indexOf('defer')).toBeLessThan(calls.indexOf('createThread'));
     expect(i.deferred).toBe(true);
     expect(i.edits.length).toBe(1);
-    expect(calls).not.toContain('reply'); // nunca usa i.reply depois do defer
+    expect(calls).not.toContain('reply'); // never uses i.reply after the defer
   });
 
-  it('já-ativo responde via editReply (sem i.reply)', async () => {
+  it('already-active responds via editReply (without i.reply)', async () => {
     const games = { active: () => true, channelOf: () => 'chan-9', start: () => 'started' };
     const i = makePlayInteraction({
       channel: { type: 0, threads: { create: async () => ({ id: 't' }) } },
@@ -105,22 +105,22 @@ describe('/game play — deferReply antes do REST + respostas via editReply', ()
     expect(i.calls).not.toContain('reply');
   });
 
-  it('sem thread (canal de voz) joga no próprio canal e responde via editReply', async () => {
-    // Params tipados (guildId, channelId, ...) p/ o typecheck ler calls[0][1].
+  it('without a thread (voice channel) plays in the channel itself and responds via editReply', async () => {
+    // Typed params (guildId, channelId, ...) so the typecheck can read calls[0][1].
     const start = vi.fn(
       (_guildId: string, _channelId: string, ..._rest: unknown[]) => 'started' as const,
     );
     const games = { active: () => false, channelOf: () => null, start };
-    // type:2 = GuildVoice -> createGameThread devolve null -> joga em chan-1
+    // type:2 = GuildVoice -> createGameThread returns null -> plays in chan-1
     const i = makePlayInteraction({ channel: { type: 2 } });
     await handleInteraction(i as any, makeDeps(db, games));
     expect(start).toHaveBeenCalledTimes(1);
-    expect(start.mock.calls[0][1]).toBe('chan-1'); // gameChannelId = canal invocador
+    expect(start.mock.calls[0][1]).toBe('chan-1'); // gameChannelId = invoking channel
     expect(i.edits.length).toBe(1);
     expect(i.calls).not.toContain('reply');
   });
 
-  it('jogo desconhecido responde via editReply (early-return convertido)', async () => {
+  it('unknown game responds via editReply (converted early-return)', async () => {
     const games = { active: () => false, channelOf: () => null, start: () => 'started' };
     const i = makePlayInteraction({ gameId: 'nope', channel: { type: 0 } });
     await handleInteraction(i as any, makeDeps(db, games));
@@ -129,7 +129,7 @@ describe('/game play — deferReply antes do REST + respostas via editReply', ()
   });
 });
 
-describe('/game play — gate Premium (wordle, word-chain, chess)', () => {
+describe('/game play — Premium gate (wordle, word-chain, chess)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -144,7 +144,7 @@ describe('/game play — gate Premium (wordle, word-chain, chess)', () => {
   };
 
   for (const gameId of ['wordle', 'word-chain']) {
-    it(`jogo Premium (${gameId}) SEM Premium -> responde locked e NÃO inicia`, async () => {
+    it(`Premium game (${gameId}) WITHOUT Premium -> responds locked and does NOT start`, async () => {
       const { games, start } = freeGames();
       const i = makePlayInteraction({ gameId, channel: { type: 0 } });
       await handleInteraction(i as any, makeDeps(db, games));
@@ -154,7 +154,7 @@ describe('/game play — gate Premium (wordle, word-chain, chess)', () => {
     });
   }
 
-  it('jogo Premium (wordle) COM Premium do servidor -> inicia', async () => {
+  it('Premium game (wordle) WITH server Premium -> starts', async () => {
     grantGuildPremium(db, GUILD, 30, 'test', Date.now());
     const { games, start } = freeGames();
     const i = makePlayInteraction({ gameId: 'wordle', channel: { type: 2 } });
@@ -162,7 +162,7 @@ describe('/game play — gate Premium (wordle, word-chain, chess)', () => {
     expect(start).toHaveBeenCalledTimes(1);
   });
 
-  it('jogo GRÁTIS (tictactoe) SEM Premium -> inicia normalmente (não afetado)', async () => {
+  it('FREE game (tictactoe) WITHOUT Premium -> starts normally (unaffected)', async () => {
     const { games, start } = freeGames();
     const i = makePlayInteraction({ gameId: 'tictactoe', channel: { type: 2 } });
     await handleInteraction(i as any, makeDeps(db, games));

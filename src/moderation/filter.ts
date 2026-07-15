@@ -2,12 +2,12 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Cache de RegExp compiladas por CONTEUDO da blocklist. Sem isto, isBlocked/redactBlocked
-// recompilavam N RegExp unicode a CADA mensagem lida (o array da blocklist chega como copia
-// nova a cada chamada, por isso a IDENTIDADE nao serve para memoizar — usamos o conteudo
-// juntado). Reutilizar as RegExp e seguro: os padroes de isBlocked sao NAO-globais (`.test`
-// e stateless) e `String.replace` com uma RegExp global reseta o `lastIndex` a cada chamada.
-// Cap simples com limpeza total ao atingir o teto (poucas guilds com blocklist ativa).
+// Cache of RegExps compiled by blocklist CONTENT. Without this, isBlocked/redactBlocked would
+// recompile N unicode RegExps on EVERY message read (the blocklist array arrives as a new copy
+// on each call, so IDENTITY is no good for memoizing — we use the joined content). Reusing the
+// RegExps is safe: isBlocked's patterns are NON-global (`.test` is stateless) and
+// `String.replace` with a global RegExp resets `lastIndex` on each call. Simple cap with a full
+// clear when the ceiling is reached (few guilds have an active blocklist).
 const CACHE_CAP = 256;
 const blockedTestCache = new Map<string, RegExp[]>();
 const redactCache = new Map<string, RegExp[]>();
@@ -31,8 +31,8 @@ export function isBlocked(text: string, blocklist: string[]): boolean {
   const words = blocklist.map((w) => w.trim().toLowerCase()).filter((w) => w !== '');
   if (words.length === 0) return false;
   const haystack = text.toLowerCase();
-  // match por palavra completa: limites em fronteiras nao-alfanumericas.
-  // \b nao chega para acentos/unicode, por isso usamos lookarounds manuais.
+  // whole-word match: boundaries at non-alphanumeric edges.
+  // \b is not enough for accents/unicode, so we use manual lookarounds.
   const regs = compiled(
     blockedTestCache,
     words,
@@ -42,13 +42,12 @@ export function isBlocked(text: string, blocklist: string[]): boolean {
 }
 
 /**
- * REDIGE (remove) as palavras da blocklist do texto, mantendo o resto legível — para o
- * Vozen NÃO FALAR essas palavras mas continuar a ler a mensagem (em vez de saltar a
- * mensagem inteira). Match por PALAVRA COMPLETA (mesmas fronteiras unicode do
- * isBlocked), case-insensitive. Usa lookbehind/lookahead ZERO-WIDTH (não consome as
- * fronteiras) para o replace GLOBAL funcionar mesmo em palavras bloqueadas consecutivas.
- * Colapsa os espaços que sobram da remoção. Sem palavra bloqueada presente -> texto
- * inalterado (não normaliza espaços à toa). PURA.
+ * REDACTS (removes) the blocklist words from the text, keeping the rest readable — so that
+ * Vozen does NOT SPEAK those words but still reads the message (instead of skipping the whole
+ * message). WHOLE-WORD match (same unicode boundaries as isBlocked), case-insensitive. Uses
+ * ZERO-WIDTH lookbehind/lookahead (does not consume the boundaries) so the GLOBAL replace
+ * works even on consecutive blocked words. Collapses the spaces left over from removal. With
+ * no blocked word present -> text unchanged (does not normalize spaces needlessly). PURE.
  */
 export function redactBlocked(text: string, blocklist: string[]): string {
   const words = blocklist.map((w) => w.trim()).filter((w) => w !== '');

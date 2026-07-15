@@ -8,7 +8,7 @@ import { AudioCache } from '../src/tts/cache';
 import type { SynthRequest, TTSEngine } from '../src/tts/engine';
 
 describe('parseCommand', () => {
-  it('parte exe + args e respeita aspas do path', () => {
+  it('splits exe + args and respects quotes in the path', () => {
     expect(parseCommand('python script.py --x')).toEqual({
       exe: 'python',
       args: ['script.py', '--x'],
@@ -21,18 +21,18 @@ describe('parseCommand', () => {
 });
 
 describe('resolveCloneCmd', () => {
-  // `exists`/`cwd` injetáveis para não depender do venv real da máquina de teste.
-  // Paths construídos com join() para bater na plataforma (Windows '\\', Linux '/').
+  // `exists`/`cwd` injectable so it does not depend on the real venv of the test machine.
+  // Paths built with join() to match the platform (Windows '\\', Linux '/').
   const CWD = join('/', 'proj');
   const PY_LINUX = join(CWD, 'tools', 'clone-venv', 'bin', 'python');
   const PY_WIN = join(CWD, 'tools', 'clone-venv', 'Scripts', 'python.exe');
   const SERVER = join(CWD, 'tools', 'clone_server.py');
 
-  it('CLONE_CMD explícito ganha (parseia exe + args)', () => {
+  it('explicit CLONE_CMD wins (parses exe + args)', () => {
     expect(resolveCloneCmd('py serve.py')).toEqual({ exe: 'py', args: ['serve.py'] });
   });
 
-  it('venv Linux (bin/python) + server presentes -> comando', () => {
+  it('venv Linux (bin/python) + server present -> command', () => {
     const cmd = resolveCloneCmd(undefined, {
       cwd: CWD,
       exists: (p) => p === PY_LINUX || p === SERVER,
@@ -40,7 +40,7 @@ describe('resolveCloneCmd', () => {
     expect(cmd).toEqual({ exe: PY_LINUX, args: [SERVER] });
   });
 
-  it('venv Windows (Scripts/python.exe) também é detetado', () => {
+  it('venv Windows (Scripts/python.exe) is also detected', () => {
     const cmd = resolveCloneCmd(undefined, {
       cwd: CWD,
       exists: (p) => p === PY_WIN || p === SERVER,
@@ -48,19 +48,19 @@ describe('resolveCloneCmd', () => {
     expect(cmd).toEqual({ exe: PY_WIN, args: [SERVER] });
   });
 
-  it('sem venv -> null (clone inerte)', () => {
+  it('no venv -> null (clone inert)', () => {
     expect(resolveCloneCmd(undefined, { cwd: CWD, exists: (p) => p === SERVER })).toBeNull();
   });
 
-  it('sem clone_server.py -> null', () => {
+  it('no clone_server.py -> null', () => {
     expect(resolveCloneCmd(undefined, { cwd: CWD, exists: (p) => p === PY_LINUX })).toBeNull();
   });
 });
 
 /**
- * Sidecar Python FALSO: um EventEmitter com stdin.write que responde ao protocolo —
- * warmup -> {ready}; pedido -> escreve o WAV no `out` e responde {ok,out} (ou {ok:false}
- * se behavior='fail'; ou nada se 'hang').
+ * FAKE Python sidecar: an EventEmitter with stdin.write that responds to the protocol —
+ * warmup -> {ready}; request -> writes the WAV to `out` and responds {ok,out} (or {ok:false}
+ * if behavior='fail'; or nothing if 'hang').
  */
 function fakeSidecar(
   behavior: 'ok' | 'fail' | 'hang' | 'never-ready' = 'ok',
@@ -82,7 +82,7 @@ function fakeSidecar(
         const req = JSON.parse(s.trim());
         queueMicrotask(() => {
           if (req.warmup) {
-            if (behavior === 'never-ready') return; // wedged: nunca responde {ready}
+            if (behavior === 'never-ready') return; // wedged: never responds {ready}
             child.stdout.emit(
               'data',
               Buffer.from(JSON.stringify({ ok: true, ready: true, model: 'en' }) + '\n'),
@@ -128,7 +128,7 @@ describe('CloneEngine', () => {
     for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
   });
 
-  it('sem cloneRef -> voz normal (inner), sem tocar no sidecar', async () => {
+  it('no cloneRef -> normal voice (inner), without touching the sidecar', async () => {
     const eng = new CloneEngine(
       innerReturning('/normal.wav'),
       cache(),
@@ -138,13 +138,13 @@ describe('CloneEngine', () => {
     expect(await eng.synth(REQ())).toBe('/normal.wav');
   });
 
-  it('sem motor (cmd null) -> voz normal mesmo com cloneRef', async () => {
+  it('no engine (cmd null) -> normal voice even with cloneRef', async () => {
     const eng = new CloneEngine(innerReturning('/normal.wav'), cache(), null);
     expect(eng.available).toBe(false);
     expect(await eng.synth(REQ({ cloneRef: '/ref.wav' }))).toBe('/normal.wav');
   });
 
-  it('com cloneRef -> sintetiza via sidecar e cacheia (2.º = hit)', async () => {
+  it('with cloneRef -> synthesizes via sidecar and caches (2nd = hit)', async () => {
     const eng = new CloneEngine(
       innerReturning('/normal.wav'),
       cache(),
@@ -152,12 +152,12 @@ describe('CloneEngine', () => {
       fakeSidecar('ok'),
     );
     const out1 = await eng.synth(REQ({ cloneRef: '/ref.wav' }));
-    expect(out1).not.toBe('/normal.wav'); // veio do clone, foi para a cache
+    expect(out1).not.toBe('/normal.wav'); // came from the clone, went into the cache
     const out2 = await eng.synth(REQ({ cloneRef: '/ref.wav' }));
     expect(out2).toBe(out1); // cache-hit
   });
 
-  it('CRÍTICO: falha do sidecar -> cai na voz normal (nunca lança)', async () => {
+  it('CRITICAL: sidecar failure -> falls back to normal voice (never throws)', async () => {
     const eng = new CloneEngine(
       innerReturning('/normal.wav'),
       cache(),
@@ -167,7 +167,7 @@ describe('CloneEngine', () => {
     await expect(eng.synth(REQ({ cloneRef: '/ref.wav' }))).resolves.toBe('/normal.wav');
   });
 
-  it('REGRESSÃO: re-gravar (ref diferente) NÃO serve a voz velha da cache', async () => {
+  it('REGRESSION: re-recording (different ref) does NOT serve the old voice from cache', async () => {
     const eng = new CloneEngine(
       innerReturning('/normal.wav'),
       cache(),
@@ -175,24 +175,24 @@ describe('CloneEngine', () => {
       fakeSidecar('ok'),
     );
     const a = await eng.synth(REQ({ text: 'hello', cloneRef: '/clones/u1-1000.wav' }));
-    // mesma frase, MAS amostra re-gravada (path versionado diferente) -> chave nova
+    // same phrase, BUT re-recorded sample (different versioned path) -> new key
     const b = await eng.synth(REQ({ text: 'hello', cloneRef: '/clones/u1-2000.wav' }));
-    expect(b).not.toBe(a); // não é o hit da amostra antiga
+    expect(b).not.toBe(a); // not the hit of the old sample
   });
 
-  it('BUG-01: sidecar vivo mas nunca pronto -> deadline expira, job rejeita e cai na voz normal', async () => {
+  it('BUG-01: sidecar alive but never ready -> deadline expires, job rejects and falls back to normal voice', async () => {
     const eng = new CloneEngine(
       innerReturning('/normal.wav'),
       cache(),
       { exe: 'x', args: [] },
       fakeSidecar('never-ready'),
-      30, // deadline curto para o teste
+      30, // short deadline for the test
     );
-    // Sem deadline isto ficava PENDENTE para sempre (era o bug).
+    // Without a deadline this would stay PENDING forever (that was the bug).
     await expect(eng.synth(REQ({ cloneRef: '/ref.wav' }))).resolves.toBe('/normal.wav');
   });
 
-  it('BUG-01: ready dentro do prazo -> timer limpo, SEM teardown espúrio (1 só spawn)', async () => {
+  it('BUG-01: ready within the deadline -> timer cleared, NO spurious teardown (only 1 spawn)', async () => {
     const counter = { spawns: 0 };
     const eng = new CloneEngine(
       innerReturning('/normal.wav'),
@@ -202,12 +202,12 @@ describe('CloneEngine', () => {
       50,
     );
     const a = await eng.synth(REQ({ text: 'um', cloneRef: '/ref.wav' }));
-    expect(a).not.toBe('/normal.wav'); // veio do clone
-    // Espera para lá do deadline: se o timer NÃO tivesse sido limpo, restart()
-    // matava o sidecar e o spawn seguinte contava 2.
+    expect(a).not.toBe('/normal.wav'); // came from the clone
+    // Wait past the deadline: if the timer had NOT been cleared, restart()
+    // would kill the sidecar and the next spawn would count 2.
     await new Promise((r) => setTimeout(r, 80));
     const b = await eng.synth(REQ({ text: 'dois', cloneRef: '/ref.wav' }));
     expect(b).not.toBe('/normal.wav');
-    expect(counter.spawns).toBe(1); // nunca reiniciou
+    expect(counter.spawns).toBe(1); // never restarted
   });
 });

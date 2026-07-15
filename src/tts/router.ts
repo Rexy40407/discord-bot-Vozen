@@ -1,16 +1,16 @@
 // src/tts/router.ts
 //
-// RouterEngine — combina VÁRIOS motores TTS num só, escolhendo por-língua e caindo
-// no seguinte quando um falha. Cada `synth(req)` olha para a língua do `req.model`
-// (prefixo, ex. 'pt') e tenta, POR ORDEM DE PRIORIDADE, os motores que suportam essa
-// língua; se um lança (ex.: gTTS com HTTP 429 da Google), tenta o próximo. Assim:
-//   - QUALIDADE: usa o melhor motor disponível para cada língua (ex. Kokoro no topo).
-//   - FIABILIDADE: um motor em baixo cai automaticamente no seguinte (ex. gTTS -> Piper).
-//   - COBERTURA: um motor "apanha-tudo" (langs=null) no fim garante que NENHUMA língua
-//     fica sem voz (ex. Piper, local, cobre as 34).
+// RouterEngine — combines SEVERAL TTS engines into one, choosing per-language and falling
+// back to the next when one fails. Each `synth(req)` looks at the language of `req.model`
+// (prefix, e.g. 'pt') and tries, IN PRIORITY ORDER, the engines that support that
+// language; if one throws (e.g. gTTS with Google HTTP 429), it tries the next. This way:
+//   - QUALITY: uses the best available engine for each language (e.g. Kokoro on top).
+//   - RELIABILITY: an engine that is down automatically falls back to the next (e.g. gTTS -> Piper).
+//   - COVERAGE: a "catch-all" engine (langs=null) at the end guarantees NO language
+//     is left without a voice (e.g. Piper, local, covers all 34).
 //
-// Encaixa como motor BASE (mesmo contrato TTSEngine), por baixo do MultiSegmentEngine:
-// numa mensagem multi-língua, cada segmento é roteado para o motor certo da sua língua.
+// It plugs in as a BASE engine (same TTSEngine contract), under the MultiSegmentEngine:
+// in a multilingual message, each segment is routed to the right engine for its language.
 
 import type { SynthRequest, TTSEngine } from './engine';
 import { langKeyOfModel } from '../language/spokenPhrases';
@@ -19,11 +19,11 @@ import { log } from '../logging/logger';
 export interface EngineRoute {
   engine: TTSEngine;
   /**
-   * Prefixos de locale suportados (ex. new Set(['en','pt','es'])). `null` = motor
-   * APANHA-TUDO (suporta qualquer língua) — obrigatório no fim da lista.
+   * Supported locale prefixes (e.g. new Set(['en','pt','es'])). `null` = CATCH-ALL
+   * engine (supports any language) — required at the end of the list.
    */
   langs: Set<string> | null;
-  /** Nome curto para logs (ex. 'kokoro', 'gtts', 'piper'). */
+  /** Short name for logs (e.g. 'kokoro', 'gtts', 'piper'). */
   label: string;
 }
 
@@ -32,8 +32,8 @@ export class RouterEngine implements TTSEngine {
     if (routes.length === 0) {
       throw new Error('[router] at least one engine is required');
     }
-    // Invariante de COBERTURA: o último motor tem de ser apanha-tudo (langs=null),
-    // senão uma língua sem rota específica cairia num throw. Barato de garantir aqui.
+    // COVERAGE invariant: the last engine must be catch-all (langs=null),
+    // otherwise a language with no specific route would fall into a throw. Cheap to guarantee here.
     if (routes[routes.length - 1].langs !== null) {
       throw new Error(
         '[router] the last engine must be a catch-all (langs=null) to guarantee coverage',
@@ -43,7 +43,7 @@ export class RouterEngine implements TTSEngine {
 
   async synth(req: SynthRequest): Promise<string> {
     const key = langKeyOfModel(req.model);
-    // Candidatos: motores que suportam esta língua, na ordem de prioridade dada.
+    // Candidates: engines that support this language, in the given priority order.
     const candidates = this.routes.filter((r) => r.langs === null || r.langs.has(key));
     let lastErr: unknown;
     for (let idx = 0; idx < candidates.length; idx++) {
@@ -60,7 +60,7 @@ export class RouterEngine implements TTSEngine {
         );
       }
     }
-    // Só chega aqui se TODOS os candidatos falharam (o apanha-tudo incluído).
+    // Only reaches here if ALL candidates failed (the catch-all included).
     throw lastErr ?? new Error(`[router] sem motor para a língua '${key}'`);
   }
 }

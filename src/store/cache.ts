@@ -1,16 +1,15 @@
 // src/store/cache.ts
 //
-// Cache WRITE-THROUGH das tabelas ESTÁVEIS lidas a cada mensagem (guild_config,
-// blocklist, pronúncia, voz/nickname/opt-out/deteção por-user, efeito, clone). As
-// leituras populam a cache; CADA setter tem de a invalidar. Isto tira ~9 queries
-// SQLite síncronas do event-loop por mensagem, mantendo as leituras sempre corretas
-// DENTRO do processo.
+// WRITE-THROUGH cache of the STABLE tables read on every message (guild_config,
+// blocklist, pronunciation, per-user voice/nickname/opt-out/detection, effect, clone). The
+// reads populate the cache; EVERY setter must invalidate it. This takes ~9 synchronous SQLite
+// queries off the event-loop per message, keeping the reads always correct WITHIN the process.
 //
-// REGRA DE OURO: quem adicionar um setter novo a uma tabela cacheada TEM de chamar
-// invalidate(...) para a mesma chave — senão a alteração fica stale-até-restart.
+// GOLDEN RULE: whoever adds a new setter to a cached table MUST call
+// invalidate(...) for the same key — otherwise the change stays stale-until-restart.
 //
-// Escopo por-INSTÂNCIA de db (WeakMap): testes com :memory: novos por teste nunca se
-// contaminam, e fechar a db liberta as entradas (GC).
+// Per-INSTANCE db scope (WeakMap): tests with a fresh :memory: per test never
+// contaminate each other, and closing the db frees the entries (GC).
 
 import type Database from 'better-sqlite3';
 
@@ -21,13 +20,13 @@ interface Entry {
 type TableCache = Map<string, Entry>;
 const caches = new WeakMap<Database.Database, Map<string, TableCache>>();
 
-/** Nº máximo de entradas por tabela; ao exceder, limpa tudo (read-through repõe). */
+/** Max number of entries per table; on exceeding, clears everything (read-through refills). */
 const MAX_ENTRIES_PER_TABLE = 10_000;
 
 /**
- * Tabelas com chave por-GUILD (chave === guildId ou prefixo `guildId:`). Só estas são
- * purgadas em invalidateGuild; o user_clone (chave global userId) é evictado só pelos
- * seus próprios invalidates + TTL.
+ * Tables with a per-GUILD key (key === guildId or `guildId:` prefix). Only these are
+ * purged in invalidateGuild; user_clone (global userId key) is evicted only by its
+ * own invalidates + TTL.
  */
 const GUILD_KEYED = new Set([
   'guild_config',
@@ -55,11 +54,11 @@ function tableMap(db: Database.Database, table: string): TableCache {
 }
 
 /**
- * Devolve o valor cacheado para (db, table, key), carregando-o via `load` no miss.
- * `map.has` decide o hit — por isso valores `null`/`false` também são hits (caching
- * negativo, essencial: a maioria dos users não tem nickname/clone/voz fixada). Se
- * `ttlMs` for dado e a entrada expirou, trata-se como miss. `load` é SÍNCRONO
- * (better-sqlite3 é síncrono) — sem async, sem locks.
+ * Returns the cached value for (db, table, key), loading it via `load` on a miss.
+ * `map.has` decides the hit — so `null`/`false` values are also hits (negative
+ * caching, essential: most users have no nickname/clone/pinned voice). If
+ * `ttlMs` is given and the entry expired, it is treated as a miss. `load` is SYNCHRONOUS
+ * (better-sqlite3 is synchronous) — no async, no locks.
  */
 export function cached<T>(
   db: Database.Database,
@@ -74,21 +73,21 @@ export function cached<T>(
     return hit.value as T;
   }
   const value = load();
-  // Bound de memória cru (nunca serve dados errados: o pior caso é um refill).
+  // Crude memory bound (never serves wrong data: the worst case is a refill).
   if (!map.has(key) && map.size >= MAX_ENTRIES_PER_TABLE) map.clear();
   map.set(key, { value, at: Date.now() });
   return value;
 }
 
-/** Invalida uma chave de uma tabela (chamar DEPOIS de cada escrita nessa tabela). */
+/** Invalidates a key of a table (call AFTER each write to that table). */
 export function invalidate(db: Database.Database, table: string, key: string): void {
   caches.get(db)?.get(table)?.delete(key);
 }
 
 /**
- * Remove TODAS as entradas de uma guild (chave === guildId ou prefixo `guildId:`) das
- * tabelas GUILD-KEYED. Chamado no handleGuildDelete para limitar a memória. Não toca no
- * user_clone (chave global) — esse sai pelos próprios invalidates/TTL.
+ * Removes ALL of a guild's entries (key === guildId or `guildId:` prefix) from the
+ * GUILD-KEYED tables. Called in handleGuildDelete to limit memory. Does not touch
+ * user_clone (global key) — that leaves via its own invalidates/TTL.
  */
 export function invalidateGuild(db: Database.Database, guildId: string): void {
   const byTable = caches.get(db);
@@ -104,8 +103,8 @@ export function invalidateGuild(db: Database.Database, guildId: string): void {
 }
 
 /**
- * Tabelas cacheadas cuja chave é (ou termina em) um userId: chave === userId (user_clone,
- * global) ou sufixo `:userId` (as por-(guild,user), chave `guildId:userId`).
+ * Cached tables whose key is (or ends in) a userId: key === userId (user_clone,
+ * global) or `:userId` suffix (the per-(guild,user) ones, key `guildId:userId`).
  */
 const USER_KEYED = new Set([
   'user_voice',
@@ -113,16 +112,16 @@ const USER_KEYED = new Set([
   'tts_optout',
   'user_effect',
   'user_clone',
-  // pronunciation_user é apagada pelo eraseUser (RGPD) mas cacheada por userId; sem estar
-  // aqui, invalidateUser não a limpava e as pronúncias apagadas persistiam em memória.
+  // pronunciation_user is deleted by eraseUser (GDPR) but cached by userId; without being
+  // here, invalidateUser did not clear it and the deleted pronunciations persisted in memory.
   'pronunciation_user',
 ]);
 
 /**
- * Remove TODAS as entradas de um utilizador (em qualquer servidor) das tabelas USER-KEYED.
- * Usado pelo `eraseUser` (RGPD): apaga em vários servidores de uma vez, por isso invalidação
- * pontual não chega. Não toca em clones de que o user é ALVO mas não dono — esses são
- * invalidados individualmente por deleteClonesByTarget.
+ * Removes ALL of a user's entries (in any server) from the USER-KEYED tables.
+ * Used by `eraseUser` (GDPR): deletes across several servers at once, so a pointwise
+ * invalidation is not enough. Does not touch clones the user is the TARGET but not owner of —
+ * those are invalidated individually by deleteClonesByTarget.
  */
 export function invalidateUser(db: Database.Database, userId: string): void {
   const byTable = caches.get(db);

@@ -1,25 +1,25 @@
 // src/health/loopLag.ts
 //
-// Monitor de BLOQUEIOS do event-loop. Um tick de setInterval que chega atrasado
-// significa que algo segurou o loop (I/O síncrono grande, CPU saturada da máquina,
-// GC longo). Isso atrasa TODAS as respostas do bot — em especial o AUTOCOMPLETE,
-// que tem ~3s de orçamento total e não pode ser deferido ("Falha ao carregar
-// opções" no cliente). Este monitor transforma esses episódios invisíveis em
-// linhas de log + contador (metrics.loopStalls), para o diagnóstico deixar de
-// ser adivinhação.
+// Event-loop BLOCKING monitor. A setInterval tick that arrives late means
+// something held the loop (large synchronous I/O, saturated machine CPU,
+// long GC). That delays ALL the bot's responses — especially AUTOCOMPLETE,
+// which has a ~3s total budget and cannot be deferred ("Failed to load
+// options" on the client). This monitor turns those invisible episodes into
+// log lines + a counter (metrics.loopStalls), so diagnosis stops being
+// guesswork.
 //
-// O cálculo do atraso vive num tracker puro (createLagTracker) para ser testável
-// sem timers reais.
+// The lag computation lives in a pure tracker (createLagTracker) so it is
+// testable without real timers.
 
 import { log } from '../logging/logger';
 import { metrics } from '../metrics';
 
 export interface LagTracker {
-  /** Chamado a cada tick; devolve o atraso (ms) face ao instante esperado. */
+  /** Called on each tick; returns the lag (ms) relative to the expected instant. */
   tick(): number;
 }
 
-/** Tracker puro: `expected` re-ancora em cada tick para não acumular deriva. */
+/** Pure tracker: `expected` re-anchors on each tick so drift does not accumulate. */
 export function createLagTracker(intervalMs: number, now: () => number): LagTracker {
   let expected = now() + intervalMs;
   return {
@@ -33,15 +33,15 @@ export function createLagTracker(intervalMs: number, now: () => number): LagTrac
 }
 
 export interface LoopLagOptions {
-  /** Cadência do tick (default 500ms — granular o suficiente p/ stalls de 400ms). */
+  /** Tick cadence (default 500ms — granular enough for 400ms stalls). */
   intervalMs?: number;
-  /** Atraso a partir do qual conta como stall (default 400ms). */
+  /** Lag at or above which it counts as a stall (default 400ms). */
   warnMs?: number;
-  /** Hook de teste/extensão; chamado com o atraso medido. */
+  /** Test/extension hook; called with the measured lag. */
   onStall?: (lagMs: number) => void;
 }
 
-/** Arranca o monitor; devolve uma função de paragem. O timer é unref'd. */
+/** Starts the monitor; returns a stop function. The timer is unref'd. */
 export function startLoopLagMonitor(opts: LoopLagOptions = {}): () => void {
   const intervalMs = opts.intervalMs ?? 500;
   const warnMs = opts.warnMs ?? 400;

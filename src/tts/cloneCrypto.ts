@@ -1,15 +1,15 @@
 // src/tts/cloneCrypto.ts
 //
-// Encriptação EM REPOUSO das amostras de voz clonada (.wav) — dado biométrico, o mais
-// sensível que o Vozen guarda (ToS de Desenvolvedor do Discord §5(c) + RGPD). AES-256-GCM
-// (autenticado: deteta adulteração). A chave deriva de um segredo em `.env` (CLONE_KEY);
-// sem chave, a feature fica DESLIGADA (escreve em claro) — retrocompatível com instâncias
-// self-hosted que não a definam.
+// Encryption AT REST of cloned voice samples (.wav) — biometric data, the most
+// sensitive thing Vozen stores (Discord Developer ToS §5(c) + GDPR). AES-256-GCM
+// (authenticated: detects tampering). The key derives from a secret in `.env` (CLONE_KEY);
+// without a key, the feature is DISABLED (writes in cleartext) — backwards-compatible with
+// self-hosted instances that don't set it.
 //
-// CAVEAT honesto: a chave vive no `.env` na MESMA máquina que os `.wav`. Isto protege
-// contra roubo do disco/backup, não contra quem já tem root na máquina.
+// Honest caveat: the key lives in `.env` on the SAME machine as the `.wav` files. This protects
+// against disk/backup theft, not against someone who already has root on the machine.
 //
-// Formato do ficheiro cifrado: MAGIC(6) | IV(12) | TAG(16) | ciphertext.
+// Encrypted file format: MAGIC(6) | IV(12) | TAG(16) | ciphertext.
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
 
 const MAGIC = Buffer.from('VZCLE1', 'ascii'); // Vozen CLone Encrypted v1
@@ -17,17 +17,17 @@ const IV_LEN = 12;
 const TAG_LEN = 16;
 const HEADER = MAGIC.length + IV_LEN + TAG_LEN;
 
-/** Deriva a chave AES de 256 bits a partir do segredo do .env (determinística). */
+/** Derives the 256-bit AES key from the .env secret (deterministic). */
 export function deriveCloneKey(secret: string): Buffer {
   return scryptSync(secret, 'vozen-clone-v1', 32);
 }
 
-/** true se o buffer tem o cabeçalho de cifra do Vozen (senão é um .wav em claro/legado). */
+/** true if the buffer has Vozen's cipher header (otherwise it's a cleartext/legacy .wav). */
 export function isEncryptedSample(buf: Buffer): boolean {
   return buf.length >= MAGIC.length && buf.subarray(0, MAGIC.length).equals(MAGIC);
 }
 
-/** Cifra os bytes de uma amostra. IV novo por chamada. */
+/** Encrypts a sample's bytes. New IV per call. */
 export function encryptSample(plain: Buffer, key: Buffer): Buffer {
   const iv = randomBytes(IV_LEN);
   const cipher = createCipheriv('aes-256-gcm', key, iv);
@@ -37,9 +37,9 @@ export function encryptSample(plain: Buffer, key: Buffer): Buffer {
 }
 
 /**
- * Decifra os bytes de uma amostra. Se o buffer NÃO estiver cifrado (um .wav antigo em
- * claro), devolve-o inalterado — retrocompatível. Lança se estiver cifrado mas a chave
- * estiver errada ou os bytes tiverem sido adulterados (GCM autentica).
+ * Decrypts a sample's bytes. If the buffer is NOT encrypted (an old cleartext .wav),
+ * returns it unchanged — backwards-compatible. Throws if it is encrypted but the key
+ * is wrong or the bytes have been tampered with (GCM authenticates).
  */
 export function decryptSample(buf: Buffer, key: Buffer): Buffer {
   if (!isEncryptedSample(buf)) return buf;

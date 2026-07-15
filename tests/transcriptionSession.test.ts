@@ -7,9 +7,9 @@ import {
   type TranscriptionSessionDeps,
 } from '../src/voice/transcriptionSession';
 
-// Testa a ORQUESTRAÇÃO da sessão (gate de consentimento + utterance -> transcrição -> post),
-// injetando o `capture` (o plumbing Opus real fica na impl default, como no recorder). Um
-// `capture` falso emite utterances e resolve quando o locutor pára de falar.
+// Tests the ORCHESTRATION of the session (consent gate + utterance -> transcription -> post),
+// injecting `capture` (the real Opus plumbing stays in the default impl, like in the recorder). A
+// fake `capture` emits utterances and resolves when the speaker stops talking.
 
 function makeDeps(over: Partial<TranscriptionSessionDeps> = {}) {
   const posts: string[] = [];
@@ -32,7 +32,7 @@ function makeDeps(over: Partial<TranscriptionSessionDeps> = {}) {
 }
 
 describe('TranscriptionSession', () => {
-  it('locutor CONSENTIDO: capta, transcreve e posta "**Nome:** texto"', async () => {
+  it('CONSENTED speaker: captures, transcribes and posts "**Name:** text"', async () => {
     const { deps, posts } = makeDeps();
     const s = new TranscriptionSession(deps as unknown as TranscriptionSessionDeps);
     await s.onSpeakingStart('yes');
@@ -40,7 +40,7 @@ describe('TranscriptionSession', () => {
     expect(deps.transcribe).toHaveBeenCalledOnce();
   });
 
-  it('locutor SEM consentimento: nunca é captado (gate consent-first)', async () => {
+  it('speaker WITHOUT consent: is never captured (consent-first gate)', async () => {
     const { deps, captured, posts } = makeDeps();
     const s = new TranscriptionSession(deps as unknown as TranscriptionSessionDeps);
     await s.onSpeakingStart('no');
@@ -49,25 +49,25 @@ describe('TranscriptionSession', () => {
     expect(deps.transcribe).not.toHaveBeenCalled();
   });
 
-  it('não capta o mesmo locutor duas vezes em simultâneo', async () => {
+  it('does not capture the same speaker twice at once', async () => {
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
     let calls = 0;
     const { deps } = makeDeps({
       capture: vi.fn(async (_u: string, _on: (p: Buffer) => void) => {
         calls++;
-        await gate; // fica "a captar" até libertarmos
+        await gate; // stays "capturing" until we release
       }),
     });
     const s = new TranscriptionSession(deps as unknown as TranscriptionSessionDeps);
     const p1 = s.onSpeakingStart('yes');
-    await s.onSpeakingStart('yes'); // 2.ª chamada enquanto a 1.ª ainda capta -> ignorada
+    await s.onSpeakingStart('yes'); // 2nd call while the 1st is still capturing -> ignored
     release();
     await p1;
-    expect(calls).toBe(1); // só uma captura
+    expect(calls).toBe(1); // only one capture
   });
 
-  it('utterance vazia (só ruído) não posta nada', async () => {
+  it('empty utterance (just noise) posts nothing', async () => {
     const { deps, posts } = makeDeps({
       transcribe: vi.fn(async () => ({ text: '   ', lang: 'en' })),
     });
@@ -76,7 +76,7 @@ describe('TranscriptionSession', () => {
     expect(posts).toEqual([]);
   });
 
-  it('stop() marca a sessão como parada: novos speaking-start são ignorados', async () => {
+  it('stop() marks the session as stopped: new speaking-starts are ignored', async () => {
     const { deps, captured } = makeDeps();
     const s = new TranscriptionSession(deps as unknown as TranscriptionSessionDeps);
     s.stop();
@@ -84,7 +84,7 @@ describe('TranscriptionSession', () => {
     expect(captured).toEqual([]);
   });
 
-  it('transcribe() a falhar: engole o erro, não posta e não rebenta a sessão', async () => {
+  it('transcribe() failing: swallows the error, does not post and does not blow up the session', async () => {
     const { deps, posts } = makeDeps({
       transcribe: vi.fn(async () => {
         throw new Error('sidecar morreu a meio');
@@ -95,25 +95,25 @@ describe('TranscriptionSession', () => {
     expect(posts).toEqual([]);
   });
 
-  it('o WAV temporário é apagado após a utterance MESMO quando a transcrição falha (PRIVACY §2.4)', async () => {
+  it('the temporary WAV is deleted after the utterance EVEN when transcription fails (PRIVACY §2.4)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'vozen-stt-test-'));
     try {
       const written: string[] = [];
       const { deps } = makeDeps({
         tmpDir: dir,
         toWav: vi.fn(async (_pcm: Buffer, out: string) => {
-          writeFileSync(out, 'wav'); // escreve mesmo o ficheiro (não é só o path)
+          writeFileSync(out, 'wav'); // actually writes the file (not just the path)
           written.push(out);
           return out;
         }),
         transcribe: vi.fn(async () => {
-          throw new Error('boom'); // caminho de falha: o finally tem de apagar na mesma
+          throw new Error('boom'); // failure path: the finally must still delete
         }),
       });
       const s = new TranscriptionSession(deps as unknown as TranscriptionSessionDeps);
       await s.onSpeakingStart('yes');
       expect(written).toHaveLength(1);
-      expect(existsSync(written[0])).toBe(false); // gravação consentida não persiste
+      expect(existsSync(written[0])).toBe(false); // consented recording does not persist
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

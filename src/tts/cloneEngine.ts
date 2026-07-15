@@ -1,13 +1,13 @@
 // src/tts/cloneEngine.ts
 //
-// Motor de CLONE DE VOZ: envolve o motor normal por FORA (como o EffectEngine) e, quando
-// o utilizador tem clone LIGADO (req.cloneRef presente), sintetiza a fala na voz clonada
-// via um sidecar Python persistente (tools/clone_server.py — Chatterbox, GPU). QUALQUER
-// falha (sidecar em baixo, timeout, erro do modelo) cai na voz NORMAL — nunca silêncio.
+// VOICE CLONE engine: wraps the normal engine from the OUTSIDE (like EffectEngine) and, when
+// the user has clone ON (req.cloneRef present), synthesizes the speech in the cloned voice
+// via a persistent Python sidecar (tools/clone_server.py — Chatterbox, GPU). ANY
+// failure (sidecar down, timeout, model error) falls back to the NORMAL voice — never silence.
 //
-// Cache própria (namespace 'clone', keyed por cacheKey+refBasename): a mesma frase na
-// mesma voz clonada é reutilizada; a LRU limpa. O sidecar corre 1 pedido de cada vez
-// (GPU): serializamos com uma fila FIFO interna.
+// Own cache (namespace 'clone', keyed by cacheKey+refBasename): the same phrase in the
+// same cloned voice is reused; the LRU cleans up. The sidecar runs 1 request at a time
+// (GPU): we serialize with an internal FIFO queue.
 
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
@@ -20,13 +20,13 @@ import type { SynthRequest, TTSEngine } from './engine';
 import { langKeyOfModel } from '../language/spokenPhrases';
 import { log } from '../logging/logger';
 
-/** Tempo máximo por síntese clonada (o 1.º pedido carrega o modelo — daí generoso). */
+/** Maximum time per cloned synthesis (the 1st request loads the model — hence generous). */
 const SYNTH_TIMEOUT_MS = 60_000;
 
 /**
- * Tempo máximo à espera do {ready} do warmup. O load do modelo em GPU é lento
- * (~35s a frio — ver prewarm()), daí um teto generoso; mas um sidecar vivo que
- * NUNCA fica pronto não pode segurar a fila para sempre.
+ * Maximum time waiting for the warmup's {ready}. Loading the model on GPU is slow
+ * (~35s cold — see prewarm()), hence a generous ceiling; but a live sidecar that
+ * NEVER becomes ready cannot hold the queue forever.
  */
 const READY_TIMEOUT_MS = 120_000;
 
@@ -39,8 +39,8 @@ interface Job {
 }
 
 /**
- * Divide um comando "python.exe script.py --flag" em [exe, ...args] respeitando aspas
- * do path (Windows: "C:\Program Files\..."). PURA.
+ * Splits a command "python.exe script.py --flag" into [exe, ...args] respecting path
+ * quotes (Windows: "C:\Program Files\..."). PURE.
  */
 export function parseCommand(cmd: string): { exe: string; args: string[] } {
   const parts = cmd.match(/"[^"]+"|\S+/g) ?? [];
@@ -49,20 +49,20 @@ export function parseCommand(cmd: string): { exe: string; args: string[] } {
 }
 
 export interface ResolveCloneDeps {
-  /** Injetável nos testes; em produção é fs.existsSync. */
+  /** Injectable in tests; in production it's fs.existsSync. */
   exists?: (p: string) => boolean;
-  /** Raiz do projeto; default process.cwd(). */
+  /** Project root; default process.cwd(). */
   cwd?: string;
 }
 
 /**
- * Resolve o comando do sidecar: usa CLONE_CMD se dado, senão AUTO-DETETA o venv em
- * tools/clone-venv (criado por setup-clone). Devolve null se nada estiver instalado
- * (=> o motor de clone fica inerte e serve sempre a voz normal).
+ * Resolves the sidecar command: uses CLONE_CMD if given, otherwise AUTO-DETECTS the venv in
+ * tools/clone-venv (created by setup-clone). Returns null if nothing is installed
+ * (=> the clone engine stays inert and always serves the normal voice).
  *
- * O python do venv fica em Scripts/python.exe (Windows) OU bin/python (Linux/VPS) —
- * tenta os dois (o sidecar de STT já fazia isto; o do clone só via Windows, por isso
- * no VPS Linux o clone NUNCA era detetado mesmo com o venv lá).
+ * The venv's python is at Scripts/python.exe (Windows) OR bin/python (Linux/VPS) —
+ * tries both (the STT sidecar already did this; the clone one only looked at Windows, so
+ * on the Linux VPS the clone was NEVER detected even with the venv there).
  */
 export function resolveCloneCmd(
   explicit: string | undefined,
@@ -94,53 +94,53 @@ export class CloneEngine implements TTSEngine {
     private readonly inner: TTSEngine,
     private readonly cache: AudioCache,
     private readonly cmd: { exe: string; args: string[] } | null,
-    // Injeção do spawn para testes (default: child_process.spawn real).
+    // spawn injection for tests (default: real child_process.spawn).
     private readonly spawnImpl: typeof spawn = spawn,
-    // Deadline do warmup injetável para testes (default: READY_TIMEOUT_MS).
+    // Warmup deadline injectable for tests (default: READY_TIMEOUT_MS).
     private readonly readyTimeoutMs: number = READY_TIMEOUT_MS,
-    // Chave para decifrar amostras cifradas em repouso antes de as passar ao sidecar
-    // (que lê o ficheiro por caminho). Ausente => amostras em claro (retrocompatível).
+    // Key to decrypt samples encrypted at rest before passing them to the sidecar
+    // (which reads the file by path). Absent => plaintext samples (backward-compatible).
     private readonly cloneKey?: Buffer,
   ) {}
 
-  /** Há motor de clone instalado nesta instância? */
+  /** Is there a clone engine installed on this instance? */
   get available(): boolean {
     return this.cmd !== null;
   }
 
   /**
-   * Arranca o sidecar e carrega o modelo JÁ, em vez de esperar pela 1.ª mensagem clonada
-   * (que senão pagava ~35s de cold-load de GPU, dando a sensação de "não funciona"). No-op
-   * se não houver motor; qualquer falha é absorvida pelo próprio ensureChild (cai na voz
-   * normal como sempre). Chamado uma vez no arranque do bot.
+   * Starts the sidecar and loads the model NOW, instead of waiting for the 1st cloned message
+   * (which would otherwise pay ~35s of GPU cold-load, giving the sense of "it doesn't work"). No-op
+   * if there is no engine; any failure is absorbed by ensureChild itself (falls back to the normal
+   * voice as always). Called once at the bot's startup.
    */
   prewarm(): void {
     if (this.cmd) this.ensureChild();
   }
 
   async synth(req: SynthRequest): Promise<string> {
-    // Sem clone pedido, ou sem motor -> voz normal (o caminho de sempre).
+    // No clone requested, or no engine -> normal voice (the usual path).
     if (!req.cloneRef || !this.cmd) return this.inner.synth(req);
 
-    // cacheKey já inclui o cloneRef (basename versionado) — re-gravar dá chave nova.
+    // cacheKey already includes the cloneRef (versioned basename) — re-recording gives a new key.
     const key = cacheKey(req);
     const hit = this.cache.get(key);
     if (hit) return hit;
 
     let tmp: string | null = null;
-    // Amostra em claro para o sidecar: se estiver cifrada em repouso, decifra para um temp
-    // (o sidecar lê o ficheiro por caminho e não sabe decifrar). Apagado no finally.
+    // Plaintext sample for the sidecar: if encrypted at rest, decrypt to a temp
+    // (the sidecar reads the file by path and cannot decrypt). Deleted in the finally.
     let ref: { path: string; temp: boolean } | null = null;
     try {
       const lang = langCode(req.model);
       ref = materializeSampleForSidecar(req.cloneRef, this.cloneKey);
-      // lowerAllCapsRuns: evita que um "grito" em MAIÚSCULAS saia soletrado (ver
-      // deCaps.ts). A chave de cache usa o req ORIGINAL (acima).
+      // lowerAllCapsRuns: prevents an UPPERCASE "shout" from coming out spelled (see
+      // deCaps.ts). The cache key uses the ORIGINAL req (above).
       tmp = await this.enqueue(lowerAllCapsRuns(req.text), ref.path, lang);
-      return this.cache.put(key, tmp); // copia para a cache (chave estável)
+      return this.cache.put(key, tmp); // copies to the cache (stable key)
     } catch (err) {
       log.warn('[clone] cloned synthesis failed; using the normal voice:', err);
-      return this.inner.synth(req); // NUNCA silêncio
+      return this.inner.synth(req); // NEVER silence
     } finally {
       if (tmp) {
         try {
@@ -155,7 +155,7 @@ export class CloneEngine implements TTSEngine {
 
   private enqueue(text: string, ref: string, lang: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      // O sidecar escreve o WAV neste temp; o cache.put copia-o e depois apagamo-lo.
+      // The sidecar writes the WAV to this temp; cache.put copies it and then we delete it.
       const outPath = join(tmpdir(), `vozen-clone-${process.pid}-${this.tmpSeq++}.wav`);
       const line = JSON.stringify({ text, ref, out: outPath, lang }) + '\n';
       this.queue.push({ line, outPath, resolve, reject });
@@ -170,14 +170,14 @@ export class CloneEngine implements TTSEngine {
       for (const j of this.queue.splice(0)) j.reject(err);
       return;
     }
-    if (!this.ready) return; // à espera do warmup; onLine chama pump() quando ready
+    if (!this.ready) return; // waiting for warmup; onLine calls pump() when ready
     const job = this.queue.shift()!;
     this.active = job;
     job.timer = setTimeout(() => {
       if (this.active !== job) return;
       this.active = null;
       job.reject(new Error(`clone: timeout ${SYNTH_TIMEOUT_MS}ms`));
-      this.restart(); // um pedido preso mata o sidecar -> reinicia limpo
+      this.restart(); // a stuck request kills the sidecar -> restarts clean
     }, SYNTH_TIMEOUT_MS);
     try {
       this.child!.stdin!.write(job.line);
@@ -201,28 +201,28 @@ export class CloneEngine implements TTSEngine {
       child.stdout!.on('data', (c: Buffer) => this.onData(c));
       child.stderr!.on('data', (c: Buffer) => log.info(`[clone-py] ${c.toString().trim()}`));
       child.on('exit', (code) => {
-        if (this.child !== child) return; // evento de um child JÁ substituído — ignora
+        if (this.child !== child) return; // event from an ALREADY-replaced child — ignore
         log.warn(`[clone] sidecar exited (code ${code})`);
         this.teardown();
       });
       child.on('error', (err) => {
-        if (this.child !== child) return; // evento de um child JÁ substituído — ignora
+        if (this.child !== child) return; // event from an ALREADY-replaced child — ignore
         log.warn('[clone] sidecar failure:', err);
         this.teardown();
       });
-      // Warmup: carrega o modelo já; o onLine liga this.ready e faz pump().
+      // Warmup: loads the model now; onLine sets this.ready and calls pump().
       child.stdin!.write(JSON.stringify({ warmup: true }) + '\n');
-      // Deadline do warmup: um sidecar vivo-mas-nunca-pronto prendia os jobs para
-      // sempre (o gate !ready em pump() corre ANTES do timer por-job). Expirar =>
-      // restart(): mata o processo wedged e o teardown rejeita a fila — os chamadores
-      // caem na voz normal, exatamente como no caminho de crash.
+      // Warmup deadline: a live-but-never-ready sidecar held the jobs
+      // forever (the !ready gate in pump() runs BEFORE the per-job timer). Expiring =>
+      // restart(): kills the wedged process and the teardown rejects the queue — the callers
+      // fall back to the normal voice, exactly as in the crash path.
       this.warmupTimer = setTimeout(() => {
         this.warmupTimer = null;
-        if (this.ready) return; // corrida benigna: ficou pronto entretanto
+        if (this.ready) return; // benign race: became ready in the meantime
         log.warn(`[clone] sidecar was not ready after ${this.readyTimeoutMs}ms; restarting`);
         this.restart();
       }, this.readyTimeoutMs);
-      // Não segurar o processo vivo só por causa deste timer (shutdown limpo).
+      // Don't keep the process alive just because of this timer (clean shutdown).
       this.warmupTimer.unref?.();
       return true;
     } catch (err) {
@@ -248,7 +248,7 @@ export class CloneEngine implements TTSEngine {
     try {
       msg = JSON.parse(line);
     } catch {
-      return; // linha não-protocolo (log solto) — ignora
+      return; // non-protocol line (stray log) — ignore
     }
     if (msg.ready) {
       if (this.warmupTimer) {
@@ -279,8 +279,8 @@ export class CloneEngine implements TTSEngine {
     this.ready = false;
     this.starting = false;
     this.child = null;
-    // Descarta bytes parciais do processo morto: senão colam-se à 1.ª linha do
-    // sidecar respawnado e partem o JSON.parse (pior caso: corrompem o `ready`).
+    // Discards partial bytes from the dead process: otherwise they stick to the 1st line of
+    // the respawned sidecar and break the JSON.parse (worst case: corrupt the `ready`).
     this.buffer = '';
     if (this.active) {
       if (this.active.timer) clearTimeout(this.active.timer);
@@ -294,13 +294,13 @@ export class CloneEngine implements TTSEngine {
     try {
       this.child?.kill('SIGKILL');
     } catch {
-      // já morto
+      // already dead
     }
     this.teardown();
   }
 }
 
-/** Código de língua ('pt','en',...) a partir do id do modelo, para o sidecar multilíngue. */
+/** Language code ('pt','en',...) from the model id, for the multilingual sidecar. */
 function langCode(model: string): string {
   return langKeyOfModel(model).slice(0, 2).toLowerCase() || 'en';
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock mínimo de @discordjs/voice (o módulo de comandos importa-o em cadeia).
+// Minimal mock of @discordjs/voice (the commands module imports it transitively).
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
   getVoiceConnection: () => undefined,
@@ -26,7 +26,7 @@ function makeDeps(db: Database.Database): BotDeps {
   } as unknown as BotDeps;
 }
 
-/** Interação falsa do /premium <sub>. manage = tem Gerir Servidor? */
+/** Fake /premium <sub> interaction. manage = has Manage Server? */
 function makePremiumInteraction(
   sub: 'info' | 'activate' | 'deactivate',
   opts: { manage?: boolean; guildId?: string | null; userId?: string } = {},
@@ -55,7 +55,7 @@ function makePremiumInteraction(
       if (o.components) componentRows.push(...o.components);
     },
     editReply: async () => {},
-    // Só o caminho de confirmação do activate chega aqui; nunca clicamos (timeout).
+    // Only the activate confirmation path reaches here; we never click (timeout).
     fetchReply: async () => ({
       awaitMessageComponent: async () => {
         throw new Error('no-click');
@@ -69,7 +69,7 @@ function makePremiumInteraction(
   };
 }
 
-describe('/premium — info / activate / deactivate (passe de licenças)', () => {
+describe('/premium — info / activate / deactivate (licence pass)', () => {
   let db: Database.Database;
   const now = Date.now();
   beforeEach(() => {
@@ -79,7 +79,7 @@ describe('/premium — info / activate / deactivate (passe de licenças)', () =>
     db.close();
   });
 
-  it('info sem Premium -> montra + link de compra do Ko-fi', async () => {
+  it('info without Premium -> showcase + Ko-fi purchase link', async () => {
     const i = makePremiumInteraction('info');
     await handleInteraction(i as any, makeDeps(db));
     expect(i.embedTexts.join('\n')).toMatch(/ko-fi\.com\/vozentest/);
@@ -98,53 +98,53 @@ describe('/premium — info / activate / deactivate (passe de licenças)', () =>
     expect(json).toContain('222222222222222222');
   });
 
-  it('info com passe ativo -> mostra a linha do passe (licenças em uso)', async () => {
+  it('info with active pass -> shows the pass line (licences in use)', async () => {
     grantGuildPass(db, U, 2, 30, 'kofi', now);
     activateSeat(db, U, GUILD, now);
     const i = makePremiumInteraction('info');
     await handleInteraction(i as any, makeDeps(db));
-    // linha do passe menciona 1/2 licenças
+    // the pass line mentions 1/2 licences
     expect(i.embedTexts.join('\n')).toMatch(/1\/2/);
   });
 
-  it('activate sem Gerir Servidor -> recusa (needManageGuild)', async () => {
+  it('activate without Manage Server -> refuses (needManageGuild)', async () => {
     grantGuildPass(db, U, 2, 30, 'kofi', now);
     const i = makePremiumInteraction('activate', { manage: false });
     await handleInteraction(i as any, makeDeps(db));
     expect(i.replies.join('\n')).toMatch(/Manage Server|Gerir Servidor/i);
   });
 
-  it('activate com Gerir Servidor mas SEM passe -> diz que não tem passe + link', async () => {
+  it('activate with Manage Server but WITHOUT a pass -> says there is no pass + link', async () => {
     const i = makePremiumInteraction('activate');
     await handleInteraction(i as any, makeDeps(db));
     expect(i.replies.join('\n')).toMatch(/ko-fi\.com\/vozentest/);
   });
 
-  it('activate num servidor já ativado -> alreadyActive (não abre confirmação)', async () => {
+  it('activate on an already-activated server -> alreadyActive (does not open confirmation)', async () => {
     grantGuildPass(db, U, 2, 30, 'kofi', now);
     activateSeat(db, U, GUILD, now);
     const i = makePremiumInteraction('activate');
     await handleInteraction(i as any, makeDeps(db));
-    expect(i.replies.length).toBeGreaterThan(0); // respondeu com reply(), não com confirmação
+    expect(i.replies.length).toBeGreaterThan(0); // responded with reply(), not with a confirmation
   });
 
-  it('activate sem licenças livres (2 usadas noutros servidores) -> noSeats', async () => {
+  it('activate with no free licences (2 used on other servers) -> noSeats', async () => {
     grantGuildPass(db, U, 2, 30, 'kofi', now);
     activateSeat(db, U, OTHER, now);
     activateSeat(db, U, 'g-third', now);
-    const i = makePremiumInteraction('activate'); // tenta num 3.º servidor
+    const i = makePremiumInteraction('activate'); // tries on a 3rd server
     await handleInteraction(i as any, makeDeps(db));
     expect(i.replies.length).toBeGreaterThan(0);
-    expect(i.replies.join('\n')).toMatch(/2/); // menciona o total de licenças
+    expect(i.replies.join('\n')).toMatch(/2/); // mentions the total number of licences
   });
 
-  it('deactivate liberta a licença do servidor; sem licença -> deactivateNone', async () => {
+  it('deactivate frees the server licence; without a licence -> deactivateNone', async () => {
     grantGuildPass(db, U, 2, 30, 'kofi', now);
     activateSeat(db, U, GUILD, now);
     const i1 = makePremiumInteraction('deactivate');
     await handleInteraction(i1 as any, makeDeps(db));
     expect(i1.replies.join('\n')).toMatch(/Freed|Libertaste/i);
-    // segunda vez já não há nada para libertar
+    // second time there is nothing left to free
     const i2 = makePremiumInteraction('deactivate');
     await handleInteraction(i2 as any, makeDeps(db));
     expect(i2.replies.join('\n')).toMatch(/no Premium licence|nenhuma licença/i);

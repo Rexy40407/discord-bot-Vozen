@@ -1,4 +1,4 @@
-// src/commands/handlers/core.ts — handlers de join/leave/tts/skip/shutup + menu de contexto "Speak" (extraídos de index.ts, plano 015).
+// src/commands/handlers/core.ts — join/leave/tts/skip/shutup handlers + "Speak" context menu (extracted from index.ts, plan 015).
 import {
   ChatInputCommandInteraction,
   MessageContextMenuCommandInteraction,
@@ -26,11 +26,11 @@ import { t } from '../../i18n/index';
 import { localeFor, localeForUser, reply } from '../helpers';
 
 /**
- * Resultado (discriminado) de tentar juntar o Vozen ao canal de voz do invocador.
- * NAO contem texto de UI — quem chama e que renderiza a mensagem (via t()), para
- * que uma unica interacao produza uma unica resposta. Isto e o que permite
- * partilhar a logica entre /join (que responde) e /setup (que dobra o resultado
- * no seu checklist), sem arriscar um duplo-reply na mesma interacao.
+ * Result (discriminated) of trying to join Vozen to the caller's voice channel.
+ * Does NOT contain UI text — the caller is what renders the message (via t()), so
+ * that a single interaction produces a single response. This is what allows
+ * sharing the logic between /join (which responds) and /setup (which folds the result
+ * into its checklist), without risking a double-reply on the same interaction.
  */
 export type JoinOutcome =
   | { status: 'no-channel' }
@@ -38,13 +38,13 @@ export type JoinOutcome =
   | { status: 'joined'; channelName: string };
 
 /**
- * Logica PARTILHADA de "entrar no canal de voz do invocador", extraida do antigo
- * handleJoin para poder ser reutilizada pelo /setup (onboarding guiado). Efeitos:
- * verifica Connect/Speak, (re)cria o player e a conexao. NAO responde a interacao
- * — devolve um JoinOutcome que o chamador traduz. Contrato preservado:
- *  - sem canal de voz            -> { status: 'no-channel' } (nao mexe no player)
- *  - faltam Connect/Speak        -> { status: 'missing-perms' } (nao destroi o player existente)
- *  - ok                          -> junta-se e devolve { status: 'joined' }
+ * SHARED logic for "join the caller's voice channel", extracted from the old
+ * handleJoin so it can be reused by /setup (guided onboarding). Effects:
+ * checks Connect/Speak, (re)creates the player and the connection. Does NOT respond to the interaction
+ * — returns a JoinOutcome that the caller translates. Contract preserved:
+ *  - no voice channel            -> { status: 'no-channel' } (doesn't touch the player)
+ *  - missing Connect/Speak       -> { status: 'missing-perms' } (doesn't destroy the existing player)
+ *  - ok                          -> joins and returns { status: 'joined' }
  */
 export function joinUserVoice(i: ChatInputCommandInteraction, deps: BotDeps): JoinOutcome {
   const member = i.member as GuildMember;
@@ -52,17 +52,17 @@ export function joinUserVoice(i: ChatInputCommandInteraction, deps: BotDeps): Jo
   if (!channel) {
     return { status: 'no-channel' };
   }
-  // Verificar permissoes Connect/Speak ANTES de tocar no player existente: um
-  // /join para um canal proibido nao deve destruir um player que ja funciona.
+  // Check Connect/Speak permissions BEFORE touching the existing player: a
+  // /join to a forbidden channel must not destroy a player that already works.
   const me = deps.client.user;
   const perms = me ? channel.permissionsFor(me) : null;
   if (!perms || !perms.has(PermissionFlagsBits.Connect) || !perms.has(PermissionFlagsBits.Speak)) {
     return { status: 'missing-perms', channelName: channel.name };
   }
-  // Cria a sessão via helper partilhado (mesma lógica do autojoin). O guard de
-  // identidade no onIdle vive lá.
+  // Creates the session via the shared helper (same logic as autojoin). The
+  // identity guard in onIdle lives there.
   createVoiceSession(deps, i.guildId!, channel.id, i.guild!.voiceAdapterCreator);
-  becomeSpeakerIfStage(channel); // no-op se não for um canal de palco
+  becomeSpeakerIfStage(channel); // no-op if it's not a stage channel
   return { status: 'joined', channelName: channel.name };
 }
 
@@ -77,10 +77,10 @@ export async function handleJoin(i: ChatInputCommandInteraction, deps: BotDeps):
       await reply(i, t('join.missingPerms', locale, { channel: outcome.channelName }));
       return;
     case 'joined':
-      // Anúncio PÚBLICO (todos no canal veem que o Vozen entrou, como um bot de TTS
-      // faz) — NÃO ephemeral. Na língua da GUILD (localeFor), porque é uma mensagem
-      // para toda a gente, não só para quem invocou. Os erros acima ficam ephemeral
-      // (são feedback para o invocador). `i.reply` sem flags = mensagem pública.
+      // PUBLIC announcement (everyone in the channel sees that Vozen joined, as a TTS
+      // bot does) — NOT ephemeral. In the GUILD's language (localeFor), because it's a message
+      // for everyone, not just the caller. The errors above stay ephemeral
+      // (they're feedback for the caller). `i.reply` without flags = public message.
       await i.reply({
         content: t('join.joined', localeFor(deps, i.guildId), { channel: outcome.channelName }),
       });
@@ -90,14 +90,14 @@ export async function handleJoin(i: ChatInputCommandInteraction, deps: BotDeps):
 
 export async function handleLeave(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   removePlayer(deps, i.guildId!);
-  // 24/7 in-call: saída EXPLÍCITA -> esquece a presença para NÃO repor no arranque
-  // (ao contrário de um restart/deploy, que preserva a linha de propósito).
+  // 24/7 in-call: EXPLICIT exit -> forgets the presence so it does NOT restore on startup
+  // (unlike a restart/deploy, which preserves the purpose row).
   forgetVoicePresence(deps.db, i.guildId!);
   getVoiceConnection(i.guildId!)?.destroy();
   await reply(i, t('leave.left', localeForUser(deps, i)));
 }
 
-/** Resultado (discriminado) de tentar LER um texto em voz alta com a voz do user. */
+/** Result (discriminated) of trying to READ a text out loud with the user's voice. */
 export type SpeakOutcome =
   | { status: 'no-player' }
   | { status: 'rate-limited' }
@@ -107,12 +107,12 @@ export type SpeakOutcome =
   | { status: 'busy' };
 
 /**
- * Pipeline PARTILHADO "ler `raw` em voz alta com a voz do user", extraído do /tts para
- * ser reutilizado pelo context-menu "Speak". Faz TUDO (gating de player, rate-limit,
- * limpeza, media, gírias/pronúncia, escolha de voz, blocklist, say) MENOS responder à
- * interação — devolve um SpeakOutcome que o chamador traduz. Assim /tts e "Speak"
- * partilham o comportamento sem divergir. EXPORTADO também para o /randomizer (fala o
- * resultado do sorteio com a voz de quem o correu).
+ * SHARED pipeline "read `raw` out loud with the user's voice", extracted from /tts to
+ * be reused by the "Speak" context-menu. Does EVERYTHING (player gating, rate-limit,
+ * cleaning, media, slang/pronunciation, voice choice, blocklist, say) EXCEPT respond to the
+ * interaction — returns a SpeakOutcome that the caller translates. This way /tts and "Speak"
+ * share the behavior without diverging. Also EXPORTED for /randomizer (speaks the
+ * draw result with the voice of whoever ran it).
  */
 export async function speakRawText(
   deps: BotDeps,
@@ -144,8 +144,8 @@ export async function speakRawText(
   const userVoice = getUserVoice(deps.db, guildId, userId);
   const { req } = prepareSpeech({
     personal: cleaned,
-    // Pronúncias de quem invocou (/tts e Speak leem com a voz + regras do próprio),
-    // seguidas das do SERVIDOR (aplicam-se a todos).
+    // Pronunciations of the caller (/tts and Speak read with the caller's voice + rules),
+    // followed by the SERVER's (apply to everyone).
     pronunciations: [
       ...getUserPronunciations(deps.db, userId),
       ...getServerPronunciations(deps.db, guildId),
@@ -157,15 +157,15 @@ export async function speakRawText(
     defaultSpeed: deps.config.defaultSpeed,
     media: media.map((kind) => ({ kind })),
   });
-  // Motor escolhido pelo user — resolvido pelo gate partilhado (gcloud->google sem
-  // Premium; Fase 3 anexa o orçamento). Os dois campos que o resolver devolve são
-  // exatamente engine + gcloudBudget do SynthRequest.
+  // Engine chosen by the user — resolved by the shared gate (gcloud->google without
+  // Premium; Phase 3 attaches the budget). The two fields the resolver returns are
+  // exactly engine + gcloudBudget of the SynthRequest.
   const resolvedEngine = resolveUserEngine(deps.db, guildId, userId, userVoice?.engine, Date.now());
   req.engine = resolvedEngine.engine;
   req.gcloudBudget = resolvedEngine.gcloudBudget;
 
-  // Blocklist: REDIGE as palavras bloqueadas (o Vozen lê o resto sem as dizer). Só devolve
-  // 'blocked' se, depois de as remover, não sobrar nada legível (era só palavra bloqueada).
+  // Blocklist: REDACTS the blocked words (Vozen reads the rest without saying them). Only returns
+  // 'blocked' if, after removing them, nothing readable is left (it was only a blocked word).
   const blocklist = getBlocklist(deps.db, guildId);
   const redacted = redactRequest(req, blocklist);
   const readable =
@@ -173,15 +173,15 @@ export async function speakRawText(
     (redacted.segments?.some((s) => hasReadableText(s.text)) ?? false);
   if (!readable) return { status: 'blocked' };
   const outReq = redacted;
-  outReq.effect = getVoiceEffect(deps.db, guildId, userId); // efeito de voz (premium)
-  const cloneRow = getClone(deps.db, userId); // clone de voz (premium)
+  outReq.effect = getVoiceEffect(deps.db, guildId, userId); // voice effect (premium)
+  const cloneRow = getClone(deps.db, userId); // voice clone (premium)
   if (cloneRow?.enabled) outReq.cloneRef = cloneRow.samplePath;
   if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
   const queued = await player.say(outReq);
   return { status: queued ? 'queued' : 'busy' };
 }
 
-/** Traduz um SpeakOutcome na mensagem (ephemeral) a mostrar ao user. */
+/** Translates a SpeakOutcome into the (ephemeral) message to show the user. */
 function speakOutcomeMessage(outcome: SpeakOutcome, locale: string): string {
   switch (outcome.status) {
     case 'no-player':
@@ -200,7 +200,7 @@ function speakOutcomeMessage(outcome: SpeakOutcome, locale: string): string {
 }
 
 export async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
-  // A sintese pode demorar ate ~15s; defer imediato para nao perder o token (3s).
+  // Synthesis can take up to ~15s; defer immediately so we don't lose the token (3s).
   await i.deferReply({ flags: MessageFlags.Ephemeral });
   const locale = localeForUser(deps, i);
   const raw = i.options.getString('text', true).trim();
@@ -213,9 +213,9 @@ export async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): 
 }
 
 /**
- * Context-menu "Speak" (botão direito numa mensagem -> Apps -> Speak): lê essa mensagem
- * em voz alta com a voz de quem clicou. Mesmo pipeline do /tts (speakRawText), mas o
- * texto vem da mensagem-alvo em vez de um argumento.
+ * "Speak" context-menu (right-click a message -> Apps -> Speak): reads that message
+ * out loud with the voice of whoever clicked. Same pipeline as /tts (speakRawText), but the
+ * text comes from the target message instead of an argument.
  */
 export async function handleMessageContextMenu(
   i: MessageContextMenuCommandInteraction,
@@ -223,11 +223,11 @@ export async function handleMessageContextMenu(
 ): Promise<void> {
   if (i.commandName !== 'Speak') return;
   const locale = localeForUser(deps, i);
-  // Ao contrário dos comandos slash (todos protegidos pelo try/catch de
-  // handleInteraction), o context-menu é despachado direto em client.ts com
-  // `void handleMessageContextMenu(...)` — SEM catch. Sem este try/catch, um throw
-  // no speakRawText deixava o utilizador preso em "Vozen is thinking…" para sempre
-  // (o deferReply nunca era editado) + unhandledRejection. Espelha o catch do slash.
+  // Unlike the slash commands (all protected by handleInteraction's try/catch),
+  // the context-menu is dispatched directly in client.ts with
+  // `void handleMessageContextMenu(...)` — WITHOUT catch. Without this try/catch, a throw
+  // in speakRawText would leave the user stuck at "Vozen is thinking…" forever
+  // (the deferReply was never edited) + unhandledRejection. Mirrors the slash catch.
   try {
     await i.deferReply({ flags: MessageFlags.Ephemeral });
     if (!i.guildId || !i.guild) {
@@ -260,10 +260,10 @@ export async function handleSkip(i: ChatInputCommandInteraction, deps: BotDeps):
     await reply(i, t('skip.notInVoice', locale));
     return;
   }
-  // Ha player, mas pode estar parado (nada a tocar nem na fila). Ler isActive()
-  // ANTES de skip() — skip() faria stop()/emit(Idle) e distorceria o estado — para
-  // nao fingir que saltou algo quando nao havia nada. skip.notInVoice cobre o
-  // "sem player de todo"; skip.nothing cobre "ha player mas esta parado".
+  // There is a player, but it may be stopped (nothing playing nor in the queue). Read isActive()
+  // BEFORE skip() — skip() would do stop()/emit(Idle) and distort the state — so as
+  // not to pretend it skipped something when there was nothing. skip.notInVoice covers
+  // "no player at all"; skip.nothing covers "there is a player but it's stopped".
   if (!player.isActive()) {
     await reply(i, t('skip.nothing', locale));
     return;
@@ -272,7 +272,7 @@ export async function handleSkip(i: ChatInputCommandInteraction, deps: BotDeps):
   await reply(i, t('skip.skipped', locale));
 }
 
-/** /shutup — cala o Vozen já: esvazia a fila e pára o que está a tocar (fica na call). */
+/** /shutup — silences Vozen now: clears the queue and stops what's playing (stays in the call). */
 export async function handleShutup(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const player = getPlayer(deps, i.guildId!);
@@ -280,8 +280,8 @@ export async function handleShutup(i: ChatInputCommandInteraction, deps: BotDeps
     await reply(i, t('shutup.notInVoice', locale));
     return;
   }
-  // Ler isActive() ANTES de silence() (silence faz stop()/emit(Idle) e distorceria o
-  // estado): distingue "não havia nada a falar" de "calei mesmo".
+  // Read isActive() BEFORE silence() (silence does stop()/emit(Idle) and would distort the
+  // state): distinguishes "there was nothing to say" from "actually silenced it".
   if (!player.isActive()) {
     await reply(i, t('shutup.nothing', locale));
     return;

@@ -1,9 +1,9 @@
 // src/voice/session.ts
 //
-// Cria uma sessão de voz (ligação + player) para uma guild/canal. É a FONTE ÚNICA
-// desta lógica, partilhada pelo /join (joinUserVoice, a partir de uma interação) e
-// pelo autojoin (a partir de uma mensagem) — para não divergirem (ex.: o guard de
-// identidade no onIdle, que evita derrubar um player substituto).
+// Creates a voice session (connection + player) for a guild/channel. It is the SINGLE
+// SOURCE of this logic, shared by /join (joinUserVoice, from an interaction) and by
+// autojoin (from a message) — so they don't diverge (e.g. the identity guard in onIdle,
+// which avoids tearing down a replacement player).
 
 import {
   joinVoiceChannel,
@@ -20,18 +20,18 @@ import { rememberVoicePresence } from '../store/voicePresence';
 import { log } from '../logging/logger';
 
 /**
- * STAGE channels: ao entrar num canal de palco, o bot fica como AUDIÊNCIA (suprimido)
- * e não é ouvido. Aqui pedimos para ser ORADOR (setSuppressed(false)); se não houver
- * permissão para isso, pedimos para falar (setRequestToSpeak). Best-effort e
- * fire-and-forget — NUNCA bloqueia nem crasha o join; num canal de voz normal é no-op.
- * NÃO testável em unit (precisa de um stage real do Discord).
+ * STAGE channels: when joining a stage channel, the bot ends up as AUDIENCE (suppressed)
+ * and is not heard. Here we request to be a SPEAKER (setSuppressed(false)); if there's no
+ * permission for that, we request to speak (setRequestToSpeak). Best-effort and
+ * fire-and-forget — NEVER blocks or crashes the join; in a normal voice channel it's a
+ * no-op. NOT unit-testable (needs a real Discord stage).
  */
 export function becomeSpeakerIfStage(channel: VoiceBasedChannel): void {
   if (channel.type !== ChannelType.GuildStageVoice) return;
   const voice = channel.guild?.members?.me?.voice;
   if (!voice) return;
   Promise.resolve(voice.setSuppressed(false)).catch(() => {
-    // Sem permissão para se auto-promover -> pede para falar (o moderador aceita).
+    // No permission to self-promote -> request to speak (the moderator accepts).
     Promise.resolve(voice.setRequestToSpeak(true)).catch((err) => {
       log.warn('[voice] failed to become a stage speaker (ignored)', err);
     });
@@ -39,11 +39,11 @@ export function becomeSpeakerIfStage(channel: VoiceBasedChannel): void {
 }
 
 /**
- * (Re)cria a sessão de voz da guild no canal dado e devolve o player. Substitui
- * qualquer player anterior (removePlayer primeiro). O onIdle é identity-aware: só
- * derruba a sessão se ESTE player ainda for o registado (um /join durante uma
- * reconexão pode ter instalado outro no mesmo slot). NÃO verifica permissões — o
- * chamador é que valida Connect/Speak antes.
+ * (Re)creates the guild's voice session in the given channel and returns the player.
+ * Replaces any previous player (removePlayer first). The onIdle is identity-aware: it
+ * only tears down the session if THIS player is still the registered one (a /join during
+ * a reconnection may have installed another in the same slot). Does NOT check permissions
+ * — it's the caller that validates Connect/Speak beforehand.
  */
 export function createVoiceSession(
   deps: BotDeps,
@@ -65,10 +65,10 @@ export function createVoiceSession(
     getVoiceConnection(guildId)?.destroy();
   });
   deps.players.set(guildId, player);
-  // 24/7 in-call: só persiste o canal quando a guild é Premium E ligou o toggle
-  // (/config always-on, default OFF) — assim é reposto no arranque (ver rejoin.ts).
-  // Best-effort — NUNCA bloqueia a entrada na call (e um deps sem db, como em testes,
-  // cai no catch sem efeito).
+  // 24/7 in-call: only persists the channel when the guild is Premium AND turned on the
+  // toggle (/config always-on, default OFF) — so it is restored on startup (see rejoin.ts).
+  // Best-effort — NEVER blocks joining the call (and a deps without a db, as in tests,
+  // falls into the catch with no effect).
   try {
     if (
       isGuildPremium(deps.db, guildId, Date.now()) &&

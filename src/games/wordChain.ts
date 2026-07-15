@@ -1,9 +1,9 @@
 // src/games/wordChain.ts
 //
-// 15.º minijogo: CADEIA DE PALAVRAS (inspirado no "Finish The Word" do Roblox).
-// Por turnos em ordem fixa, 2 vidas, UMA língua por partida (escolhida no /game play).
-// O Vozen dá as boas-vindas na língua da partida, LÊ cada palavra aceite em voz alta e
-// anuncia a letra seguinte. As regras da cadeia vivem no núcleo puro (wordchain/core).
+// 15th minigame: WORD CHAIN (inspired by Roblox's "Finish The Word").
+// Turn-based in fixed order, 2 lives, ONE language per match (chosen in /game play).
+// Vozen welcomes in the match's language, READS each accepted word out loud and
+// announces the next letter. The chain rules live in the pure core (wordchain/core).
 
 import type { Game, GameContext, GameDefinition, GameMessage, GameStartOptions } from './types';
 import {
@@ -20,7 +20,7 @@ const LOBBY_MS = 20000;
 const LIVES = 2;
 const WIN_BONUS = 3;
 
-/** Nome amigável da língua (autónimo) para as mensagens de texto. */
+/** Friendly language name (autonym) for the text messages. */
 const LANG_NAME: Record<WordChainLang, string> = {
   pt: 'Português',
   en: 'English',
@@ -28,7 +28,7 @@ const LANG_NAME: Record<WordChainLang, string> = {
   fr: 'Français',
 };
 
-/** Boas-vindas FALADAS, na língua da partida (lidas com a voz nativa). */
+/** SPOKEN welcome, in the match's language (read with the native voice). */
 const WELCOME: Record<WordChainLang, string> = {
   pt: 'Bem-vindos ao jogo da cadeia de palavras!',
   en: 'Welcome to the word chain game!',
@@ -41,10 +41,10 @@ function resolveLang(input?: string): WordChainLang {
   return (WORDCHAIN_LANGS as readonly string[]).includes(l) ? (l as WordChainLang) : 'en';
 }
 
-/** pickVoice espera ISO 639-3 (LANG_TO_PREFIX usa 'por'/'eng'/…), não 2 letras. */
+/** pickVoice expects ISO 639-3 (LANG_TO_PREFIX uses 'por'/'eng'/…), not 2 letters. */
 const ISO3: Record<WordChainLang, string> = { pt: 'por', en: 'eng', es: 'spa', fr: 'fra' };
 
-/** Chave i18n do feedback de uma tentativa inválida. */
+/** i18n key for the feedback of an invalid attempt. */
 function badKey(reason: ValidationReason): string {
   switch (reason) {
     case 'wrong-letter':
@@ -56,7 +56,7 @@ function badKey(reason: ValidationReason): string {
     case 'not-a-word':
       return 'game.wordChain.bad.word';
     default:
-      return 'game.wordChain.bad.latin'; // not-latin / vazio
+      return 'game.wordChain.bad.latin'; // not-latin / empty
   }
 }
 
@@ -66,11 +66,11 @@ class WordChainGame implements Game {
   private dict: Dictionary | null = null;
   private engine: ChainEngine | null = null;
   private phase: 'lobby' | 'playing' | 'ended' = 'lobby';
-  private readonly order: string[] = []; // userIds VIVOS, por ordem de turno
+  private readonly order: string[] = []; // ALIVE userIds, in turn order
   private readonly names = new Map<string, string>();
   private readonly lives = new Map<string, number>();
-  private idx = 0; // índice do jogador atual em `order`
-  private turnGen = 0; // geração do turno: um timer de turno obsoleto (gen != atual) é no-op
+  private idx = 0; // index of the current player in `order`
+  private turnGen = 0; // turn generation: a stale turn timer (gen != current) is a no-op
   private busy = false; // reentrancy latch: one guess is in flight (set before the first await)
 
   constructor(opts?: GameStartOptions) {
@@ -96,7 +96,7 @@ class WordChainGame implements Game {
       return;
     }
     if (this.phase !== 'playing') return;
-    // Só a mensagem do jogador ATUAL conta; espectadores são ignorados (turnos limpos).
+    // Only the CURRENT player's message counts; spectators are ignored (clean turns).
     if (msg.authorId !== this.order[this.idx]) return;
     // Reentrancy guard: onMessage is dispatched fire-and-forget (manager does not await it),
     // so a same-player message can arrive while a prior handleGuess is suspended at
@@ -132,14 +132,14 @@ class WordChainGame implements Game {
     }
     this.phase = 'playing';
     this.engine = new ChainEngine(this.dict!, ctx.seed);
-    // Boas-vindas faladas na língua da partida (voz nativa).
+    // Spoken welcome in the match's language (native voice).
     void ctx.say(WELCOME[this.lang], { model: this.voiceModel(ctx) });
     const roster = this.order.map((id) => this.names.get(id)).join(', ');
     void ctx.send(ctx.t('game.wordChain.begin', { players: roster, lang: LANG_NAME[this.lang] }));
     this.announceTurn(ctx);
   }
 
-  /** Anuncia o turno atual e arma o timer (com guarda de geração). */
+  /** Announces the current turn and arms the timer (with a generation guard). */
   private announceTurn(ctx: GameContext): void {
     const gen = ++this.turnGen;
     const id = this.order[this.idx];
@@ -161,8 +161,8 @@ class WordChainGame implements Game {
     const e = this.engine!;
     const res = e.validate(msg.content);
     if (!res.ok) {
-      // Tentativa inválida: feedback, MAS o timer continua a correr (tentativas
-      // ilimitadas dentro do turno) — não re-armamos nem avançamos.
+      // Invalid attempt: feedback, BUT the timer keeps running (unlimited
+      // attempts within the turn) — we don't re-arm or advance.
       await ctx.send(
         ctx.t(badKey(res.reason), { letter: e.requiredLetter.toUpperCase(), min: e.minLength }),
       );
@@ -170,7 +170,7 @@ class WordChainGame implements Game {
     }
     e.accept(res.normalized);
     ctx.award(msg.authorId, 1);
-    // Lê a palavra aceite em voz alta (voz da língua) — o coração do jogo no Vozen.
+    // Reads the accepted word out loud (language voice) — the heart of the game in Vozen.
     void ctx.say(res.normalized, { model: this.voiceModel(ctx) });
     await ctx.send(
       ctx.t('game.wordChain.accepted', {
@@ -178,7 +178,7 @@ class WordChainGame implements Game {
         letter: e.requiredLetter.toUpperCase(),
       }),
     );
-    // Próximo jogador (bumpa turnGen -> o timer do turno anterior fica obsoleto).
+    // Next player (bumps turnGen -> the previous turn's timer becomes stale).
     this.idx = (this.idx + 1) % this.order.length;
     this.announceTurn(ctx);
   }
@@ -189,7 +189,7 @@ class WordChainGame implements Game {
     this.lives.set(id, left);
     if (left <= 0) {
       void ctx.send(ctx.t('game.wordChain.eliminated', { name: this.names.get(id) ?? '?' }));
-      this.order.splice(this.idx, 1); // remove o atual; o próximo passa a ocupar `idx`
+      this.order.splice(this.idx, 1); // remove the current one; the next takes over `idx`
       this.lives.delete(id);
       if (this.order.length === 1) {
         this.declareWinner(ctx);
@@ -226,8 +226,8 @@ export const wordChainDef: GameDefinition = {
   id: 'word-chain',
   nameKey: 'game.wordChain.name',
   descKey: 'game.wordChain.descr',
-  needsVoice: false, // a voz é um BÓNUS; o jogo funciona só em texto se não houver call
-  premium: true, // 💎 Premium (Plus do próprio OU Premium do servidor) — gate em handleGame
+  needsVoice: false, // voice is a BONUS; the game works in text-only if there's no call
+  premium: true, // 💎 Premium (user's own Plus OR server Premium) — gated in handleGame
   usesLanguage: true,
   create: (opts) => new WordChainGame(opts),
 };

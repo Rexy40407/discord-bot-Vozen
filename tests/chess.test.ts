@@ -44,13 +44,13 @@ function harness() {
     availableModels: ['en_US-amy-medium'],
     defaultSpeed: 1,
     defaultVoiceOf: () => 'en_US-amy-medium',
-    getPlayer: () => undefined, // chess não usa voz
+    getPlayer: () => undefined, // chess does not use voice
     sendToChannel: send,
     localeOf: () => 'en',
-    translate: (key) => key, // devolve a própria chave -> asserções por chave
+    translate: (key) => key, // returns the key itself -> assertions by key
     persistScores,
     logError: vi.fn(),
-    // sem boardEmojis -> ctx.emoji devolve undefined -> render ASCII
+    // no boardEmojis -> ctx.emoji returns undefined -> ASCII render
   };
   return { env, clock, send, persistScores };
 }
@@ -65,32 +65,32 @@ const sentKeys = (send: ReturnType<typeof vi.fn>): string[] =>
   send.mock.calls.map((c) => String(c[1]).split(' ')[0]);
 
 describe('chess — resign', () => {
-  it('resign como PRIMEIRA interação não seata nem termina o jogo em silêncio', async () => {
+  it('resign as the FIRST interaction does not seat anyone nor end the game silently', async () => {
     const { env, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create(), false, 'en');
     await flush();
-    mgr.handleMessage(msg('u1', 'resign')); // primeira interação = resign, sem oponente
+    mgr.handleMessage(msg('u1', 'resign')); // first interaction = resign, no opponent
     await flush();
-    // Não deve conceder a ninguém nem terminar em silêncio: o jogo continua ativo.
+    // Must not concede to anyone nor end silently: the game stays active.
     expect(mgr.active(G)).toBe(true);
     expect(sentKeys(send)).not.toContain('game.chess.resigned');
   });
 
-  it('resign de um jogador SENTADO concede ao oponente e termina', async () => {
+  it('resign by a SEATED player concedes to the opponent and ends', async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create(), false, 'en');
     await flush();
-    mgr.handleMessage(msg('u1', 'e4')); // u1 = brancas
+    mgr.handleMessage(msg('u1', 'e4')); // u1 = white
     await flush();
-    mgr.handleMessage(msg('u2', 'e5')); // u2 = pretas
+    mgr.handleMessage(msg('u2', 'e5')); // u2 = black
     await flush();
-    mgr.handleMessage(msg('u1', 'resign')); // brancas desistem
+    mgr.handleMessage(msg('u1', 'resign')); // white resigns
     await flush();
     expect(sentKeys(send)).toContain('game.chess.resigned');
     expect(mgr.active(G)).toBe(false);
     const pts = persistScores.mock.calls.at(-1)?.[1] as Map<string, number>;
-    expect(pts.get('u2') ?? 0).toBe(3); // oponente (pretas) ganhou
+    expect(pts.get('u2') ?? 0).toBe(3); // opponent (black) won
   });
 });

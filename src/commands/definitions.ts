@@ -1,9 +1,9 @@
 // src/commands/definitions.ts
 //
-// Definições dos comandos (builders -> payload JSON) extraídas do index.ts (DEBT-02):
-// o index.ts fica como dispatcher/registry fino. `commandDefsRaw` é o array cru;
-// `commandDefs` aplica o gate de contexto (Guild vs DM); `ownerCommandDefs` são os
-// comandos OWNER-ONLY registados à parte. Puro/sem estado — só monta payloads.
+// Command definitions (builders -> JSON payload) extracted from index.ts (DEBT-02):
+// index.ts stays as a thin dispatcher/registry. `commandDefsRaw` is the raw array;
+// `commandDefs` applies the context gate (Guild vs DM); `ownerCommandDefs` are the
+// OWNER-ONLY commands registered separately. Pure/stateless — only builds payloads.
 
 import {
   SlashCommandBuilder,
@@ -19,25 +19,25 @@ import { GREET_LANGUAGE_CHOICES } from '../voice/greeting';
 import { SOUND_CHOICES } from '../content/sounds';
 
 const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
-  // /invite — gatilho do loop viral: qualquer utilizador pode pedir o link de
-  // convite OAuth2 do bot. Top-level e SEM setDefaultMemberPermissions (nao
-  // admin-only), para que quem ouve o Vozen numa call o possa adicionar.
+  // /invite — viral loop trigger: any user can request the bot's OAuth2
+  // invite link. Top-level and WITHOUT setDefaultMemberPermissions (not
+  // admin-only), so anyone who hears Vozen in a call can add it.
   new SlashCommandBuilder()
     .setName('invite')
     .setDescription('Show the link to add Vozen to your server')
     .toJSON(),
-  // /vote — link para a pagina de voto do Vozen no top.gg (P11.5). Top-level e SEM
-  // setDefaultMemberPermissions (NAO admin-only): qualquer utilizador pode votar.
-  // Tal como o /invite, e um gatilho de crescimento — votar (gratis, a cada 12h)
-  // sobe a visibilidade do bot no top.gg.
+  // /vote — link to Vozen's vote page on top.gg (P11.5). Top-level and WITHOUT
+  // setDefaultMemberPermissions (NOT admin-only): any user can vote.
+  // Like /invite, it's a growth trigger — voting (free, every 12h)
+  // boosts the bot's visibility on top.gg.
   new SlashCommandBuilder()
     .setName('vote')
     .setDescription('Show the link to vote for Vozen on top.gg')
     .toJSON(),
-  // /help — discovery de comandos em-app, para donos de servidor nao-tecnicos.
-  // Top-level e SEM setDefaultMemberPermissions (NAO admin-only): qualquer
-  // utilizador pode pedir a lista. O texto e DERIVADO destes commandDefs (ver
-  // handleHelp), por isso este comando inclui-se a si proprio no grupo "Geral".
+  // /help — in-app command discovery, for non-technical server owners.
+  // Top-level and WITHOUT setDefaultMemberPermissions (NOT admin-only): any
+  // user can request the list. The text is DERIVED from these commandDefs (see
+  // handleHelp), so this command includes itself in the "General" group.
   new SlashCommandBuilder().setName('help').setDescription("Show Vozen's command list").toJSON(),
   new SlashCommandBuilder().setName('join').setDescription('Join your voice channel').toJSON(),
   new SlashCommandBuilder().setName('leave').setDescription('Leave the voice channel').toJSON(),
@@ -47,21 +47,21 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addStringOption((o) => o.setName('text').setDescription('What to read').setRequired(true))
     .toJSON(),
   new SlashCommandBuilder().setName('skip').setDescription('Skip the current audio').toJSON(),
-  // /shutup — cala o Vozen JÁ: esvazia a fila toda e pára o que está a tocar (sem sair
-  // da call). O /skip salta só a mensagem atual; este limpa tudo.
+  // /shutup — silences Vozen NOW: clears the whole queue and stops what's playing (without leaving
+  // the call). /skip only skips the current message; this clears everything.
   new SlashCommandBuilder()
     .setName('shutup')
     .setDescription('Make Vozen stop talking now (clears the whole queue)')
     .toJSON(),
-  // /laugh — diversao por-utilizador (como /tts): o Vozen ri na voz ATUAL do user.
-  // Sem opcoes, sem gate de admin; exige um player ativo (user numa call).
+  // /laugh — per-user fun (like /tts): Vozen laughs in the user's CURRENT voice.
+  // No options, no admin gate; requires an active player (user in a call).
   new SlashCommandBuilder()
     .setName('laugh')
     .setDescription('Vozen laughs out loud in your current voice')
     .toJSON(),
-  // /joke — conta uma piada curta na LINGUA escolhida. `idioma` usa AUTOCOMPLETE
-  // (nao choices): suportamos ~34 linguas e o Discord limita choices estaticas a
-  // 25. `risos` (obrigatorio) acrescenta uma gargalhada no fim.
+  // /joke — tells a short joke in the chosen LANGUAGE. `language` uses AUTOCOMPLETE
+  // (not choices): we support ~34 languages and Discord limits static choices to
+  // 25. `laughter` (required) adds a laugh at the end.
   new SlashCommandBuilder()
     .setName('joke')
     .setDescription('Vozen tells a short joke in the language you pick')
@@ -76,8 +76,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       o.setName('laughter').setDescription('Add laughter at the end?').setRequired(true),
     )
     .toJSON(),
-  // /rizz — manda uma pick-up line na LINGUA escolhida (mesmo autocomplete `language` do
-  // /joke). `sound` (obrigatorio) toca o efeito sonoro "rizz" no fim. Precisa de call.
+  // /rizz — sends a pick-up line in the chosen LANGUAGE (same `language` autocomplete as
+  // /joke). `sound` (required) plays the "rizz" sound effect at the end. Needs a call.
   new SlashCommandBuilder()
     .setName('rizz')
     .setDescription('Vozen drops a pickup line in the language you pick (💎 Premium)')
@@ -92,8 +92,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       o.setName('sound').setDescription('Add the rizz sound effect at the end?').setRequired(true),
     )
     .toJSON(),
-  // /sound — toca um clip curto do soundboard na call. `name` (OPCIONAL) usa choices
-  // (biblioteca curada <=25); sem argumento, o handler responde com a lista dos sons.
+  // /sound — plays a short soundboard clip in the call. `name` (OPTIONAL) uses choices
+  // (curated library <=25); without an argument, the handler responds with the list of sounds.
   new SlashCommandBuilder()
     .setName('sound')
     .setDescription('Play a sound clip in the voice channel')
@@ -105,8 +105,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .addChoices(...SOUND_CHOICES),
     )
     .toJSON(),
-  // Micro-comandos divertidos (falados na voz + resposta pública). Funcionam sem estar
-  // numa call (só texto); se o Vozen estiver na call, também fala.
+  // Fun micro-commands (spoken in voice + public response). Work without being
+  // in a call (text only); if Vozen is in the call, it also speaks.
   new SlashCommandBuilder()
     .setName('8ball')
     .setDescription('Ask the magic 8-ball a yes/no question')
@@ -127,8 +127,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .setName('wyr')
     .setDescription('Vozen asks a "would you rather" question')
     .toJSON(),
-  // /birthday — regista o teu aniversário; o Vozen diz "Parabéns" quando entrares na call
-  // nesse dia. Sem ano (só interessa o dia). set / clear / show.
+  // /birthday — records your birthday; Vozen says "Happy Birthday" when you join the call
+  // on that day. No year (only the day matters). set / clear / show.
   new SlashCommandBuilder()
     .setName('birthday')
     .setDescription('Vozen wishes you a happy birthday when you join on your day')
@@ -156,8 +156,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) => s.setName('clear').setDescription('Remove your saved birthday'))
     .addSubcommand((s) => s.setName('show').setDescription('Show your saved birthday'))
     .toJSON(),
-  // /privacy — direito ao esquecimento (RGPD / Política do Discord §5(b)): apagar todos
-  // os dados pessoais num só comando (com confirmação). O premium pago fica retido.
+  // /privacy — right to be forgotten (GDPR / Discord Policy §5(b)): delete all
+  // personal data in a single command (with confirmation). Paid premium stays retained.
   new SlashCommandBuilder()
     .setName('privacy')
     .setDescription('Manage your personal data')
@@ -167,18 +167,18 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setDescription('Permanently delete all your personal data (asks you to confirm first)'),
     )
     .toJSON(),
-  // /topspeakers — quem teve mais mensagens lidas pelo Vozen + streaks de dias seguidos.
+  // /topspeakers — who had the most messages read by Vozen + consecutive-day streaks.
   new SlashCommandBuilder()
     .setName('topspeakers')
     .setDescription('See who Vozen has read the most — and daily streaks')
     .toJSON(),
-  // /serverstats — estatísticas agregadas do servidor (perk Premium; free vê um teaser).
-  // Público (qualquer pessoa pode ver); o gate Premium é no handler, não no comando.
+  // /serverstats — aggregated server statistics (Premium perk; free sees a teaser).
+  // Public (anyone can see); the Premium gate is in the handler, not in the command.
   new SlashCommandBuilder()
     .setName('serverstats')
     .setDescription('Server stats: messages, top talkers and games (💎 Premium, free preview)')
     .toJSON(),
-  // /premium — estado/montra + gerir licenças do passe (info/activate/deactivate).
+  // /premium — status/showcase + manage pass licences (info/activate/deactivate).
   new SlashCommandBuilder()
     .setName('premium')
     .setDescription('Vozen Premium: your status, or use/free a licence on this server')
@@ -290,8 +290,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             .addChoices(...EFFECT_CHOICES),
         ),
     )
-    // /voice clone — clona a TUA PRÓPRIA voz (consent-first: só gravas a ti, só tu
-    // usas o teu clone, apagável a qualquer momento). 💎 Premium.
+    // /voice clone — clones YOUR OWN voice (consent-first: you only record yourself, only you
+    // use your clone, deletable at any time). 💎 Premium.
     .addSubcommandGroup((g) =>
       g
         .setName('clone')
@@ -302,9 +302,9 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             .setDescription(
               'Record a voice in the call to build your clone (yours, or someone who agrees)',
             )
-            // STRING + autocomplete (não addUserOption): o seletor nativo de utilizador do
-            // Discord só mostra membros em cache/recentes. Aqui listamos EXATAMENTE quem está
-            // na call contigo — os únicos alvos válidos (gravar exige estar no canal do bot).
+            // STRING + autocomplete (not addUserOption): Discord's native user
+            // selector only shows cached/recent members. Here we list EXACTLY who is
+            // in the call with you — the only valid targets (recording requires being in the bot's channel).
             .addStringOption((o) =>
               o
                 .setName('user')
@@ -495,10 +495,10 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       s
         .setName('language')
         .setDescription('Set the interface language (English is the default)')
-        // AUTOCOMPLETE (nao choices): suportamos 34 linguas de interface > 25, o cap
-        // do Discord para choices estaticas. O ramo `locale` do handleAutocomplete
-        // filtra SUPPORTED_LOCALES por endonimo/codigo (LOCALE_DISPLAY_NAMES) e
-        // devolve ate 25 sugestoes. O handler valida a escolha contra SUPPORTED_LOCALES.
+        // AUTOCOMPLETE (not choices): we support 34 interface languages > 25, Discord's
+        // cap for static choices. The `locale` branch of handleAutocomplete
+        // filters SUPPORTED_LOCALES by endonym/code (LOCALE_DISPLAY_NAMES) and
+        // returns up to 25 suggestions. The handler validates the choice against SUPPORTED_LOCALES.
         .addStringOption((o) =>
           o
             .setName('locale')
@@ -534,8 +534,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             ),
         ),
     )
-    // NB: o antigo subgrupo `pronunciation` (dicionário de servidor) foi REMOVIDO no
-    // plano v4 — as pronúncias agora são só PESSOAIS via /pronunciation (individual).
+    // NB: the old `pronunciation` subgroup (server dictionary) was REMOVED in
+    // plan v4 — pronunciations are now only PERSONAL via /pronunciation (individual).
     .toJSON(),
   new SlashCommandBuilder()
     .setName('setup')
@@ -562,10 +562,10 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .setName('botstats')
     .setDescription('Public Vozen stats: servers, voice sessions, uptime')
     .toJSON(),
-  // /game — minijogos de grupo. PUBLICO (sem gate de admin): qualquer um começa um
-  // jogo. Guild-only (nao esta em DM_CAPABLE_COMMANDS -> o .map poe contexts:[Guild]).
-  // A opcao `game` usa AUTOCOMPLETE (nomes na lingua do utilizador via t()); os
-  // subcomandos stop/list/leaderboard nao tem opcoes.
+  // /game — group minigames. PUBLIC (no admin gate): anyone starts a
+  // game. Guild-only (not in DM_CAPABLE_COMMANDS -> the .map sets contexts:[Guild]).
+  // The `game` option uses AUTOCOMPLETE (names in the user's language via t()); the
+  // stop/list/leaderboard subcommands have no options.
   new SlashCommandBuilder()
     .setName('game')
     .setDescription('Play a minigame with the server')
@@ -576,8 +576,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .addStringOption((o) =>
           o
             .setName('game')
-            // OPCIONAL de propósito (beginner-friendly, plano v4): /game play "vazio"
-            // mostra um select menu com os jogos em vez de o Discord exigir a opção.
+            // OPTIONAL on purpose (beginner-friendly, plan v4): /game play "empty"
+            // shows a select menu with the games instead of Discord requiring the option.
             .setDescription('Which game to play (leave empty to pick from a menu)')
             .setAutocomplete(true),
         )
@@ -596,9 +596,9 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .addSubcommand((s) => s.setName('stats').setDescription('Show your own game stats'))
     .toJSON(),
-  // /pronunciation — dicionário de pronúncia PESSOAL (só afeta as mensagens de quem o
-  // criou; segue o utilizador entre servidores). Limite 3 Free / 50 Premium (Plus ou
-  // servidor Premium). `add` sem opções abre um MODAL (beginner-friendly, plano v4).
+  // /pronunciation — PERSONAL pronunciation dictionary (only affects the messages of whoever
+  // created it; follows the user across servers). Limit 3 Free / 50 Premium (Plus or
+  // Premium server). `add` without options opens a MODAL (beginner-friendly, plan v4).
   new SlashCommandBuilder()
     .setName('pronunciation')
     .setDescription('Teach Vozen how to say a word — only affects YOUR messages')
@@ -623,7 +623,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       s
         .setName('remove')
         .setDescription('Remove one of your personal pronunciations')
-        // AUTOCOMPLETE: lista as pronúncias guardadas (escolher > escrever de cor).
+        // AUTOCOMPLETE: lists the saved pronunciations (pick > type from memory).
         .addStringOption((o) =>
           o
             .setName('term')
@@ -635,8 +635,8 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .addSubcommand((s) => s.setName('list').setDescription('List your personal pronunciations'))
     .toJSON(),
-  // /serverpronunciation — dicionário de pronúncia do SERVIDOR (admin): aplica-se às
-  // mensagens de TODA a gente. Limite 3 Free / 50 Premium. `add` sem opções abre um modal.
+  // /serverpronunciation — SERVER pronunciation dictionary (admin): applies to
+  // EVERYONE's messages. Limit 3 Free / 50 Premium. `add` without options opens a modal.
   new SlashCommandBuilder()
     .setName('serverpronunciation')
     .setDescription('Server-wide pronunciations for everyone (admin, 3 · 50 with Premium)')
@@ -656,7 +656,7 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
       s
         .setName('remove')
         .setDescription('Remove one of the server pronunciations')
-        // AUTOCOMPLETE: lista as pronúncias do servidor (escolher > escrever de cor).
+        // AUTOCOMPLETE: lists the server's pronunciations (pick > type from memory).
         .addStringOption((o) =>
           o
             .setName('term')
@@ -668,9 +668,9 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     )
     .addSubcommand((s) => s.setName('list').setDescription("List the server's pronunciations"))
     .toJSON(),
-  // /randomizer — sorteio falado: escolhe o nº de opções (2–5, modal) OU passa uma lista
-  // separada por vírgulas; o Vozen escolhe uma ao acaso e di-la na call. Sem opções
-  // nenhumas -> select do nº (beginner-friendly).
+  // /randomizer — spoken draw: choose the number of options (2–5, modal) OR pass a
+  // comma-separated list; Vozen picks one at random and says it in the call. Without any
+  // options -> number select (beginner-friendly).
   new SlashCommandBuilder()
     .setName('randomizer')
     .setDescription('Vozen picks one option at random and says it out loud')
@@ -688,12 +688,12 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setMaxLength(1000),
     )
     .toJSON(),
-  // Context-menu (botão direito numa mensagem -> Apps -> Speak): lê essa mensagem em
-  // voz alta com a voz de quem clicou. Complementa o /tts sem escrever nada.
+  // Context-menu (right-click a message -> Apps -> Speak): reads that message out
+  // loud with the voice of whoever clicked. Complements /tts without typing anything.
   new ContextMenuCommandBuilder().setName('Speak').setType(ApplicationCommandType.Message).toJSON(),
-  // /redeem — PÚBLICO: resgata um código de presente (gerado pelo dono com /gencode).
-  // Concede Plus ou um passe Premium à conta de quem resgata (não a um servidor), por
-  // isso é DM-capable. Uso único; ver store/premiumCode.ts.
+  // /redeem — PUBLIC: redeems a gift code (generated by the owner with /gencode).
+  // Grants Plus or a Premium pass to the redeemer's account (not to a server), so
+  // it is DM-capable. Single-use; see store/premiumCode.ts.
   new SlashCommandBuilder()
     .setName('redeem')
     .setDescription('Redeem a Vozen gift code')
@@ -703,23 +703,23 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .toJSON(),
 ];
 
-// Comandos utilizáveis em DM: só devolvem TEXTO e não dependem de guild/voz/store.
-// (/redeem também: concede à CONTA de quem resgata, não a um servidor.)
+// Commands usable in DM: they only return TEXT and don't depend on guild/voice/store.
+// (/redeem too: grants to the redeemer's ACCOUNT, not to a server.)
 const DM_CAPABLE_COMMANDS = new Set(['invite', 'vote', 'help', 'uptime', 'botstats', 'redeem']);
 
-// Todos os OUTROS comandos dependem de uma guild (sessão de voz, config e store
-// por-guild). Por defeito o Discord mostra comandos globais também em DM, onde
-// `guildId` é null → o handler escrevia no store com guildId null (SqliteError:
-// guild_id NOT NULL) ou respondia coisas enganadoras. Restringi-los ao contexto
-// Guild faz o Discord ESCONDÊ-LOS em DM. Centralizado por nome (em vez de repetir
-// .setContexts() em ~10 builders) para não esquecer nenhum comando novo. Cobre
-// também o context-menu "Speak" (precisa de canal de voz).
+// All OTHER commands depend on a guild (voice session, config and per-guild
+// store). By default Discord shows global commands in DM too, where
+// `guildId` is null → the handler would write to the store with guildId null (SqliteError:
+// guild_id NOT NULL) or respond with misleading things. Restricting them to the
+// Guild context makes Discord HIDE them in DM. Centralized by name (instead of repeating
+// .setContexts() in ~10 builders) so no new command is forgotten. Also covers
+// the "Speak" context-menu (needs a voice channel).
 /**
- * Remove o grupo de subcomandos `clone` do /voice. O motor de clone (Chatterbox)
- * precisa de GPU/RAM que o bot alojado não tem — nem sequer carrega no VPS (ver
- * docs/SPIKE-CLONE.md). Mostrar o comando dava uma feature que só devolve voz normal.
- * Quem já gravou uma amostra continua a poder apagá-la por /privacy erase (eraseUser
- * apaga user_clone + o .wav), por isso esconder o grupo é compliance-safe. PURA.
+ * Removes the `clone` subcommand group from /voice. The clone engine (Chatterbox)
+ * needs GPU/RAM the hosted bot doesn't have — it doesn't even load on the VPS (see
+ * docs/SPIKE-CLONE.md). Showing the command would expose a feature that only returns the normal voice.
+ * Anyone who already recorded a sample can still delete it via /privacy erase (eraseUser
+ * deletes user_clone + the .wav), so hiding the group is compliance-safe. PURE.
  */
 export function withoutCloneGroup(
   defs: RESTPostAPIApplicationCommandsJSONBody[],
@@ -727,7 +727,7 @@ export function withoutCloneGroup(
   return defs.map((def) => {
     const options = (def as { options?: Array<{ name?: string }> }).options;
     if (def.name !== 'voice' || !Array.isArray(options)) return def;
-    // Cast no retorno: só filtrámos options (sem mudar a sua forma), a estrutura mantém-se.
+    // Cast on the return: we only filtered options (without changing their shape), the structure stays.
     return {
       ...def,
       options: options.filter((o) => o.name !== 'clone'),
@@ -735,8 +735,8 @@ export function withoutCloneGroup(
   });
 }
 
-// O clone só aparece onde o motor pode correr: CLONE_ENABLED=1 (variável de ambiente
-// REAL, ex. numa máquina com GPU). No bot alojado fica off por defeito -> grupo escondido.
+// The clone only appears where the engine can run: CLONE_ENABLED=1 (a REAL environment
+// variable, e.g. on a machine with a GPU). On the hosted bot it's off by default -> group hidden.
 const CLONE_ENABLED = process.env.CLONE_ENABLED === '1';
 
 const commandDefsWithContext: RESTPostAPIApplicationCommandsJSONBody[] = commandDefsRaw.map(
@@ -747,9 +747,9 @@ export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = CLONE_ENABL
   ? commandDefsWithContext
   : withoutCloneGroup(commandDefsWithContext);
 
-// Comandos OWNER-ONLY. NÃO entram em commandDefs (global): são registados à parte, como
-// comandos de GUILD, só na OWNER_GUILD_ID (registerOwnerCommands). Assim o público nem
-// os vê no picker — 1.ª camada de defesa. A 2.ª é o gate por dono no handler.
+// OWNER-ONLY commands. They do NOT go into commandDefs (global): they're registered separately, as
+// GUILD commands, only in OWNER_GUILD_ID (registerOwnerCommands). This way the public doesn't even
+// see them in the picker — 1st layer of defense. The 2nd is the owner gate in the handler.
 export const ownerCommandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
   new SlashCommandBuilder()
     .setName('vozengrant')
@@ -780,9 +780,9 @@ export const ownerCommandDefs: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setMaxValue(50),
     )
     .toJSON(),
-  // /gencode — OWNER-ONLY: gera código(s) de presente que o dono dá a quem quiser. Mesma
-  // defesa em profundidade do /vozengrant (só registado na OWNER_GUILD_ID + gate por dono
-  // no handler). Resgatam-se com /redeem (público). `plan` escolhe Plus vs passe Premium.
+  // /gencode — OWNER-ONLY: generates gift code(s) the owner gives to whoever they want. Same
+  // defense in depth as /vozengrant (only registered in OWNER_GUILD_ID + owner gate
+  // in the handler). Redeemed with /redeem (public). `plan` chooses Plus vs Premium pass.
   new SlashCommandBuilder()
     .setName('gencode')
     .setDescription('Owner only — generate Vozen gift code(s)')

@@ -1,39 +1,39 @@
-// 24/7 in-call — planeamento PURO do rejoin no arranque. Decide, a partir das presenças
-// persistidas (voice_presence), o que repor e o que esquecer, SEM tocar em discord.js nem
-// na DB (injetam-se os predicados). O wiring real (createVoiceSession + DELETE) vive no
-// ClientReady em index.ts; aqui só a política, para ser testável.
+// 24/7 in-call — PURE planning of the startup rejoin. Decides, from the persisted
+// presences (voice_presence), what to restore and what to forget, WITHOUT touching discord.js
+// or the DB (the predicates are injected). The real wiring (createVoiceSession + DELETE) lives
+// in ClientReady in index.ts; here only the policy, so it is testable.
 
 import type { VoicePresenceRow } from '../store/voicePresence';
 
 /**
- * Estado do canal persistido, resolvido contra o Discord no momento do arranque:
- *  - 'ready'    -> o canal existe, é de voz e o bot tem Connect+Speak -> repor.
- *  - 'no-perms' -> existe mas faltam permissões -> NÃO repor, mas MANTER a linha (as
- *                  permissões podem voltar; tenta-se de novo no próximo arranque).
- *  - 'gone'     -> canal apagado / já não é de voz -> esquecer (linha morta).
+ * State of the persisted channel, resolved against Discord at startup time:
+ *  - 'ready'    -> the channel exists, is a voice channel and the bot has Connect+Speak -> restore.
+ *  - 'no-perms' -> exists but permissions are missing -> do NOT restore, but KEEP the row (the
+ *                  permissions may come back; it is retried on the next startup).
+ *  - 'gone'     -> channel deleted / no longer a voice channel -> forget (dead row).
  */
 export type ChannelState = 'ready' | 'no-perms' | 'gone';
 
 export interface RejoinPolicyDeps {
-  /** A guild deve ficar 24/7 na call AGORA? (Premium E o toggle /config always-on ligado.) */
+  /** Should the guild stay 24/7 in the call NOW? (Premium AND the /config always-on toggle on.) */
   stayInCall: (guildId: string) => boolean;
-  /** Estado atual do canal persistido desta guild. */
+  /** Current state of this guild's persisted channel. */
   channelState: (guildId: string, channelId: string) => ChannelState;
 }
 
 export interface RejoinPlan {
-  /** Guildas a repor na call (createVoiceSession). */
+  /** Guilds to restore into the call (createVoiceSession). */
   rejoin: VoicePresenceRow[];
-  /** Guildas cuja linha deve ser apagada (não-Premium ou canal morto). */
+  /** Guilds whose row should be deleted (non-Premium or dead channel). */
   forget: string[];
 }
 
 /**
- * Decide o rejoin do arranque. Regras, por linha persistida:
- *  - não-Premium            -> esquecer (rede de segurança: limpa linhas Free antigas).
- *  - Premium + canal 'gone' -> esquecer (o canal desapareceu).
- *  - Premium + 'no-perms'   -> nada (mantém a linha; tenta no próximo arranque).
- *  - Premium + 'ready'      -> repor.
+ * Decides the startup rejoin. Rules, per persisted row:
+ *  - non-Premium            -> forget (safety net: cleans up old Free rows).
+ *  - Premium + 'gone' channel -> forget (the channel disappeared).
+ *  - Premium + 'no-perms'   -> nothing (keeps the row; retries on the next startup).
+ *  - Premium + 'ready'      -> restore.
  */
 export function planRejoin(rows: VoicePresenceRow[], deps: RejoinPolicyDeps): RejoinPlan {
   const rejoin: VoicePresenceRow[] = [];
@@ -49,7 +49,7 @@ export function planRejoin(rows: VoicePresenceRow[], deps: RejoinPolicyDeps): Re
     } else if (state === 'ready') {
       rejoin.push(row);
     }
-    // 'no-perms' -> nem repor nem esquecer.
+    // 'no-perms' -> neither restore nor forget.
   }
   return { rejoin, forget };
 }

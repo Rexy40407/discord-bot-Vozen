@@ -1,25 +1,25 @@
 import type Database from 'better-sqlite3';
 
-// Aniversário por-(guild,user): mês + dia (SEM ano — só interessa o dia do ano). Quando a
-// pessoa ENTRA na call do Vozen no seu dia de anos, o Vozen diz "Parabéns {nome}" em vez da
-// saudação normal (reaproveita o greetOnJoin — sem agendador). Ausente => sem parabéns.
+// Per-(guild,user) birthday: month + day (NO year — only the day of the year matters). When
+// the person JOINS Vozen's call on their birthday, Vozen says "Happy birthday {name}" instead
+// of the normal greeting (reuses greetOnJoin — no scheduler). Absent => no birthday wish.
 
 export interface Birthday {
   month: number; // 1-12
-  day: number; // 1-31 (validado contra o mês)
+  day: number; // 1-31 (validated against the month)
 }
 
-/** Dias máximos por mês (1-based). Fevereiro = 29 para permitir aniversários em 29/02. */
+/** Maximum days per month (1-based). February = 29 to allow birthdays on 29/02. */
 const MAX_DAY = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-/** Data (mês/dia) válida como dia de aniversário? Ignora o ano (29/02 é aceite). PURA. */
+/** Is the date (month/day) valid as a birthday? Ignores the year (29/02 is accepted). PURE. */
 export function isValidBirthday(month: number, day: number): boolean {
   if (!Number.isInteger(month) || !Number.isInteger(day)) return false;
   if (month < 1 || month > 12) return false;
   return day >= 1 && day <= MAX_DAY[month];
 }
 
-/** É hoje (mês/dia de `now`) o dia de anos `bd`? PURA — `now` injetável para testes. */
+/** Is today (month/day of `now`) the birthday `bd`? PURE — `now` injectable for tests. */
 export function isBirthdayToday(bd: Birthday, now: Date): boolean {
   return bd.month === now.getMonth() + 1 && bd.day === now.getDate();
 }

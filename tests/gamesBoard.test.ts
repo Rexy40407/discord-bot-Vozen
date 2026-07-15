@@ -39,8 +39,8 @@ class FakeClock implements Clock {
 
 function harness() {
   const clock = new FakeClock();
-  // Params tipados p/ o typecheck dos testes: sem eles, .mock.calls fica tuplo vazio
-  // e c[1] / calls[0][1] dão TS2493 (assinaturas reais no GameEnv).
+  // Typed params for the tests' typecheck: without them, .mock.calls is an empty tuple
+  // and c[1] / calls[0][1] raise TS2493 (real signatures in GameEnv).
   const send = vi.fn(async (_channelId: string, _content: Sendable) => {});
   const persistScores = vi.fn((_guildId: string, _points: Map<string, number>) => {});
   const logError = vi.fn();
@@ -49,7 +49,7 @@ function harness() {
     availableModels: ['en_US-amy-medium'],
     defaultSpeed: 1,
     defaultVoiceOf: () => 'en_US-amy-medium',
-    getPlayer: () => undefined, // jogos de tabuleiro nao falam
+    getPlayer: () => undefined, // board games do not speak
     sendToChannel: send,
     localeOf: () => 'en',
     translate: (key, _l, params) => (params ? `${key} ${JSON.stringify(params)}` : key),
@@ -64,11 +64,11 @@ const C = 'c1';
 const say = (mgr: GameManager, authorId: string, content: string): void => {
   mgr.handleMessage({ guildId: G, channelId: C, authorId, authorName: authorId, content });
 };
-// A semente da sessao = clock.now() no start = 0 (FakeClock comeca a 0).
+// The session seed = clock.now() at start = 0 (FakeClock starts at 0).
 const SEED = 0;
 
-describe('Forca', () => {
-  it('adivinhar a palavra inteira ganha o ponto', async () => {
+describe('Hangman', () => {
+  it('guessing the whole word wins the point', async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('hangman')!.create());
@@ -82,7 +82,7 @@ describe('Forca', () => {
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('6 letras erradas -> derrota, sem pontos', async () => {
+  it('6 wrong letters -> loss, no points', async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('hangman')!.create());
@@ -102,7 +102,7 @@ describe('Forca', () => {
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('com tiles instalados: mostra o boneco da forca no estágio certo (nº de erros)', async () => {
+  it('with tiles installed: shows the hangman figure at the right stage (number of wrong guesses)', async () => {
     const { env, send } = harness();
     env.boardEmojis = Object.fromEntries(
       Array.from({ length: 7 }, (_, i) => [`h${i}`, `<:h${i}:1234567890123456789>`]),
@@ -112,9 +112,9 @@ describe('Forca', () => {
     await flush();
     const { words } = wordsForLocale('en');
     const word = normalizeAnswer(words[seededIndex(SEED, words.length)]);
-    // Início: 0 erros -> estágio h0 (só a forca).
+    // Start: 0 wrong -> stage h0 (just the gallows).
     expect(String(send.mock.calls[0][1])).toContain('<:h0:');
-    // Uma letra errada -> estágio h1.
+    // One wrong letter -> stage h1.
     const wrong = 'qwertyuiopasdfghjklzxcvbnm'.split('').find((l) => !word.includes(l))!;
     say(mgr, 'u', wrong);
     await flush();
@@ -123,12 +123,12 @@ describe('Forca', () => {
 });
 
 describe('Termo/Wordle', () => {
-  it('acertar a palavra de 5 letras ganha; mensagens não-5-letras são ignoradas', async () => {
+  it('guessing the 5-letter word wins; non-5-letter messages are ignored', async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('wordle')!.create());
     await flush();
-    // Chat qualquer (não 5 letras) não conta como palpite.
+    // Any chat (not 5 letters) does not count as a guess.
     say(mgr, 'u', 'ola pessoal');
     await flush();
     const { words } = pickWordleWords('en');
@@ -139,14 +139,14 @@ describe('Termo/Wordle', () => {
     expect(persistScores.mock.calls[0][1].get('u')).toBe(1);
   });
 
-  it('palpite errado mostra as letras coloridas (bloco ansi) e conta uma tentativa', async () => {
+  it('wrong guess shows the colored letters (ansi block) and counts an attempt', async () => {
     const { env, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('wordle')!.create());
     await flush();
     const { words } = pickWordleWords('en');
     const target = normalizeAnswer(words[seededIndex(SEED, words.length)]);
-    // Um palpite de 5 letras diferente do alvo (garante ≠).
+    // A 5-letter guess different from the target (guarantees ≠).
     const guess = target === 'zzzzz' ? 'aaaaa' : 'zzzzz';
     say(mgr, 'u', guess);
     await flush();
@@ -154,20 +154,20 @@ describe('Termo/Wordle', () => {
       .map((c) => String(c[1]))
       .find((s) => s.includes('game.wordle.guess'));
     expect(guessMsg).toBeDefined();
-    // As letras coloridas vêm num bloco ```ansi com as letras do palpite (maiúsculas).
+    // The colored letters come in a ```ansi block with the guess's letters (uppercase).
     expect(guessMsg).toContain('```ansi');
     expect(guessMsg).toContain(guess.toUpperCase()[0]);
-    expect(mgr.active(G)).toBe(true); // ainda a decorrer
+    expect(mgr.active(G)).toBe(true); // still in progress
   });
 
-  it('mostra o teclado com as letras descartadas (fora) após um palpite', async () => {
+  it('shows the keyboard with the discarded letters (out) after a guess', async () => {
     const { env, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('wordle')!.create());
     await flush();
     const { words } = pickWordleWords('en');
     const target = normalizeAnswer(words[seededIndex(SEED, words.length)]);
-    // Palpite de 5 letras que NÃO estão no alvo -> todas viram "fora".
+    // A 5-letter guess whose letters are NOT in the target -> all become "out".
     const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
     const notInTarget = alphabet
       .filter((l) => !target.includes(l))
@@ -178,12 +178,12 @@ describe('Termo/Wordle', () => {
     const guessMsg = send.mock.calls
       .map((c) => String(c[1]))
       .find((s) => s.includes('game.wordle.guess'));
-    expect(guessMsg).toContain('game.wordle.out'); // linha das letras descartadas
-    // A 1ª letra descartada aparece na linha "fora".
+    expect(guessMsg).toContain('game.wordle.out'); // line of discarded letters
+    // The 1st discarded letter appears in the "out" line.
     expect(guessMsg).toContain(notInTarget[0].toUpperCase());
   });
 
-  // Mapa dos 78 tiles do wordle: w{g|y|x}{a-z} -> markup com id de 19 dígitos.
+  // Map of the 78 wordle tiles: w{g|y|x}{a-z} -> markup with a 19-digit id.
   const fakeWordleMap = (): Record<string, string> => {
     const m: Record<string, string> = {};
     for (const s of ['g', 'y', 'x']) {
@@ -193,7 +193,7 @@ describe('Termo/Wordle', () => {
     return m;
   };
 
-  it('com tiles instalados: grelha em emojis (5 por palpite, acumula), sem bloco ansi', async () => {
+  it('with tiles installed: emoji grid (5 per guess, accumulates), no ansi block', async () => {
     const { env, send } = harness();
     env.boardEmojis = fakeWordleMap();
     const mgr = new GameManager(env);
@@ -209,9 +209,9 @@ describe('Termo/Wordle', () => {
       .map((c) => String(c[1]))
       .find((s) => s.includes('game.wordle.guess'));
     expect(msg1).toBeDefined();
-    expect(msg1).not.toContain('```ansi'); // já não é o fallback
-    expect((msg1!.match(/<:w[gyx]/g) ?? []).length).toBe(5); // 1 palpite = 5 tiles
-    // 2º palpite -> a grelha acumula para 10 tiles.
+    expect(msg1).not.toContain('```ansi'); // no longer the fallback
+    expect((msg1!.match(/<:w[gyx]/g) ?? []).length).toBe(5); // 1 guess = 5 tiles
+    // 2nd guess -> the grid accumulates to 10 tiles.
     say(mgr, 'u', g2);
     await flush();
     const msg2 = send.mock.calls
@@ -222,13 +222,13 @@ describe('Termo/Wordle', () => {
   });
 });
 
-describe('Galo', () => {
-  it('X faz linha e ganha; jogar fora da vez é recusado', async () => {
+describe('Tic-tac-toe', () => {
+  it('X makes a line and wins; playing out of turn is refused', async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('tictactoe')!.create());
     await flush();
-    // X (ana) joga a 1; ana tenta jogar de novo fora da vez -> recusado.
+    // X (ana) plays 1; ana tries to play again out of turn -> refused.
     say(mgr, 'ana', '1');
     await flush();
     say(mgr, 'ana', '2');
@@ -236,7 +236,7 @@ describe('Galo', () => {
     expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.notYourTurn'))).toBe(
       true,
     );
-    // O (rui) joga 4; segue a sequência até X fazer a linha 1-2-3.
+    // O (rui) plays 4; follows the sequence until X makes the line 1-2-3.
     say(mgr, 'rui', '4');
     await flush();
     say(mgr, 'ana', '2');
@@ -250,7 +250,7 @@ describe('Galo', () => {
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('com tiles instalados: grelha em emojis (tx/to/números), sem code block', async () => {
+  it('with tiles installed: emoji grid (tx/to/numbers), no code block', async () => {
     const { env, send } = harness();
     env.boardEmojis = {
       tx: '<:tx:1234567890123456789>',
@@ -262,25 +262,25 @@ describe('Galo', () => {
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('tictactoe')!.create());
     await flush();
-    say(mgr, 'ana', '1'); // X joga na casa 1
+    say(mgr, 'ana', '1'); // X plays on square 1
     await flush();
     const msg = send.mock.calls
       .map((c) => String(c[1]))
       .reverse()
       .find((s) => s.includes('game.tictactoe.turn'));
     expect(msg).toBeDefined();
-    expect(msg).not.toContain('```'); // já não é o ASCII
-    expect(msg).toContain('<:tx:'); // a jogada de X aparece como tile
-    expect((msg!.match(/<:t/g) ?? []).length).toBe(9); // 9 casas, cada uma um tile
+    expect(msg).not.toContain('```'); // no longer the ASCII
+    expect(msg).toContain('<:tx:'); // X's move appears as a tile
+    expect((msg!.match(/<:t/g) ?? []).length).toBe(9); // 9 squares, each one a tile
   });
 
-  it('tabuleiro cheio sem linha -> empate, sem pontos', async () => {
+  it('full board with no line -> draw, no points', async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('tictactoe')!.create());
     await flush();
-    // Sequência conhecida de "gato" (X começa): X:1 O:3 X:2 O:4 X:6 O:5 X:7 O:8 X:9.
-    // Resultado: X em 1,2,6,7,9 e O em 3,4,5,8 — 9 casas, nenhuma linha.
+    // Known "cat's game" sequence (X starts): X:1 O:3 X:2 O:4 X:6 O:5 X:7 O:8 X:9.
+    // Result: X on 1,2,6,7,9 and O on 3,4,5,8 — 9 squares, no line.
     const seq: [string, string][] = [
       ['ana', '1'],
       ['rui', '3'],
@@ -302,7 +302,7 @@ describe('Galo', () => {
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('um 3º jogador é espetador (não ocupa casa)', async () => {
+  it('a 3rd player is a spectator (does not take a square)', async () => {
     const { env, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('tictactoe')!.create());
@@ -311,66 +311,66 @@ describe('Galo', () => {
     await flush();
     say(mgr, 'rui', '2'); // O
     await flush();
-    say(mgr, 'carlos', '3'); // espetador -> ignorado
+    say(mgr, 'carlos', '3'); // spectator -> ignored
     await flush();
-    say(mgr, 'ana', '3'); // X consegue jogar a 3 (não foi ocupada pelo carlos)
+    say(mgr, 'ana', '3'); // X can play 3 (it was not taken by carlos)
     await flush();
     expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.tictactoe.taken'))).toBe(
       false,
     );
-    expect(mgr.active(G)).toBe(true); // ainda a decorrer
+    expect(mgr.active(G)).toBe(true); // still in progress
   });
 });
 
-describe('Xadrez', () => {
-  it("mate do pastor invertido (fool's mate): brancas=1º a jogar, pretas dão xeque-mate em 4 jogadas", async () => {
+describe('Chess', () => {
+  it("fool's mate: white=first to move, black delivers checkmate in 4 moves", async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create());
     await flush();
-    say(mgr, 'ana', 'f3'); // ana -> brancas
+    say(mgr, 'ana', 'f3'); // ana -> white
     await flush();
-    say(mgr, 'rui', 'e5'); // rui -> pretas
+    say(mgr, 'rui', 'e5'); // rui -> black
     await flush();
     say(mgr, 'ana', 'g4');
     await flush();
-    say(mgr, 'rui', 'Qh4'); // xeque-mate
+    say(mgr, 'rui', 'Qh4'); // checkmate
     await flush();
     expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.checkmate'))).toBe(true);
-    expect(persistScores.mock.calls[0][1].get('rui')).toBe(3); // rui (pretas) ganhou
+    expect(persistScores.mock.calls[0][1].get('rui')).toBe(3); // rui (black) won
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('jogar fora da vez é recusado; jogada ilegal é recusada sem mudar o turno', async () => {
+  it('playing out of turn is refused; an illegal move is refused without changing the turn', async () => {
     const { env, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create());
     await flush();
-    say(mgr, 'ana', 'f3'); // ana -> brancas, joga
+    say(mgr, 'ana', 'f3'); // ana -> white, plays
     await flush();
-    say(mgr, 'ana', 'f4'); // ana tenta jogar de novo fora da vez -> recusado
+    say(mgr, 'ana', 'f4'); // ana tries to play again out of turn -> refused
     await flush();
     expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.notYourTurn'))).toBe(
       true,
     );
-    say(mgr, 'rui', 'e6'); // rui -> pretas, joga bem
+    say(mgr, 'rui', 'e6'); // rui -> black, plays legally
     await flush();
-    say(mgr, 'ana', 'Qh8'); // brancas: jogada ilegal (dama nao chega ali)
+    say(mgr, 'ana', 'Qh8'); // white: illegal move (queen can't reach there)
     await flush();
     expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.illegalMove'))).toBe(
       true,
     );
-    expect(mgr.active(G)).toBe(true); // jogo continua, ninguem ganhou por engano
+    expect(mgr.active(G)).toBe(true); // game continues, nobody won by mistake
   });
 
-  it('desistir ("resign") termina o jogo e dá a vitória ao adversário', async () => {
+  it('resigning ("resign") ends the game and gives the win to the opponent', async () => {
     const { env, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create());
     await flush();
-    say(mgr, 'ana', 'f3'); // ana -> brancas
+    say(mgr, 'ana', 'f3'); // ana -> white
     await flush();
-    say(mgr, 'rui', 'e5'); // rui -> pretas
+    say(mgr, 'rui', 'e5'); // rui -> black
     await flush();
     say(mgr, 'ana', 'resign');
     await flush();
@@ -379,60 +379,60 @@ describe('Xadrez', () => {
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('um 3º jogador é espetador; conversa normal não conta como jogada', async () => {
+  it('a 3rd player is a spectator; normal chat does not count as a move', async () => {
     const { env, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create());
     await flush();
-    say(mgr, 'ana', 'hello everyone, good luck!'); // conversa, nao e jogada -> ignorado
+    say(mgr, 'ana', 'hello everyone, good luck!'); // chat, not a move -> ignored
     await flush();
-    say(mgr, 'ana', 'f3'); // so agora ana reclama as brancas
+    say(mgr, 'ana', 'f3'); // only now ana claims white
     await flush();
-    say(mgr, 'rui', 'e5'); // rui -> pretas
+    say(mgr, 'rui', 'e5'); // rui -> black
     await flush();
-    say(mgr, 'carlos', 'Nc3'); // espetador (assentos cheios) -> ignorado, mesmo sendo jogada válida
+    say(mgr, 'carlos', 'Nc3'); // spectator (seats full) -> ignored, even though it's a valid move
     await flush();
     expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.chess.illegalMove'))).toBe(
       false,
     );
-    expect(mgr.active(G)).toBe(true); // ainda a decorrer, vez das brancas
+    expect(mgr.active(G)).toBe(true); // still in progress, white's turn
   });
 
-  // Mapa nome->markup dos 26 emojis, com IDs de 19 dígitos (como os reais) para o teste
-  // de comprimento refletir o orçamento verdadeiro dos 2000 chars.
+  // Name->markup map of the 26 emojis, with 19-digit IDs (like the real ones) so the
+  // length test reflects the true 2000-char budget.
   const fakeEmojiMap = (): Record<string, string> =>
     Object.fromEntries(CHESS_EMOJI_NAMES.map((n) => [n, `<:${n}:1234567890123456789>`]));
 
-  it('render em emojis: 64 casas, alternância clara/escura correta, cabe em <2000 chars', async () => {
+  it('emoji render: 64 squares, correct light/dark alternation, fits in <2000 chars', async () => {
     const { env, send } = harness();
     env.boardEmojis = fakeEmojiMap();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create());
     await flush();
     const msg = String(send.mock.calls[0][1]);
-    // Nova partida = 64 casas + 8 tiles de etiqueta de ficheiro = 72 emojis.
+    // New match = 64 squares + 8 file-label tiles = 72 emojis.
     expect((msg.match(/<:/g) ?? []).length).toBe(72);
-    // Mapeamento peça×casa: a8 (canto sup. esq.) é casa CLARA -> torre preta clara (brl);
-    // b8 é escura -> cavalo preto escuro (bnd); a1 é escura -> torre branca escura (wrd).
+    // Piece×square mapping: a8 (top-left corner) is a LIGHT square -> light black rook (brl);
+    // b8 is dark -> dark black knight (bnd); a1 is dark -> dark white rook (wrd).
     expect(msg).toContain('<:brl:');
     expect(msg).toContain('<:bnd:');
     expect(msg).toContain('<:wrd:');
-    // Etiquetas dos ficheiros são tiles próprios (fa..fh), NÃO indicadores regionais
-    // (esses combinavam-se em bandeiras: 🇨🇩=Congo, 🇬🇭=Gana).
+    // File labels are their own tiles (fa..fh), NOT regional indicators
+    // (those would combine into flags: 🇨🇩=Congo, 🇬🇭=Ghana).
     expect(msg).toContain('<:fa:');
     expect(msg).toContain('<:fh:');
     expect(msg).not.toContain('🇦');
-    // Orçamento do Discord (UTF-16 length é um limite conservador vs code points).
+    // Discord budget (UTF-16 length is a conservative limit vs code points).
     expect(msg.length).toBeLessThan(2000);
   });
 
-  it('sem emojis instalados: cai no tabuleiro ASCII (code block), sem markup de emoji', async () => {
-    const { env, send } = harness(); // harness normal NÃO define boardEmojis
+  it('without emojis installed: falls back to the ASCII board (code block), no emoji markup', async () => {
+    const { env, send } = harness(); // the normal harness does NOT set boardEmojis
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('chess')!.create());
     await flush();
     const msg = String(send.mock.calls[0][1]);
-    expect(msg).toContain('```'); // code block ASCII
-    expect(msg).not.toContain('<:'); // nenhum emoji custom
+    expect(msg).toContain('```'); // ASCII code block
+    expect(msg).not.toContain('<:'); // no custom emoji
   });
 });

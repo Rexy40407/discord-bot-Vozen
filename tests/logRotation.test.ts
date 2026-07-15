@@ -1,9 +1,9 @@
-// tests/logRotation.test.ts — rotação de logs do supervisor A MEIO-do-run (plano 028).
-// Antes desta mudança a rotação só corria no arranque do start-prod.mjs; um child em
-// crash-loop inundava logs/vozen.log sem limite até encher o disco. Cobre: rotação ao
-// ultrapassar maxBytes numa escrita a meio, seed do contador a partir do ficheiro já
-// existente (rotação também no arranque), e que write() NUNCA lança mesmo com a pasta
-// removida a meio (degrada em silêncio).
+// tests/logRotation.test.ts — supervisor log rotation MID-run (plan 028).
+// Before this change rotation only ran at start-prod.mjs startup; a child in a
+// crash-loop flooded logs/vozen.log without limit until the disk filled up. Covers: rotation on
+// exceeding maxBytes on a mid-run write, seeding the counter from the already-existing
+// file (rotation also at startup), and that write() NEVER throws even with the folder
+// removed mid-run (degrades silently).
 import { describe, it, expect, afterEach } from 'vitest';
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -24,19 +24,19 @@ afterEach(() => {
   }
 });
 
-describe('makeRotatingWriter — rotação a meio-do-run', () => {
-  it('roda para .1 quando os bytes escritos ultrapassam maxBytes, mantendo 1 geração', () => {
+describe('makeRotatingWriter — mid-run rotation', () => {
+  it('rotates to .1 when the bytes written exceed maxBytes, keeping 1 generation', () => {
     const dir = makeTmpDir();
     const writer = makeRotatingWriter(dir, 'vozen.log', 50);
 
-    // 6 chunks de 10 bytes = 60 bytes, ultrapassa o limite de 50 a meio da sequência.
+    // 6 chunks of 10 bytes = 60 bytes, exceeds the limit of 50 mid-sequence.
     for (let i = 0; i < 6; i++) writer.write('0123456789');
 
     expect(existsSync(writer.rotatedFile)).toBe(true);
     expect(statSync(writer.currentFile).size).toBeLessThan(50);
   });
 
-  it('mantém só 1 geração — rotações sucessivas não acumulam .2, .3, …', () => {
+  it('keeps only 1 generation — successive rotations do not accumulate .2, .3, …', () => {
     const dir = makeTmpDir();
     const writer = makeRotatingWriter(dir, 'vozen.log', 20);
 
@@ -47,20 +47,20 @@ describe('makeRotatingWriter — rotação a meio-do-run', () => {
     expect(existsSync(`${writer.currentFile}.2`)).toBe(false);
   });
 
-  it('semeia o contador a partir do tamanho do ficheiro existente (rotação também no arranque)', () => {
+  it('seeds the counter from the size of the existing file (rotation also at startup)', () => {
     const dir = makeTmpDir();
     const filePath = join(dir, 'vozen.log');
-    // Ficheiro de uma sessão anterior já acima do limite.
+    // File from a previous session already above the limit.
     writeFileSync(filePath, 'x'.repeat(100));
 
     const writer = makeRotatingWriter(dir, 'vozen.log', 50);
 
-    // O construtor já deve ter rodado — sem esperar por nenhuma escrita.
+    // The constructor must have already rotated — without waiting for any write.
     expect(existsSync(writer.rotatedFile)).toBe(true);
     expect(readFileSync(writer.rotatedFile, 'utf8')).toBe('x'.repeat(100));
   });
 
-  it('write() NUNCA lança mesmo com a pasta removida a meio (degrada em silêncio)', () => {
+  it('write() NEVER throws even with the folder removed mid-run (degrades silently)', () => {
     const dir = makeTmpDir();
     const writer = makeRotatingWriter(dir, 'vozen.log', 50);
 
@@ -71,9 +71,9 @@ describe('makeRotatingWriter — rotação a meio-do-run', () => {
     expect(() => writer.write('mais uma para garantir\n')).not.toThrow();
   });
 
-  it('construtor NUNCA lança mesmo quando a pasta não pode ser criada', () => {
+  it('constructor NEVER throws even when the folder cannot be created', () => {
     const dir = makeTmpDir();
-    // Cria um FICHEIRO onde o writer vai tentar criar uma PASTA — mkdirSync falha.
+    // Creates a FILE where the writer will try to create a FOLDER — mkdirSync fails.
     const blockedDirPath = join(dir, 'bloqueado');
     writeFileSync(blockedDirPath, 'sou um ficheiro, não uma pasta');
 

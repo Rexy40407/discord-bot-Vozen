@@ -1,4 +1,4 @@
-// src/commands/helpers.ts — helpers partilhados (locale de interface, reply efémero, permissões de convite, formatação de duração) extraídos de index.ts (plano 015).
+// src/commands/helpers.ts — shared helpers (interface locale, ephemeral reply, invite permissions, duration formatting) extracted from index.ts (plan 015).
 import {
   PermissionsBitField,
   PermissionFlagsBits,
@@ -10,11 +10,11 @@ import { getGuildConfig } from '../store/guildConfig';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '../i18n/index';
 
 /**
- * Locale da INTERFACE para uma interacao. Le `guild_config.locale` da guild; em
- * DMs (guildId null) ou se a leitura falhar por qualquer motivo, devolve
- * DEFAULT_LOCALE ('en'). NUNCA lanca — uma falha a ler a config nunca deve partir
- * a resposta/erro que o utilizador recebe (isto e chamado inclusive no catch de
- * handleInteraction). Colapsa o padrao repetido `i.guildId ? ...locale : 'en'`.
+ * INTERFACE locale for an interaction. Reads `guild_config.locale` for the guild; in
+ * DMs (guildId null) or if the read fails for any reason, returns DEFAULT_LOCALE
+ * ('en'). NEVER throws — a failure to read the config must never break the
+ * response/error the user receives (this is even called from the catch of
+ * handleInteraction). Collapses the repeated `i.guildId ? ...locale : 'en'` pattern.
  */
 export function localeFor(deps: BotDeps, guildId: string | null | undefined): string {
   if (!guildId) return DEFAULT_LOCALE;
@@ -26,20 +26,20 @@ export function localeFor(deps: BotDeps, guildId: string | null | undefined): st
 }
 
 /**
- * Locale da INTERFACE para uma resposta PER-UTILIZADOR (ephemeral). O Discord
- * envia o idioma do CLIENTE de quem clicou em `interaction.locale` (ex. 'pt-BR',
- * 'en-US', 'es-ES'); assim cada utilizador ve a UI na SUA lingua, sem depender do
- * locale configurado na guild.
+ * INTERFACE locale for a PER-USER (ephemeral) response. Discord sends the language
+ * of the CLIENT of whoever clicked in `interaction.locale` (e.g. 'pt-BR',
+ * 'en-US', 'es-ES'); this way each user sees the UI in THEIR language, without
+ * depending on the locale configured on the guild.
  *
- * Resolucao (nunca lanca — como localeFor):
- *   1. Normaliza `interaction.locale` para o codigo base: parte antes do '-' em
- *      minusculas ('pt-BR'->'pt', 'en-US'->'en', 'es-419'->'es', 'zh-CN'->'zh',
- *      'sv-SE'->'sv'; um codigo ja base como 'fr' mapeia para si proprio). Uma
- *      regra generica cobre TODAS as variantes do Discord — sem casos especiais.
- *   2. Se o codigo base estiver em SUPPORTED_LOCALES -> usa-o.
- *   3. Senao (lingua do Discord que ainda nao suportamos, ou locale ausente) ->
- *      cai no locale configurado da GUILD (localeFor), que por sua vez cai em
- *      DEFAULT_LOCALE. Assim /config language continua a ser o fallback partilhado.
+ * Resolution (never throws — like localeFor):
+ *   1. Normalizes `interaction.locale` to the base code: part before the '-' in
+ *      lowercase ('pt-BR'->'pt', 'en-US'->'en', 'es-419'->'es', 'zh-CN'->'zh',
+ *      'sv-SE'->'sv'; a code already in base form like 'fr' maps to itself). One
+ *      generic rule covers ALL Discord variants — no special cases.
+ *   2. If the base code is in SUPPORTED_LOCALES -> use it.
+ *   3. Otherwise (a Discord language we don't yet support, or a missing locale) ->
+ *      falls back to the GUILD's configured locale (localeFor), which in turn falls
+ *      back to DEFAULT_LOCALE. So /config language remains the shared fallback.
  */
 export function localeForUser(
   deps: BotDeps,
@@ -52,20 +52,20 @@ export function localeForUser(
       return base;
     }
   }
-  // Lingua do Discord nao suportada / ausente -> fallback para a guild (e default).
+  // Unsupported / missing Discord language -> fall back to the guild (and default).
   return localeFor(deps, interaction?.guildId);
 }
 
 /**
- * Permissoes minimas que o Vozen precisa no servidor onde for convidado, derivadas
- * dos 5 bits nomeados via PermissionsBitField (NAO um numero magico):
- *  - Connect/Speak       -> entrar e falar nos canais de voz (o core do bot)
- *  - ViewChannel         -> ver os canais (texto e voz)
- *  - SendMessages        -> responder no canal de texto
- *  - ReadMessageHistory  -> ler o historico do canal de auto-leitura
- * Exportado como string (representacao do bigint) porque e isso que o parametro
- * `permissions` do URL OAuth2 espera. Derivado e testavel: o teste recomputa o
- * mesmo inteiro a partir dos bits, por isso deixar cair um bit aqui parte o teste.
+ * Minimum permissions Vozen needs on the server it is invited to, derived from
+ * the 5 named bits via PermissionsBitField (NOT a magic number):
+ *  - Connect/Speak       -> join and speak in voice channels (the bot's core)
+ *  - ViewChannel         -> see the channels (text and voice)
+ *  - SendMessages        -> reply in the text channel
+ *  - ReadMessageHistory  -> read the auto-read channel's history
+ * Exported as a string (representation of the bigint) because that is what the
+ * `permissions` parameter of the OAuth2 URL expects. Derived and testable: the test
+ * recomputes the same integer from the bits, so dropping a bit here breaks the test.
  */
 export const INVITE_PERMISSIONS: string = new PermissionsBitField([
   PermissionFlagsBits.Connect,
@@ -73,15 +73,15 @@ export const INVITE_PERMISSIONS: string = new PermissionsBitField([
   PermissionFlagsBits.ViewChannel,
   PermissionFlagsBits.SendMessages,
   PermissionFlagsBits.ReadMessageHistory,
-  // EmbedLinks: o bot responde quase tudo em EMBEDS (ajuda, stats, jogos, setup).
-  // Sem esta permissão o Discord NÃO renderiza os embeds do bot em canais onde o
-  // @everyone não a tenha. Reações/anexos NÃO entram: o código não usa .react() nem
-  // envia ficheiros (auditado).
+  // EmbedLinks: the bot replies with almost everything in EMBEDS (help, stats, games, setup).
+  // Without this permission Discord does NOT render the bot's embeds in channels where
+  // @everyone doesn't have it. Reactions/attachments do NOT apply: the code uses neither
+  // .react() nor sends files (audited).
   PermissionFlagsBits.EmbedLinks,
-  // Threads dos jogos (/game): o Vozen cria uma thread descartável por partida, escreve
-  // nela e apaga-a no fim. Sem estas, o jogo cai no fallback (joga no próprio canal);
-  // sem ManageThreads a thread não é apagada (auto-arquiva). Servidores já convidados
-  // não têm estas permissões até re-convidarem — o fallback trata disso.
+  // Game threads (/game): Vozen creates a disposable thread per match, writes in
+  // it, and deletes it at the end. Without these, the game falls back (plays in the channel
+  // itself); without ManageThreads the thread is not deleted (auto-archives). Already-invited
+  // servers don't have these permissions until they re-invite — the fallback handles that.
   PermissionFlagsBits.CreatePublicThreads,
   PermissionFlagsBits.SendMessagesInThreads,
   PermissionFlagsBits.ManageThreads,
@@ -92,11 +92,11 @@ export async function reply(i: ChatInputCommandInteraction, content: string): Pr
 }
 
 /**
- * Prefixo de locale a partir de um nome de modelo Piper: a parte inicial ate ao
- * primeiro '_' inclusive (ex. 'en_US-amy-medium' -> 'en_', 'pt_PT-tugao' -> 'pt_').
- * Se nao houver '_', devolve '' (o laughterFor cai no fallback "hahaha"). PURO.
- * E o MESMO formato de prefixo usado em LANG_TO_PREFIX / pickVoice, para que
- * laughterFor(prefix) e a escolha de voz falem a mesma lingua.
+ * Locale prefix from a Piper model name: the initial part up to and including the
+ * first '_' (e.g. 'en_US-amy-medium' -> 'en_', 'pt_PT-tugao' -> 'pt_').
+ * If there is no '_', returns '' (laughterFor falls back to "hahaha"). PURE.
+ * It is the SAME prefix format used in LANG_TO_PREFIX / pickVoice, so that
+ * laughterFor(prefix) and the voice choice speak the same language.
  */
 export function localePrefixOf(model: string): string {
   const us = model.indexOf('_');
@@ -104,8 +104,8 @@ export function localePrefixOf(model: string): string {
 }
 
 /**
- * Formata uma duração em segundos como "2d 3h 15m" (omite unidades a zero à cabeça;
- * < 1 min -> "<1m"). Universal (letras d/h/m), a frase à volta é que é localizada. PURA.
+ * Formats a duration in seconds as "2d 3h 15m" (omits leading zero units;
+ * < 1 min -> "<1m"). Universal (d/h/m letters), only the surrounding phrase is localized. PURE.
  */
 export function formatDuration(totalSec: number): string {
   const s = Math.max(0, Math.floor(totalSec));

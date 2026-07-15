@@ -1,22 +1,22 @@
 import type Database from 'better-sqlite3';
 
-// Grants PENDENTES do Ko-fi: uma compra que chegou pelo webhook SEM Discord ID associável
-// (o checkout de subscrição do Ko-fi não tem caixa de mensagem fiável). Em vez de a perder
-// num log, guardamo-la aqui à espera de ser RECLAMADA pelo comprador no site (login Discord +
-// código do recibo). Indexada pelo tx id (que o comprador tem no recibo, chave forte) e pelo
-// HASH do email (para renovações órfãs); NUNCA o email em claro — ver hashKofiEmail em
-// premium/kofi.ts. Ao reclamar, aplica-se o grant ao Discord ID e memoriza-se email->Discord
-// ID (kofi_supporter), por isso as renovações seguintes resolvem-se sozinhas.
+// PENDING Ko-fi grants: a purchase that arrived via the webhook WITHOUT an associable Discord ID
+// (Ko-fi's subscription checkout has no reliable message box). Instead of losing it
+// in a log, we store it here waiting to be CLAIMED by the buyer on the site (Discord login +
+// receipt code). Indexed by the tx id (which the buyer has on the receipt, a strong key) and by the
+// email HASH (for orphan renewals); NEVER the email in cleartext — see hashKofiEmail in
+// premium/kofi.ts. On claiming, the grant is applied to the Discord ID and email->Discord
+// ID is memorized (kofi_supporter), so subsequent renewals resolve themselves.
 
 export interface PendingGrant {
   transactionId: string;
-  /** HASH HMAC do email (nunca o email em claro), ou null se o payload não trouxe email. */
+  /** HMAC HASH of the email (never the cleartext email), or null if the payload had no email. */
   emailHash: string | null;
   plan: string; // 'plus' | 'premium'
   days: number;
-  seats: number; // relevante só para 'premium'
+  seats: number; // relevant only for 'premium'
   createdAt: number;
-  /** Unix ms em que foi reclamado, ou null enquanto por reclamar. */
+  /** Unix ms when it was claimed, or null while unclaimed. */
   claimedAt: number | null;
 }
 
@@ -29,9 +29,9 @@ export interface PendingGrantInput {
 }
 
 /**
- * Regista uma compra sem Discord ID como PENDENTE. INSERT OR IGNORE na PK (transaction_id):
- * idempotente — uma re-entrega do Ko-fi (mesmo tx) não duplica. Devolve true se inseriu
- * (1.ª vez), false se já existia.
+ * Records a purchase without a Discord ID as PENDING. INSERT OR IGNORE on the PK (transaction_id):
+ * idempotent — a Ko-fi re-delivery (same tx) doesn't duplicate. Returns true if it inserted
+ * (1st time), false if it already existed.
  */
 export function recordPendingGrant(
   db: Database.Database,
@@ -68,7 +68,7 @@ function rowToPending(row: {
   };
 }
 
-/** Pendente NÃO reclamado com este tx id, ou null. */
+/** UNCLAIMED pending with this tx id, or null. */
 export function findUnclaimedPendingByTx(
   db: Database.Database,
   transactionId: string,
@@ -80,9 +80,9 @@ export function findUnclaimedPendingByTx(
 }
 
 /**
- * TODOS os pendentes NÃO reclamados com este hash de email (renovações órfãs: quem comprou
- * várias vezes sem nunca reclamar tem vários pendentes — o claim aplica todos). Um pendente
- * sem email (email_hash NULL) nunca casa aqui (só é reclamável pelo tx id).
+ * ALL UNCLAIMED pendings with this email hash (orphan renewals: someone who bought
+ * several times without ever claiming has several pendings — the claim applies all). A pending
+ * without email (email_hash NULL) never matches here (only claimable by tx id).
  */
 export function listUnclaimedPendingByEmailHash(
   db: Database.Database,
@@ -97,8 +97,8 @@ export function listUnclaimedPendingByEmailHash(
 }
 
 /**
- * Marca o pendente como reclamado. Idempotente: só afeta linhas ainda por reclamar
- * (claimed_at IS NULL), por isso um 2.º claim do mesmo tx devolve false sem re-aplicar.
+ * Marks the pending as claimed. Idempotent: only affects rows still unclaimed
+ * (claimed_at IS NULL), so a 2nd claim of the same tx returns false without re-applying.
  */
 export function markPendingClaimed(
   db: Database.Database,
@@ -114,28 +114,28 @@ export function markPendingClaimed(
 }
 
 /**
- * Purga pendentes criados antes de `cutoff` (minimização de dados — mesmo espírito da purga
- * de guilds saídas). Apaga reclamados e não-reclamados velhos: os reclamados já foram
- * aplicados e o ledger kofi_transaction continua a garantir a idempotência do webhook.
- * Devolve o nº de linhas removidas.
+ * Purges pendings created before `cutoff` (data minimization — same spirit as the purge
+ * of departed guilds). Deletes old claimed and unclaimed ones: the claimed were already
+ * applied and the kofi_transaction ledger still guarantees the webhook's idempotency.
+ * Returns the number of rows removed.
  */
 export function purgeOldPendingGrants(db: Database.Database, cutoff: number): number {
   const res = db.prepare('DELETE FROM kofi_pending WHERE created_at < ?').run(cutoff);
   return res.changes;
 }
 
-/** Retenção de um pendente (90 dias). Depois disto a compra abandonada é apagada
- * (minimização de dados). O comprador reclama muito antes; as renovações não dependem de
- * pendentes antigos (usam o mapa email->Discord ID memorizado no 1.º claim). */
+/** Retention of a pending (90 days). After this the abandoned purchase is deleted
+ * (data minimization). The buyer claims well before; renewals don't depend on
+ * old pendings (they use the email->Discord ID map memorized on the 1st claim). */
 export const PENDING_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
-/** Intervalo do job de purga (1x/dia). */
+/** Purge job interval (1x/day). */
 const PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Arranca o job de purga de pendentes: corre 1x no arranque e depois 1x/dia. Nunca lança
- * (uma corrida não pode derrubar o bot). O timer é unref'd (não segura o processo). Devolve
- * um `stop()` para testes/encerramento. A lógica pura está em `purgeOldPendingGrants`.
+ * Starts the pending-purge job: runs 1x on startup and then 1x/day. Never throws
+ * (a run can't take down the bot). The timer is unref'd (doesn't hold the process). Returns
+ * a `stop()` for tests/shutdown. The pure logic is in `purgeOldPendingGrants`.
  */
 export function startPendingPurgeJob(
   db: Database.Database,
@@ -146,7 +146,7 @@ export function startPendingPurgeJob(
       const removed = purgeOldPendingGrants(db, Date.now() - PENDING_RETENTION_MS);
       if (removed > 0 && onPurged) onPurged(removed);
     } catch {
-      // best-effort: nunca crashar o loop de manutenção.
+      // best-effort: never crash the maintenance loop.
     }
   };
   tick();

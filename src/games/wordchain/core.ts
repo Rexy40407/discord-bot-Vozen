@@ -1,22 +1,22 @@
 // src/games/wordchain/core.ts
 //
-// Núcleo PURO do minijogo "cadeia de palavras" (word-chain). Sem I/O, sem discord.js,
-// sem estado global — só as regras da cadeia, para ser testado isolado e determinista.
-// A orquestração (lobby, turnos, vidas, voz) vive em src/games/wordChain.ts.
+// PURE core of the "word-chain" minigame. No I/O, no discord.js, no global state —
+// just the chain rules, so it can be tested in isolation and deterministically.
+// The orchestration (lobby, turns, lives, voice) lives in src/games/wordChain.ts.
 
-/** Línguas latinas suportadas (têm wordlist em assets/wordlists/). */
+/** Supported Latin languages (they have a wordlist in assets/wordlists/). */
 export type WordChainLang = 'pt' | 'en' | 'es' | 'fr';
 export const WORDCHAIN_LANGS: readonly WordChainLang[] = ['pt', 'en', 'es', 'fr'];
 
-// NORMALIZAÇÃO — TEM de ser byte-a-byte igual à de tools/build-wordlists.mjs, senão o
-// input do utilizador normaliza diferente da lista e palavras válidas são rejeitadas.
-// O teste fixa os outputs canónicos (Cães->caes, éléphant->elephant, Straße->strasse).
+// NORMALIZATION — MUST be byte-for-byte identical to the one in tools/build-wordlists.mjs,
+// otherwise user input normalizes differently from the list and valid words are rejected.
+// The test pins the canonical outputs (Cães->caes, éléphant->elephant, Straße->strasse).
 const RE_PLAYABLE = /^[a-z]+$/;
 export function normalize(word: string): string {
   return word
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // diacríticos combinados
-    .toLowerCase() // ANTES das ligaduras, para apanhar maiúsculas (Æ, Ø, Ł…)
+    .replace(/[̀-ͯ]/g, '') // combining diacritics
+    .toLowerCase() // BEFORE the ligatures, to catch uppercase (Æ, Ø, Ł…)
     .replace(/ß/g, 'ss')
     .replace(/æ/g, 'ae')
     .replace(/œ/g, 'oe')
@@ -25,19 +25,19 @@ export function normalize(word: string): string {
     .replace(/ł/g, 'l');
 }
 
-/** true se a forma normalizada é "jogável" (só a-z, sem espaços/dígitos/pontuação). */
+/** true if the normalized form is "playable" (only a-z, no spaces/digits/punctuation). */
 export function isPlayableForm(normalized: string): boolean {
   return RE_PLAYABLE.test(normalized);
 }
 
-/** Dicionário de uma língua: pertença + que letras iniciais têm palavras. */
+/** Dictionary of a language: membership + which starting letters have words. */
 export interface Dictionary {
   has(normalizedWord: string): boolean;
-  /** Existe ALGUMA palavra que começa por esta letra (a-z)? Para a regra da letra-morta. */
+  /** Is there ANY word starting with this letter (a-z)? For the dead-letter rule. */
   hasStartingWith(letter: string): boolean;
 }
 
-/** Dicionário a partir de uma lista de palavras JÁ normalizadas (o que o loader dá). */
+/** Dictionary from a list of ALREADY normalized words (what the loader provides). */
 export class WordSetDictionary implements Dictionary {
   private readonly words: Set<string>;
   private readonly firstLetters: Set<string>;
@@ -56,7 +56,7 @@ export class WordSetDictionary implements Dictionary {
 
 export type ValidationReason =
   | 'ok'
-  | 'not-latin' // tem letras fora de a-z depois de normalizar (ex.: palavra noutro alfabeto)
+  | 'not-latin' // has letters outside a-z after normalizing (e.g. a word in another alphabet)
   | 'too-short'
   | 'wrong-letter'
   | 'repeated'
@@ -65,18 +65,18 @@ export type ValidationReason =
 export interface ValidationResult {
   ok: boolean;
   reason: ValidationReason;
-  /** Forma normalizada avaliada (para logs / mensagens). */
+  /** Normalized form evaluated (for logs / messages). */
   normalized: string;
 }
 
 export interface ChainConfig {
-  /** Duração do 1.º turno (ms). Default 15000. */
+  /** Duration of the 1st turn (ms). Default 15000. */
   startTurnMs?: number;
-  /** Piso da duração do turno (ms). Default 6000. */
+  /** Floor of the turn duration (ms). Default 6000. */
   minTurnMs?: number;
-  /** Quanto encurta o turno por cada palavra aceite (ms). Default 400. */
+  /** How much the turn shortens per accepted word (ms). Default 400. */
   turnDecrementMs?: number;
-  /** Tamanho mínimo inicial da palavra. Default 3. */
+  /** Initial minimum word length. Default 3. */
   baseMinLength?: number;
 }
 
@@ -89,7 +89,7 @@ const DEFAULTS: Required<ChainConfig> = {
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 
-/** RNG determinista (mulberry32) — start-letter reproduzível a partir do seed do jogo. */
+/** Deterministic RNG (mulberry32) — reproducible start-letter from the game seed. */
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -102,9 +102,9 @@ function mulberry32(seed: number): () => number {
 }
 
 /**
- * Motor da cadeia: mantém a letra obrigatória, as palavras já usadas e a dificuldade.
- * NÃO sabe nada de jogadores/turnos/vidas — isso é do jogo. Mutável por design (uma
- * instância = uma partida), mas cada método é determinista dado o estado.
+ * Chain engine: keeps the required letter, the words already used and the difficulty.
+ * Knows NOTHING about players/turns/lives — that's the game's job. Mutable by design
+ * (one instance = one match), but each method is deterministic given the state.
  */
 export class ChainEngine {
   private readonly cfg: Required<ChainConfig>;
@@ -118,24 +118,24 @@ export class ChainEngine {
     config: ChainConfig = {},
   ) {
     this.cfg = { ...DEFAULTS, ...config };
-    // Letra de arranque: aleatória (seeded) entre as que TÊM palavras no dicionário.
+    // Starting letter: random (seeded) among those that HAVE words in the dictionary.
     const rng = mulberry32(seed);
     const candidates = [...ALPHABET].filter((l) => dict.hasStartingWith(l));
     const pool = candidates.length ? candidates : [...ALPHABET];
     this.letter = pool[Math.floor(rng() * pool.length)];
   }
 
-  /** Letra por que a próxima palavra tem de começar. */
+  /** Letter the next word must start with. */
   get requiredLetter(): string {
     return this.letter;
   }
 
-  /** Palavras aceites até agora (comprimento da cadeia). */
+  /** Words accepted so far (chain length). */
   get chainLength(): number {
     return this.accepted;
   }
 
-  /** Tamanho mínimo atual: 3 → 4 (após 8 palavras) → 5 (após 16). */
+  /** Current minimum length: 3 → 4 (after 8 words) → 5 (after 16). */
   get minLength(): number {
     const base = this.cfg.baseMinLength;
     if (this.accepted >= 16) return base + 2;
@@ -143,13 +143,13 @@ export class ChainEngine {
     return base;
   }
 
-  /** Duração do turno atual (ms): encurta com a cadeia, com piso. */
+  /** Current turn duration (ms): shortens with the chain, with a floor. */
   get turnMs(): number {
     const raw = this.cfg.startTurnMs - this.accepted * this.cfg.turnDecrementMs;
     return Math.max(this.cfg.minTurnMs, raw);
   }
 
-  /** Valida uma palavra crua (como o utilizador a escreveu) contra o estado atual. */
+  /** Validates a raw word (as the user typed it) against the current state. */
   validate(rawWord: string): ValidationResult {
     const normalized = normalize(rawWord.trim());
     if (!isPlayableForm(normalized) || normalized.length === 0) {
@@ -171,10 +171,10 @@ export class ChainEngine {
   }
 
   /**
-   * Aceita uma palavra JÁ validada: regista-a, avança a dificuldade e escolhe a próxima
-   * letra obrigatória. Regra da letra-morta: usa a última letra; se nenhuma palavra do
-   * dicionário começa por ela, cai na penúltima; se essa também for morta, escolhe uma
-   * letra viva qualquer (determinista). Assume validate()===ok — não revalida.
+   * Accepts an ALREADY validated word: records it, advances the difficulty and picks the
+   * next required letter. Dead-letter rule: uses the last letter; if no dictionary word
+   * starts with it, falls back to the second-to-last; if that is also dead, picks any live
+   * letter (deterministic). Assumes validate()===ok — does not re-validate.
    */
   accept(normalizedWord: string): void {
     this.used.add(normalizedWord);
@@ -191,7 +191,7 @@ export class ChainEngine {
     }
   }
 
-  /** Uma palavra já foi usada nesta partida? (para mensagens/testes) */
+  /** Has a word already been used in this match? (for messages/tests) */
   isUsed(normalizedWord: string): boolean {
     return this.used.has(normalizedWord);
   }

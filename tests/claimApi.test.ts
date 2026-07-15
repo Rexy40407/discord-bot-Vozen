@@ -1,10 +1,10 @@
-// tests/claimApi.test.ts — endpoint HTTP POST /api/link (claim autenticado por OAuth Discord).
+// tests/claimApi.test.ts — HTTP POST /api/link endpoint (claim authenticated via Discord OAuth).
 //
-// O comprador, logado no site com Discord (OAuth), cola o código da transação do recibo. O
-// endpoint valida a identidade (statusApi.resolveIdentity), reclama o pendente e ativa.
-// Rate-limit próprio (anti-brute-force do código), uso único, CORS restrito. Um `code` com
-// '@' (email) é rejeitado com 400 `use_receipt_code` — plano 021, o email não é aceite como
-// prova de posse. Ver src/premium/kofiWebhook.ts.
+// The buyer, logged into the site with Discord (OAuth), pastes the receipt's transaction code. The
+// endpoint validates the identity (statusApi.resolveIdentity), claims the pending grant and activates.
+// Its own rate-limit (anti-brute-force on the code), single use, restricted CORS. A `code` with
+// '@' (email) is rejected with 400 `use_receipt_code` — plan 021, the email is not accepted as
+// proof of possession. See src/premium/kofiWebhook.ts.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Server } from 'node:http';
 import type Database from 'better-sqlite3';
@@ -16,7 +16,7 @@ import { isUserPremium } from '../src/store/premium';
 
 const DID = '999888777666555444';
 
-/** statusApi falso: mapeia token->identidade (null = inválido). */
+/** Fake statusApi: maps token->identity (null = invalid). */
 function makeStatusApi(identityByToken: Record<string, { id: string } | null>) {
   return {
     getStatus: vi.fn(async () => ({ code: 200, body: {} })),
@@ -27,7 +27,7 @@ function makeStatusApi(identityByToken: Record<string, { id: string } | null>) {
   };
 }
 
-describe('POST /api/link — claim autenticado', () => {
+describe('POST /api/link — authenticated claim', () => {
   let db: Database.Database;
   let server: Server | null = null;
 
@@ -66,24 +66,24 @@ describe('POST /api/link — claim autenticado', () => {
       body: JSON.stringify(body),
     });
 
-  it('sem token -> 401', async () => {
+  it('no token -> 401', async () => {
     const url = await start(makeStatusApi({}));
     expect((await post(url, { code: 'x' })).status).toBe(401);
   });
 
-  it('token inválido -> 401', async () => {
+  it('invalid token -> 401', async () => {
     const url = await start(makeStatusApi({ bom: { id: DID } }));
     const res = await post(url, { code: 'x' }, { authorization: 'Bearer mau' });
     expect(res.status).toBe(401);
   });
 
-  it('sem código no body -> 400', async () => {
+  it('no code in the body -> 400', async () => {
     const url = await start(makeStatusApi({ bom: { id: DID } }));
     const res = await post(url, {}, { authorization: 'Bearer bom' });
     expect(res.status).toBe(400);
   });
 
-  it('código válido -> 200, ativa Plus e marca reclamado', async () => {
+  it('valid code -> 200, activates Plus and marks as claimed', async () => {
     recordPendingGrant(
       db,
       { transactionId: 'tx-ok', emailHash: 'h', plan: 'plus', days: 30, seats: 3 },
@@ -99,8 +99,8 @@ describe('POST /api/link — claim autenticado', () => {
     expect(findUnclaimedPendingByTx(db, 'tx-ok')).toBeNull();
   });
 
-  it('email do Ko-fi -> 400 use_receipt_code (plano 021: email já não ativa nada)', async () => {
-    const emailHash = hashKofiEmail('tok', 'buyer@example.com'); // 'tok' = token do webhook no start()
+  it('Ko-fi email -> 400 use_receipt_code (plan 021: email no longer activates anything)', async () => {
+    const emailHash = hashKofiEmail('tok', 'buyer@example.com'); // 'tok' = webhook token in start()
     recordPendingGrant(
       db,
       { transactionId: 'tx-em', emailHash, plan: 'plus', days: 30, seats: 3 },
@@ -112,16 +112,16 @@ describe('POST /api/link — claim autenticado', () => {
     const body = (await res.json()) as { error: string };
     expect(body.error).toBe('use_receipt_code');
     expect(isUserPremium(db, DID, 2_000_000)).toBe(false);
-    expect(findUnclaimedPendingByTx(db, 'tx-em')).not.toBeNull(); // continua por reclamar
+    expect(findUnclaimedPendingByTx(db, 'tx-em')).not.toBeNull(); // still unclaimed
   });
 
-  it('código desconhecido -> 404 (genérico, sem oráculo)', async () => {
+  it('unknown code -> 404 (generic, no oracle)', async () => {
     const url = await start(makeStatusApi({ bom: { id: DID } }));
     const res = await post(url, { code: 'nada' }, { authorization: 'Bearer bom' });
     expect(res.status).toBe(404);
   });
 
-  it('OPTIONS preflight -> 204 com CORS + POST permitido', async () => {
+  it('OPTIONS preflight -> 204 with CORS + POST allowed', async () => {
     const url = await start(makeStatusApi({}));
     const res = await fetch(url, { method: 'OPTIONS' });
     expect(res.status).toBe(204);
@@ -129,12 +129,12 @@ describe('POST /api/link — claim autenticado', () => {
     expect(res.headers.get('access-control-allow-methods')).toMatch(/POST/);
   });
 
-  it('GET (método errado) -> 405', async () => {
+  it('GET (wrong method) -> 405', async () => {
     const url = await start(makeStatusApi({}));
     expect((await fetch(url, { method: 'GET' })).status).toBe(405);
   });
 
-  it('rate-limit anti-brute-force: 6.ª tentativa do mesmo IP -> 429', async () => {
+  it('anti-brute-force rate-limit: 6th attempt from the same IP -> 429', async () => {
     const url = await start(makeStatusApi({ bom: { id: DID } }));
     for (let i = 0; i < 5; i++) {
       const r = await post(
@@ -142,7 +142,7 @@ describe('POST /api/link — claim autenticado', () => {
         { code: 'nada' },
         { authorization: 'Bearer bom', 'x-forwarded-for': '5.5.5.5' },
       );
-      expect(r.status).toBe(404); // não encontrado, mas conta para o limite
+      expect(r.status).toBe(404); // not found, but counts toward the limit
     }
     const blocked = await post(
       url,

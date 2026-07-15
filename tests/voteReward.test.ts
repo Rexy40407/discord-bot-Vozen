@@ -14,7 +14,7 @@ const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 const U = 'voter-1';
 
-describe('voteReward — recompensa de 24h com cooldown de 30 dias', () => {
+describe('voteReward — 24h reward with a 30-day cooldown', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -22,14 +22,14 @@ describe('voteReward — recompensa de 24h com cooldown de 30 dias', () => {
   });
   afterEach(() => db.close());
 
-  it('constantes: recompensa = 24h, cooldown = 30 dias', () => {
-    // Pin dos literais (o Diogo escolheu 24h + 1 mês). NÃO derivar da constante nos
-    // dois lados — senão o teste é tautológico e não protege o valor.
+  it('constants: reward = 24h, cooldown = 30 days', () => {
+    // Pin the literals (Diogo chose 24h + 1 month). Do NOT derive from the constant on
+    // both sides — otherwise the test is tautological and doesn't protect the value.
     expect(VOTE_REWARD_HOURS).toBe(24);
     expect(VOTE_REWARD_COOLDOWN_MS).toBe(30 * DAY_MS);
   });
 
-  it('1º voto: concede 24h de Plus e regista o momento', () => {
+  it('1st vote: grants 24h of Plus and records the moment', () => {
     const NOW = 1_000_000_000;
     const res = claimVoteReward(db, U, NOW);
     expect(res.granted).toBe(true);
@@ -39,32 +39,32 @@ describe('voteReward — recompensa de 24h com cooldown de 30 dias', () => {
     expect(getVoteRewardAt(db, U)).toBe(NOW);
   });
 
-  it('2º voto dentro dos 30 dias: NÃO concede nada (cooldown) e não estende o Plus', () => {
+  it('2nd vote within the 30 days: grants NOTHING (cooldown) and does not extend the Plus', () => {
     const NOW = 1_000_000_000;
     claimVoteReward(db, U, NOW);
     const expiryDepoisDo1 = getUserPremiumExpiry(db, U);
 
-    // 12h depois (pode votar no top.gg, mas a recompensa está em cooldown).
+    // 12h later (can vote on top.gg, but the reward is in cooldown).
     const res2 = claimVoteReward(db, U, NOW + 12 * HOUR_MS);
     expect(res2.granted).toBe(false);
     expect(res2.nextEligibleAt).toBe(NOW + VOTE_REWARD_COOLDOWN_MS);
-    // O Plus NÃO acumulou — continua a expirar no mesmo instante do 1º voto.
+    // The Plus did NOT accumulate — it still expires at the same instant as the 1st vote.
     expect(getUserPremiumExpiry(db, U)).toBe(expiryDepoisDo1);
-    // O marcador de cooldown também não recuou nem avançou.
+    // The cooldown marker also didn't move backward or forward.
     expect(getVoteRewardAt(db, U)).toBe(NOW);
   });
 
-  it('voto exatamente aos 30 dias: elegível outra vez, concede novo 24h', () => {
+  it('vote exactly at 30 days: eligible again, grants a new 24h', () => {
     const NOW = 1_000_000_000;
     claimVoteReward(db, U, NOW);
-    const LATER = NOW + VOTE_REWARD_COOLDOWN_MS; // fronteira: já elegível
+    const LATER = NOW + VOTE_REWARD_COOLDOWN_MS; // boundary: already eligible
     const res = claimVoteReward(db, U, LATER);
     expect(res.granted).toBe(true);
     expect(res.expiresAt).toBe(LATER + 24 * HOUR_MS);
     expect(getVoteRewardAt(db, U)).toBe(LATER);
   });
 
-  it('voteRewardStatus: elegível quando nunca ganhou; em cooldown mostra o próximo instante', () => {
+  it('voteRewardStatus: eligible when never earned; in cooldown it shows the next instant', () => {
     const NOW = 1_000_000_000;
     expect(voteRewardStatus(db, U, NOW)).toEqual({ eligible: true, nextEligibleAt: null });
 
@@ -79,7 +79,7 @@ describe('voteReward — recompensa de 24h com cooldown de 30 dias', () => {
     });
   });
 
-  it('utilizador sem histórico: getVoteRewardAt devolve null', () => {
+  it('user with no history: getVoteRewardAt returns null', () => {
     expect(getVoteRewardAt(db, 'ninguem')).toBeNull();
   });
 });

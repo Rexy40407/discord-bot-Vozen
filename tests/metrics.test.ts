@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { EventEmitter } from 'node:events';
 
-// Mock de @discordjs/voice necessário para importar player.ts e commands/index.ts
+// @discordjs/voice mock needed to import player.ts and commands/index.ts
 vi.mock('@discordjs/voice', async () => {
   const { EventEmitter: EE } = await import('node:events');
   const IDLE = 'idle';
@@ -96,7 +96,7 @@ function makeStatsInteraction(isAdmin = true): FakeInteraction {
     deferred: false,
     isRepliable: () => true,
     reply: async (o: { content?: string; embeds?: { data?: { description?: string } }[] }) => {
-      // /stats passou a embed — regista o texto OU a descrição do embed.
+      // /stats moved to an embed — record the text OR the embed description.
       const fromEmbeds = (o.embeds ?? []).map((e) => e?.data?.description ?? '').join('\n');
       replies.push(o.content ?? fromEmbeds);
     },
@@ -117,12 +117,12 @@ function makeStatsInteraction(isAdmin = true): FakeInteraction {
   };
 }
 
-// ── 1. Módulo de métricas: API básica ─────────────────────────────────────────
+// ── 1. Metrics module: basic API ─────────────────────────────────────────
 
-describe('metrics — API básica', () => {
+describe('metrics — basic API', () => {
   beforeEach(() => metrics.reset());
 
-  it('começa a zero após reset()', () => {
+  it('starts at zero after reset()', () => {
     const snap = metrics.snapshot();
     expect(snap).toEqual({
       messagesSpoken: 0,
@@ -143,14 +143,14 @@ describe('metrics — API básica', () => {
     });
   });
 
-  it('recordSynthMs alimenta synthCount + p50/p95; reset limpa', () => {
-    // Amostras 10..100 (10 valores). p50 -> idx floor(0.5*10)=5 -> 60; p95 -> idx 9 -> 100.
+  it('recordSynthMs feeds synthCount + p50/p95; reset clears', () => {
+    // Samples 10..100 (10 values). p50 -> idx floor(0.5*10)=5 -> 60; p95 -> idx 9 -> 100.
     for (let v = 10; v <= 100; v += 10) metrics.recordSynthMs(v);
     const snap = metrics.snapshot();
     expect(snap.synthCount).toBe(10);
     expect(snap.synthP50Ms).toBe(60);
     expect(snap.synthP95Ms).toBe(100);
-    // Valores invalidos sao ignorados (nao contam).
+    // Invalid values are ignored (do not count).
     metrics.recordSynthMs(-5);
     metrics.recordSynthMs(NaN);
     expect(metrics.snapshot().synthCount).toBe(10);
@@ -161,7 +161,7 @@ describe('metrics — API básica', () => {
     expect(z.synthP95Ms).toBe(0);
   });
 
-  it('inc("cacheHits") incrementa só cacheHits', () => {
+  it('inc("cacheHits") increments only cacheHits', () => {
     metrics.inc('cacheHits');
     metrics.inc('cacheHits');
     const snap = metrics.snapshot();
@@ -171,35 +171,35 @@ describe('metrics — API básica', () => {
     expect(snap.synthErrors).toBe(0);
   });
 
-  it('inc("cacheMisses") incrementa só cacheMisses', () => {
+  it('inc("cacheMisses") increments only cacheMisses', () => {
     metrics.inc('cacheMisses');
     expect(metrics.snapshot().cacheMisses).toBe(1);
     expect(metrics.snapshot().cacheHits).toBe(0);
   });
 
-  it('inc("messagesSpoken") incrementa só messagesSpoken', () => {
+  it('inc("messagesSpoken") increments only messagesSpoken', () => {
     metrics.inc('messagesSpoken');
     metrics.inc('messagesSpoken');
     metrics.inc('messagesSpoken');
     expect(metrics.snapshot().messagesSpoken).toBe(3);
   });
 
-  it('inc("synthErrors") incrementa só synthErrors', () => {
+  it('inc("synthErrors") increments only synthErrors', () => {
     metrics.inc('synthErrors');
     expect(metrics.snapshot().synthErrors).toBe(1);
   });
 
-  it('snapshot() devolve uma cópia (não a referência interna)', () => {
+  it('snapshot() returns a copy (not the internal reference)', () => {
     metrics.inc('cacheHits');
     const s1 = metrics.snapshot();
     metrics.inc('cacheHits');
     const s2 = metrics.snapshot();
-    // s1 não deve ter sido afetado pela segunda inc
+    // s1 must not have been affected by the second inc
     expect(s1.cacheHits).toBe(1);
     expect(s2.cacheHits).toBe(2);
   });
 
-  it('reset() repõe todos os contadores a zero', () => {
+  it('reset() sets all counters back to zero', () => {
     metrics.inc('cacheHits');
     metrics.inc('cacheMisses');
     metrics.inc('messagesSpoken');
@@ -227,7 +227,7 @@ describe('metrics — API básica', () => {
     });
   });
 
-  it('inc("voiceDrops") incrementa só voiceDrops', () => {
+  it('inc("voiceDrops") increments only voiceDrops', () => {
     metrics.inc('voiceDrops');
     metrics.inc('voiceDrops');
     const snap = metrics.snapshot();
@@ -237,7 +237,7 @@ describe('metrics — API básica', () => {
     expect(snap.synthErrors).toBe(0);
   });
 
-  it('inc("voiceReconnects") incrementa só voiceReconnects', () => {
+  it('inc("voiceReconnects") increments only voiceReconnects', () => {
     metrics.inc('voiceReconnects');
     const snap = metrics.snapshot();
     expect(snap.voiceReconnects).toBe(1);
@@ -247,7 +247,7 @@ describe('metrics — API básica', () => {
 
 // ── 2. Wiring: AudioCache.get → cacheHits / cacheMisses ─────────────────────
 
-describe('AudioCache.get — wiring de métricas', () => {
+describe('AudioCache.get — metrics wiring', () => {
   let dir: string;
   let srcDir: string;
   let cache: AudioCache;
@@ -264,13 +264,13 @@ describe('AudioCache.get — wiring de métricas', () => {
     rmSync(srcDir, { recursive: true, force: true });
   });
 
-  it('get em chave inexistente incrementa cacheMisses', () => {
+  it('get on a nonexistent key increments cacheMisses', () => {
     cache.get('nao-existe');
     expect(metrics.snapshot().cacheMisses).toBe(1);
     expect(metrics.snapshot().cacheHits).toBe(0);
   });
 
-  it('get em chave existente incrementa cacheHits', () => {
+  it('get on an existing key increments cacheHits', () => {
     const src = join(srcDir, 'out.wav');
     writeFileSync(src, Buffer.from('wav'));
     cache.put('chave', src);
@@ -280,7 +280,7 @@ describe('AudioCache.get — wiring de métricas', () => {
     expect(metrics.snapshot().cacheMisses).toBe(0);
   });
 
-  it('múltiplos gets acumulam corretamente (mix hit+miss)', () => {
+  it('multiple gets accumulate correctly (mix of hit+miss)', () => {
     const src = join(srcDir, 'out.wav');
     writeFileSync(src, Buffer.from('wav'));
     cache.put('k', src);
@@ -299,10 +299,10 @@ describe('AudioCache.get — wiring de métricas', () => {
 
 // ── 3. Wiring: GuildVoicePlayer → messagesSpoken + synthErrors ───────────────
 
-describe('GuildVoicePlayer — wiring de métricas', () => {
+describe('GuildVoicePlayer — metrics wiring', () => {
   beforeEach(() => metrics.reset());
 
-  it('messagesSpoken incrementa quando áudio começa a tocar', async () => {
+  it('messagesSpoken increments when audio starts playing', async () => {
     const engine: TTSEngine = {
       synth: async (req: SynthRequest) => req.text,
     };
@@ -318,7 +318,7 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
     expect(metrics.snapshot().synthErrors).toBe(0);
   });
 
-  it('synthErrors incrementa quando a síntese falha', async () => {
+  it('synthErrors increments when synthesis fails', async () => {
     const engine: TTSEngine = {
       synth: async () => {
         throw new Error('piper boom');
@@ -336,7 +336,7 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
     expect(metrics.snapshot().messagesSpoken).toBe(0);
   });
 
-  it('synthErrors não incrementa quando síntese tem sucesso', async () => {
+  it('synthErrors does not increment when synthesis succeeds', async () => {
     const engine: TTSEngine = {
       synth: async (req: SynthRequest) => req.text,
     };
@@ -356,21 +356,21 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
 });
 
 // ── 3b. Wiring: GuildVoicePlayer → voiceDrops + voiceReconnects ───────────────
-// O mock partilhado de @discordjs/voice (topo do ficheiro) tem
-// entersState: () => Promise.resolve(), por isso a recuperacao "soft" no
-// handleDisconnect resolve sempre: um episodio de queda = 1 drop + 1 reconnect.
+// The shared @discordjs/voice mock (top of the file) has
+// entersState: () => Promise.resolve(), so the "soft" recovery in
+// handleDisconnect always resolves: one drop episode = 1 drop + 1 reconnect.
 
-describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)', () => {
+describe('GuildVoicePlayer — reconnection wiring (voiceDrops/voiceReconnects)', () => {
   beforeEach(() => metrics.reset());
 
-  it('uma queda (Disconnected) -> voiceDrops sobe 1 e a recuperacao -> voiceReconnects sobe 1', async () => {
+  it('one drop (Disconnected) -> voiceDrops goes up 1 and the recovery -> voiceReconnects goes up 1', async () => {
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
 
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
-    // Emite a queda: handleDisconnect conta o drop e, como entersState resolve
-    // sempre (mock), a recuperacao "soft" volta a Ready -> conta o reconnect.
+    // Emit the drop: handleDisconnect counts the drop and, since entersState always
+    // resolves (mock), the "soft" recovery returns to Ready -> counts the reconnect.
     conn.emit('disconnected');
 
     await vi.waitFor(() => expect(metrics.snapshot().voiceReconnects).toBe(1), { timeout: 1000 });
@@ -379,20 +379,20 @@ describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)'
     player.destroy();
   });
 
-  it('Disconnected repetido no mesmo episodio nao conta a dobrar (dedup por episodio)', async () => {
+  it('repeated Disconnected in the same episode does not double-count (dedup per episode)', async () => {
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
 
     const conn = makeConnection() as any;
     const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
-    // Dois eventos Disconnected SINCRONOS no mesmo episodio: o primeiro entra em
-    // handleDisconnect, poe reconnecting=true e conta o drop antes do 1o await;
-    // o segundo bate no guard (reconnecting) e retorna logo, sem contar.
+    // Two SYNCHRONOUS Disconnected events in the same episode: the first enters
+    // handleDisconnect, sets reconnecting=true and counts the drop before the 1st await;
+    // the second hits the guard (reconnecting) and returns immediately, without counting.
     conn.emit('disconnected');
     conn.emit('disconnected');
 
     await vi.waitFor(() => expect(metrics.snapshot().voiceReconnects).toBe(1), { timeout: 1000 });
-    // Episodio unico: exatamente 1 drop e 1 reconnect, apesar dos 2 eventos.
+    // Single episode: exactly 1 drop and 1 reconnect, despite the 2 events.
     expect(metrics.snapshot().voiceDrops).toBe(1);
     expect(metrics.snapshot().voiceReconnects).toBe(1);
 
@@ -405,7 +405,7 @@ describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)'
 describe('/stats — handleInteraction', () => {
   beforeEach(() => metrics.reset());
 
-  it('responde com os contadores e info do bot', async () => {
+  it('responds with the counters and bot info', async () => {
     metrics.inc('messagesSpoken');
     metrics.inc('messagesSpoken');
     metrics.inc('cacheHits');
@@ -427,7 +427,7 @@ describe('/stats — handleInteraction', () => {
 
     expect(i.replies).toHaveLength(1);
     const reply = i.replies[0];
-    // Migrado PT->EN (P16.2): /stats renderiza via t() em ingles por defeito.
+    // Migrated PT->EN (P16.2): /stats renders via t() in English by default.
     expect(reply).toContain('Messages spoken: 2');
     expect(reply).toContain('Cache hits: 1');
     expect(reply).toContain('Cache misses: 1');
@@ -440,13 +440,13 @@ describe('/stats — handleInteraction', () => {
     expect(reply).toContain('Uptime:');
   });
 
-  it('mostra zeros quando nenhum evento ocorreu ainda', async () => {
+  it('shows zeros when no event has occurred yet', async () => {
     const deps = makeStatsDeps();
     const i = makeStatsInteraction(true);
     await handleInteraction(i as unknown as import('discord.js').ChatInputCommandInteraction, deps);
 
     const reply = i.replies[0];
-    // Migrado PT->EN (P16.2): /stats renderiza via t() em ingles por defeito.
+    // Migrated PT->EN (P16.2): /stats renders via t() in English by default.
     expect(reply).toContain('Messages spoken: 0');
     expect(reply).toContain('Cache hits: 0');
     expect(reply).toContain('Cache misses: 0');
@@ -457,13 +457,13 @@ describe('/stats — handleInteraction', () => {
     expect(reply).toContain('Active players: 0');
   });
 
-  it('bloqueia utilizadores sem ManageGuild', async () => {
+  it('blocks users without ManageGuild', async () => {
     const deps = makeStatsDeps();
-    const i = makeStatsInteraction(false); // não é admin
+    const i = makeStatsInteraction(false); // not an admin
     await handleInteraction(i as unknown as import('discord.js').ChatInputCommandInteraction, deps);
 
     expect(i.replies).toHaveLength(1);
-    // Migrado PT->EN: "You need the **Manage Server** permission to do that."
+    // Migrated PT->EN: "You need the **Manage Server** permission to do that."
     expect(i.replies[0]).toMatch(/permission|Manage Server/i);
   });
 });

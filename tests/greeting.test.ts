@@ -12,23 +12,23 @@ import { getGuildConfig, setGuildConfig } from '../src/store/guildConfig';
 
 const MODELS = ['en_US-amy-medium', 'pt_BR-faber-medium', 'de_DE-thorsten-medium'];
 
-describe('isJoinIntoChannel — deteção de ENTRADA no canal do bot', () => {
-  it('true quando entra no canal do bot (não estava lá antes)', () => {
-    expect(isJoinIntoChannel(null, 'voz-1', 'voz-1')).toBe(true); // ligou-se
-    expect(isJoinIntoChannel('voz-2', 'voz-1', 'voz-1')).toBe(true); // mudou de canal
+describe('isJoinIntoChannel — detecting a JOIN into the bot channel', () => {
+  it('true when joining the bot channel (was not there before)', () => {
+    expect(isJoinIntoChannel(null, 'voz-1', 'voz-1')).toBe(true); // connected
+    expect(isJoinIntoChannel('voz-2', 'voz-1', 'voz-1')).toBe(true); // switched channel
   });
-  it('false quando já estava no canal (ex.: mute/deafen — canal não muda)', () => {
+  it('false when already in the channel (e.g. mute/deafen — channel does not change)', () => {
     expect(isJoinIntoChannel('voz-1', 'voz-1', 'voz-1')).toBe(false);
   });
-  it('false quando entra NOUTRO canal, ou o bot não está em call', () => {
-    expect(isJoinIntoChannel(null, 'voz-2', 'voz-1')).toBe(false); // outro canal
-    expect(isJoinIntoChannel(null, 'voz-1', null)).toBe(false); // bot sem call
-    expect(isJoinIntoChannel('voz-1', null, 'voz-1')).toBe(false); // saiu (não é entrada)
+  it('false when joining ANOTHER channel, or the bot is not in a call', () => {
+    expect(isJoinIntoChannel(null, 'voz-2', 'voz-1')).toBe(false); // another channel
+    expect(isJoinIntoChannel(null, 'voz-1', null)).toBe(false); // bot not in a call
+    expect(isJoinIntoChannel('voz-1', null, 'voz-1')).toBe(false); // left (not a join)
   });
 });
 
-describe('buildGreeting — texto + voz da saudação', () => {
-  it('inglês por defeito: "Hello {name}" em voz inglesa', () => {
+describe('buildGreeting — greeting text + voice', () => {
+  it('English by default: "Hello {name}" in an English voice', () => {
     const req = buildGreeting({
       locale: 'en',
       name: 'Ana',
@@ -40,7 +40,7 @@ describe('buildGreeting — texto + voz da saudação', () => {
     expect(req.model).toBe('en_US-amy-medium');
     expect(req.singleVoice).toBe(true);
   });
-  it('usa a língua escolhida (pt -> "Olá") e uma voz dessa língua', () => {
+  it('uses the chosen language (pt -> "Olá") and a voice of that language', () => {
     const req = buildGreeting({
       locale: 'pt-BR',
       name: 'Rui',
@@ -49,9 +49,9 @@ describe('buildGreeting — texto + voz da saudação', () => {
       defaultSpeed: 1,
     });
     expect(req.text).toBe('Olá Rui');
-    expect(req.model).toBe('pt_BR-faber-medium'); // voz PT, não a default EN
+    expect(req.model).toBe('pt_BR-faber-medium'); // PT voice, not the default EN
   });
-  it('língua sem saudação -> cai no inglês (texto E voz)', () => {
+  it('language without a greeting -> falls back to English (text AND voice)', () => {
     const req = buildGreeting({
       locale: 'ja',
       name: 'Yuki',
@@ -62,7 +62,7 @@ describe('buildGreeting — texto + voz da saudação', () => {
     expect(req.text).toBe('Hello Yuki');
     expect(req.model).toBe('en_US-amy-medium');
   });
-  it('sem nome -> só a saudação, sem espaço a mais', () => {
+  it('without a name -> just the greeting, no extra space', () => {
     expect(
       buildGreeting({
         locale: 'en',
@@ -82,7 +82,7 @@ describe('buildGreeting — texto + voz da saudação', () => {
       }).text,
     ).toBe('Olá');
   });
-  it('língua sem voz instalada -> texto na língua, voz default', () => {
+  it('language without an installed voice -> text in the language, default voice', () => {
     const req = buildGreeting({
       locale: 'fr',
       name: 'Léa',
@@ -91,13 +91,13 @@ describe('buildGreeting — texto + voz da saudação', () => {
       defaultSpeed: 1,
     });
     expect(req.text).toBe('Bonjour Léa');
-    expect(req.model).toBe('en_US-amy-medium'); // não há voz FR nos MODELS
+    expect(req.model).toBe('en_US-amy-medium'); // there is no FR voice in MODELS
   });
 });
 
 describe('GREET_LANGUAGE_CHOICES / GREET_LOCALES', () => {
-  it('cada choice tem uma saudação e o código está no conjunto válido', () => {
-    expect(GREET_LANGUAGE_CHOICES.length).toBeLessThanOrEqual(25); // cap do Discord
+  it('each choice has a greeting and the code is in the valid set', () => {
+    expect(GREET_LANGUAGE_CHOICES.length).toBeLessThanOrEqual(25); // Discord cap
     for (const c of GREET_LANGUAGE_CHOICES) {
       expect(GREETINGS[c.value]).toBeDefined();
       expect(GREET_LOCALES.has(c.value)).toBe(true);
@@ -114,16 +114,16 @@ describe('guildConfig — greet fields', () => {
   afterEach(() => {
     db.close();
   });
-  it('default: greetOnJoin ligado, greetLocale "en"', () => {
+  it('default: greetOnJoin enabled, greetLocale "en"', () => {
     const cfg = getGuildConfig(db, 'g1');
     expect(cfg.greetOnJoin).toBe(true);
     expect(cfg.greetLocale).toBe('en');
   });
-  it('persiste toggle e língua sem perder outros campos', () => {
+  it('persists toggle and language without losing other fields', () => {
     setGuildConfig(db, 'g1', { greetOnJoin: false, greetLocale: 'pt' });
     const cfg = getGuildConfig(db, 'g1');
     expect(cfg.greetOnJoin).toBe(false);
     expect(cfg.greetLocale).toBe('pt');
-    expect(cfg.enabled).toBe(true); // outros defaults intactos
+    expect(cfg.enabled).toBe(true); // other defaults intact
   });
 });

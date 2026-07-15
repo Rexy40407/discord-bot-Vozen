@@ -17,7 +17,7 @@ const A = 'user-a';
 const B = 'user-b';
 const G = 'guild-1';
 
-describe('pronúncias pessoais — limites e isolamento', () => {
+describe('personal pronunciations — limits and isolation', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -26,7 +26,7 @@ describe('pronúncias pessoais — limites e isolamento', () => {
     db.close();
   });
 
-  it('Free: aceita 3, bloqueia a 4.ª', () => {
+  it('Free: accepts 3, blocks the 4th', () => {
     for (let n = 1; n <= USER_PRON_LIMIT_FREE; n++) {
       expect(addUserPronunciation(db, A, `t${n}`, `r${n}`, USER_PRON_LIMIT_FREE)).toBe('ok');
     }
@@ -34,44 +34,44 @@ describe('pronúncias pessoais — limites e isolamento', () => {
     expect(getUserPronunciations(db, A)).toHaveLength(USER_PRON_LIMIT_FREE);
   });
 
-  it('EDITAR um termo existente não conta para o limite', () => {
+  it('EDITING an existing term does not count towards the limit', () => {
     for (let n = 1; n <= USER_PRON_LIMIT_FREE; n++) {
       addUserPronunciation(db, A, `t${n}`, `r${n}`, USER_PRON_LIMIT_FREE);
     }
-    // No cap, mas t1 já existe -> é UPDATE, passa.
+    // At the cap, but t1 already exists -> it's an UPDATE, passes.
     expect(addUserPronunciation(db, A, 't1', 'novo', USER_PRON_LIMIT_FREE)).toBe('ok');
     expect(getUserPronunciations(db, A).find((e) => e.term === 't1')?.replacement).toBe('novo');
   });
 
-  it('Premium: aceita 50, bloqueia a 51.ª', () => {
+  it('Premium: accepts 50, blocks the 51st', () => {
     for (let n = 1; n <= USER_PRON_LIMIT_PREMIUM; n++) {
       expect(addUserPronunciation(db, A, `t${n}`, 'r', USER_PRON_LIMIT_PREMIUM)).toBe('ok');
     }
     expect(addUserPronunciation(db, A, 'extra', 'x', USER_PRON_LIMIT_PREMIUM)).toBe('limit');
   });
 
-  it('as pronúncias do user A não aparecem ao user B (individuais)', () => {
+  it('user A pronunciations do not appear to user B (individual)', () => {
     addUserPronunciation(db, A, 'gg', 'good game', USER_PRON_LIMIT_FREE);
     expect(getUserPronunciations(db, B)).toHaveLength(0);
-    // ...e por isso a mensagem de B nunca é tocada pelo dicionário de A:
+    // ...and so B's message is never touched by A's dictionary:
     const textOfB = applyPronunciation('gg wp', getUserPronunciations(db, B));
     expect(textOfB).toBe('gg wp');
   });
 
-  it('remove: true quando existia, false quando não', () => {
+  it('remove: true when it existed, false when not', () => {
     addUserPronunciation(db, A, 'gg', 'good game', USER_PRON_LIMIT_FREE);
     expect(removeUserPronunciation(db, A, 'gg')).toBe(true);
     expect(removeUserPronunciation(db, A, 'gg')).toBe(false);
     expect(getUserPronunciations(db, A)).toHaveLength(0);
   });
 
-  it('precedência: a pronúncia PESSOAL do autor ganha à do SERVIDOR', () => {
+  it('precedence: the author PERSONAL pronunciation beats the SERVER one', () => {
     addUserPronunciation(db, A, 'sql', 'sequel', USER_PRON_LIMIT_FREE);
     addServerPronunciation(db, G, 'sql', 'ess-cue-ell', SERVER_PRON_LIMIT);
-    // Ordem do pipeline: [pessoal do autor, servidor]. A do autor A vence.
+    // Pipeline order: [author personal, server]. Author A's wins.
     const dictA = [...getUserPronunciations(db, A), ...getServerPronunciations(db, G)];
     expect(applyPronunciation('i love sql', dictA)).toBe('i love sequel');
-    // Um user SEM regra própria (B) apanha a do servidor.
+    // A user WITHOUT their own rule (B) picks up the server one.
     const dictB = [...getUserPronunciations(db, B), ...getServerPronunciations(db, G)];
     expect(applyPronunciation('i love sql', dictB)).toBe('i love ess-cue-ell');
   });

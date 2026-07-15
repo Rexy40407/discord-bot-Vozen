@@ -1,34 +1,34 @@
 // src/voice/utteranceCollector.ts
 //
-// Segmentador de UTTERANCES para o STT (Fase 4). Recebe frames PCM (decodificados do Opus
-// de UM locutor — ver recorder.ts) e agrupa-os em utterances: fecha uma quando há um GAP de
-// silêncio depois de fala (`silenceGapMs`) OU ao atingir o teto (`maxUtteranceMs`). Silêncio
-// pré-fala é ignorado; blips demasiado curtos (< `minUtteranceMs` de VOZ) são descartados
-// (rejeição de ruído). PURO/testável (alimentado com buffers), sem IO nem rede.
+// UTTERANCE segmenter for the STT (Phase 4). Receives PCM frames (decoded from the Opus
+// of ONE speaker — see recorder.ts) and groups them into utterances: closes one when there is
+// a silence GAP after speech (`silenceGapMs`) OR when the cap (`maxUtteranceMs`) is reached.
+// Pre-speech silence is ignored; blips that are too short (< `minUtteranceMs` of SPEECH) are
+// discarded (noise rejection). PURE/testable (fed with buffers), no IO nor network.
 //
-// Difere do VoicedCollector do recorder (que descarta silêncio para juntar 15s de amostra de
-// clone): aqui preservamos o silêncio INTERNO da utterance (fronteiras naturais para o
-// Whisper) e emitimos por-utterance em vez de um buffer único.
+// Differs from the recorder's VoicedCollector (which discards silence to gather a 15s clone
+// sample): here we preserve the INTERNAL silence of the utterance (natural boundaries for
+// Whisper) and emit per-utterance instead of a single buffer.
 
 export interface Utterance {
-  /** PCM da utterance (do 1.º frame vozeado até ao gap que a fechou). */
+  /** PCM of the utterance (from the 1st voiced frame to the gap that closed it). */
   pcm: Buffer;
-  /** Duração total (ms), incluindo silêncio interno. */
+  /** Total duration (ms), including internal silence. */
   ms: number;
-  /** Só os ms de FALA (RMS acima do chão) — usado para rejeitar blips e p/ diagnóstico. */
+  /** Only the SPEECH ms (RMS above the floor) — used to reject blips and for diagnostics. */
   voicedMs: number;
 }
 
 export interface UtteranceOpts {
-  /** Bytes por ms do formato PCM (48kHz estéreo s16le = 192; testes usam 2). Default 192. */
+  /** Bytes per ms of the PCM format (48kHz stereo s16le = 192; tests use 2). Default 192. */
   bytesPerMs?: number;
-  /** Chão de RMS (int16) acima do qual um frame conta como FALA. Default 350 (≈ recorder). */
+  /** RMS floor (int16) above which a frame counts as SPEECH. Default 350 (≈ recorder). */
   rmsThreshold?: number;
-  /** Silêncio contínuo (ms) depois de fala que FECHA a utterance. Default 800. */
+  /** Continuous silence (ms) after speech that CLOSES the utterance. Default 800. */
   silenceGapMs?: number;
-  /** Mínimo de FALA (ms) para uma utterance valer — abaixo disto descarta-se. Default 300. */
+  /** Minimum SPEECH (ms) for an utterance to count — below this it is discarded. Default 300. */
   minUtteranceMs?: number;
-  /** Teto (ms) que força o fecho de um monólogo longo. Default 20000. */
+  /** Cap (ms) that forces the close of a long monologue. Default 20000. */
   maxUtteranceMs?: number;
 }
 
@@ -54,8 +54,8 @@ export class UtteranceCollector {
   }
 
   /**
-   * Alimenta um frame PCM. Devolve uma Utterance quando uma acaba de fechar (gap de silêncio
-   * ou teto atingido), senão null. Um blip curto que atinja o gap é descartado (null).
+   * Feeds a PCM frame. Returns an Utterance when one has just closed (silence gap
+   * or cap reached), otherwise null. A short blip that reaches the gap is discarded (null).
    */
   push(frame: Buffer): Utterance | null {
     const frameMs = frame.length / this.bytesPerMs;
@@ -67,25 +67,25 @@ export class UtteranceCollector {
       this.totalMs += frameMs;
       this.voicedMs += frameMs;
       this.silenceRunMs = 0;
-      // Monólogo longo: fecha à força (ainda que sem gap) para não crescer sem limite.
+      // Long monologue: force-close (even without a gap) so it doesn't grow without limit.
       return this.totalMs >= this.maxUtteranceMs ? this.close() : null;
     }
 
-    // Silêncio antes de qualquer fala: ignora (não arranca utterance).
+    // Silence before any speech: ignore (does not start an utterance).
     if (!this.inUtterance) return null;
 
     this.chunks.push(frame);
     this.totalMs += frameMs;
     this.silenceRunMs += frameMs;
     if (this.silenceRunMs >= this.silenceGapMs) {
-      // Fim da utterance: emite se teve fala suficiente, senão descarta (ruído/blip).
+      // End of the utterance: emit if it had enough speech, otherwise discard (noise/blip).
       if (this.voicedMs >= this.minUtteranceMs) return this.close();
       this.reset();
     }
     return null;
   }
 
-  /** Fecha e devolve a utterance pendente (se válida) — chamar quando a gravação pára. */
+  /** Closes and returns the pending utterance (if valid) — call when the recording stops. */
   flush(): Utterance | null {
     if (this.inUtterance && this.voicedMs >= this.minUtteranceMs) return this.close();
     this.reset();

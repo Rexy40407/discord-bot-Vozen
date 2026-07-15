@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { postTopggStats, startBotListUpdater } from '../src/botLists';
 
-// Params tipados (url, opts) p/ o typecheck: sem eles .mock.calls fica tuplo vazio.
-// O mock é passado com cast `as unknown as typeof fetch`, por isso o opts pode ter a
-// forma que o teste lê (method+headers+body).
+// Typed params (url, opts) for the typecheck: without them .mock.calls is an empty tuple.
+// The mock is passed with the cast `as unknown as typeof fetch`, so opts can have the
+// shape the test reads (method+headers+body).
 function okFetch() {
   return vi.fn(
     async (
@@ -14,7 +14,7 @@ function okFetch() {
 }
 
 describe('postTopggStats', () => {
-  it('POST para o endpoint certo com Authorization e server_count', async () => {
+  it('POST to the right endpoint with Authorization and server_count', async () => {
     const fetchImpl = okFetch();
     const ok = await postTopggStats('bot-123', 'tok-abc', 42, fetchImpl as unknown as typeof fetch);
     expect(ok).toBe(true);
@@ -26,13 +26,13 @@ describe('postTopggStats', () => {
     expect(JSON.parse(opts.body)).toEqual({ server_count: 42 });
   });
 
-  it('HTTP não-2xx -> false (não lança)', async () => {
+  it('non-2xx HTTP -> false (does not throw)', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: false, status: 401 }) as Response);
     const ok = await postTopggStats('b', 't', 1, fetchImpl as unknown as typeof fetch);
     expect(ok).toBe(false);
   });
 
-  it('erro de rede -> false (nunca lança)', async () => {
+  it('network error -> false (never throws)', async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error('network down');
     });
@@ -42,7 +42,7 @@ describe('postTopggStats', () => {
 });
 
 describe('startBotListUpdater', () => {
-  it('sem token -> no-op (não publica, stop() seguro)', () => {
+  it('no token -> no-op (does not publish, stop() safe)', () => {
     const fetchImpl = okFetch();
     const stop = startBotListUpdater({
       botId: 'b',
@@ -56,7 +56,7 @@ describe('startBotListUpdater', () => {
     expect(() => stop()).not.toThrow();
   });
 
-  it('com token -> publica JÁ e regista o intervalo; stop() cancela-o', () => {
+  it('with token -> publishes NOW and registers the interval; stop() cancels it', () => {
     const fetchImpl = okFetch();
     let intervalFn: (() => void) | null = null;
     const cleared: number[] = [];
@@ -71,9 +71,9 @@ describe('startBotListUpdater', () => {
       },
       clearIntervalImpl: (h) => cleared.push(h as unknown as number),
     });
-    // Publicação imediata.
+    // Immediate publish.
     expect(fetchImpl).toHaveBeenCalledTimes(1);
-    // O tick do intervalo publica de novo com a contagem ATUAL.
+    // The interval tick publishes again with the CURRENT count.
     intervalFn!();
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     stop();

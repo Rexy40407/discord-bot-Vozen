@@ -1,25 +1,25 @@
 // src/games/thread.ts
 //
-// Glue de discord.js para as THREADS descartáveis dos jogos. Isolado aqui para o resto
-// do framework (manager, jogos) continuar desacoplado do discord.js e testável com um
-// env falso. Tudo best-effort: qualquer falha (sem permissões, tipo de canal sem
-// threads, canal já apagado) devolve o fallback (null / arquivar), nunca lança — mas
-// LOGA sempre o desfecho, para uma falha de permissões não passar despercebida.
+// discord.js glue for the games' disposable THREADS. Isolated here so the rest of the
+// framework (manager, games) stays decoupled from discord.js and testable with a fake
+// env. Everything best-effort: any failure (no permissions, channel type without threads,
+// already-deleted channel) returns the fallback (null / archive), never throws — but
+// always LOGS the outcome, so a permissions failure doesn't go unnoticed.
 
 import { ChannelType, PermissionFlagsBits, type Client } from 'discord.js';
 import { log } from '../logging/logger';
 
-/** Duração de auto-arquivo (min) — rede de segurança se o apagar E o arquivar falharem. */
+/** Auto-archive duration (min) — safety net if both deleting AND archiving fail. */
 const AUTO_ARCHIVE_MIN = 60;
 
 /**
- * Diagnóstico da permissão de apagar ANTES de tentar: distingue as duas causas do
- * "Missing Permissions", que se resolvem de formas OPOSTAS, e escreve no log a que se
- * aplica (senão anda-se às cegas a re-convidar quando o problema é do canal, ou vice-versa):
- *  - falta a nível do SERVIDOR  → o re-convite não pegou (link antigo?) → usar o /invite atual;
- *  - tem no servidor mas o CANAL-pai remove-a por exceção → ligar "Gerir Tópicos" ao role
- *    Vozen nas permissões DESSE canal.
- * Best-effort e puramente informativo — nunca altera o fluxo nem lança.
+ * Diagnoses the delete permission BEFORE attempting: distinguishes the two causes of
+ * "Missing Permissions", which are resolved in OPPOSITE ways, and writes to the log which
+ * one applies (otherwise you re-invite blindly when the problem is the channel, or vice versa):
+ *  - missing at the SERVER level  → the re-invite didn't take (stale link?) → use the current /invite;
+ *  - present at the server but the PARENT channel removes it via an override → enable "Manage Threads"
+ *    for the Vozen role in THAT channel's permissions.
+ * Best-effort and purely informational — never changes the flow nor throws.
  */
 function diagnoseThreadDelete(ch: unknown, _channelId: string): void {
   try {
@@ -30,13 +30,13 @@ function diagnoseThreadDelete(ch: unknown, _channelId: string): void {
     };
     const me = thread.guild?.members?.me as
       { permissions?: { has?: (p: bigint) => boolean } } | undefined;
-    if (!me) return; // sem o membro-bot em cache não há o que comparar
+    if (!me) return; // without the bot member in cache there is nothing to compare
     const guildHas = me.permissions?.has?.(PermissionFlagsBits.ManageThreads) ?? false;
-    // Permissão EFETIVA no canal-pai (já com as exceções aplicadas); se o pai não está em
-    // cache cai para o valor do servidor (não conseguimos afirmar exceção nesse caso).
+    // EFFECTIVE permission on the parent channel (with overrides already applied); if the
+    // parent is not in cache it falls back to the server value (we can't assert an override then).
     const chanPerms = thread.parent?.permissionsFor?.(me);
     const chanHas = chanPerms?.has?.(PermissionFlagsBits.ManageThreads) ?? guildHas;
-    if (chanHas) return; // deve conseguir apagar — nada a assinalar
+    if (chanHas) return; // should be able to delete — nothing to flag
     if (!guildHas) {
       log.warn(
         `[game] diagnosis: Vozen does not have Manage Threads at guild level; ` +
@@ -50,14 +50,14 @@ function diagnoseThreadDelete(ch: unknown, _channelId: string): void {
       );
     }
   } catch {
-    // diagnóstico é só uma ajuda — se algo faltar, seguimos para a tentativa real
+    // the diagnosis is just a helper — if something is missing, we proceed to the real attempt
   }
 }
 
 /**
- * Cria uma thread pública a partir de `channel` (o canal onde o /game play foi dado).
- * Devolve o id da thread, ou null se não der (tipo de canal sem threads, sem permissões,
- * canais de voz/DM) — o chamador joga então no próprio canal (comportamento de sempre).
+ * Creates a public thread from `channel` (the channel where /game play was issued).
+ * Returns the thread id, or null if it can't (channel type without threads, no permissions,
+ * voice/DM channels) — the caller then plays in the channel itself (the usual behavior).
  */
 export async function createGameThread(channel: unknown, name: string): Promise<string | null> {
   try {
@@ -65,12 +65,12 @@ export async function createGameThread(channel: unknown, name: string): Promise<
       type?: number;
       threads?: { create?: (o: unknown) => Promise<{ id: string }> };
     };
-    // Só canais de TEXTO/ANÚNCIO de servidor suportam threads públicas.
+    // Only server TEXT/ANNOUNCEMENT channels support public threads.
     if (ch?.type !== ChannelType.GuildText && ch?.type !== ChannelType.GuildAnnouncement)
       return null;
     if (typeof ch.threads?.create !== 'function') return null;
     const thread = await ch.threads.create({
-      name: name.slice(0, 100), // limite do Discord
+      name: name.slice(0, 100), // Discord limit
       autoArchiveDuration: AUTO_ARCHIVE_MIN,
       reason: 'Vozen game session',
     });
@@ -85,11 +85,11 @@ export async function createGameThread(channel: unknown, name: string): Promise<
 }
 
 /**
- * Apaga a thread do jogo pelo id. Escada de degradação, sempre logada:
- *  1. delete — precisa de Manage Threads (convite novo);
- *  2. arquivar — o bot criou a thread, por isso consegue arquivá-la mesmo sem
- *     Manage Threads (desaparece da lista de canais na mesma);
- *  3. nada — a thread auto-arquiva pela AUTO_ARCHIVE_MIN.
+ * Deletes the game thread by id. Degradation ladder, always logged:
+ *  1. delete — needs Manage Threads (fresh invite);
+ *  2. archive — the bot created the thread, so it can archive it even without
+ *     Manage Threads (it disappears from the channel list all the same);
+ *  3. nothing — the thread auto-archives after AUTO_ARCHIVE_MIN.
  */
 export async function deleteChannelSafe(client: Client, channelId: string): Promise<void> {
   const ch =
@@ -99,7 +99,7 @@ export async function deleteChannelSafe(client: Client, channelId: string): Prom
     log.warn(`[game] thread ${channelId} was not found for deletion (already removed?).`);
     return;
   }
-  // Antes de tentar, diz no log se (e onde) falta a permissão de apagar.
+  // Before attempting, log whether (and where) the delete permission is missing.
   diagnoseThreadDelete(ch, channelId);
   const c = ch as {
     delete?: (reason?: string) => Promise<unknown>;

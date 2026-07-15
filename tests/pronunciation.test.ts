@@ -3,44 +3,44 @@ import { applyPronunciation } from '../src/textCleaning/pronunciation';
 import type { PronunciationEntry } from '../src/textCleaning/pronunciation';
 
 describe('applyPronunciation', () => {
-  it('dict vazio = no-op', () => {
+  it('empty dict = no-op', () => {
     expect(applyPronunciation('ola mundo', [])).toBe('ola mundo');
   });
 
-  it('substitui um termo por palavra completa', () => {
+  it('replaces a term by whole word', () => {
     const dict: PronunciationEntry[] = [{ term: 'gg', replacement: 'good game' }];
     expect(applyPronunciation('gg a todos', dict)).toBe('good game a todos');
   });
 
-  it('substituicao e case-insensitive', () => {
+  it('replacement is case-insensitive', () => {
     const dict: PronunciationEntry[] = [{ term: 'gg', replacement: 'good game' }];
     expect(applyPronunciation('GG malta', dict)).toBe('good game malta');
     expect(applyPronunciation('Gg malta', dict)).toBe('good game malta');
   });
 
-  it('nao afeta substrings (so palavra completa)', () => {
+  it('does not affect substrings (whole word only)', () => {
     const dict: PronunciationEntry[] = [{ term: 'gg', replacement: 'good game' }];
-    // "eggs" contem "gg" mas nao deve ser tocado
+    // "eggs" contains "gg" but must not be touched
     expect(applyPronunciation('eggs e ovos', dict)).toBe('eggs e ovos');
   });
 
-  // Bug-hunt 2026-07: o replacement (controlado pelo admin via /config pronunciation)
-  // era passado CRU como 2.º arg de String.replace, que interpreta $&, $1, $`, $', $$
-  // como diretivas. Um replacement com '$' produzia áudio errado (ex.: "R$" -> insere
-  // o termo casado). Tem de ser LITERAL (as irmãs restoreAccents/expandAbbreviations
-  // usam replacers-função por isto). Casos abaixo cobrem os padrões $.
-  it('trata o replacement como LITERAL (não interpreta $&, $1, $$ como diretivas)', () => {
-    // $& = termo casado; se fosse interpretado, "gg" -> "[gg]" viraria "[gg]"->"[[gg]]"? Não.
+  // Bug-hunt 2026-07: the replacement (controlled by the admin via /config pronunciation)
+  // was passed RAW as the 2nd arg of String.replace, which interprets $&, $1, $`, $', $$
+  // as directives. A replacement with '$' produced wrong audio (e.g. "R$" -> inserts
+  // the matched term). It must be LITERAL (the siblings restoreAccents/expandAbbreviations
+  // use function-replacers for this reason). The cases below cover the $ patterns.
+  it('treats the replacement as LITERAL (does not interpret $&, $1, $$ as directives)', () => {
+    // $& = matched term; if it were interpreted, "gg" -> "[gg]" would become "[gg]"->"[[gg]]"? No.
     expect(applyPronunciation('preco gg', [{ term: 'gg', replacement: '$&' }])).toBe('preco $&');
-    // símbolo de moeda literal — o caso real do mundo.
+    // literal currency symbol — the real-world case.
     expect(applyPronunciation('paga dollars agora', [{ term: 'dollars', replacement: 'R$' }])).toBe(
       'paga R$ agora',
     );
-    // $$ deve ficar $$ (não colapsar para $), $1 literal (não há grupo 1).
+    // $$ must stay $$ (not collapse to $), $1 literal (there is no group 1).
     expect(applyPronunciation('a x b', [{ term: 'x', replacement: '$$$1' }])).toBe('a $$$1 b');
   });
 
-  it('substitui multiplos termos diferentes', () => {
+  it('replaces multiple different terms', () => {
     const dict: PronunciationEntry[] = [
       { term: 'gg', replacement: 'good game' },
       { term: 'btw', replacement: 'by the way' },
@@ -48,13 +48,13 @@ describe('applyPronunciation', () => {
     expect(applyPronunciation('gg e btw acabou', dict)).toBe('good game e by the way acabou');
   });
 
-  it('substitui ocorrencias repetidas do mesmo termo', () => {
+  it('replaces repeated occurrences of the same term', () => {
     const dict: PronunciationEntry[] = [{ term: 'gg', replacement: 'good game' }];
     expect(applyPronunciation('gg gg gg', dict)).toBe('good game good game good game');
   });
 
-  it('substitui dois termos diferentes adjacentes (fronteira zero-width)', () => {
-    // Boundary chars sao zero-width: ambos os termos adjacentes sao substituidos.
+  it('replaces two different adjacent terms (zero-width boundary)', () => {
+    // Boundary chars are zero-width: both adjacent terms are replaced.
     const dict: PronunciationEntry[] = [
       { term: 'aa', replacement: 'X' },
       { term: 'bb', replacement: 'Y' },
@@ -62,30 +62,30 @@ describe('applyPronunciation', () => {
     expect(applyPronunciation('aa bb', dict)).toBe('X Y');
   });
 
-  it('respeita fronteiras unicode (acentos contam como letra)', () => {
+  it('respects unicode boundaries (accents count as letters)', () => {
     const dict: PronunciationEntry[] = [{ term: 'ca', replacement: 'KA' }];
-    // "café" nao deve ser tocado: o "é" faz parte da palavra (fronteira unicode)
+    // "café" must not be touched: the "é" is part of the word (unicode boundary)
     expect(applyPronunciation('café quente', dict)).toBe('café quente');
   });
 
-  it('substitui um termo acentuado', () => {
+  it('replaces an accented term', () => {
     const dict: PronunciationEntry[] = [{ term: 'salázar', replacement: 'ditador' }];
     expect(applyPronunciation('o salázar fez', dict)).toBe('o ditador fez');
   });
 
-  it('escapa metacaracteres de regex no termo', () => {
+  it('escapes regex metacharacters in the term', () => {
     const dict: PronunciationEntry[] = [{ term: 'c++', replacement: 'cplusplus' }];
     expect(applyPronunciation('amo c++', dict)).toBe('amo cplusplus');
   });
 
-  it('replacement vazio remove o termo (deixa a fronteira)', () => {
+  it('empty replacement removes the term (leaves the boundary)', () => {
     const dict: PronunciationEntry[] = [{ term: 'lol', replacement: '' }];
-    // O termo e removido; a substituicao acontece DEPOIS do cleanText, por isso
-    // o whitespace residual nao e re-colapsado (comportamento fixado).
+    // The term is removed; the replacement happens AFTER cleanText, so
+    // the residual whitespace is not re-collapsed (pinned behavior).
     expect(applyPronunciation('isto lol acabou', dict)).toBe('isto  acabou');
   });
 
-  it('e deterministico para o mesmo input', () => {
+  it('is deterministic for the same input', () => {
     const dict: PronunciationEntry[] = [
       { term: 'gg', replacement: 'good game' },
       { term: 'wp', replacement: 'well played' },
@@ -96,7 +96,7 @@ describe('applyPronunciation', () => {
     expect(out1).toBe('good game well played good game');
   });
 
-  it('substitui um termo multi-palavra (nick com espaco)', () => {
+  it('replaces a multi-word term (nick with a space)', () => {
     const dict: PronunciationEntry[] = [{ term: 'xX Sniper Xx', replacement: 'o jogador' }];
     expect(applyPronunciation('boa xX Sniper Xx', dict)).toBe('boa o jogador');
   });

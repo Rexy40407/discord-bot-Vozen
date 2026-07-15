@@ -1,14 +1,14 @@
 // src/language/attachmentMedia.ts
 //
-// Classifica ANEXOS e STICKERS do Discord em itens de media a anunciar (imagem,
-// vídeo, áudio, ficheiro comprimido, ficheiro, gif, múltiplos). A localização em
-// voz ("uma imagem"/"an image") acontece a jusante (spokenPhrases); aqui só se
-// decide o TIPO. PURO — opera sobre formas mínimas ({contentType,name}), por isso
-// testa-se sem objetos reais do Discord.
+// Classifies Discord ATTACHMENTS and STICKERS into media items to announce (image,
+// video, audio, compressed file, file, gif, multiple). The voice localization
+// ("uma imagem"/"an image") happens downstream (spokenPhrases); here only the
+// TYPE is decided. PURE — operates on minimal shapes ({contentType,name}), so it
+// can be tested without real Discord objects.
 
 import type { MediaKind, MediaItem } from './spokenPhrases';
 
-/** Forma mínima de um anexo (subconjunto do Attachment do discord.js). */
+/** Minimal shape of an attachment (subset of discord.js's Attachment). */
 export interface AttachmentLike {
   contentType?: string | null;
   name?: string | null;
@@ -23,9 +23,9 @@ function extOf(name: string | null | undefined): string {
 }
 
 /**
- * Tipo de UM anexo, por content-type (preferido) ou extensão do nome (fallback).
- * gif tem prioridade sobre image (um .gif é uma imagem, mas o Diogo quer "um gif").
- * PURO.
+ * Type of ONE attachment, by content-type (preferred) or name extension (fallback).
+ * gif takes priority over image (a .gif is an image, but Diogo wants "a gif").
+ * PURE.
  */
 export function classifyAttachment(att: AttachmentLike): MediaKind {
   const ct = (att.contentType ?? '').toLowerCase();
@@ -43,8 +43,8 @@ export function classifyAttachment(att: AttachmentLike): MediaKind {
 }
 
 /**
- * Media dos anexos: 0 -> nenhum; 1 -> o seu tipo; >1 -> um único "múltiplos ficheiros"
- * (como o concorrente — evita "imagem imagem vídeo" verboso). PURO.
+ * Media from attachments: 0 -> none; 1 -> its type; >1 -> a single "multiple files"
+ * (like the competitor — avoids the verbose "image image video"). PURE.
  */
 export function mediaFromAttachments(atts: AttachmentLike[]): MediaItem[] {
   if (atts.length === 0) return [];
@@ -52,14 +52,14 @@ export function mediaFromAttachments(atts: AttachmentLike[]): MediaItem[] {
   return [{ kind: classifyAttachment(atts[0]) }];
 }
 
-/** Forma mínima de um sticker. */
+/** Minimal shape of a sticker. */
 export interface StickerLike {
   name?: string | null;
 }
 
 /**
- * Media dos stickers: um por sticker, lendo o NOME (o concorrente lê o nome do
- * sticker). Nome vazio -> o item cai em "um sticker" a jusante. PURO.
+ * Media from stickers: one per sticker, reading the NAME (the competitor reads the
+ * sticker's name). Empty name -> the item falls back to "a sticker" downstream. PURE.
  */
 export function mediaFromStickers(stickers: StickerLike[]): MediaItem[] {
   return stickers.map((s) => ({ kind: 'sticker' as const, text: s.name ?? undefined }));

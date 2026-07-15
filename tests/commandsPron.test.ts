@@ -1,7 +1,7 @@
-// Testes do /pronunciation (pessoal) via dispatcher — cobre a SUPERFÍCIE DE MONETIZAÇÃO:
-// o limite Free (3) vs Premium (50) e o upsell do Ko-fi quando o limite é atingido.
-// Segue o padrão de tests/commandsServerPron.test.ts (stub de interação + fast-path add,
-// que dispensa o modal).
+// Tests for /pronunciation (personal) via the dispatcher — covers the MONETIZATION SURFACE:
+// the Free (3) vs Premium (50) limit and the Ko-fi upsell when the limit is hit.
+// Follows the tests/commandsServerPron.test.ts pattern (interaction stub + fast-path add,
+// which skips the modal).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@discordjs/voice', () => ({
@@ -68,7 +68,7 @@ async function add(db: Database.Database, term: string, say: string): Promise<st
   return i.replies;
 }
 
-describe('/pronunciation — limite Free 3 vs Premium 50 + upsell (monetização)', () => {
+describe('/pronunciation — Free 3 vs Premium 50 limit + upsell (monetization)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -77,7 +77,7 @@ describe('/pronunciation — limite Free 3 vs Premium 50 + upsell (monetização
     db.close();
   });
 
-  it('Free: aceita 3; a 4.ª bate no limite COM upsell do Ko-fi', async () => {
+  it('Free: accepts 3; the 4th hits the limit WITH the Ko-fi upsell', async () => {
     for (const t of ['a', 'b', 'c']) {
       await add(db, t, `${t}-say`);
     }
@@ -85,12 +85,12 @@ describe('/pronunciation — limite Free 3 vs Premium 50 + upsell (monetização
 
     const replies = await add(db, 'd', 'd-say');
     const all = replies.join('\n');
-    expect(all).toMatch(/3/); // menciona o limite
-    expect(all).toContain(KOFI); // upsell para não-premium
-    expect(getUserPronunciations(db, USER)).toHaveLength(3); // nada guardado
+    expect(all).toMatch(/3/); // mentions the limit
+    expect(all).toContain(KOFI); // upsell for non-premium
+    expect(getUserPronunciations(db, USER)).toHaveLength(3); // nothing stored
   });
 
-  it('Premium: passa das 3 sem limite nem upsell (cap 50)', async () => {
+  it('Premium: goes past 3 with no limit or upsell (cap 50)', async () => {
     grantUserPremium(db, USER, 30, 'kofi', Date.now());
     for (const t of ['a', 'b', 'c', 'd', 'e']) {
       await add(db, t, `${t}-say`);
@@ -101,12 +101,12 @@ describe('/pronunciation — limite Free 3 vs Premium 50 + upsell (monetização
     expect(getUserPronunciations(db, USER)).toHaveLength(6);
   });
 
-  it('Premium do SERVIDOR também eleva o limite pessoal (isGuildPremium no gate)', async () => {
+  it('SERVER Premium also raises the personal limit (isGuildPremium in the gate)', async () => {
     const { grantGuildPremium } = await import('../src/store/premium.js');
     grantGuildPremium(db, GUILD, 30, 'kofi', Date.now());
     for (const t of ['a', 'b', 'c', 'd']) {
       await add(db, t, `${t}-say`);
     }
-    expect(getUserPronunciations(db, USER)).toHaveLength(4); // >3 porque a guild é premium
+    expect(getUserPronunciations(db, USER)).toHaveLength(4); // >3 because the guild is premium
   });
 });

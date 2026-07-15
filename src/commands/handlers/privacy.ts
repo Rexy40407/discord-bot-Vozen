@@ -1,9 +1,9 @@
 // src/commands/handlers/privacy.ts
 //
-// /privacy erase — direito ao esquecimento (RGPD / Política do Discord §5(b)): apaga
-// TODOS os dados pessoais do utilizador em qualquer servidor, num só comando. Confirmação
-// obrigatória por botão (é destrutivo). O premium PAGO e o registo financeiro NÃO são
-// apagados (retenção legal + é um bem que a pessoa comprou) — avisa-se isso antes.
+// /privacy erase — right to be forgotten (GDPR / Discord Policy §5(b)): erases ALL of
+// the user's personal data in any server, in a single command. Button confirmation
+// required (it's destructive). PAID premium and the financial record are NOT erased
+// (legal retention + it's an asset the person bought) — this is warned about beforehand.
 import {
   ChatInputCommandInteraction,
   ActionRowBuilder,
@@ -35,7 +35,7 @@ async function handleErase(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     isUserPremium(deps.db, i.user.id, now) ||
     (i.guildId ? isGuildPremium(deps.db, i.guildId, now) : false);
 
-  // Aviso + botões (efémero: só o próprio vê/clica).
+  // Warning + buttons (ephemeral: only the user sees/clicks).
   const warning = hasPaid
     ? `${t('privacy.eraseConfirm', locale)}\n\n${t('privacy.erasePremiumNote', locale)}`
     : t('privacy.eraseConfirm', locale);
@@ -74,13 +74,13 @@ async function handleErase(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     await btn.update({ content: t('error.generic', locale), components: [] }).catch(() => {});
     return;
   }
-  // Apaga os .wav de clone do disco (best-effort — a linha na BD já desapareceu).
+  // Delete the clone .wav files from disk (best-effort — the DB row is already gone).
   for (const p of removedSamplePaths) {
     await unlink(p).catch(() => {});
   }
-  // Se a pessoa tinha voz clonada, purga também o ÁUDIO clonado gerado (audio-cache/
-  // clone/ e /fx/) — senão sobreviveria à erasure biométrica até ser evictado por LRU.
-  // As chaves são hashes, por isso limpa-se o namespace inteiro (regenerável).
+  // If the person had a cloned voice, also purge the generated cloned AUDIO (audio-cache/
+  // clone/ and /fx/) — otherwise it would survive the biometric erasure until evicted by LRU.
+  // The keys are hashes, so the entire namespace is cleared (regenerable).
   if (removedSamplePaths.length > 0) {
     purgeCloneDerivedAudio(join(dirname(deps.config.dbPath), 'audio-cache'));
   }

@@ -1,10 +1,10 @@
-// tools/build-i18n.mjs — gera site/js/i18n.js a partir de tools/i18n-src/<lang>.json.
+// tools/build-i18n.mjs — generates site/js/i18n.js from tools/i18n-src/<lang>.json.
 //
-// Cada <lang>.json tem { ui:{chave:texto}, commands:{cat:[[id,desc],...]}, faq:[[Q,A],...] }.
-// O EN é o CANÓNICO (define as chaves/ids/ordem); as outras línguas têm de bater certo.
-// Saída: window.VOZEN_I18N / VOZEN_COMMANDS / VOZEN_FAQ (formato que o main-v*.js lê).
+// Each <lang>.json has { ui:{key:text}, commands:{cat:[[id,desc],...]}, faq:[[Q,A],...] }.
+// EN is the CANONICAL one (defines the keys/ids/order); the other languages must match.
+// Output: window.VOZEN_I18N / VOZEN_COMMANDS / VOZEN_FAQ (the format main-v*.js reads).
 //
-// Correr: node tools/build-i18n.mjs   (depois npm run build:site minifica.)
+// Run: node tools/build-i18n.mjs   (then npm run build:site minifies.)
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'tools', 'i18n-src');
-// Ordem = ordem no seletor do site.
+// Order = order in the site selector.
 const LANGS = ['en', 'pt', 'fr', 'es', 'de', 'tr', 'ar', 'zh', 'ru', 'ko'];
 
 const data = {};
@@ -22,7 +22,7 @@ const en = data.en;
 const uiKeys = Object.keys(en.ui);
 const cats = Object.keys(en.commands);
 
-// Validação: cada língua tem de ter as MESMAS chaves ui, ids de comando e nº de FAQ.
+// Validation: each language must have the SAME ui keys, command ids and FAQ count.
 for (const l of LANGS) {
   const d = data[l];
   const missing = uiKeys.filter((k) => d.ui[k] == null);
@@ -38,7 +38,7 @@ for (const l of LANGS) {
 const I18N = {};
 for (const l of LANGS) I18N[l] = data[l].ui;
 
-// VOZEN_COMMANDS = { cat: [[id, {lang:desc}], ...] } — ids/ordem do EN.
+// VOZEN_COMMANDS = { cat: [[id, {lang:desc}], ...] } — ids/order from EN.
 const COMMANDS = {};
 for (const c of cats) {
   COMMANDS[c] = en.commands[c].map(([id], i) => {
@@ -48,7 +48,7 @@ for (const c of cats) {
   });
 }
 
-// VOZEN_FAQ = [[{lang:Q}, {lang:A}], ...] — ordem do EN.
+// VOZEN_FAQ = [[{lang:Q}, {lang:A}], ...] — order from EN.
 const FAQ = en.faq.map((_, i) => {
   const q = {};
   const a = {};

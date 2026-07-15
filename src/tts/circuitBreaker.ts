@@ -1,40 +1,40 @@
 // src/tts/circuitBreaker.ts
 //
-// CircuitBreakerEngine — decorator de TTSEngine que protege contra um motor PRIMARY
-// que fica lento/indisponível (o caso típico: o gTTS da Google a fazer timeout de
-// ~15s por pedido quando bloqueia/limita). Depois de N falhas CONSECUTIVAS, "abre" e
-// serve o `fallback` (ex. Piper, local) DIRETAMENTE durante um cooldown — sem sequer
-// tentar o primary — para não acumular stalls de 15s a cada mensagem. Uma síntese
-// bem-sucedida do primary fecha o breaker e reseta o contador.
+// CircuitBreakerEngine — a TTSEngine decorator that protects against a PRIMARY engine
+// that becomes slow/unavailable (the typical case: Google's gTTS timing out at
+// ~15s per request when it blocks/throttles). After N CONSECUTIVE failures, it "opens" and
+// serves the `fallback` (e.g. Piper, local) DIRECTLY during a cooldown — without even
+// trying the primary — to avoid stacking 15s stalls on every message. A successful
+// primary synthesis closes the breaker and resets the counter.
 //
-// Estados:
-//   FECHADO      -> tenta o primary; sucesso reseta, falha conta.
-//   ABERTO       -> (now < openUntil) nem toca no primary; vai direto ao fallback.
-//   MEIO-ABERTO  -> (cooldown expirou) uma sondagem ao primary; sucesso fecha, falha reabre.
+// States:
+//   CLOSED    -> tries the primary; success resets, failure counts.
+//   OPEN      -> (now < openUntil) does not even touch the primary; goes straight to the fallback.
+//   HALF-OPEN -> (cooldown expired) one probe to the primary; success closes, failure reopens.
 //
-// Degradação graciosa: mesmo no estado FECHADO, uma falha do primary cai no fallback
-// para ESSA mensagem (não a deixa sem áudio) além de contar para abrir.
+// Graceful degradation: even in the CLOSED state, a primary failure falls back to the fallback
+// for THAT message (does not leave it without audio) besides counting toward opening.
 
 import type { SynthRequest, TTSEngine } from './engine';
 import { log } from '../logging/logger';
 
 export interface CircuitBreakerOpts {
-  /** Falhas CONSECUTIVAS do primary para abrir o breaker. */
+  /** CONSECUTIVE primary failures to open the breaker. */
   threshold: number;
-  /** Tempo (ms) que o breaker fica aberto (a usar o fallback) antes de re-sondar. */
+  /** Time (ms) the breaker stays open (using the fallback) before re-probing. */
   cooldownMs: number;
-  /** Relógio injetável (testes). Default: Date.now. */
+  /** Injectable clock (tests). Default: Date.now. */
   now?: () => number;
-  /** Nome curto para logs (ex. 'gtts'). */
+  /** Short name for logs (e.g. 'gtts'). */
   label?: string;
-  /** Hook chamado quando o breaker ABRE (métricas/observabilidade). */
+  /** Hook called when the breaker OPENS (metrics/observability). */
   onOpen?: () => void;
 }
 
 export class CircuitBreakerEngine implements TTSEngine {
   private failures = 0;
   private openUntil = 0;
-  private probing = false; // MEIO-ABERTO: há uma sondagem do primary em curso?
+  private probing = false; // HALF-OPEN: is there a primary probe in progress?
   private readonly now: () => number;
   private readonly label: string;
 
@@ -47,32 +47,32 @@ export class CircuitBreakerEngine implements TTSEngine {
     this.label = opts.label ?? 'primary';
   }
 
-  /** O breaker está ABERTO agora (a saltar o primary)? Observabilidade/testes. */
+  /** Is the breaker OPEN right now (skipping the primary)? Observability/tests. */
   isOpen(): boolean {
     return this.now() < this.openUntil;
   }
 
   async synth(req: SynthRequest): Promise<string> {
-    // ABERTO: nem tenta o primary — fallback direto (evita o stall de ~15s).
+    // OPEN: does not even try the primary — straight to the fallback (avoids the ~15s stall).
     if (this.now() < this.openUntil) {
       return this.fallback.synth(req);
     }
-    // MEIO-ABERTO se JÁ esteve aberto e o cooldown expirou (openUntil>0). Nesse estado,
-    // uma ÚNICA falha da sondagem reabre já (não espera juntar `threshold` outra vez —
-    // senão cada expiração de cooldown re-provocava N stalls de 15s numa outage longa).
+    // HALF-OPEN if it was ALREADY open and the cooldown expired (openUntil>0). In that state,
+    // a SINGLE probe failure reopens immediately (it does not wait to accumulate `threshold`
+    // again — otherwise each cooldown expiry would re-trigger N 15s stalls in a long outage).
     const halfOpen = this.openUntil > 0;
-    // MEIO-ABERTO: deixa passar UMA sondagem de cada vez. Sem este latch, todos os pedidos
-    // que chegam na janela após o cooldown expirar (e antes de a sondagem de ~15s resolver)
-    // sondavam o primary em paralelo — N stalls de 15s por cooldown numa outage longa. Os
-    // concorrentes servem o fallback diretamente; o latch é posto antes do await e limpo
-    // no finally.
+    // HALF-OPEN: lets ONE probe through at a time. Without this latch, all requests
+    // arriving in the window after the cooldown expires (and before the ~15s probe resolves)
+    // would probe the primary in parallel — N 15s stalls per cooldown in a long outage. The
+    // concurrent ones serve the fallback directly; the latch is set before the await and cleared
+    // in the finally.
     if (halfOpen && this.probing) {
       return this.fallback.synth(req);
     }
     if (halfOpen) this.probing = true;
     try {
       const out = await this.primary.synth(req);
-      this.failures = 0; // sucesso -> FECHA e reseta
+      this.failures = 0; // success -> CLOSES and resets
       this.openUntil = 0;
       return out;
     } catch (err) {
@@ -88,7 +88,7 @@ export class CircuitBreakerEngine implements TTSEngine {
           `[breaker] '${this.label}' failed (${this.failures}/${this.opts.threshold}): ${(err as Error).message}`,
         );
       }
-      // Degradação graciosa: usa o fallback para ESTA mensagem também (não a deixa muda).
+      // Graceful degradation: uses the fallback for THIS message too (does not leave it mute).
       return this.fallback.synth(req);
     } finally {
       if (halfOpen) this.probing = false;

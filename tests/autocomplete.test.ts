@@ -8,15 +8,15 @@ import {
 import { modelDisplayName } from '../src/language/voiceMap';
 
 describe('modelDisplayName', () => {
-  it('mostra a lingua escrita na propria lingua (autonimo)', () => {
+  it('shows the language written in its own language (autonym)', () => {
     expect(modelDisplayName('pt_PT-tugao-medium')).toBe('Português (Portugal)');
-    expect(modelDisplayName('pt_BR-faber-medium')).toBe('Português (Brasil)'); // simétrico com pt_PT
+    expect(modelDisplayName('pt_BR-faber-medium')).toBe('Português (Brasil)'); // symmetric with pt_PT
     expect(modelDisplayName('en_US-amy-medium')).toBe('English (US)');
     expect(modelDisplayName('fr_FR-siwis-medium')).toBe('Français');
     expect(modelDisplayName('de_DE-thorsten-medium')).toBe('Deutsch');
     expect(modelDisplayName('zh_CN-huayan-medium')).toBe('中文');
   });
-  it('faz fallback ao id quando o locale nao esta mapeado (nunca esconde a voz)', () => {
+  it('falls back to the id when the locale is not mapped (never hides the voice)', () => {
     expect(modelDisplayName('xx_YY-foo-medium')).toBe('xx_YY-foo-medium');
   });
 });
@@ -24,7 +24,7 @@ describe('modelDisplayName', () => {
 describe('filterModelChoices (autocomplete)', () => {
   const models = ['pt_PT-tugao-medium', 'en_US-amy-medium', 'fr_FR-siwis-medium'];
 
-  it('name = autonimo, value = id, ordenado por nome', () => {
+  it('name = autonym, value = id, sorted by name', () => {
     expect(filterModelChoices(models, '')).toEqual([
       { name: 'English (US)', value: 'en_US-amy-medium' },
       { name: 'Français', value: 'fr_FR-siwis-medium' },
@@ -32,47 +32,47 @@ describe('filterModelChoices (autocomplete)', () => {
     ]);
   });
 
-  it('filtra pelo nome da lingua (o utilizador escreve "portu")', () => {
+  it('filters by the language name (the user types "portu")', () => {
     expect(filterModelChoices(models, 'portu').map((c) => c.value)).toEqual(['pt_PT-tugao-medium']);
   });
 
-  it('filtra tambem pelo id do modelo (ex. nome da voz)', () => {
+  it('also filters by the model id (e.g. the voice name)', () => {
     expect(filterModelChoices(models, 'siwis').map((c) => c.value)).toEqual(['fr_FR-siwis-medium']);
   });
 
-  it('e case-insensitive e ignora espacos', () => {
+  it('is case-insensitive and ignores spaces', () => {
     expect(filterModelChoices(models, '  ENGLISH ').map((c) => c.value)).toEqual([
       'en_US-amy-medium',
     ]);
   });
 
-  it('limita a 25 sugestoes (maximo do Discord)', () => {
+  it('limits to 25 suggestions (Discord maximum)', () => {
     const many = Array.from({ length: 40 }, (_, i) => `en_US-voz${i}-medium`);
     expect(filterModelChoices(many, '').length).toBe(25);
   });
 
-  it('com >25 modelos devolve exatamente 25, ordenados (sort ANTES do slice)', () => {
-    // Locales nao mapeados -> modelDisplayName cai no id cru, por isso cada modelo
-    // tem um nome DISTINTO (ao contrario dos en_US-… que colapsam em "English (US)").
-    // Baralhamos a entrada para provar que a ordenacao acontece antes do corte: se
-    // o slice viesse antes do sort, o resultado nao seria o prefixo ordenado.
+  it('with >25 models returns exactly 25, sorted (sort BEFORE the slice)', () => {
+    // Unmapped locales -> modelDisplayName falls back to the raw id, so each model has
+    // a DISTINCT name (unlike the en_US-… ones that collapse into "English (US)").
+    // We shuffle the input to prove the sorting happens before the cut: if the slice
+    // came before the sort, the result wouldn't be the sorted prefix.
     const ids = Array.from({ length: 30 }, (_, i) => `zz_ZZ-v${String(i).padStart(2, '0')}-medium`);
-    const shuffled = [...ids].reverse(); // ordem de entrada != ordem final
+    const shuffled = [...ids].reverse(); // input order != final order
     const out = filterModelChoices(shuffled, '');
     expect(out.length).toBe(25);
-    // Os 25 primeiros por nome (id cru) ordenado — nao os 25 primeiros da entrada.
+    // The first 25 by sorted name (raw id) — not the first 25 of the input.
     const expected = [...ids].sort((a, b) => a.localeCompare(b)).slice(0, 25);
     expect(out.map((c) => c.value)).toEqual(expected);
   });
 
-  it('query que nao bate em nada devolve [] (sem sugestoes)', () => {
+  it('a query that matches nothing returns [] (no suggestions)', () => {
     expect(filterModelChoices(models, 'zzzz-nao-existe')).toEqual([]);
   });
 });
 
-// Pedido do Diogo: os nomes das línguas no picker do /voice set aparecem NA LÍNGUA DO
-// UTILIZADOR (o locale do cliente Discord), via Intl.DisplayNames. Sem locale -> autónimo.
-describe('filterModelChoices — nomes das línguas no locale do utilizador', () => {
+// Diogo's request: the language names in the /voice set picker appear IN THE USER'S
+// LANGUAGE (the Discord client locale), via Intl.DisplayNames. Without locale -> autonym.
+describe('filterModelChoices — language names in the user locale', () => {
   const models = [
     'pt_PT-tugao-medium',
     'en_US-amy-medium',
@@ -80,43 +80,43 @@ describe('filterModelChoices — nomes das línguas no locale do utilizador', ()
     'de_DE-thorsten-medium',
   ];
 
-  it('locale pt-BR -> nomes em português', () => {
+  it('locale pt-BR -> names in Portuguese', () => {
     const names = filterModelChoices(models, '', 'pt-BR').map((c) => c.name);
     expect(names).toContain('Alemão');
     expect(names).toContain('Francês');
     expect(names).toContain('Português');
-    expect(names).toContain('Inglês'); // região só aparece se houver >1 região da base
+    expect(names).toContain('Inglês'); // the region only appears if there's >1 region of the base
   });
 
-  it('locale fr -> nomes em francês', () => {
+  it('locale fr -> names in French', () => {
     const names = filterModelChoices(models, '', 'fr').map((c) => c.name);
     expect(names).toContain('Allemand');
     expect(names).toContain('Anglais');
     expect(names).toContain('Portugais');
   });
 
-  it('locale de -> nomes em alemão', () => {
+  it('locale de -> names in German', () => {
     const names = filterModelChoices(models, '', 'de').map((c) => c.name);
     expect(names).toContain('Deutsch');
     expect(names).toContain('Englisch');
   });
 
-  it('mostra a REGIÃO (localizada) quando a base tem >1 região instalada', () => {
+  it('shows the (localized) REGION when the base has >1 installed region', () => {
     const multi = ['en_US-amy-medium', 'en_GB-alan-medium'];
     const names = filterModelChoices(multi, '', 'pt-BR').map((c) => c.name);
     expect(names).toContain('Inglês (Estados Unidos)');
     expect(names).toContain('Inglês (Reino Unido)');
   });
 
-  it('o utilizador pode PROCURAR na sua própria língua (ex.: "alemão")', () => {
+  it('the user can SEARCH in their own language (e.g. "alemão")', () => {
     expect(filterModelChoices(models, 'alemão', 'pt-BR').map((c) => c.value)).toEqual([
       'de_DE-thorsten-medium',
     ]);
   });
 
-  it('locale estranho -> não rebenta e devolve todas as vozes', () => {
-    // Intl é tolerante (cai em en para tags desconhecidas mas bem-formadas); o que
-    // importa é NUNCA rebentar e nunca esconder uma voz.
+  it('a weird locale -> does not blow up and returns all the voices', () => {
+    // Intl is tolerant (falls back to en for unknown but well-formed tags); what matters
+    // is to NEVER blow up and never hide a voice.
     const out = filterModelChoices(models, '', 'zz-nonsense');
     expect(out.length).toBe(models.length);
     expect(out.map((c) => c.value)).toContain('de_DE-thorsten-medium');
@@ -124,10 +124,10 @@ describe('filterModelChoices — nomes das línguas no locale do utilizador', ()
 });
 
 describe('handleAutocomplete', () => {
-  // Deps minimo: o handler so le deps.availableModels no ramo 'model'.
+  // Minimal deps: the handler only reads deps.availableModels in the 'model' branch.
   const deps = { availableModels: ['pt_PT-tugao-medium', 'en_US-amy-medium'] } as any;
 
-  it('opcao focada e "model": responde com as choices filtradas', async () => {
+  it('focused option is "model": responds with the filtered choices', async () => {
     const respond = vi.fn();
     const i = {
       options: { getFocused: () => ({ name: 'model', value: 'amy' }) },
@@ -138,7 +138,7 @@ describe('handleAutocomplete', () => {
     expect(respond).toHaveBeenCalledWith([{ name: 'English (US)', value: 'en_US-amy-medium' }]);
   });
 
-  it('opcao focada NAO e "model": responde [] (ramo nao-model)', async () => {
+  it('focused option is NOT "model": responds [] (non-model branch)', async () => {
     const respond = vi.fn();
     const i = {
       options: { getFocused: () => ({ name: 'speed', value: '1.0' }) },
@@ -149,7 +149,7 @@ describe('handleAutocomplete', () => {
     expect(respond).toHaveBeenCalledWith([]);
   });
 
-  it('opcao focada e "locale" (/config language): responde com locales filtrados (<=25)', async () => {
+  it('focused option is "locale" (/config language): responds with filtered locales (<=25)', async () => {
     const respond = vi.fn();
     const i = {
       options: { getFocused: () => ({ name: 'locale', value: 'portu' }) },
@@ -162,7 +162,7 @@ describe('handleAutocomplete', () => {
     expect(arg).toContainEqual({ name: 'Português', value: 'pt' });
   });
 
-  it('opcao focada e "locale" com query vazia: corta a 25 (34 > 25)', async () => {
+  it('focused option is "locale" with an empty query: cuts to 25 (34 > 25)', async () => {
     const respond = vi.fn();
     const i = {
       options: { getFocused: () => ({ name: 'locale', value: '' }) },
@@ -173,14 +173,14 @@ describe('handleAutocomplete', () => {
     expect(arg.length).toBe(25);
   });
 
-  // Endurecimento anti-"Falha ao carregar opções" (bug intermitente reportado):
-  // o autocomplete nao pode ser deferido e o token morre ~3s apos o keystroke.
+  // Anti-"Failed to load options" hardening (reported intermittent bug): autocomplete
+  // cannot be deferred and the token dies ~3s after the keystroke.
 
-  it('interacao que chega >2.5s atrasada e IGNORADA (token quase morto; responder daria 10062)', async () => {
+  it('an interaction that arrives >2.5s late is IGNORED (token almost dead; responding would give 10062)', async () => {
     const respond = vi.fn();
     const i = {
       commandName: 'game',
-      createdTimestamp: Date.now() - 3000, // 3s de atraso gateway->bot
+      createdTimestamp: Date.now() - 3000, // 3s of gateway->bot delay
       options: { getFocused: () => ({ name: 'game', value: '' }) },
       respond,
     } as any;
@@ -188,7 +188,7 @@ describe('handleAutocomplete', () => {
     expect(respond).not.toHaveBeenCalled();
   });
 
-  it('respond que rebenta com 10062 (resposta tardia) nao propaga nem rebenta', async () => {
+  it('a respond that blows up with 10062 (late response) neither propagates nor blows up', async () => {
     const err = Object.assign(new Error('Unknown interaction'), { code: 10062 });
     const i = {
       commandName: 'voice',
@@ -200,40 +200,40 @@ describe('handleAutocomplete', () => {
   });
 });
 
-describe('sanitizeAutocompleteChoices — limites do Discord (1 entrada invalida = payload inteiro rejeitado)', () => {
-  it('corta a 25 entradas', () => {
+describe('sanitizeAutocompleteChoices — Discord limits (1 invalid entry = whole payload rejected)', () => {
+  it('cuts to 25 entries', () => {
     const many = Array.from({ length: 40 }, (_, k) => ({ name: `n${k}`, value: `v${k}` }));
     expect(sanitizeAutocompleteChoices(many).length).toBe(25);
   });
 
-  it('trunca name e value a 100 chars', () => {
+  it('truncates name and value to 100 chars', () => {
     const out = sanitizeAutocompleteChoices([{ name: 'x'.repeat(150), value: 'y'.repeat(150) }]);
     expect(out[0].name.length).toBe(100);
     expect(out[0].value.length).toBe(100);
   });
 
-  it('name vazio/so-espacos vira placeholder (name de 0 chars e 400 da API)', () => {
+  it('empty/whitespace-only name becomes a placeholder (a 0-char name is a 400 from the API)', () => {
     const out = sanitizeAutocompleteChoices([{ name: '   ', value: 'v' }]);
     expect(out[0].name).toBe('—');
     expect(out[0].value).toBe('v');
   });
 
-  it('entradas validas passam intactas', () => {
+  it('valid entries pass through intact', () => {
     const input = [{ name: 'Português', value: 'pt' }];
     expect(sanitizeAutocompleteChoices(input)).toEqual(input);
   });
 });
 
-describe('/config language — option locale usa autocomplete (34 > 25 choices)', () => {
-  it('o option `locale` do /config language e autocomplete e SEM choices estaticas', () => {
+describe('/config language — locale option uses autocomplete (34 > 25 choices)', () => {
+  it('the `locale` option of /config language is autocomplete and WITHOUT static choices', () => {
     const config = commandDefs.find((c) => c.name === 'config') as any;
     const langSub = config.options.find((o: any) => o.name === 'language');
     expect(langSub, 'subcomando language nao encontrado').toBeDefined();
     const localeOpt = langSub.options.find((o: any) => o.name === 'locale');
     expect(localeOpt, 'option locale nao encontrado').toBeDefined();
     expect(localeOpt.autocomplete).toBe(true);
-    // Com autocomplete NAO pode ter choices estaticas (Discord rejeita ambos e o
-    // limite de 25 seria excedido pelas 34 linguas).
+    // With autocomplete it CANNOT have static choices (Discord rejects both and the
+    // limit of 25 would be exceeded by the 34 languages).
     expect(localeOpt.choices ?? []).toHaveLength(0);
   });
 });

@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameManager } from '../src/games/manager';
 import type { Clock, Game, GameContext, GameEnv, TimerHandle } from '../src/games/types';
 
-/** Deixa correr as microtasks (o manager chama game.start/onMessage via Promise). */
+/** Lets the microtasks run (the manager calls game.start/onMessage via Promise). */
 const flush = (): Promise<void> => new Promise((r) => setImmediate(r));
 
-/** Relogio falso: avanca o tempo a mao e dispara os timers vencidos por ordem. */
+/** Fake clock: advances time by hand and fires the due timers in order. */
 class FakeClock implements Clock {
   time = 0;
   private timers: { id: number; at: number; fn: () => void }[] = [];
@@ -54,7 +54,7 @@ function makeEnv(overrides: Partial<GameEnv> = {}): GameEnv {
   };
 }
 
-/** Jogo-espia minimo: guarda o ctx e conta chamadas, sem logica propria. */
+/** Minimal spy game: stores the ctx and counts calls, with no logic of its own. */
 class SpyGame implements Game {
   readonly id = 'spy';
   ctx: GameContext | null = null;
@@ -83,11 +83,11 @@ describe('GameManager', () => {
     mgr = new GameManager(env);
   });
 
-  it('lock por-guild: 2o start na mesma guild -> already-active', () => {
+  it('per-guild lock: 2nd start in the same guild -> already-active', () => {
     expect(mgr.start(GUILD, CHAN, new SpyGame())).toBe('started');
     expect(mgr.active(GUILD)).toBe(true);
     expect(mgr.channelOf(GUILD)).toBe(CHAN);
-    expect(mgr.start(GUILD, 'outro-canal', new SpyGame())).toBe('already-active');
+    expect(mgr.start(GUILD, 'another-channel', new SpyGame())).toBe('already-active');
   });
 
   it('tracks the starter for scoped stop authorization and clears it at teardown', () => {
@@ -99,14 +99,14 @@ describe('GameManager', () => {
     expect(mgr.isStarter(GUILD, 'owner')).toBe(false);
   });
 
-  it('chama game.start ao iniciar', async () => {
+  it('calls game.start on start', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, CHAN, g);
     await flush();
     expect(g.starts).toBe(1);
   });
 
-  it('handleMessage: consome (true) e encaminha SO no canal do jogo', async () => {
+  it('handleMessage: consumes (true) and forwards ONLY in the game channel', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, CHAN, g);
     await flush();
@@ -118,7 +118,7 @@ describe('GameManager', () => {
       content: 'ola',
     });
     expect(inChan).toBe(true);
-    // Noutro canal da mesma guild -> NAO consome (TTS normal segue).
+    // In another channel of the same guild -> does NOT consume (normal TTS proceeds).
     const otherChan = mgr.handleMessage({
       guildId: GUILD,
       channelId: 'c2',
@@ -131,7 +131,7 @@ describe('GameManager', () => {
     expect(g.messages).toEqual(['ola']);
   });
 
-  it('sem jogo ativo -> handleMessage devolve false', () => {
+  it('no active game -> handleMessage returns false', () => {
     expect(
       mgr.handleMessage({
         guildId: GUILD,
@@ -143,7 +143,7 @@ describe('GameManager', () => {
     ).toBe(false);
   });
 
-  it('ctx.after dispara com o avanco do relogio; end cancela os timers pendentes', async () => {
+  it('ctx.after fires as the clock advances; end cancels the pending timers', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, CHAN, g);
     await flush();
@@ -155,7 +155,7 @@ describe('GameManager', () => {
     clock.advance(1);
     expect(fired).toHaveBeenCalledTimes(1);
 
-    // Novo timer + end -> o timer e cancelado (nao dispara).
+    // New timer + end -> the timer is cancelled (does not fire).
     const fired2 = vi.fn();
     g.ctx!.after(500, fired2);
     expect(clock.pending()).toBe(1);
@@ -165,7 +165,7 @@ describe('GameManager', () => {
     expect(fired2).not.toHaveBeenCalled();
   });
 
-  it('end() persiste os pontos acumulados (fim NORMAL da partida)', async () => {
+  it('end() persists the accumulated points (NORMAL end of the match)', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, CHAN, g);
     await flush();
@@ -182,11 +182,11 @@ describe('GameManager', () => {
         ['b', 5],
       ]),
     );
-    // Apos end o lock esta livre.
+    // After end the lock is free.
     expect(mgr.active(GUILD)).toBe(false);
   });
 
-  it('stop() e endGuild() abortam SEM persistir pontos', async () => {
+  it('stop() and endGuild() abort WITHOUT persisting points', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, CHAN, g);
     await flush();
@@ -194,10 +194,10 @@ describe('GameManager', () => {
     expect(mgr.stop(GUILD)).toBe(true);
     expect(env.persistScores).not.toHaveBeenCalled();
     expect(mgr.active(GUILD)).toBe(false);
-    // stop sem jogo -> false.
+    // stop with no game -> false.
     expect(mgr.stop(GUILD)).toBe(false);
 
-    // endGuild idem (funil de saida): aborta e nao persiste.
+    // endGuild likewise (exit funnel): aborts and does not persist.
     const g2 = new SpyGame();
     mgr.start(GUILD, CHAN, g2);
     await flush();
@@ -207,24 +207,24 @@ describe('GameManager', () => {
     expect(mgr.active(GUILD)).toBe(false);
   });
 
-  it('onVoiceLeft termina jogos de VOZ mas poupa os de tabuleiro; endGuild termina qualquer', async () => {
-    // Jogo de VOZ (needsVoice default true): uma saida de voz termina-o.
+  it('onVoiceLeft ends VOICE games but spares board ones; endGuild ends any', async () => {
+    // VOICE game (needsVoice default true): a voice leave ends it.
     mgr.start(GUILD, CHAN, new SpyGame());
     await flush();
     mgr.onVoiceLeft(GUILD);
     expect(mgr.active(GUILD)).toBe(false);
 
-    // Jogo de TABULEIRO (needsVoice=false): sobrevive a uma saida de voz nao relacionada.
+    // BOARD game (needsVoice=false): survives an unrelated voice leave.
     mgr.start(GUILD, CHAN, new SpyGame(), false);
     await flush();
     mgr.onVoiceLeft(GUILD);
     expect(mgr.active(GUILD)).toBe(true);
-    // Mas a guild ser removida (endGuild) termina-o na mesma (sem leak).
+    // But the guild being removed (endGuild) ends it anyway (no leak).
     mgr.endGuild(GUILD);
     expect(mgr.active(GUILD)).toBe(false);
   });
 
-  it('ctx.say usa o player; sem player devolve false', async () => {
+  it('ctx.say uses the player; without a player returns false', async () => {
     const say = vi.fn(async () => true);
     let hasPlayer = true;
     env = makeEnv({ getPlayer: () => (hasPlayer ? { say } : undefined) });
@@ -240,7 +240,7 @@ describe('GameManager', () => {
     await expect(g.ctx!.say('sem call')).resolves.toBe(false);
   });
 
-  it('ctx.send delega no sendToChannel do env (com o canal do jogo)', async () => {
+  it('ctx.send delegates to the env sendToChannel (with the game channel)', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, CHAN, g);
     await flush();
@@ -248,7 +248,7 @@ describe('GameManager', () => {
     expect(env.sendToChannel).toHaveBeenCalledWith(CHAN, 'mensagem');
   });
 
-  it('um throw dentro do jogo nao escapa (e logado)', async () => {
+  it('a throw inside the game does not escape (is logged)', async () => {
     const boom: Game = {
       id: 'boom',
       start: () => {
@@ -262,17 +262,17 @@ describe('GameManager', () => {
   });
 });
 
-// ── Jogos em THREAD descartável (servidores grandes) ──────────────────────────
+// ── Games in a disposable THREAD (large servers) ──────────────────────────
 const THREAD = 't1';
 const PARENT = 'c1';
-describe('GameManager — jogo em thread descartável', () => {
+describe('GameManager — game in a disposable thread', () => {
   let env: GameEnv;
   let clock: FakeClock;
   let deleteChannel: ReturnType<typeof vi.fn>;
   let mgr: GameManager;
   beforeEach(() => {
     deleteChannel = vi.fn(async () => {});
-    // translate que inclui os params, para conseguirmos verificar o vencedor no resumo.
+    // translate that includes the params, so we can verify the winner in the summary.
     env = makeEnv({
       deleteChannel,
       translate: (key, _loc, params) => (params ? `${key} ${JSON.stringify(params)}` : key),
@@ -281,12 +281,12 @@ describe('GameManager — jogo em thread descartável', () => {
     mgr = new GameManager(env);
   });
 
-  it('o jogo corre no channelId da THREAD; as mensagens da thread são encaminhadas', async () => {
+  it('the game runs on the THREAD channelId; thread messages are forwarded', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, THREAD, g, false, 'en', PARENT);
     await flush();
     expect(mgr.channelOf(GUILD)).toBe(THREAD);
-    // Mensagem NA thread -> consumida; no canal-pai -> NÃO (é o chat normal).
+    // Message IN the thread -> consumed; in the parent channel -> NOT (it's the normal chat).
     expect(
       mgr.handleMessage({
         guildId: GUILD,
@@ -309,29 +309,29 @@ describe('GameManager — jogo em thread descartável', () => {
     expect(g.messages).toEqual(['ola']);
   });
 
-  it('fim normal: resumo do VENCEDOR vai ao canal-pai e a thread é apagada 5s depois', async () => {
+  it('normal end: WINNER summary goes to the parent channel and the thread is deleted 5s later', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, THREAD, g, false, 'en', PARENT);
     await flush();
     g.ctx!.award('a', 2);
-    g.ctx!.award('b', 9); // b vence
+    g.ctx!.award('b', 9); // b wins
     g.ctx!.end();
 
-    // Resumo no PAI (não na thread), com o mention do vencedor 'b'.
+    // Summary in the PARENT (not the thread), with the mention of winner 'b'.
     const send = env.sendToChannel as ReturnType<typeof vi.fn>;
     const parentCall = send.mock.calls.find((c) => c[0] === PARENT);
     expect(parentCall).toBeDefined();
     expect(String(parentCall![1])).toContain('game.thread.winner');
     expect(String(parentCall![1])).toContain('<@b>');
-    // A thread ainda NÃO foi apagada.
+    // The thread has NOT been deleted yet.
     expect(deleteChannel).not.toHaveBeenCalled();
     clock.advance(5000);
     expect(deleteChannel).toHaveBeenCalledWith(THREAD);
-    // Pontos persistidos (fim normal).
+    // Points persisted (normal end).
     expect(env.persistScores).toHaveBeenCalledTimes(1);
   });
 
-  it('abortado (stop, sem pontos): resumo "terminou" no pai + apaga a thread', async () => {
+  it('aborted (stop, no points): "ended" summary in the parent + deletes the thread', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, THREAD, g, false, 'en', PARENT);
     await flush();
@@ -344,18 +344,18 @@ describe('GameManager — jogo em thread descartável', () => {
     expect(env.persistScores).not.toHaveBeenCalled();
   });
 
-  it('SEM thread (parentChannelId undefined): não anuncia no pai nem apaga canal', async () => {
+  it('WITHOUT a thread (parentChannelId undefined): does not announce in the parent nor delete the channel', async () => {
     const g = new SpyGame();
-    mgr.start(GUILD, PARENT, g, false, 'en'); // sem parentChannelId
+    mgr.start(GUILD, PARENT, g, false, 'en'); // no parentChannelId
     await flush();
     g.ctx!.award('a', 1);
     g.ctx!.end();
-    // O único send seria do próprio jogo (aqui não envia nada); nenhum delete agendado.
+    // The only send would be from the game itself (here it sends nothing); no delete scheduled.
     clock.advance(5000);
     expect(deleteChannel).not.toHaveBeenCalled();
   });
 
-  it('degrada sem env.deleteChannel: anuncia no pai mas não tenta apagar', async () => {
+  it('degrades without env.deleteChannel: announces in the parent but does not try to delete', async () => {
     const noDelete = makeEnv({ translate: (k, _l, p) => (p ? `${k} ${JSON.stringify(p)}` : k) });
     const c = noDelete.clock as FakeClock;
     const m = new GameManager(noDelete);
@@ -364,7 +364,7 @@ describe('GameManager — jogo em thread descartável', () => {
     await flush();
     g.ctx!.end();
     expect(noDelete.sendToChannel).toHaveBeenCalled();
-    // Sem deleteChannel no env, nenhum timer de delete foi agendado.
+    // Without deleteChannel in the env, no delete timer was scheduled.
     expect(c.pending()).toBe(0);
   });
 });

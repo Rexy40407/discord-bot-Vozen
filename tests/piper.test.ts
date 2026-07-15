@@ -9,16 +9,16 @@ import { PiperEngine, isSafeModelName } from '../src/tts/piper';
 import { AudioCache } from '../src/tts/cache';
 import type { SynthRequest } from '../src/tts/engine';
 
-// Apenas o child_process e mockado; fs e real (precisamos do guard existsSync do
-// modelo + do diretorio temporario da cache).
+// Only child_process is mocked; fs is real (we need the model's existsSync guard
+// + the cache's temporary directory).
 vi.mock('node:child_process', () => ({ spawn: vi.fn() }));
 
 const spawnMock = vi.mocked(spawn);
 
 /**
- * Child fake: EventEmitter real com stdin/stderr (tambem EventEmitters) e
- * stdin.write/end + kill como spies. Os listeners sao registados sincronamente
- * dentro do executor da Promise, por isso emitir logo a seguir a synth() funciona.
+ * Fake child: real EventEmitter with stdin/stderr (also EventEmitters) and
+ * stdin.write/end + kill as spies. The listeners are registered synchronously
+ * inside the Promise executor, so emitting right after synth() works.
  */
 function makeFakeChild() {
   const child = new EventEmitter() as EventEmitter & {
@@ -38,7 +38,7 @@ function makeFakeChild() {
   return child;
 }
 
-describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
+describe('PiperEngine.synth — mocked spawn (EPIPE / failures)', () => {
   let dir: string;
   let modelsDir: string;
   let cache: AudioCache;
@@ -49,7 +49,7 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     spawnMock.mockReset();
     dir = mkdtempSync(join(tmpdir(), 'pipercache-'));
     modelsDir = mkdtempSync(join(tmpdir(), 'pipermodels-'));
-    // Dummy .onnx para o guard existsSync(modelPath) passar.
+    // Dummy .onnx so the existsSync(modelPath) guard passes.
     writeFileSync(join(modelsDir, `${req.model}.onnx`), 'dummy');
     cache = new AudioCache(dir);
     engine = new PiperEngine('piper', modelsDir, cache);
@@ -60,12 +60,12 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     rmSync(modelsDir, { recursive: true, force: true });
   });
 
-  it('stdin emite EPIPE + child fecha com codigo != 0 -> rejeita limpo, sem crashar', async () => {
+  it('stdin emits EPIPE + child closes with code != 0 -> rejects cleanly, without crashing', async () => {
     const child = makeFakeChild();
     spawnMock.mockReturnValue(child as never);
 
     const p = engine.synth(req);
-    // O EPIPE no stdin deve ser engolido (child morreu -> 'close' trata).
+    // The EPIPE on stdin should be swallowed (child died -> 'close' handles it).
     child.stdin.emit('error', Object.assign(new Error('write EPIPE'), { code: 'EPIPE' }));
     child.stderr.emit('data', Buffer.from('piper died'));
     child.emit('close', 1);
@@ -73,18 +73,18 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     await expect(p).rejects.toThrow(/saiu com codigo 1/);
   });
 
-  it('stdin EPIPE seguido de close(0) -> nao gerou WAV (settla, nao crasha)', async () => {
+  it('stdin EPIPE followed by close(0) -> no WAV produced (settles, does not crash)', async () => {
     const child = makeFakeChild();
     spawnMock.mockReturnValue(child as never);
 
     const p = engine.synth(req);
     child.stdin.emit('error', Object.assign(new Error('write EPIPE'), { code: 'EPIPE' }));
-    child.emit('close', 0); // saiu 0 mas nada escrito no outPath (fs real)
+    child.emit('close', 0); // exited 0 but nothing written to outPath (real fs)
 
     await expect(p).rejects.toThrow(/did not produce a WAV/);
   });
 
-  it('erro de stdin NAO-EPIPE -> rejeita com "Falha ao escrever no stdin"', async () => {
+  it('NON-EPIPE stdin error -> rejects with "Falha ao escrever no stdin"', async () => {
     const child = makeFakeChild();
     spawnMock.mockReturnValue(child as never);
 
@@ -94,7 +94,7 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     await expect(p).rejects.toThrow(/Falha ao escrever no stdin do Piper/);
   });
 
-  it('spawn falha (ENOENT) -> rejeita com "Falha ao iniciar Piper"', async () => {
+  it('spawn fails (ENOENT) -> rejects with "Falha ao iniciar Piper"', async () => {
     const child = makeFakeChild();
     spawnMock.mockReturnValue(child as never);
 
@@ -104,7 +104,7 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     await expect(p).rejects.toThrow(/Falha ao iniciar Piper/);
   });
 
-  it('write sincrono lanca -> rejeita limpo com "Falha ao escrever no stdin"', async () => {
+  it('synchronous write throws -> rejects cleanly with "Falha ao escrever no stdin"', async () => {
     const child = makeFakeChild();
     child.stdin.write.mockImplementation(() => {
       throw new Error('stream destroyed');
@@ -114,7 +114,7 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     await expect(engine.synth(req)).rejects.toThrow(/Falha ao escrever no stdin do Piper/);
   });
 
-  it('exit code != 0 (sem EPIPE) -> rejeita com codigo e stderr', async () => {
+  it('exit code != 0 (no EPIPE) -> rejects with code and stderr', async () => {
     const child = makeFakeChild();
     spawnMock.mockReturnValue(child as never);
 
@@ -125,7 +125,7 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     await expect(p).rejects.toThrow(/saiu com codigo 2: bad model/);
   });
 
-  it('calibração: spawn recebe --length_scale ~1.65 para pt_PT-tugao-medium (1.5 ×1.10 orgânico)', async () => {
+  it('calibration: spawn receives --length_scale ~1.65 for pt_PT-tugao-medium (1.5 ×1.10 organic)', async () => {
     const child = makeFakeChild();
     spawnMock.mockReturnValue(child as never);
     const calibReq: SynthRequest = { text: 'ola', model: 'pt_PT-tugao-medium', speed: 1 };
@@ -135,19 +135,19 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     const args = spawnMock.mock.calls[0][1] as string[];
     const idx = args.indexOf('--length_scale');
     expect(idx).toBeGreaterThanOrEqual(0);
-    // 1.5 × 1.10 = 1.6500000000000001 em ponto flutuante; o arg é String(number),
-    // por isso comparamos numericamente com tolerância.
+    // 1.5 × 1.10 = 1.6500000000000001 in floating point; the arg is String(number),
+    // so we compare numerically with tolerance.
     expect(Number(args[idx + 1])).toBeCloseTo(1.65);
 
-    // settle a promise para nao deixar rejeicao pendente
+    // settle the promise so we do not leave a pending rejection
     child.emit('close', 1);
     await expect(p).rejects.toThrow();
   });
 
-  // Params de qualidade: com o engine construido SEM overrides (defaults do
-  // preset ORGÂNICO), os args levam noise_scale/noise_w/sentence_silence nos
-  // defaults orgânicos E o length_scale reflete a calibracao ×1.10 (tugao ~1.65).
-  it('defaults de qualidade: args levam --noise_scale/--noise_w/--sentence_silence nos defaults orgânicos, length_scale ×1.10', async () => {
+  // Quality params: with the engine built WITHOUT overrides (ORGANIC preset
+  // defaults), the args carry noise_scale/noise_w/sentence_silence at the
+  // organic defaults AND the length_scale reflects the ×1.10 calibration (tugao ~1.65).
+  it('quality defaults: args carry --noise_scale/--noise_w/--sentence_silence at the organic defaults, length_scale ×1.10', async () => {
     const child = makeFakeChild();
     spawnMock.mockReturnValue(child as never);
     const calibReq: SynthRequest = { text: 'ola', model: 'pt_PT-tugao-medium', speed: 1 };
@@ -157,7 +157,7 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     const args = spawnMock.mock.calls[0][1] as string[];
 
     const ls = args.indexOf('--length_scale');
-    expect(Number(args[ls + 1])).toBeCloseTo(1.65); // calibracao tugao (1.5) × 1.10 orgânico
+    expect(Number(args[ls + 1])).toBeCloseTo(1.65); // tugao calibration (1.5) × 1.10 organic
 
     const ns = args.indexOf('--noise_scale');
     expect(ns).toBeGreaterThanOrEqual(0);
@@ -175,9 +175,9 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     await expect(p).rejects.toThrow();
   });
 
-  // O engine aceita defaults de qualidade CUSTOM (a via por onde a config global
-  // — NOISE_SCALE/etc — chega ao spawn via factory). Refletem-se nos args.
-  it('params de qualidade custom no engine refletem-se nos args do spawn', async () => {
+  // The engine accepts CUSTOM quality defaults (the path by which the global config
+  // — NOISE_SCALE/etc — reaches the spawn via factory). They are reflected in the args.
+  it('custom quality params on the engine are reflected in the spawn args', async () => {
     const child = makeFakeChild();
     spawnMock.mockReturnValue(child as never);
     const customEngine = new PiperEngine('piper', modelsDir, cache, {
@@ -198,14 +198,14 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
   });
 });
 
-describe('isSafeModelName — validacao de nome de modelo (anti path-traversal)', () => {
-  it('rejeita nomes com separadores, ".." ou vazios', () => {
+describe('isSafeModelName — model name validation (anti path-traversal)', () => {
+  it('rejects names with separators, ".." or empty', () => {
     for (const bad of ['../../etc/x', '..\\x', 'a/b', 'a\\b', '/abs', '', '..', '.']) {
       expect(isSafeModelName(bad)).toBe(false);
     }
   });
 
-  it('aceita nomes reais (letras/digitos/_/-, sem separadores)', () => {
+  it('accepts real names (letters/digits/_/-, no separators)', () => {
     for (const good of [
       'en_US-amy-medium',
       'pt_BR-cadu-medium',
@@ -217,7 +217,7 @@ describe('isSafeModelName — validacao de nome de modelo (anti path-traversal)'
   });
 });
 
-describe('PiperEngine.synth — guard de nome inseguro (rejeita antes de spawn)', () => {
+describe('PiperEngine.synth — unsafe name guard (rejects before spawn)', () => {
   let dir: string;
   let modelsDir: string;
   let cache: AudioCache;
@@ -236,7 +236,7 @@ describe('PiperEngine.synth — guard de nome inseguro (rejeita antes de spawn)'
     rmSync(modelsDir, { recursive: true, force: true });
   });
 
-  it('nome com path-traversal -> rejeita com "Nome de modelo invalido" e nunca faz spawn', async () => {
+  it('name with path-traversal -> rejects with "Invalid model name" and never spawns', async () => {
     const badReq: SynthRequest = { text: 'ola', model: '../../etc/passwd', speed: 1 };
     await expect(engine.synth(badReq)).rejects.toThrow(/Invalid model name/);
     expect(spawnMock).not.toHaveBeenCalled();

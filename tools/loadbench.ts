@@ -1,13 +1,13 @@
 /**
- * tools/loadbench.ts — bench de CARGA + soak (spec T4.1/T4.2).
+ * tools/loadbench.ts — LOAD + soak bench (spec T4.1/T4.2).
  *
- * Corre com:  npx tsx tools/loadbench.ts   (usa o Piper real; pool persistente ON)
+ * Run with:  npx tsx tools/loadbench.ts   (uses the real Piper; persistent pool ON)
  *
- * T4.1 — carga: N sínteses CONCORRENTES (5/10/20) através de 2 vozes; mede wall-time,
- *   sucesso e throughput. Valida o cap global (T1.3) + o pool persistente (T2.1).
- * T4.2 — soak: uma rajada grande de sínteses; confirma RAM estável e que o nº de
- *   processos piper.exe vivos fica ≤ PIPER_WARM_VOICES (sem fuga de processos).
- * Escreve um resumo em BENCHMARKS-load.md. Não faz parte do build de produção.
+ * T4.1 — load: N CONCURRENT syntheses (5/10/20) across 2 voices; measures wall-time,
+ *   success, and throughput. Validates the global cap (T1.3) + the persistent pool (T2.1).
+ * T4.2 — soak: one large burst of syntheses; confirms stable RAM and that the number of
+ *   live piper.exe processes stays ≤ PIPER_WARM_VOICES (no process leak).
+ * Writes a summary to BENCHMARKS-load.md. Not part of the production build.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -26,7 +26,7 @@ function discoverModels(dir: string): string[] {
     .sort();
 }
 function countPiperProcs(): number {
-  // Windows: tasklist. Conta instâncias vivas de piper.exe.
+  // Windows: tasklist. Counts live instances of piper.exe.
   try {
     const out =
       spawnSync('tasklist', ['/FI', 'IMAGENAME eq piper.exe', '/NH'], {
@@ -35,7 +35,7 @@ function countPiperProcs(): number {
       }).stdout || '';
     return (out.match(/piper\.exe/gi) || []).length;
   } catch {
-    return -1; // desconhecido (não-Windows)
+    return -1; // unknown (non-Windows)
   }
 }
 const wordsOf = (n: number) =>
@@ -82,7 +82,7 @@ async function main(): Promise<void> {
   };
 
   try {
-    // ── T4.1 carga: N concorrentes ──────────────────────────────────────────
+    // ── T4.1 load: N concurrent ──────────────────────────────────────────
     log('## T4.1 — concurrent load');
     log('');
     log('| Concurrent N | wall time (ms) | ok/N | throughput (synthesis/s) |');
@@ -96,7 +96,7 @@ async function main(): Promise<void> {
     }
     log('');
 
-    // ── T4.2 soak: rajada grande + RAM + processos vivos ────────────────────
+    // ── T4.2 soak: large burst + RAM + live processes ────────────────────
     log('## T4.2 — soak (leak check)');
     log('');
     const SOAK = 200;

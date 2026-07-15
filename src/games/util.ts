@@ -1,13 +1,13 @@
 /**
- * Utilitarios PUROS partilhados pelos minijogos. Sem estado, sem I/O — testaveis
- * isoladamente. A aleatoriedade e SEMPRE derivada de uma semente (seededShuffle/
- * seededIndex) para os testes serem deterministas, tal como pickJoke(key, seed).
+ * PURE utilities shared by the minigames. Stateless, no I/O — testable in
+ * isolation. Randomness is ALWAYS derived from a seed (seededShuffle/
+ * seededIndex) so the tests are deterministic, just like pickJoke(key, seed).
  */
 
 /**
- * Normaliza texto para comparacao TOLERANTE de respostas: minusculas, sem acentos
- * (NFD + strip de diacriticos), trim e espacos colapsados. Assim "Alemão", "alemao"
- * e "  ALEMAO " comparam iguais.
+ * Normalizes text for TOLERANT answer comparison: lowercase, no accents
+ * (NFD + diacritic strip), trim and collapsed whitespace. So "Alemão", "alemao"
+ * and "  ALEMAO " compare equal.
  */
 export function normalizeAnswer(s: string): string {
   return s
@@ -18,15 +18,15 @@ export function normalizeAnswer(s: string): string {
     .replace(/\s+/g, ' ');
 }
 
-/** Codigo base da lingua de um id de modelo Piper: 'de_DE-thorsten-medium' -> 'de'. */
+/** Base language code from a Piper model id: 'de_DE-thorsten-medium' -> 'de'. */
 export function baseCodeOf(model: string): string {
   return model.split('-')[0].split('_')[0].toLowerCase();
 }
 
 /**
- * Nome da lingua `base` escrito no `locale` do utilizador (via Intl.DisplayNames,
- * dados ICU do Node), capitalizado. Fallback ao proprio codigo se o ICU nao conhecer
- * a lingua ou o locale for invalido. NUNCA lanca.
+ * Name of the `base` language written in the user's `locale` (via Intl.DisplayNames,
+ * Node's ICU data), capitalized. Falls back to the code itself if ICU does not know
+ * the language or the locale is invalid. NEVER throws.
  */
 export function localizedLanguageName(base: string, locale: string): string {
   try {
@@ -36,12 +36,12 @@ export function localizedLanguageName(base: string, locale: string): string {
       return name.charAt(0).toUpperCase() + name.slice(1);
     }
   } catch {
-    /* locale/base invalido -> fallback abaixo */
+    /* invalid locale/base -> fallback below */
   }
   return base;
 }
 
-/** Gerador xorshift de 32 bits a partir de uma semente (nunca 0). Interno. */
+/** 32-bit xorshift generator from a seed (never 0). Internal. */
 function xorshift(seed: number): () => number {
   let state = Math.floor(seed) | 0 || 0x9e3779b9;
   return () => {
@@ -52,21 +52,21 @@ function xorshift(seed: number): () => number {
   };
 }
 
-/** Gerador de inteiros nao-negativos deterministas a partir de `seed` (stream). */
+/** Deterministic non-negative integer generator from `seed` (stream). */
 export function makeRng(seed: number): () => number {
   return xorshift(seed);
 }
 
-/** Primeiro inteiro (com sinal opcional) num texto; null se nao houver. */
+/** First integer (with optional sign) in a text; null if none. */
 export function firstInteger(s: string): number | null {
   const m = s.match(/-?\d+/);
   return m ? parseInt(m[0], 10) : null;
 }
 
 /**
- * Semelhanca de Jaccard entre dois textos ao nivel de PALAVRA (ambos normalizados):
- * |A∩B| / |A∪B|, em [0,1]. Usada para aceitar respostas "quase iguais" (ex. jogo da
- * Velocidade, onde uma gralha nao deve invalidar). Conjuntos vazios -> 0.
+ * Jaccard similarity between two texts at the WORD level (both normalized):
+ * |A∩B| / |A∪B|, in [0,1]. Used to accept "almost equal" answers (e.g. the
+ * Speed game, where a typo should not invalidate). Empty sets -> 0.
  */
 export function jaccard(a: string, b: string): number {
   const A = new Set(normalizeAnswer(a).split(' ').filter(Boolean));
@@ -77,15 +77,15 @@ export function jaccard(a: string, b: string): number {
   return inter / (A.size + B.size - inter);
 }
 
-/** Indice determinista em [0, n) a partir de uma semente. n<=0 -> 0. */
+/** Deterministic index in [0, n) from a seed. n<=0 -> 0. */
 export function seededIndex(seed: number, n: number): number {
   if (n <= 0) return 0;
   return xorshift(seed)() % n;
 }
 
 /**
- * Baralha uma copia de `arr` deterministicamente a partir de `seed` (Fisher-Yates
- * com xorshift). Mesma semente -> mesma ordem (testavel); nao muta a entrada.
+ * Deterministically shuffles a copy of `arr` from `seed` (Fisher-Yates
+ * with xorshift). Same seed -> same order (testable); does not mutate the input.
  */
 export function seededShuffle<T>(arr: readonly T[], seed: number): T[] {
   const out = arr.slice();

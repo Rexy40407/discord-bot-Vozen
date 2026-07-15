@@ -1,16 +1,16 @@
-// tests/gatewayWatch.test.ts — decisão pura do watchdog do gateway.
+// tests/gatewayWatch.test.ts — pure decision of the gateway watchdog.
 import { describe, it, expect } from 'vitest';
 import { evaluateGateway } from '../src/bot/gatewayWatch';
 
 const MAX = 120_000; // 120s
 
 describe('evaluateGateway', () => {
-  it('Ready -> saudável, sem reinício, limpa o unhealthySince', () => {
+  it('Ready -> healthy, no restart, clears unhealthySince', () => {
     const d = evaluateGateway(true, 5000, 10_000, MAX);
     expect(d).toEqual({ healthy: true, unhealthySince: null, downMs: 0, shouldRestart: false });
   });
 
-  it('primeira verificação não-Ready -> ancora o unhealthySince em `now`, ainda não reinicia', () => {
+  it('first non-Ready check -> anchors unhealthySince at `now`, does not restart yet', () => {
     const d = evaluateGateway(false, null, 10_000, MAX);
     expect(d.healthy).toBe(false);
     expect(d.unhealthySince).toBe(10_000);
@@ -18,25 +18,25 @@ describe('evaluateGateway', () => {
     expect(d.shouldRestart).toBe(false);
   });
 
-  it('não-Ready DENTRO do limite -> não reinicia', () => {
+  it('non-Ready WITHIN the limit -> does not restart', () => {
     const d = evaluateGateway(false, 10_000, 10_000 + 119_000, MAX); // 119s < 120s
     expect(d.shouldRestart).toBe(false);
     expect(d.downMs).toBe(119_000);
-    expect(d.unhealthySince).toBe(10_000); // preserva a âncora
+    expect(d.unhealthySince).toBe(10_000); // preserves the anchor
   });
 
-  it('não-Ready ALÉM do limite -> reinicia', () => {
+  it('non-Ready BEYOND the limit -> restarts', () => {
     const d = evaluateGateway(false, 10_000, 10_000 + 121_000, MAX); // 121s > 120s
     expect(d.shouldRestart).toBe(true);
     expect(d.downMs).toBe(121_000);
   });
 
-  it('recuperar (Ready depois de não-Ready) limpa o estado -> a próxima queda re-ancora', () => {
+  it('recovering (Ready after non-Ready) clears the state -> the next drop re-anchors', () => {
     const down = evaluateGateway(false, null, 1000, MAX);
     expect(down.unhealthySince).toBe(1000);
     const up = evaluateGateway(true, down.unhealthySince, 2000, MAX);
     expect(up.unhealthySince).toBeNull();
-    // Nova queda mais tarde ancora no NOVO instante (não arrasta o 1000 antigo).
+    // A new drop later anchors at the NEW instant (does not drag the old 1000).
     const down2 = evaluateGateway(false, up.unhealthySince, 500_000, MAX);
     expect(down2.unhealthySince).toBe(500_000);
     expect(down2.shouldRestart).toBe(false);

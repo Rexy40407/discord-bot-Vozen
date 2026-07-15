@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { purgeCloneDerivedAudio, CLONE_DERIVED_NAMESPACES } from '../src/tts/cache';
 
-describe('purgeCloneDerivedAudio — apagamento de áudio de voz clonada (RGPD)', () => {
+describe('purgeCloneDerivedAudio — deletion of cloned-voice audio (GDPR)', () => {
   let root: string;
   beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), 'vozen-cache-'));
@@ -15,19 +15,19 @@ describe('purgeCloneDerivedAudio — apagamento de áudio de voz clonada (RGPD)'
   });
   afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-  it('cobre clone E fx (o EffectEngine envolve o CloneEngine)', () => {
+  it('covers clone AND fx (the EffectEngine wraps the CloneEngine)', () => {
     expect([...CLONE_DERIVED_NAMESPACES].sort()).toEqual(['clone', 'fx']);
   });
 
-  it('purga os namespaces derivados do clone e preserva os outros', () => {
+  it('purges the clone-derived namespaces and preserves the others', () => {
     purgeCloneDerivedAudio(root);
     expect(existsSync(join(root, 'clone'))).toBe(false);
     expect(existsSync(join(root, 'fx'))).toBe(false);
-    expect(existsSync(join(root, 'q'))).toBe(true); // prosódia: não guarda clone (24k -> base uncached)
-    expect(existsSync(join(root, 'piper'))).toBe(true); // motor normal: intocado
+    expect(existsSync(join(root, 'q'))).toBe(true); // prosody: does not store clone (24k -> base uncached)
+    expect(existsSync(join(root, 'piper'))).toBe(true); // normal engine: untouched
   });
 
-  it('não lança se a raiz da cache não existir', () => {
+  it('does not throw if the cache root does not exist', () => {
     expect(() => purgeCloneDerivedAudio(join(root, 'nope'))).not.toThrow();
   });
 });

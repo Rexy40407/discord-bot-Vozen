@@ -22,50 +22,51 @@ export interface BotDeps {
   availableModels: string[];
   players: Map<string, GuildVoicePlayer>;
   limiters: Map<string, { limiter: RateLimiter; perMin: number }>;
-  /** Vigia "sozinho na call 5 min" -> sai. Injetado no bootstrap; opcional p/ testes. */
+  /** Watches "alone in the call for 5 min" -> leaves. Injected at bootstrap; optional for tests. */
   aloneWatcher?: AloneWatcher;
   /**
-   * Último autor que o Vozen leu em VOZ ALTA, por guild (guildId -> userId). Serve ao
-   * xsaid para NÃO repetir "{nome} disse" em mensagens SEGUIDAS do mesmo autor. Limpo
-   * quando o bot sai (removePlayer) para que ao voltar volte a anunciar. Opcional: sem
-   * o mapa (ex. testes antigos) não há supressão (anuncia sempre).
+   * Last author Vozen read OUT LOUD, per guild (guildId -> userId). Used by xsaid to
+   * NOT repeat "{name} said" on CONSECUTIVE messages from the same author. Cleared when
+   * the bot leaves (removePlayer) so it announces again on return. Optional: without the
+   * map (e.g. old tests) there's no suppression (always announces).
    */
   lastSpeaker?: Map<string, string>;
   /**
-   * Cooldown de 5 min da saudação de entrada, por (guild, user). Evita que spam de
-   * entrar/sair da call faça o Vozen repetir "Olá {nome}"/parabéns. Injetado no
-   * bootstrap; opcional (sem ele, saúda sempre — comportamento antigo). Ver greetCooldown.
+   * 5-min cooldown on the join greeting, per (guild, user). Prevents call join/leave
+   * spam from making Vozen repeat "Hello {name}"/birthday wishes. Injected at bootstrap;
+   * optional (without it, always greets — old behavior). See greetCooldown.
    */
   greetCooldown?: GreetCooldown;
   /**
-   * Decisor do leaderboard automático (F2): de vez em quando posta o top de tagarelas no
-   * canal do /setup. Estado em memória por-guild. Injetado no bootstrap; opcional (sem
-   * ele, nunca aparece). Ver leaderboard/randomPost.
+   * Decider for the automatic leaderboard (F2): every now and then posts the top chatters
+   * in the /setup channel. In-memory per-guild state. Injected at bootstrap; optional
+   * (without it, never appears). See leaderboard/randomPost.
    */
   leaderboardPoster?: LeaderboardPoster;
   /**
-   * Tracker de mensagens duplicadas (anti-spam), por (guild, author). Deteta a mesma
-   * pessoa a repetir a mesma mensagem grande em janela curta. Só é consultado quando
-   * a guild tem `antispam` ON. Injetado no bootstrap; opcional (sem ele, só a heurística
-   * de repetição intra-mensagem atua). Ver src/moderation/antispam.
+   * Duplicate-message tracker (anti-spam), per (guild, author). Detects the same person
+   * repeating the same large message within a short window. Only consulted when the guild
+   * has `antispam` ON. Injected at bootstrap; optional (without it, only the intra-message
+   * repetition heuristic applies). See src/moderation/antispam.
    */
   dupTracker?: DuplicateTracker;
   /**
-   * Gestor dos minijogos (/game). Um jogo ativo por guild. Opcional (testes antigos
-   * nao o injetam; sem ele nao ha jogos, so o TTS normal). Ver src/games.
+   * Manager for the minigames (/game). One active game per guild. Optional (old tests
+   * don't inject it; without it there are no games, just normal TTS). See src/games.
    */
   games?: GameManager;
   /**
-   * Há motor de clone de voz REALMENTE disponível nesta instância? Reflete o
-   * `CloneEngine.available` (que inclui a AUTO-DETEÇÃO do venv em tools/clone-venv),
-   * NÃO apenas o env CLONE_CMD. Sem isto, a UI olhava só para config.cloneCmd e dizia
-   * "motor não instalado" mesmo com o venv detetado. Opcional: testes caem no env.
+   * Is a voice-clone engine ACTUALLY available in this instance? Reflects
+   * `CloneEngine.available` (which includes the AUTO-DETECTION of the venv in
+   * tools/clone-venv), NOT just the CLONE_CMD env. Without this, the UI only looked at
+   * config.cloneCmd and said "engine not installed" even with the venv detected.
+   * Optional: tests fall back to the env.
    */
   cloneAvailable?: boolean;
   /**
-   * IDs do(s) DONO(S) do bot, resolvidos no ClientReady via client.application (User ou
-   * membros da Team) + OWNER_ID. Fonte da verdade para o gate do /vozengrant (owner-only) —
-   * não se deixa falsear por env. Vazio/ausente => nenhum grant é autorizado.
+   * IDs of the bot OWNER(S), resolved at ClientReady via client.application (User or Team
+   * members) + OWNER_ID. Source of truth for the /vozengrant gate (owner-only) — not
+   * spoofable via env. Empty/absent => no grant is authorized.
    */
   ownerIds?: Set<string>;
 }
@@ -78,22 +79,22 @@ export function removePlayer(
   deps: Pick<BotDeps, 'players' | 'aloneWatcher' | 'lastSpeaker' | 'games'>,
   guildId: string,
 ): void {
-  // Cancela o timer de "sozinho" ANTES de tudo. Este e o FUNIL de todas as saidas
-  // (/leave, guildDelete, desistencia-de-reconexao, saida-por-sozinho), por isso
-  // limpar aqui garante que um timer armado nunca sobrevive para derrubar uma sessao
-  // NOVA instalada entretanto (o bug classico de timer-fantasma).
+  // Cancel the "alone" timer BEFORE anything else. This is the FUNNEL for all exits
+  // (/leave, guildDelete, reconnection-giveup, alone-exit), so clearing here guarantees
+  // an armed timer never survives to tear down a NEW session installed in the meantime
+  // (the classic phantom-timer bug).
   deps.aloneWatcher?.clear(guildId);
-  // Mesma razao para os JOGOS DE VOZ: se o bot sai da call (ex. AloneWatcher sai
-  // imediato quando o canal esvazia) a meio de uma partida de voz, os timers de ronda
-  // tem de morrer aqui — senao ficavam vivos a chamar player.say num player destruido.
-  // `onVoiceLeft` so termina jogos que PRECISAM de voz: um jogo de tabuleiro (texto)
-  // nao deve morrer por uma saida de voz nao relacionada. O teardown total de qualquer
-  // jogo (guild removida) vive no handleGuildDelete.
+  // Same reason for VOICE GAMES: if the bot leaves the call (e.g. AloneWatcher exits
+  // immediately when the channel empties) mid voice match, the round timers must die
+  // here — otherwise they'd stay alive calling player.say on a destroyed player.
+  // `onVoiceLeft` only ends games that NEED voice: a board game (text) should not die
+  // from an unrelated voice exit. The full teardown of any game (guild removed) lives
+  // in handleGuildDelete.
   deps.games?.onVoiceLeft(guildId);
-  // STT: se havia uma sessão de transcrição, morre com a saída da call — senão o
-  // sidecar Whisper, o listener de speaking e o intervalo de auto-stop ficavam órfãos.
+  // STT: if there was a transcription session, it dies with the call exit — otherwise
+  // the Whisper sidecar, the speaking listener and the auto-stop interval would be orphaned.
   stopTranscriptionForGuild(guildId);
-  // Esquece o último locutor: ao voltar à call, o xsaid volta a anunciar quem falou.
+  // Forget the last speaker: on returning to the call, xsaid announces who spoke again.
   deps.lastSpeaker?.delete(guildId);
   const p = deps.players.get(guildId);
   if (p) {
@@ -103,15 +104,14 @@ export function removePlayer(
 }
 
 /**
- * O Vozen saiu (ou perdeu acesso a) uma guild — Events.GuildDelete. Liberta os
- * recursos retidos por guildId para evitar crescimento monotonico de heap em
- * uptime longo com muitas guilds:
- *  - apaga a entrada de `limiters` (e todos os buckets do RateLimiter dentro);
- *  - remove/destroi o player (sai do canal de voz se ainda la estava).
+ * Vozen left (or lost access to) a guild — Events.GuildDelete. Releases the resources
+ * held by guildId to avoid monotonic heap growth over long uptime with many guilds:
+ *  - deletes the `limiters` entry (and all the RateLimiter buckets inside);
+ *  - removes/destroys the player (leaves the voice channel if still there).
  *
- * Funcao pura/testavel (tal como shutdown): o handler do evento em client.ts so
- * a chama. try/catch para NUNCA crashar o gateway. Idempotente: se a guild ja
- * nao existir, `.delete` e removePlayer sao no-ops.
+ * Pure/testable function (like shutdown): the event handler in client.ts just calls it.
+ * try/catch to NEVER crash the gateway. Idempotent: if the guild no longer exists,
+ * `.delete` and removePlayer are no-ops.
  */
 export function handleGuildDelete(
   deps: Pick<BotDeps, 'players' | 'limiters' | 'aloneWatcher' | 'games'> &
@@ -121,13 +121,13 @@ export function handleGuildDelete(
   try {
     deps.limiters.delete(guildId);
     removePlayer(deps, guildId);
-    // A guild desapareceu: termina QUALQUER jogo ativo (incl. tabuleiro), que o
-    // removePlayer/onVoiceLeft deixaria vivo se nao precisasse de voz — senao a sessao
-    // ficava presa no mapa (leak) apos a guild sair.
+    // The guild is gone: end ANY active game (incl. board games), which
+    // removePlayer/onVoiceLeft would leave alive if it didn't need voice — otherwise the
+    // session stays stuck in the map (leak) after the guild leaves.
     deps.games?.endGuild(guildId);
-    // Liberta as entradas de cache dos stores desta guild (bound de memória).
+    // Release the store cache entries for this guild (memory bound).
     if (deps.db) invalidateGuild(deps.db, guildId);
-    // 24/7 in-call: a guild desapareceu -> esquece a presença (não repor no arranque).
+    // 24/7 in-call: the guild is gone -> forget the presence (don't restore on startup).
     if (deps.db) forgetVoicePresence(deps.db, guildId);
   } catch (err) {
     log.warn('[client] failed to release guild resources on guildDelete (ignored)', err);
@@ -136,7 +136,7 @@ export function handleGuildDelete(
 
 export function getLimiter(deps: BotDeps, guildId: string, perMin: number): RateLimiter {
   let entry = deps.limiters.get(guildId);
-  // Recria o limiter quando o perMin muda (ex.: /config rate-limit em runtime).
+  // Recreate the limiter when perMin changes (e.g. /config rate-limit at runtime).
   if (!entry || entry.perMin !== perMin) {
     entry = { limiter: new RateLimiter(perMin), perMin };
     deps.limiters.set(guildId, entry);

@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PermissionFlagsBits, ChannelType } from 'discord.js';
 
-// Mock de @discordjs/voice — o /setup passou a JUNTAR-SE a voz (reutiliza a
-// logica de /join) quando o invocador esta num canal de voz com Connect+Speak,
-// por isso os testes de caminho feliz constroem um GuildVoicePlayer REAL. Este
-// mock (copiado do commandsJoin.test.ts) fornece o suficiente para o construtor
-// do player: um AudioPlayer falso, entersState resolvido e uma conexao com
-// subscribe/on/destroy.
+// Mock of @discordjs/voice — /setup now JOINS voice (reuses the /join logic) when
+// the invoker is in a voice channel with Connect+Speak, so the happy-path tests build
+// a REAL GuildVoicePlayer. This mock (copied from commandsJoin.test.ts) provides
+// enough for the player constructor: a fake AudioPlayer, a resolved entersState and a
+// connection with subscribe/on/destroy.
 const joinVoiceChannel = vi.fn();
 const getVoiceConnection = vi.fn();
 vi.mock('@discordjs/voice', async () => {
@@ -40,9 +39,9 @@ import type Database from 'better-sqlite3';
 
 const GUILD = 'g-setup-test';
 
-// Conexao falsa devolvida por joinVoiceChannel — so precisa de subscribe/on/destroy
-// porque o GuildVoicePlayer real e construido no handler quando o /setup se junta
-// a voz. Reposta antes de CADA teste (o /setup so se junta no caminho feliz).
+// Fake connection returned by joinVoiceChannel — only needs subscribe/on/destroy
+// because the real GuildVoicePlayer is built in the handler when /setup joins voice.
+// Reset before EACH test (/setup only joins on the happy path).
 beforeEach(() => {
   joinVoiceChannel.mockReset();
   getVoiceConnection.mockReset();
@@ -66,9 +65,9 @@ function makeSetupDeps(db: Database.Database): BotDeps {
   } as unknown as BotDeps;
 }
 
-// Constroi um canal de texto "completo" como o que vive em guild.channels.cache:
-// tem .permissionsFor(me) que devolve { has(flag) }. `granted` e o conjunto de
-// flags que o bot tem nesse canal.
+// Builds a "complete" text channel like the one that lives in guild.channels.cache:
+// it has .permissionsFor(me) returning { has(flag) }. `granted` is the set of flags
+// the bot has in that channel.
 function makeTextChannel(id: string, granted: bigint[]): unknown {
   return {
     id,
@@ -77,8 +76,8 @@ function makeTextChannel(id: string, granted: bigint[]): unknown {
   };
 }
 
-// Canal de voz onde o invocador esta (member.voice.channel). `granted` sao as
-// flags do bot nesse canal de voz.
+// Voice channel where the invoker is (member.voice.channel). `granted` are the
+// bot's flags in that voice channel.
 function makeVoiceChannel(id: string, name: string, granted: bigint[]): unknown {
   return {
     id,
@@ -107,13 +106,13 @@ interface FakeInteraction {
 
 function makeSetupInteraction(opts: {
   admin?: boolean;
-  // canal passado na opcao "canal" (partial APIChannel) ou null/omitido
+  // channel passed in the "channel" option (partial APIChannel) or null/omitted
   optionChannel?: { id: string } | null;
-  // canal da interacao (fallback quando a opcao e omitida)
+  // interaction channel (fallback when the option is omitted)
   interactionChannel?: unknown;
-  // canal de voz onde o invocador esta (ou null se nao esta em voz)
+  // voice channel where the invoker is (or null if not in voice)
   voiceChannel?: unknown;
-  // canais "completos" indexados por id (simula guild.channels.cache)
+  // "complete" channels indexed by id (simulates guild.channels.cache)
   guildChannels?: Record<string, unknown>;
 }): FakeInteraction {
   const replies: string[] = [];
@@ -127,7 +126,7 @@ function makeSetupInteraction(opts: {
     deferred: false,
     isRepliable: () => true,
     reply: async (o: { content?: string; embeds?: { data?: { description?: string } }[] }) => {
-      // /setup passou a embed — regista texto OU a descrição do embed.
+      // /setup now uses an embed — record text OR the embed's description.
       const fromEmbeds = (o.embeds ?? []).map((e) => e?.data?.description ?? '').join('\n');
       replies.push(o.content ?? fromEmbeds);
     },
@@ -136,8 +135,8 @@ function makeSetupInteraction(opts: {
       voice: { channel: opts.voiceChannel ?? null },
     },
     guild: {
-      // voiceAdapterCreator e usado por joinVoiceChannel quando o /setup se junta
-      // a voz no caminho feliz.
+      // voiceAdapterCreator is used by joinVoiceChannel when /setup joins voice
+      // on the happy path.
       voiceAdapterCreator: {},
       channels: {
         cache: { get: (id: string) => cache[id] },
@@ -150,9 +149,9 @@ function makeSetupInteraction(opts: {
   };
 }
 
-// ── (a) tudo presente + invocador em VC → sucesso ─────────────────────────────
+// ── (a) all present + invoker in VC → success ─────────────────────────────────
 
-describe('/setup — caminho feliz (todas as perms + em VC)', () => {
+describe('/setup — happy path (all perms + in VC)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -161,7 +160,7 @@ describe('/setup — caminho feliz (todas as perms + em VC)', () => {
     db.close();
   });
 
-  it('grava ttsChannelId + autoread e responde sucesso', async () => {
+  it('saves ttsChannelId + autoread and replies success', async () => {
     const textCh = makeTextChannel('ch-text', [
       PermissionFlagsBits.ViewChannel,
       PermissionFlagsBits.SendMessages,
@@ -182,35 +181,35 @@ describe('/setup — caminho feliz (todas as perms + em VC)', () => {
     expect(cfg.autoread).toBe(true);
 
     const text = i.replies.join('\n');
-    expect(text).toMatch(/ch-text/); // menciona o canal alvo
+    expect(text).toMatch(/ch-text/); // mentions the target channel
     // Migrado PT->EN (P16.2): "Auto-read: on"
     expect(text).toMatch(/auto-?read|auto-?leitura/i);
-    // checklist com marcas de OK (sem "missing"/"falta" nas tres perms)
+    // checklist with OK marks (no "missing"/"falta" on the three perms)
     expect(text).toMatch(/ViewChannel/i);
     expect(text).toMatch(/Connect/i);
     expect(text).toMatch(/Speak/i);
     expect(text).not.toMatch(/missing|falta/i);
 
-    // /setup passou a juntar-se JA a voz no caminho feliz (reutiliza a logica de
-    // /join): confirma que se juntou e limpa o player para nao deixar timers.
+    // /setup now JOINS voice already on the happy path (reuses the /join logic):
+    // confirm it joined and clean up the player so it doesn't leave timers behind.
     expect(joinVoiceChannel).toHaveBeenCalledTimes(1);
-    expect(text).toMatch(/Sala/); // menciona o canal de voz onde entrou
+    expect(text).toMatch(/Sala/); // mentions the voice channel it joined
 
-    // ONBOARDING (beginner-friendly): o /setup tem de dizer aos MEMBROS o passo
-    // seguinte (nao so ao admin) — o fluxo em 3 passos join voz -> /join -> escrever.
-    // Afirmamos os marcadores distintivos desse "guia para membros".
-    expect(text).toMatch(/members|membros/i); // seccao dedicada aos membros
+    // ONBOARDING (beginner-friendly): /setup must tell the MEMBERS the next step
+    // (not just the admin) — the 3-step flow join voice -> /join -> type.
+    // We assert the distinctive markers of that "members guide".
+    expect(text).toMatch(/members|membros/i); // section dedicated to members
     expect(text).toMatch(/\/join/i);
-    // menciona "type"/"escrever" como o passo final para os membros
+    // mentions "type"/"escrever" as the final step for members
     expect(text).toMatch(/type|escrev/i);
 
     deps.players.get(GUILD)?.destroy();
   });
 });
 
-// ── (b) faltam Connect/Speak → avisa MAS grava canal+autoread ────────────────
+// ── (b) Connect/Speak missing → warns BUT saves channel+autoread ─────────────
 
-describe('/setup — faltam perms de voz', () => {
+describe('/setup — voice perms missing', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -219,7 +218,7 @@ describe('/setup — faltam perms de voz', () => {
     db.close();
   });
 
-  it('lista o que falta mas grava canal+autoread na mesma', async () => {
+  it('lists what is missing but saves channel+autoread anyway', async () => {
     const textCh = makeTextChannel('ch-text', [
       PermissionFlagsBits.ViewChannel,
       PermissionFlagsBits.SendMessages,
@@ -227,36 +226,36 @@ describe('/setup — faltam perms de voz', () => {
     const i = makeSetupInteraction({
       interactionChannel: textCh,
       guildChannels: { 'ch-text': textCh },
-      // bot nao tem Connect nem Speak no canal de voz do invocador
+      // bot has neither Connect nor Speak in the invoker's voice channel
       voiceChannel: makeVoiceChannel('vc-1', 'Sala', []),
     });
     const deps = makeSetupDeps(db);
     await handleInteraction(i as any, deps);
 
-    // Config gravada apesar das perms de voz em falta
+    // Config saved despite the missing voice perms
     const cfg = getGuildConfig(db, GUILD);
     expect(cfg.ttsChannelId).toBe('ch-text');
     expect(cfg.autoread).toBe(true);
 
     const text = i.replies.join('\n');
     // Migrado PT->EN (P16.2): "❌ {label} — missing"
-    expect(text).toMatch(/missing/i); // reporta o que falta
-    // Afirma o MARCADOR DE FALTA junto de cada rotulo (nao basta o rotulo aparecer:
-    // ele e impresso em qualquer estado). `[^\n]*` confina a uma linha.
+    expect(text).toMatch(/missing/i); // reports what is missing
+    // Assert the MISSING MARKER next to each label (the label appearing is not enough:
+    // it is printed in any state). `[^\n]*` confines it to one line.
     expect(text).toMatch(/❌[^\n]*Connect|Connect[^\n]*missing/i);
     expect(text).toMatch(/❌[^\n]*Speak|Speak[^\n]*missing/i);
 
-    // RECONCILIACAO /setup vs /join: sem Connect/Speak, o /setup NAO deve juntar-se
-    // a voz (so avisa no checklist). Se o guard 'ok && ok' regredisse e o setup se
-    // juntasse sempre, isto apanhava.
+    // RECONCILIATION /setup vs /join: without Connect/Speak, /setup must NOT join
+    // voice (only warns in the checklist). If the 'ok && ok' guard regressed and setup
+    // always joined, this would catch it.
     expect(joinVoiceChannel).not.toHaveBeenCalled();
     expect(deps.players.get(GUILD)).toBeUndefined();
   });
 });
 
-// ── (b2) falta SendMessages no canal de texto → avisa MAS grava ──────────────
+// ── (b2) SendMessages missing in the text channel → warns BUT saves ──────────
 
-describe('/setup — falta SendMessages no canal de texto', () => {
+describe('/setup — SendMessages missing in the text channel', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -265,11 +264,11 @@ describe('/setup — falta SendMessages no canal de texto', () => {
     db.close();
   });
 
-  it('marca a perm de texto como em falta mas grava canal+autoread', async () => {
-    // ViewChannel presente, SendMessages ausente: cada perm de texto tem a sua
-    // propria linha de checklist (contrato 3a). Mesmo assim grava (politica de
-    // friccao minima). Este e o caso que prova a precisao do P8.1: so SendMessages
-    // pode aparecer em falta — ViewChannel NAO pode ser marcada erradamente.
+  it('marks the text perm as missing but saves channel+autoread', async () => {
+    // ViewChannel present, SendMessages absent: each text perm has its own checklist
+    // line (contract 3a). It saves anyway (minimum-friction policy). This is the case
+    // that proves P8.1's precision: only SendMessages may appear missing — ViewChannel
+    // must NOT be marked wrongly.
     const textCh = makeTextChannel('ch-text', [PermissionFlagsBits.ViewChannel]);
     const i = makeSetupInteraction({
       interactionChannel: textCh,
@@ -282,29 +281,29 @@ describe('/setup — falta SendMessages no canal de texto', () => {
     const deps = makeSetupDeps(db);
     await handleInteraction(i as any, deps);
 
-    // Gravado apesar da perm de texto em falta
+    // Saved despite the missing text perm
     const cfg = getGuildConfig(db, GUILD);
     expect(cfg.ttsChannelId).toBe('ch-text');
     expect(cfg.autoread).toBe(true);
 
-    // Checklist reporta SendMessages como em falta — e ViewChannel NAO em falta.
-    // `[^\n]*` confina o match a uma linha: se ViewChannel regredisse para
-    // "❌ ViewChannel — falta", nao haveria ✅ antes de ViewChannel nessa linha e
-    // o assert falharia (e o regression guard real do P8.1).
+    // Checklist reports SendMessages as missing — and ViewChannel NOT missing.
+    // `[^\n]*` confines the match to one line: if ViewChannel regressed to
+    // "❌ ViewChannel — falta", there would be no ✅ before ViewChannel on that line and
+    // the assert would fail (this is the real regression guard of P8.1).
     const text = i.replies.join('\n');
     // Migrado PT->EN (P16.2): "❌ {label} — missing"
     expect(text).toMatch(/missing/i);
     expect(text).toMatch(/❌[^\n]*SendMessages|SendMessages[^\n]*missing/i);
     expect(text).toMatch(/✅[^\n]*ViewChannel/i);
 
-    // Connect+Speak presentes na voz -> /setup juntou-se; limpar o player.
+    // Connect+Speak present in voice -> /setup joined; clean up the player.
     deps.players.get(GUILD)?.destroy();
   });
 });
 
-// ── (c) invocador NAO em VC → grava + nota que voz nao foi verificada ─────────
+// ── (c) invoker NOT in VC → saves + notes that voice was not checked ──────────
 
-describe('/setup — invocador fora de um canal de voz', () => {
+describe('/setup — invoker outside a voice channel', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -313,7 +312,7 @@ describe('/setup — invocador fora de um canal de voz', () => {
     db.close();
   });
 
-  it('grava canal+autoread e nota que a voz sera verificada no /join', async () => {
+  it('saves channel+autoread and notes that voice will be checked on /join', async () => {
     const textCh = makeTextChannel('ch-text', [
       PermissionFlagsBits.ViewChannel,
       PermissionFlagsBits.SendMessages,
@@ -321,7 +320,7 @@ describe('/setup — invocador fora de um canal de voz', () => {
     const i = makeSetupInteraction({
       interactionChannel: textCh,
       guildChannels: { 'ch-text': textCh },
-      voiceChannel: null, // nao esta em voz
+      voiceChannel: null, // not in voice
     });
     const deps = makeSetupDeps(db);
     await handleInteraction(i as any, deps);
@@ -331,21 +330,21 @@ describe('/setup — invocador fora de um canal de voz', () => {
     expect(cfg.autoread).toBe(true);
 
     const text = i.replies.join('\n');
-    // estado "nao verificado" (nao "falta"): menciona o /join
+    // "not checked" state (not "missing"): mentions /join
     // Migrado PT->EN (P16.2): "… not checked yet (I'll verify it on /join)"
     expect(text).toMatch(/\/join/i);
     expect(text).toMatch(/verify|checked/i);
 
-    // RECONCILIACAO /setup vs /join: fora de um canal de voz nao ha como verificar
-    // Connect/Speak, por isso o /setup NAO se junta (deixa isso para o /join).
+    // RECONCILIATION /setup vs /join: outside a voice channel there is no way to check
+    // Connect/Speak, so /setup does NOT join (leaves that to /join).
     expect(joinVoiceChannel).not.toHaveBeenCalled();
     expect(deps.players.get(GUILD)).toBeUndefined();
   });
 });
 
-// ── (d) opcao "canal" usada → usa esse canal, nao o da interacao ─────────────
+// ── (d) "channel" option used → uses that channel, not the interaction's ─────
 
-describe('/setup — opcao canal explicita', () => {
+describe('/setup — explicit channel option', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -354,8 +353,8 @@ describe('/setup — opcao canal explicita', () => {
     db.close();
   });
 
-  it('usa o canal da opcao (resolvido via cache) e ignora o da interacao', async () => {
-    // canal da opcao chega como partial (so id); o canal completo vem da cache
+  it('uses the option channel (resolved via cache) and ignores the interaction one', async () => {
+    // the option channel arrives as a partial (id only); the complete channel comes from the cache
     const fullOptCh = makeTextChannel('ch-option', [
       PermissionFlagsBits.ViewChannel,
       PermissionFlagsBits.SendMessages,
@@ -380,14 +379,14 @@ describe('/setup — opcao canal explicita', () => {
     expect(i.replies.join('\n')).toMatch(/ch-option/);
     expect(i.replies.join('\n')).not.toMatch(/ch-interaction/);
 
-    // Invocador em voz com Connect+Speak -> /setup tambem se juntou; limpar player.
+    // Invoker in voice with Connect+Speak -> /setup also joined; clean up player.
     deps.players.get(GUILD)?.destroy();
   });
 });
 
-// ── (e) canal alvo nao e de texto → erro claro, sem crash, sem gravar ────────
+// ── (e) target channel is not text → clear error, no crash, no save ──────────
 
-describe('/setup — canal alvo nao e de texto', () => {
+describe('/setup — target channel is not text', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -396,7 +395,7 @@ describe('/setup — canal alvo nao e de texto', () => {
     db.close();
   });
 
-  it('rejeita com mensagem clara e nao grava nada', async () => {
+  it('rejects with a clear message and saves nothing', async () => {
     const voiceAsTarget = {
       id: 'ch-voice',
       type: ChannelType.GuildVoice,
@@ -412,12 +411,12 @@ describe('/setup — canal alvo nao e de texto', () => {
 
     // Migrado PT->EN (P16.2): "… has to be a text channel …"
     expect(i.replies.some((r) => /text channel|texto/i.test(r))).toBe(true);
-    // nada gravado
+    // nothing saved
     expect(getGuildConfig(db, GUILD).ttsChannelId).toBeNull();
     expect(getGuildConfig(db, GUILD).autoread).toBe(false);
   });
 
-  it('nao rebenta quando nao ha canal algum (opcao omitida e sem canal de interacao)', async () => {
+  it('does not blow up when there is no channel at all (option omitted and no interaction channel)', async () => {
     const i = makeSetupInteraction({
       interactionChannel: null,
       voiceChannel: null,
@@ -426,18 +425,18 @@ describe('/setup — canal alvo nao e de texto', () => {
     await handleInteraction(i as any, deps);
 
     expect(i.replies.length).toBeGreaterThan(0);
-    // mensagem real do handler: pede para indicar um canal de texto
+    // the handler's real message: asks to indicate a text channel
     // Migrado PT->EN (P16.2): "I couldn't tell which channel to use. …"
     expect(i.replies.join('\n')).toMatch(/which channel|text channel|canal de texto/i);
-    // nada gravado: nem canal nem autoread
+    // nothing saved: neither channel nor autoread
     expect(getGuildConfig(db, GUILD).ttsChannelId).toBeNull();
     expect(getGuildConfig(db, GUILD).autoread).toBe(false);
   });
 });
 
-// ── (f) nao-admin → rejeitado pelo guard in-handler, sem gravar ──────────────
+// ── (f) non-admin → rejected by the in-handler guard, no save ────────────────
 
-describe('/setup — gating de admin', () => {
+describe('/setup — admin gating', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -446,7 +445,7 @@ describe('/setup — gating de admin', () => {
     db.close();
   });
 
-  it('rejeita nao-admin e nao grava config', async () => {
+  it('rejects non-admin and does not save config', async () => {
     const textCh = makeTextChannel('ch-text', [
       PermissionFlagsBits.ViewChannel,
       PermissionFlagsBits.SendMessages,
@@ -469,24 +468,24 @@ describe('/setup — gating de admin', () => {
   });
 });
 
-// ── registo do comando ────────────────────────────────────────────────────────
+// ── command registration ──────────────────────────────────────────────────────
 
-describe('/setup — definicao do comando', () => {
-  it('esta registado em commandDefs como comando top-level admin-only', () => {
+describe('/setup — command definition', () => {
+  it('is registered in commandDefs as a top-level admin-only command', () => {
     const def = commandDefs.find((c) => c.name === 'setup');
     expect(def).toBeDefined();
     // ManageGuild = bit 0x20 = "32" (string) no campo default_member_permissions
     expect(def?.default_member_permissions).toBe(PermissionFlagsBits.ManageGuild.toString());
   });
 
-  it('tem uma opcao "channel" (ingles) opcional do tipo text channel', () => {
+  it('has an optional "channel" (English) option of type text channel', () => {
     const def = commandDefs.find((c) => c.name === 'setup');
     const opt = def?.options?.find((o) => o.name === 'channel');
     expect(opt).toBeDefined();
     expect(opt?.required ?? false).toBe(false);
-    // Comandos/opcoes sao SO em INGLES para toda a gente: as name_localizations pt-BR
-    // foram REMOVIDAS (senao um cliente Discord em portugues via "/cala-te", "canal"…).
-    // A localizacao das RESPOSTAS do bot (t()/i18n) continua intacta — isto e so o nome.
+    // Commands/options are ONLY in ENGLISH for everyone: the pt-BR name_localizations
+    // were REMOVED (otherwise a Portuguese Discord client would see "/cala-te", "canal"…).
+    // The localization of the bot's REPLIES (t()/i18n) remains intact — this is just the name.
     expect(opt?.name).toBe('channel');
     expect(opt?.name_localizations).toBeUndefined();
   });

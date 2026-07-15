@@ -62,15 +62,15 @@ describe('/rizz', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
-    // /rizz é Premium — a maioria dos testes exercita o caminho feliz, por isso o
-    // servidor tem Premium por defeito. O teste do gate remove-o.
+    // /rizz is Premium — most tests exercise the happy path, so the
+    // server has Premium by default. The gate test removes it.
     grantGuildPremium(db, GUILD, 30, 'test', Date.now());
   });
   afterEach(() => {
     db.close();
   });
 
-  it('sem Premium (Plus nem Premium do servidor) -> responde locked e NÃO chama say', async () => {
+  it('without Premium (neither Plus nor server Premium) -> responds locked and does NOT call say', async () => {
     db.prepare('DELETE FROM premium_guild WHERE guild_id = ?').run(GUILD);
     const say = vi.fn().mockResolvedValue(true);
     const i = makeRizzInteraction({ language: 'en', sound: false });
@@ -79,7 +79,7 @@ describe('/rizz', () => {
     expect(i.replies.some((r) => /Premium/i.test(r))).toBe(true);
   });
 
-  it('sem player ativo responde "join" e NÃO chama say', async () => {
+  it('with no active player responds "join" and does NOT call say', async () => {
     const say = vi.fn();
     const i = makeRizzInteraction({ language: 'en', sound: false });
     await handleInteraction(i as any, makeDeps(db));
@@ -87,7 +87,7 @@ describe('/rizz', () => {
     expect(i.replies.some((r) => /join/i.test(r))).toBe(true);
   });
 
-  it('idioma desconhecido responde erro e NÃO chama say', async () => {
+  it('unknown language responds with an error and does NOT call say', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const i = makeRizzInteraction({ language: 'xx-nao-existe', sound: false });
     await handleInteraction(i as any, makeDeps(db, { say }));
@@ -95,7 +95,7 @@ describe('/rizz', () => {
     expect(i.replies.length).toBeGreaterThan(0);
   });
 
-  it('escolhe a voz pelo prefixo da língua e fala a frase nessa língua (ru -> Cirílico)', async () => {
+  it('picks the voice by the language prefix and speaks the phrase in that language (ru -> Cyrillic)', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const i = makeRizzInteraction({ language: 'ru', sound: false });
     await handleInteraction(i as any, makeDeps(db, { say }));
@@ -105,21 +105,21 @@ describe('/rizz', () => {
     expect(req.text).toMatch(CYRILLIC);
   });
 
-  it('sound:true enfileira DUAS falas: a frase, e depois o efeito sonoro (assetPath)', async () => {
+  it('sound:true enqueues TWO utterances: the phrase, then the sound effect (assetPath)', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const i = makeRizzInteraction({ language: 'en', sound: true });
     await handleInteraction(i as any, makeDeps(db, { say }));
     expect(say).toHaveBeenCalledTimes(2);
-    // 1.ª fala: a pick-up line, sem assetPath.
+    // 1st utterance: the pick-up line, without assetPath.
     expect(say.mock.calls[0][0].assetPath).toBeUndefined();
     expect(say.mock.calls[0][0].text.length).toBeGreaterThan(0);
-    // 2.ª fala: o efeito sonoro — assetPath aponta para rizz.wav e o texto é vazio.
+    // 2nd utterance: the sound effect — assetPath points to rizz.wav and the text is empty.
     const sfx = say.mock.calls[1][0];
     expect(String(sfx.assetPath)).toMatch(/rizz\.wav$/);
     expect(sfx.text).toBe('');
   });
 
-  it('sound:false enfileira UMA só fala (sem efeito sonoro)', async () => {
+  it('sound:false enqueues just ONE utterance (without sound effect)', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const i = makeRizzInteraction({ language: 'en', sound: false });
     await handleInteraction(i as any, makeDeps(db, { say }));
@@ -127,7 +127,7 @@ describe('/rizz', () => {
     expect(say.mock.calls[0][0].assetPath).toBeUndefined();
   });
 
-  it('sound:true com fila cheia (say false): NÃO enfileira o efeito e responde busy', async () => {
+  it('sound:true with a full queue (say false): does NOT enqueue the effect and responds busy', async () => {
     const say = vi.fn().mockResolvedValue(false);
     const i = makeRizzInteraction({ language: 'ru', sound: true });
     await handleInteraction(i as any, makeDeps(db, { say }));
@@ -135,14 +135,14 @@ describe('/rizz', () => {
     expect(i.replies.some((r) => /busy/i.test(r))).toBe(true);
   });
 
-  it('sem modelo instalado para a língua cai no default (.env)', async () => {
+  it('with no model installed for the language falls back to the default (.env)', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const i = makeRizzInteraction({ language: 'ka', sound: false });
     await handleInteraction(i as any, makeDeps(db, { say }, ['en_US-amy-medium']));
     expect(say.mock.calls[0][0].model).toBe('en_US-amy-medium');
   });
 
-  it('segue o MOTOR escolhido pelo utilizador (engine:piper)', async () => {
+  it('follows the ENGINE chosen by the user (engine:piper)', async () => {
     setUserVoice(db, GUILD, USER, 'en_US-amy-medium', 1.0, 'piper');
     const say = vi.fn().mockResolvedValue(true);
     const i = makeRizzInteraction({ language: 'en', sound: false });
@@ -150,7 +150,7 @@ describe('/rizz', () => {
     expect(say.mock.calls[0][0].engine).toBe('piper');
   });
 
-  it('quando o limiter nega responde tts.tooFast e NÃO chama say', async () => {
+  it('when the limiter denies, responds tts.tooFast and does NOT call say', async () => {
     setGuildConfig(db, GUILD, { ratePerMin: 0 });
     const say = vi.fn().mockResolvedValue(true);
     const i = makeRizzInteraction({ language: 'en', sound: false });
@@ -160,8 +160,8 @@ describe('/rizz', () => {
   });
 });
 
-describe('/rizz — autocomplete de língua (reutiliza o do /joke)', () => {
-  it('a opção "language" do /rizz responde com as línguas filtradas', async () => {
+describe('/rizz — language autocomplete (reuses the /joke one)', () => {
+  it('the /rizz "language" option responds with the filtered languages', async () => {
     const respond = vi.fn();
     const i = {
       commandName: 'rizz',

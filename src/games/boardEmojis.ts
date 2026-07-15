@@ -1,20 +1,20 @@
 // src/games/boardEmojis.ts
 //
-// Carrega os APPLICATION EMOJIS do tabuleiro de xadrez (26: 12 peças × 2 cores de casa
-// + 2 casas vazias) uma vez no arranque, para o render do xadrez desenhar peças a sério
-// em vez de letras ASCII. App emojis funcionam em QUALQUER servidor sem Nitro nem slots
-// de guild. Best-effort: se o fetch falhar (ou o setup de emojis não tiver corrido), o
-// mapa fica vazio e o jogo cai no tabuleiro ASCII — nunca crasha.
+// Loads the chess board's APPLICATION EMOJIS (26: 12 pieces × 2 square colors
+// + 2 empty squares) once at startup, so the chess render draws real pieces
+// instead of ASCII letters. App emojis work on ANY server without Nitro or guild
+// slots. Best-effort: if the fetch fails (or the emoji setup hasn't run), the
+// map stays empty and the game falls back to the ASCII board — it never crashes.
 //
-// Faz upload dos assets com: node tools/upload-chess-emojis.mjs
+// Upload the assets with: node tools/upload-chess-emojis.mjs
 
 import type { Client } from 'discord.js';
 import { log } from '../logging/logger';
 
 /**
- * Os 34 nomes esperados: {cor}{tipo}{casa} (ex. wpl, bkd) + casas vazias (el, ed) +
- * etiquetas de ficheiro fa..fh (letras A–H em tiles, para não dependermos de indicadores
- * regionais — esses combinam-se em BANDEIRAS aos pares, ex. 🇨🇩=Congo, 🇬🇭=Gana).
+ * The 34 expected names: {color}{type}{square} (e.g. wpl, bkd) + empty squares (el, ed) +
+ * file labels fa..fh (letters A–H as tiles, so we don't depend on regional
+ * indicators — those combine into FLAGS in pairs, e.g. 🇨🇩=Congo, 🇬🇭=Ghana).
  */
 export const CHESS_EMOJI_NAMES: readonly string[] = (() => {
   const names: string[] = ['el', 'ed'];
@@ -28,11 +28,11 @@ export const CHESS_EMOJI_NAMES: readonly string[] = (() => {
 })();
 
 /**
- * Preenche `target` (por referência) com nome->markup (`<:wpl:123>`) de TODOS os
- * application emojis do bot (tiles de xadrez, wordle, …). Chamar 1x no ClientReady (a
- * `client.application` já está preenchida). Best-effort: falha => mapa fica como está e
- * os jogos caem no render de texto/ASCII. Carrega tudo (só temos tiles próprios), por
- * isso adicionar novos grupos de tiles não exige mexer aqui.
+ * Fills `target` (by reference) with name->markup (`<:wpl:123>`) of ALL the bot's
+ * application emojis (chess tiles, wordle, …). Call once on ClientReady (when
+ * `client.application` is already populated). Best-effort: failure => map stays as-is and
+ * the games fall back to text/ASCII rendering. Loads everything (we only have our own
+ * tiles), so adding new tile groups doesn't require touching this.
  */
 export async function loadBoardEmojis(
   client: Client,

@@ -41,8 +41,8 @@ describe('loadConfig', () => {
       NOISE_SCALE: undefined,
       NOISE_W: undefined,
       SENTENCE_SILENCE: undefined,
-      // tambem limpamos a env reservada do discord.js para o teste de regressao
-      // partir de um estado conhecido (so um teste a define de proposito).
+      // we also clear the discord.js reserved env so the regression test
+      // starts from a known state (only one test sets it on purpose).
       SHARDS: undefined,
       PREMIUM_API_ORIGIN: undefined,
       PREMIUM_API_ENABLED: undefined,
@@ -70,35 +70,35 @@ describe('loadConfig', () => {
     expect(cfg.clientId).toBe('client-123');
   });
 
-  it('GTTS_CHUNK_CONCURRENCY: default 3; "5" -> 5; inválido/0 -> fallback 3', () => {
-    setEnv(REQUIRED); // ausente => default 3
+  it('GTTS_CHUNK_CONCURRENCY: default 3; "5" -> 5; invalid/0 -> fallback 3', () => {
+    setEnv(REQUIRED); // absent => default 3
     expect(loadConfig().gttsChunkConcurrency).toBe(3);
     setEnv({ ...REQUIRED, GTTS_CHUNK_CONCURRENCY: '5' });
     expect(loadConfig().gttsChunkConcurrency).toBe(5);
     for (const bad of ['0', 'abc', '-1']) {
       setEnv({ ...REQUIRED, GTTS_CHUNK_CONCURRENCY: bad });
-      expect(loadConfig().gttsChunkConcurrency, `valor=${bad}`).toBe(3); // numEnvPositive cai no fallback
+      expect(loadConfig().gttsChunkConcurrency, `valor=${bad}`).toBe(3); // numEnvPositive falls back
     }
   });
 
-  it('SEC-01: TOPGG_WEBHOOK_ALLOW_INSECURE — só "true" (case-insensitive) liga (opt-in)', () => {
-    setEnv(REQUIRED); // ausente => default false
+  it('SEC-01: TOPGG_WEBHOOK_ALLOW_INSECURE — only "true" (case-insensitive) enables it (opt-in)', () => {
+    setEnv(REQUIRED); // absent => default false
     expect(loadConfig().topggWebhookAllowInsecure).toBe(false);
     setEnv({ ...REQUIRED, TOPGG_WEBHOOK_ALLOW_INSECURE: 'true' });
     expect(loadConfig().topggWebhookAllowInsecure).toBe(true);
     setEnv({ ...REQUIRED, TOPGG_WEBHOOK_ALLOW_INSECURE: 'TRUE' }); // case-insensitive
     expect(loadConfig().topggWebhookAllowInsecure).toBe(true);
-    // "quase-true" NÃO liga (evita ligar por typo).
+    // "almost-true" does NOT enable it (avoids enabling via typo).
     for (const v of ['yes', '1', 'on', '']) {
       setEnv({ ...REQUIRED, TOPGG_WEBHOOK_ALLOW_INSECURE: v });
       expect(loadConfig().topggWebhookAllowInsecure, `valor=${v}`).toBe(false);
     }
   });
 
-  it('SEC-02: premiumApiOrigin default aponta para o site atual (vozen.org)', () => {
-    setEnv(REQUIRED); // ausente => default
+  it('SEC-02: premiumApiOrigin default points to the current site (vozen.org)', () => {
+    setEnv(REQUIRED); // absent => default
     expect(loadConfig().premiumApiOrigin).toBe('https://vozen.org');
-    // override explícito continua a mandar (produção define no .env)
+    // an explicit override still wins (production sets it in .env)
     setEnv({ ...REQUIRED, PREMIUM_API_ORIGIN: 'https://exemplo.test' });
     expect(loadConfig().premiumApiOrigin).toBe('https://exemplo.test');
   });
@@ -116,7 +116,7 @@ describe('loadConfig', () => {
     setEnv(REQUIRED);
     const cfg = loadConfig();
     expect(cfg.defaultSpeed).toBe(1);
-    expect(cfg.messageLeadMs).toBe(200); // 0.20s de silêncio antes de falar
+    expect(cfg.messageLeadMs).toBe(200); // 0.20s of silence before speaking
     expect(cfg.queueCap).toBe(20);
     expect(cfg.maxChars).toBe(300);
     expect(cfg.ratePerMin).toBe(8);
@@ -149,16 +149,16 @@ describe('loadConfig', () => {
     expect(cfg.defaultVoice).toBe('pt_PT-tugão-medium');
   });
 
-  // P7.3 — DEFAULT_VOICE regional: um valor de locale (pt_PT, pt_BR, de_DE...)
-  // e aceite tal e qual via env, sem mexer no default de fabrica do codigo.
-  // (O beforeEach limpa DEFAULT_VOICE entre testes, por isso o "default de
-  //  fabrica" e provado pelo teste 'applies string defaults' acima.)
-  it('aceita DEFAULT_VOICE regional via env (pt_BR)', () => {
+  // P7.3 — regional DEFAULT_VOICE: a locale value (pt_PT, pt_BR, de_DE...)
+  // is accepted as-is via env, without touching the code's factory default.
+  // (The beforeEach clears DEFAULT_VOICE between tests, so the "factory
+  //  default" is proven by the 'applies string defaults' test above.)
+  it('accepts a regional DEFAULT_VOICE via env (pt_BR)', () => {
     setEnv({ ...REQUIRED, DEFAULT_VOICE: 'pt_BR-faber-medium' });
     expect(loadConfig().defaultVoice).toBe('pt_BR-faber-medium');
   });
 
-  it('default de fabrica do DEFAULT_VOICE permanece en_US-amy-medium (nao regional)', () => {
+  it('the factory default for DEFAULT_VOICE stays en_US-amy-medium (non-regional)', () => {
     setEnv(REQUIRED);
     expect(loadConfig().defaultVoice).toBe('en_US-amy-medium');
   });
@@ -183,8 +183,8 @@ describe('loadConfig', () => {
     expect(cfg.ttsEngine).toBe('piper');
   });
 
-  // P9.3 — PRESENCE_TEXT opcional: ausente/vazio => undefined (buildPresence usa
-  // o seu default de marca); presente => override exato passado a buildPresence.
+  // P9.3 — optional PRESENCE_TEXT: absent/empty => undefined (buildPresence uses
+  // its own brand default); present => exact override passed to buildPresence.
   it('leaves presenceText undefined when PRESENCE_TEXT missing', () => {
     setEnv(REQUIRED);
     expect(loadConfig().presenceText).toBeUndefined();
@@ -195,8 +195,8 @@ describe('loadConfig', () => {
     expect(loadConfig().presenceText).toBe('type it, hear it. • /invite');
   });
 
-  // P9.7 — HEALTH_PORT opcional: ausente/vazio => undefined (sem servidor);
-  // definido => numero. Valor invalido cai em undefined (defensivo).
+  // P9.7 — optional HEALTH_PORT: absent/empty => undefined (no server);
+  // set => number. An invalid value falls back to undefined (defensive).
   it('leaves healthPort undefined when HEALTH_PORT missing', () => {
     setEnv(REQUIRED);
     expect(loadConfig().healthPort).toBeUndefined();
@@ -212,9 +212,9 @@ describe('loadConfig', () => {
     expect(loadConfig().healthPort).toBeUndefined();
   });
 
-  // P11.5 — TOPGG_WEBHOOK_PORT opcional: ausente/vazio => undefined (sem servidor
-  // de webhook); definido => numero; invalido => undefined (defensivo, igual ao
-  // HEALTH_PORT). TOPGG_WEBHOOK_SECRET opcional: ausente/vazio => undefined.
+  // P11.5 — optional TOPGG_WEBHOOK_PORT: absent/empty => undefined (no webhook
+  // server); set => number; invalid => undefined (defensive, same as
+  // HEALTH_PORT). Optional TOPGG_WEBHOOK_SECRET: absent/empty => undefined.
   it('leaves topggWebhookPort/Secret undefined when env missing', () => {
     setEnv(REQUIRED);
     const cfg = loadConfig();
@@ -237,11 +237,11 @@ describe('loadConfig', () => {
     expect(loadConfig().topggWebhookSecret).toBe('s3cr3t');
   });
 
-  // P11.4 — BOT_SHARDS opcional: ausente/vazio => undefined (single-process
-  // default); presente => string CRUA passada a resolveShardCount no launcher. O
-  // config so transporta o valor; a interpretacao (auto/N/single) vive em
-  // src/sharding.ts. NB: a env e BOT_SHARDS, NAO `SHARDS` — esta ultima colide com
-  // uma env reservada lida pelo Client do discord.js e partiria o `npm start`.
+  // P11.4 — optional BOT_SHARDS: absent/empty => undefined (single-process
+  // default); present => RAW string passed to resolveShardCount in the launcher. The
+  // config only carries the value; the interpretation (auto/N/single) lives in
+  // src/sharding.ts. NB: the env is BOT_SHARDS, NOT `SHARDS` — the latter collides with
+  // a reserved env read by the discord.js Client and would break `npm start`.
   it('leaves shards undefined when BOT_SHARDS missing', () => {
     setEnv(REQUIRED);
     expect(loadConfig().shards).toBeUndefined();
@@ -262,19 +262,19 @@ describe('loadConfig', () => {
     expect(loadConfig().shards).toBe('4');
   });
 
-  // P11.4 (regressao) — a env reservada `SHARDS` do discord.js NAO deve influenciar
-  // config.shards. Se um utilizador definir SHARDS por engano, o nosso opt-in
-  // (BOT_SHARDS) continua a mandar — e fica undefined, ou seja single-process.
+  // P11.4 (regression) — the discord.js reserved env `SHARDS` must NOT influence
+  // config.shards. If a user sets SHARDS by mistake, our opt-in
+  // (BOT_SHARDS) still wins — and it stays undefined, i.e. single-process.
   it('ignores the reserved SHARDS env (only BOT_SHARDS controls sharding)', () => {
     setEnv({ ...REQUIRED, SHARDS: 'auto', BOT_SHARDS: undefined });
     expect(loadConfig().shards).toBeUndefined();
   });
 
-  // MULTILINGUAL_SEGMENTS — sintese multi-lingua por-segmento. Passou a estar
-  // LIGADA por defeito: sem a env (ou com valor "vazio"/nao-'false'), fica true —
-  // o Vozen mistura vozes por lingua tal como uma pessoa real. A env pode FORCAR o
-  // desligamento GLOBAL com o valor exato 'false' (case-insensitive). So 'false'
-  // desliga; qualquer outra coisa (ausente, vazio, 'true', typo) fica ON.
+  // MULTILINGUAL_SEGMENTS — per-segment multilingual synthesis. It is now ON
+  // by default: without the env (or with an "empty"/non-'false' value), it is true —
+  // Vozen mixes voices per language just like a real person. The env can FORCE a
+  // GLOBAL shutdown with the exact value 'false' (case-insensitive). Only 'false'
+  // disables; anything else (absent, empty, 'true', typo) stays ON.
   it('multilingualSegments defaults to TRUE when MULTILINGUAL_SEGMENTS missing', () => {
     setEnv(REQUIRED);
     expect(loadConfig().multilingualSegments).toBe(true);
@@ -309,9 +309,9 @@ describe('loadConfig', () => {
     expect(loadConfig().multilingualSegments).toBe(true);
   });
 
-  // Params de qualidade Piper (noiseScale/noiseW/sentenceSilence). Defaults =
-  // preset ORGÂNICO (0.75 / 0.95 / 0.4) escolhido em A/B pelo operador: som mais
-  // natural. Env opcional e numerica (numEnv: invalido/ausente => fallback ao default).
+  // Piper quality params (noiseScale/noiseW/sentenceSilence). Defaults =
+  // ORGANIC preset (0.75 / 0.95 / 0.4) chosen in A/B by the operator: more
+  // natural sound. Optional numeric env (numEnv: invalid/absent => fallback to default).
   it('applies organic synth-quality defaults when env missing (0.75 / 0.95 / 0.4)', () => {
     setEnv(REQUIRED);
     const cfg = loadConfig();
@@ -321,8 +321,8 @@ describe('loadConfig', () => {
   });
 
   it('parses NOISE_SCALE / NOISE_W / SENTENCE_SILENCE overrides from env', () => {
-    // Env continua a mandar por cima do default orgânico (valores != aos defaults
-    // para provar de forma inequívoca que o override ganha).
+    // Env still wins over the organic default (values != the defaults
+    // to prove unambiguously that the override wins).
     setEnv({ ...REQUIRED, NOISE_SCALE: '0.5', NOISE_W: '0.9', SENTENCE_SILENCE: '0.3' });
     const cfg = loadConfig();
     expect(cfg.noiseScale).toBe(0.5);

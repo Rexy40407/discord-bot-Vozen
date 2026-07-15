@@ -1,11 +1,11 @@
 import type { SynthRequest } from '../tts/engine';
 
 /**
- * Saudação "Olá {name}" por lingua-base, para o Vozen dizer quando alguém ENTRA na call.
- * A principal é sempre o inglês ('en'); as outras são escolhíveis em /config
- * greet-language. `{name}` é substituído pelo nome (já sanitizado) de quem entra; sem
- * nome, o {name} sai vazio e fica só a saudação ("Hello"). Fallback: lingua sem entrada
- * aqui cai no inglês.
+ * "Hello {name}" greeting per base-language, for Vozen to say when someone JOINS the
+ * call. The main one is always English ('en'); the others are selectable in /config
+ * greet-language. `{name}` is replaced by the (already sanitized) name of whoever joins;
+ * without a name, {name} comes out empty and only the greeting remains ("Hello").
+ * Fallback: a language without an entry here falls back to English.
  */
 export const GREETINGS: Record<string, string> = {
   en: 'Hello {name}',
@@ -29,7 +29,7 @@ export const GREETINGS: Record<string, string> = {
   hu: 'Szia {name}',
 };
 
-/** Choices (≤25) do /config greet-language: label legível + código. Derivado de GREETINGS. */
+/** Choices (≤25) for /config greet-language: readable label + code. Derived from GREETINGS. */
 export const GREET_LANGUAGE_CHOICES: { name: string; value: string }[] = [
   { name: 'English', value: 'en' },
   { name: 'Português', value: 'pt' },
@@ -53,9 +53,9 @@ export const GREET_LANGUAGE_CHOICES: { name: string; value: string }[] = [
 ];
 
 /**
- * Parabéns "Feliz aniversário {name}" por lingua-base, para o Vozen dizer quando alguém
- * ENTRA na call no seu dia de anos (em vez da saudação normal). Mesmas línguas do
- * GREETINGS; fallback ao inglês. `{name}` já sanitizado.
+ * "Happy birthday {name}" wish per base-language, for Vozen to say when someone JOINS
+ * the call on their birthday (instead of the normal greeting). Same languages as
+ * GREETINGS; fallback to English. `{name}` already sanitized.
  */
 export const BIRTHDAY_WISHES: Record<string, string> = {
   en: 'Happy birthday {name}',
@@ -79,14 +79,15 @@ export const BIRTHDAY_WISHES: Record<string, string> = {
   hu: 'Boldog születésnapot {name}',
 };
 
-/** Códigos de saudação válidos (para validar o /config greet-language). */
+/** Valid greeting codes (to validate /config greet-language). */
 export const GREET_LOCALES: ReadonlySet<string> = new Set(Object.keys(GREETINGS));
 
 /**
- * É uma ENTRADA no canal `botChannelId`? True se a pessoa passou a estar nesse canal
- * (`newChannelId`) e ANTES não estava lá (`oldChannelId`). Cobre ligar-se de novo e
- * mudar de outro canal para o do bot. False se o bot não está em call (`botChannelId`
- * null), se já lá estava, ou se é um evento de mute/deafen (canal não mudou). PURA.
+ * Is it a JOIN into the channel `botChannelId`? True if the person is now in that channel
+ * (`newChannelId`) and was NOT there before (`oldChannelId`). Covers reconnecting and
+ * moving from another channel to the bot's. False if the bot is not in a call
+ * (`botChannelId` null), if they were already there, or if it's a mute/deafen event
+ * (channel didn't change). PURE.
  */
 export function isJoinIntoChannel(
   oldChannelId: string | null | undefined,
@@ -97,17 +98,17 @@ export function isJoinIntoChannel(
   return newChannelId === botChannelId && oldChannelId !== botChannelId;
 }
 
-/** Código base da língua a partir de um id de modelo Piper ('de_DE-thorsten' -> 'de'). */
+/** Base language code from a Piper model id ('de_DE-thorsten' -> 'de'). */
 function baseOfModel(model: string): string {
   return model.split('-')[0].split('_')[0].toLowerCase();
 }
 
 /**
- * Constrói o SynthRequest da saudação: texto "Olá {nome}" na língua `locale` e voz
- * dessa língua (1.º modelo instalado com o prefixo; senão a voz default). Se a língua
- * não tiver saudação, cai no inglês (texto E voz). `name` já vem sanitizado; vazio ->
- * só a saudação. `singleVoice` para a língua escolhida não ser sobreposta pela deteção.
- * PURA.
+ * Builds the greeting SynthRequest: text "Hello {name}" in the language `locale` and a
+ * voice of that language (1st installed model with the prefix; otherwise the default
+ * voice). If the language has no greeting, it falls back to English (text AND voice).
+ * `name` already comes sanitized; empty -> just the greeting. `singleVoice` so the chosen
+ * language isn't overridden by detection. PURE.
  */
 export function buildGreeting(opts: {
   locale: string;
@@ -115,7 +116,7 @@ export function buildGreeting(opts: {
   availableModels: string[];
   defaultVoice: string;
   defaultSpeed: number;
-  /** Se true, usa os PARABÉNS (BIRTHDAY_WISHES) em vez do "Olá" — dia de anos. */
+  /** If true, uses the BIRTHDAY_WISHES instead of the "Hello" — birthday. */
   birthday?: boolean;
 }): SynthRequest {
   const requested = (opts.locale || 'en').split('-')[0].toLowerCase();

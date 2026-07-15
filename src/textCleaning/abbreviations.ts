@@ -1,35 +1,35 @@
 /**
- * Expansao de girias/abreviaturas INGLESAS, para o TTS soar natural (dizer
- * "by the way" em vez de soletrar "B-T-W").
+ * Expansion of ENGLISH slang/abbreviations, so the TTS sounds natural (saying
+ * "by the way" instead of spelling out "B-T-W").
  *
- * Funcao PURA e deterministica: depende so do input (texto), sem efeitos
- * secundarios nem estado.
+ * PURE, deterministic function: depends only on the input (text), with no side
+ * effects and no state.
  *
- * Match por FRONTEIRA DE PALAVRA, case-insensitive, usando lookarounds zero-width
- * (mesmo estilo que `applyPronunciation`): a fronteira NAO e consumida, por isso
- * abreviaturas adjacentes ("btw btw") expandem ambas e nunca se expande dentro de
- * uma palavra ("btwx" fica intacto).
+ * Matches on WORD BOUNDARY, case-insensitive, using zero-width lookarounds
+ * (same style as `applyPronunciation`): the boundary is NOT consumed, so
+ * adjacent abbreviations ("btw btw") both expand and it never expands inside
+ * a word ("btwx" stays intact).
  *
- * Contrato de lingua (P18): as girias sao SO inglesas e aplicam-se em QUALQUER
- * lingua. Nao ha mais deteccao/argumento de lingua — as girias EN sao universais
- * (um "brb" e "brb" em qualquer chat). Por isso o dicionario foi auditado contra
- * COLISOES CRUZADAS com palavras comuns das outras linguas suportadas (ver abaixo).
+ * Language contract (P18): the slang is ENGLISH ONLY and applies in ANY
+ * language. There is no more language detection/argument — the EN slang is universal
+ * (a "brb" is "brb" in any chat). That is why the dictionary was audited against
+ * CROSS-COLLISIONS with common words of the other supported languages (see below).
  */
 
 /**
- * Dicionario INGLES. Apenas tokens que NAO disparam em palavras normais.
+ * ENGLISH dictionary. Only tokens that do NOT trigger on normal words.
  *
- * REGRA DE OURO (qualidade > cobertura): uma expansao errada e PIOR que nenhuma.
- * So entra uma chave se (1) for gíria/abreviatura de chat REAL e comum, e (2) NAO
- * colidir com uma palavra normal em NENHUMA capitalizacao (o match e
- * case-insensitive) — nem em ingles NEM em nenhuma das outras linguas suportadas.
- * Na duvida, EXCLUI. Chaves so com letras (sem digitos, sem pontos), em minusculas.
+ * GOLDEN RULE (quality > coverage): a wrong expansion is WORSE than none.
+ * A key only goes in if (1) it is a REAL and common chat slang/abbreviation, and (2) it does NOT
+ * collide with a normal word in ANY capitalization (the match is
+ * case-insensitive) — neither in English NOR in any of the other supported languages.
+ * When in doubt, EXCLUDE. Keys with letters only (no digits, no dots), in lowercase.
  *
- * AUDITORIA ANTI-COLISAO CRUZADA (P18): como agora aplicamos os tokens EN a
- * mensagens de QUALQUER lingua, cada token foi re-vetado contra palavras/abreviaturas
- * COMUNS das linguas de script latino suportadas (pt, es, fr, de, it, nl, pl, tr).
- * As de script cirilico/arabe/CJK sao seguras (estes tokens sao todos latinos).
- * Tokens dropados por colisao estao listados no bloco "Excluidos" no fim.
+ * CROSS-COLLISION AUDIT (P18): since we now apply the EN tokens to
+ * messages in ANY language, each token was re-vetted against COMMON
+ * words/abbreviations of the supported Latin-script languages (pt, es, fr, de, it, nl, pl, tr).
+ * The Cyrillic/Arabic/CJK-script ones are safe (these tokens are all Latin).
+ * Tokens dropped due to collision are listed in the "Excluded" block at the end.
  */
 const DICT: Record<string, string> = {
   btw: 'by the way',
@@ -64,73 +64,73 @@ const DICT: Record<string, string> = {
   pls: 'please',
   plz: 'please',
   thx: 'thanks',
-  // Excluidos por COLISAO CRUZADA com palavras comuns de outras linguas suportadas:
-  //   'ty' -> em POLACO "ty" e a palavra "tu/você" (pronome 2.a pessoa). DROPADO.
-  //   'np' -> em POLACO "np." e "na przykład" (= "por exemplo"/"e.g."). DROPADO.
-  // Excluidos ainda (colisao/ambiguidade em ingles, herdados da curadoria original):
-  //   'bc'  -> dispara em "500 BC" ("500 because"),
-  //   'dm'  -> colide com o verbo/inicio de nomes; ambiguo,
-  //   'gg'/'wp' -> gaming, arriscado fora de contexto,
-  //   'u'/'r'/'ur' -> chaves de 1 letra, colidem demasiado.
-  // Nota da auditoria: 'thx' em polaco tambem se usa como "dzięki" (=thanks) — MESMO
-  //   sentido, colisao inofensiva -> mantido. Os restantes tokens (aka/imo/rn/…) sao
-  //   grupos consonanticos ou nao sao palavras nas 8 linguas latinas -> mantidos.
+  // Excluded due to CROSS-COLLISION with common words of other supported languages:
+  //   'ty' -> in POLISH "ty" is the word "you" (2nd person pronoun). DROPPED.
+  //   'np' -> in POLISH "np." is "na przykład" (= "for example"/"e.g."). DROPPED.
+  // Also excluded (collision/ambiguity in English, inherited from the original curation):
+  //   'bc'  -> triggers on "500 BC" ("500 because"),
+  //   'dm'  -> collides with the verb/start of names; ambiguous,
+  //   'gg'/'wp' -> gaming, risky out of context,
+  //   'u'/'r'/'ur' -> 1-letter keys, collide too much.
+  // Audit note: 'thx' in Polish is also used as "dzięki" (=thanks) — SAME
+  //   meaning, harmless collision -> kept. The remaining tokens (aka/imo/rn/…) are
+  //   consonant clusters or are not words in the 8 Latin languages -> kept.
 };
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Regexes PRÉ-COMPILADAS uma vez no load (não por mensagem). O `expandAbbreviations`
-// está no hot path (uma vez por mensagem lida); recompilar ~33 RegExp com \p{...}+lookbehind
-// a cada chamada era CPU do event loop desperdiçada. Mesmo padrão de emphasis.ts/clean.ts.
+// Regexes PRE-COMPILED once at load (not per message). `expandAbbreviations`
+// is on the hot path (once per message read); recompiling ~33 RegExp with \p{...}+lookbehind
+// on every call was wasted event-loop CPU. Same pattern as emphasis.ts/clean.ts.
 const COMPILED_ABBREV: ReadonlyArray<readonly [RegExp, string]> = Object.keys(DICT).map((token) => [
   new RegExp(`(?<=^|[^\\p{L}\\p{N}])${escapeRegExp(token)}(?=[^\\p{L}\\p{N}]|$)`, 'giu'),
   DICT[token],
 ]);
 
-/** Capitaliza so a 1.a letra (preservando o resto da expansao). */
+/** Capitalizes only the 1st letter (preserving the rest of the expansion). */
 function capitalizeFirst(s: string): string {
   if (s.length === 0) return s;
   return s[0].toUpperCase() + s.slice(1);
 }
 
 /**
- * Expande as girias inglesas conhecidas no `text`, em QUALQUER lingua.
- * Regra de capitalizacao (unica): se o token casado comeca por letra maiuscula
- * (ex. "Btw" ou "BTW"), a 1.a letra da expansao e capitalizada — para frases
- * naturais. Token em minusculas -> expansao tal e qual.
+ * Expands the known English slang in `text`, in ANY language.
+ * Capitalization rule (the only one): if the matched token starts with an uppercase
+ * letter (e.g. "Btw" or "BTW"), the 1st letter of the expansion is capitalized — for
+ * natural sentences. Lowercase token -> expansion as-is.
  */
 export function expandAbbreviations(text: string): string {
   let out = text;
   for (const [pattern, expansion] of COMPILED_ABBREV) {
     out = out.replace(pattern, (match) => {
       const first = match[0];
-      // Token comeca por maiuscula -> capitaliza a 1.a letra da expansao.
+      // Token starts with uppercase -> capitalize the 1st letter of the expansion.
       return /\p{Lu}/u.test(first) ? capitalizeFirst(expansion) : expansion;
     });
   }
   return out;
 }
 
-/** Um segmento contiguo do texto, classificado como giria EN ou nao. */
+/** A contiguous segment of the text, classified as EN slang or not. */
 export interface SlangSegment {
   text: string;
   isEnglish: boolean;
 }
 
 /**
- * Parte o `text` em segmentos contiguos por classe (giria EN conhecida vs resto),
- * para a sintese MISTURADA: a parte na lingua-base e detetada por si, e cada giria
- * EN e falada numa voz inglesa como segmento SEPARADO (em vez de "btw"->"by the way"
- * poluir a deteccao e ler a mensagem toda numa voz [muitas vezes errada]).
+ * Splits `text` into contiguous segments by class (known EN slang vs rest),
+ * for MIXED synthesis: the base-language part is detected on its own, and each EN
+ * slang is spoken in an English voice as a SEPARATE segment (instead of "btw"->"by the way"
+ * polluting the detection and reading the whole message in one voice [often wrong]).
  *
- * - Parte o texto por whitespace em palavras (descarta vazios).
- * - Para cada palavra, `core` = nucleo sem pontuacao envolvente (MESMO idiom do
- *   `isAllEnglishAbbrev`); `isEnglish = core esta no DICT` (hasOwnProperty).
- * - Funde palavras CONSECUTIVAS com o mesmo `isEnglish` num segmento (join por 1 espaco).
- * - Texto vazio/so-espacos -> [].
- * PURA e deterministica.
+ * - Splits the text by whitespace into words (discards empties).
+ * - For each word, `core` = nucleus without surrounding punctuation (SAME idiom as
+ *   `isAllEnglishAbbrev`); `isEnglish = core is in DICT` (hasOwnProperty).
+ * - Merges CONSECUTIVE words with the same `isEnglish` into one segment (join by 1 space).
+ * - Empty/whitespace-only text -> [].
+ * PURE and deterministic.
  */
 export function splitEnglishSlang(text: string): SlangSegment[] {
   const words = text.split(/\s+/).filter((w) => w.length > 0);
@@ -149,13 +149,13 @@ export function splitEnglishSlang(text: string): SlangSegment[] {
 }
 
 /**
- * True se o `text` for composto ENTEIRAMENTE de girias EN conhecidas: cada token
- * separado por whitespace tem de ser uma chave do dicionario (case-insensitive).
- * Texto vazio/so-espacos -> false (nao ha nada para forcar).
+ * True if `text` is composed ENTIRELY of known EN slang: each token
+ * separated by whitespace must be a dictionary key (case-insensitive).
+ * Empty/whitespace-only text -> false (there is nothing to force).
  *
- * Usado (stretch P18) para forcar uma voz inglesa em mensagens que sao SO girias
- * ("brb", "omg lol"): sem isto, uma voz fixada noutra lingua leria as girias com
- * o sotaque errado. Funcao PURA.
+ * Used (P18 stretch) to force an English voice on messages that are ONLY slang
+ * ("brb", "omg lol"): without this, a voice pinned to another language would read the
+ * slang with the wrong accent. PURE function.
  */
 export function isAllEnglishAbbrev(text: string): boolean {
   const tokens = text
@@ -163,12 +163,12 @@ export function isAllEnglishAbbrev(text: string): boolean {
     .split(/\s+/)
     .filter((t) => t.length > 0);
   if (tokens.length === 0) return false;
-  // Antes da lookup, retira a pontuacao envolvente (nao-\p{L}\p{N} no inicio/fim),
-  // espelhando a semantica de FRONTEIRA do expandAbbreviations: este expande "omg!"/
-  // "wyd?"/"brb..." (a pontuacao e fronteira), por isso o all-check tem de casar o
-  // MESMO nucleo. Um token que reduza a vazio (so pontuacao, ex. "!!!") nao esta no
-  // DICT (hasOwnProperty(DICT, '') e false) -> every() devolve false. Assim mantem-se
-  // o contrato "todos os tokens sao chaves" e ''/whitespace continua a dar false.
+  // Before the lookup, strip the surrounding punctuation (non-\p{L}\p{N} at start/end),
+  // mirroring the BOUNDARY semantics of expandAbbreviations: it expands "omg!"/
+  // "wyd?"/"brb..." (the punctuation is a boundary), so the all-check has to match the
+  // SAME nucleus. A token that reduces to empty (punctuation only, e.g. "!!!") is not in
+  // DICT (hasOwnProperty(DICT, '') is false) -> every() returns false. This keeps
+  // the "all tokens are keys" contract and ''/whitespace still yields false.
   return tokens.every((tok) => {
     const core = tok.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
     return Object.prototype.hasOwnProperty.call(DICT, core);

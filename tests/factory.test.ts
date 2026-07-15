@@ -40,7 +40,7 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     gcloudDailyCharBudget: 300_000,
     multilingualSegments: false,
     topggWebhookAllowInsecure: false,
-    // Campos obrigatórios do AppConfig que o typecheck dos testes passou a exigir.
+    // Required AppConfig fields that the tests' typecheck now demands.
     noiseScale: 0.667,
     noiseW: 0.8,
     sentenceSilence: 0.2,
@@ -103,9 +103,9 @@ describe('unofficial Google Translate TTS opt-in', () => {
   });
 });
 
-// Plano 016 — createPerUserEngine: o Kokoro é OPT-IN. Sem sidecar, o router por-user
-// é o de hoje (google default + piper); com KOKORO_CMD, o caminho 'kokoro' passa a ser
-// um RouterEngine(kokoro->gTTS). A construção não faz spawn nem rede — só o wiring.
+// Plan 016 — createPerUserEngine: Kokoro is OPT-IN. Without the sidecar, the per-user router
+// is today's (google default + piper); with KOKORO_CMD, the 'kokoro' path becomes a
+// RouterEngine(kokoro->gTTS). Construction does no spawn nor network — just the wiring.
 describe('createPerUserEngine (google default + piper + kokoro opt-in)', () => {
   let dir: string;
   let cache: AudioCache;
@@ -119,25 +119,25 @@ describe('createPerUserEngine (google default + piper + kokoro opt-in)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('sem sidecar Kokoro -> constrói o router por-user (comportamento de hoje)', () => {
+  it('without the Kokoro sidecar -> builds the per-user router (today behavior)', () => {
     const eng = createPerUserEngine(baseConfig({ kokoroCmd: undefined }), cache);
     expect(eng).toBeInstanceOf(PerUserEngineRouter);
   });
 
-  it('com KOKORO_CMD explícito -> constrói na mesma (Kokoro embrulhado em RouterEngine)', () => {
-    // resolveKokoroCmd(explícito) devolve o cmd SEM tocar no disco -> exercita o ramo
-    // com sidecar sem precisar da venv instalada. A construção não arranca o processo.
+  it('with explicit KOKORO_CMD -> builds anyway (Kokoro wrapped in RouterEngine)', () => {
+    // resolveKokoroCmd(explicit) returns the cmd WITHOUT touching the disk -> exercises the
+    // with-sidecar branch without needing the venv installed. Construction does not start the process.
     const eng = createPerUserEngine(baseConfig({ kokoroCmd: 'py tools/kokoro_server.py' }), cache);
     expect(eng).toBeInstanceOf(PerUserEngineRouter);
   });
 });
 
-// P14.4 — selectEngine: prova EXECUTAVEL da invariante do caminho OFF (o motor
-// base e devolvido INTACTO) e do wiring ON (embrulha em MultiSegmentEngine).
+// P14.4 — selectEngine: EXECUTABLE proof of the OFF-path invariant (the base engine
+// is returned INTACT) and the ON wiring (wraps in MultiSegmentEngine).
 describe('selectEngine (flag MULTILINGUAL_SEGMENTS)', () => {
   let dir: string;
   let cache: AudioCache;
-  // motor base falso (basta o contrato synth): so nos interessa a SELECAO.
+  // fake base engine (just the synth contract): we only care about the SELECTION.
   const base: TTSEngine = { synth: async () => '/tmp/x.wav' };
   const AVAILABLE = ['en_US-amy-medium', 'ru_RU-denis-medium'];
 
@@ -150,7 +150,7 @@ describe('selectEngine (flag MULTILINGUAL_SEGMENTS)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('flag OFF (forcada via env) -> devolve o motor base TAL E QUAL (identidade ===)', () => {
+  it('flag OFF (forced via env) -> returns the base engine AS IS (=== identity)', () => {
     const engine = selectEngine(
       base,
       baseConfig({ multilingualSegments: false }),
@@ -160,7 +160,7 @@ describe('selectEngine (flag MULTILINGUAL_SEGMENTS)', () => {
     expect(engine).toBe(base);
   });
 
-  it('flag ON (default) -> embrulha o base num MultiSegmentEngine', () => {
+  it('flag ON (default) -> wraps the base in a MultiSegmentEngine', () => {
     const engine = selectEngine(base, baseConfig({ multilingualSegments: true }), AVAILABLE, cache);
     expect(engine).toBeInstanceOf(MultiSegmentEngine);
     expect(engine).not.toBe(base);

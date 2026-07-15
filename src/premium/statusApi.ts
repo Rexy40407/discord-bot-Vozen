@@ -1,17 +1,17 @@
 // src/premium/statusApi.ts
 //
-// API de LEITURA do estado premium para o Painel Premium do site (login com Discord).
-// O site é estático (GitHub Pages) e usa OAuth2 implicit (scope `identify`): recebe um
-// access_token do Discord e chama GET /api/me/premium com `Authorization: Bearer <token>`.
-// Aqui NÃO confiamos em nenhum ID vindo do cliente — perguntamos à Discord "de quem é este
-// token?" (/users/@me) e só então lemos o SQLite desse utilizador. Assim é impossível ver
-// o estado de outra pessoa. Cache curto (token->identidade) para não bater na Discord a
-// cada refresh. Lógica isolada do servidor HTTP (montado em kofiWebhook.ts) para ser testável.
+// READ API for premium status, used by the site's Premium Panel (login with Discord).
+// The site is static (GitHub Pages) and uses OAuth2 implicit (scope `identify`): it gets a
+// Discord access_token and calls GET /api/me/premium with `Authorization: Bearer <token>`.
+// Here we do NOT trust any ID coming from the client — we ask Discord "whose token is
+// this?" (/users/@me) and only then read that user's SQLite. This makes it impossible to see
+// someone else's status. Short cache (token->identity) to avoid hitting Discord on every
+// refresh. Logic isolated from the HTTP server (mounted in kofiWebhook.ts) to be testable.
 
 import type Database from 'better-sqlite3';
 import { buildPremiumStatus } from '../store/premium';
 
-/** Identidade mínima que tiramos do /users/@me da Discord. */
+/** Minimal identity we pull from Discord's /users/@me. */
 export interface DiscordIdentity {
   id: string;
   username: string;
@@ -21,13 +21,13 @@ export interface DiscordIdentity {
 export interface StatusApiDeps {
   db: Database.Database;
   now: () => number;
-  /** Injetável para testes; em produção é o fetch global do Node. */
+  /** Injectable for tests; in production it is Node's global fetch. */
   fetchImpl: typeof fetch;
-  /** Resolve o nome de um servidor pelo ID (cache de guilds do bot). Ausente => só ID. */
+  /** Resolves a server's name by ID (bot's guild cache). Absent => ID only. */
   resolveGuildName?: (guildId: string) => string | null;
-  /** TTL da cache token->identidade (ms). Default 60s. */
+  /** TTL of the token->identity cache (ms). Default 60s. */
   identityTtlMs?: number;
-  /** Limite defensivo contra spam lento de tokens diferentes. Default 512. */
+  /** Defensive limit against slow spam of different tokens. Default 512. */
   identityCacheMaxEntries?: number;
   logError?: (m: string, err: unknown) => void;
 }
@@ -44,14 +44,14 @@ export interface StatusApi {
 
 const DISCORD_ME = 'https://discord.com/api/v10/users/@me';
 
-// Teto da validação na Discord: sem isto um discord.com lento/pendurado segurava o pedido
-// HTTP do painel em aberto (e, sob spam, acumulava). No abort caímos no catch => 401.
+// Ceiling on the Discord validation: without this a slow/hung discord.com would hold the
+// panel's HTTP request open (and, under spam, pile up). On abort we fall into the catch => 401.
 const DISCORD_FETCH_TIMEOUT_MS = 5_000;
 
 /**
- * Cria a API do painel. Mantém uma cache token->identidade (TTL curto) — evita bater na
- * Discord a cada refresh do painel e limita o dano de spam de tokens inválidos (um token
- * inválido também fica em cache como `null` durante o TTL).
+ * Creates the panel API. Keeps a token->identity cache (short TTL) — avoids hitting
+ * Discord on every panel refresh and limits the damage of invalid-token spam (an invalid
+ * token is also cached as `null` for the TTL).
  */
 export function createStatusApi(deps: StatusApiDeps): StatusApi {
   const ttl = deps.identityTtlMs ?? 60_000;
@@ -109,7 +109,7 @@ export function createStatusApi(deps: StatusApiDeps): StatusApi {
     } finally {
       clearTimeout(timer);
     }
-    // Cacheia mesmo o `null` (token inválido) para não repetir o fetch em spam.
+    // Cache even the `null` (invalid token) to avoid repeating the fetch under spam.
     pruneCache(now);
     cache.set(token, { identity, exp: now + ttl });
     return identity;

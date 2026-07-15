@@ -63,19 +63,19 @@ function discoverModels(modelsDir: string): string[] {
 
 async function main(): Promise<void> {
   const config = loadConfig();
-  // Vigia de bloqueios do event-loop (diagnóstico do "Falha ao carregar opções"):
-  // stalls ficam no log + metrics.loopStalls. Timer unref'd — nunca segura o processo.
+  // Event-loop blocking watchdog (diagnosis of "Failed to load options"):
+  // stalls go to the log + metrics.loopStalls. Timer unref'd — never holds the process.
   startLoopLagMonitor();
   const db = initDb(config.dbPath);
   const cache = new AudioCache(path.join(path.dirname(config.dbPath), 'audio-cache'));
 
-  // Modelos DELIBERADAMENTE excluidos das opcoes/deteccao. Desde 2026-07-10 o Diogo
-  // pediu para RETIRAR o Piper de Portugues europeu (pt_PT-tugao-medium): o pt-PT passa
-  // a ser servido SO pelo Google (syntheticGttsModels gera 'pt_PT-google-medium' porque
-  // nenhum Piper cobre pt_PT) e pelo Kokoro (motor opt-in, independente destes modelos).
-  // As prefs gravadas que apontavam para o Piper foram migradas para a voz Google (ver
-  // db.ts). O mecanismo fica de pe: basta juntar/tirar um id deste Set (o .onnx continua
-  // no disco ate ser apagado a mao).
+  // Models DELIBERATELY excluded from the options/detection. Since 2026-07-10 Diogo
+  // asked to REMOVE the European Portuguese Piper (pt_PT-tugao-medium): pt-PT is now
+  // served ONLY by Google (syntheticGttsModels generates 'pt_PT-google-medium' because
+  // no Piper covers pt_PT) and by Kokoro (opt-in engine, independent of these models).
+  // The saved prefs that pointed to the Piper were migrated to the Google voice (see
+  // db.ts). The mechanism stays in place: just add/remove an id from this Set (the .onnx
+  // stays on disk until deleted by hand).
   const EXCLUDED_MODELS = new Set<string>(['pt_PT-tugao-medium']);
   const piperModels = discoverModels(config.modelsDir).filter((m) => !EXCLUDED_MODELS.has(m));
   if (piperModels.length === 0) {
@@ -89,27 +89,27 @@ async function main(): Promise<void> {
       );
     }
   }
-  // Vozes SO-Google: para CADA lingua conhecida (LOCALE_NAMES) SEM modelo Piper no disco,
-  // injetamos uma voz sintetica `{locale}-google-medium`, para o /voice set e a detecao
-  // automatica a oferecerem e ela falar via Google (o motor por defeito). Isto torna o
-  // catalogo INDEPENDENTE do disco: mesmo com ./models vazio (ex.: deploy fresco sem os
-  // .onnx) as ~40 linguas aparecem na mesma, em vez de colapsar para so o japones. O nome
-  // segue a convencao Piper (locale-voz-qualidade) para o gttsLangOfModel derivar o tl
-  // (ja_JP-... -> 'ja') e o LOCALE_NAMES dar o autonimo. Excluidas em neural (sem gTTS).
+  // Google-ONLY voices: for EACH known language (LOCALE_NAMES) WITHOUT a Piper model on
+  // disk, we inject a synthetic voice `{locale}-google-medium`, so that /voice set and
+  // automatic detection offer it and it speaks via Google (the default engine). This makes
+  // the catalog INDEPENDENT of the disk: even with ./models empty (e.g. a fresh deploy
+  // without the .onnx) the ~40 languages still appear, instead of collapsing to only
+  // Japanese. The name follows the Piper convention (locale-voice-quality) so gttsLangOfModel
+  // derives the tl (ja_JP-... -> 'ja') and LOCALE_NAMES gives the autonym. Excluded in neural (no gTTS).
   const GTTS_ONLY_MODELS = syntheticGttsModels(
     piperModels,
     unofficialGttsEnabled(config.ttsEngine),
   );
   const availableModels = [...piperModels, ...GTTS_ONLY_MODELS].sort();
 
-  // P13.2 — health-check do ffmpeg no ARRANQUE. O @discordjs/voice transcodifica
-  // o audio via prism-media -> ffmpeg; se o binario faltar/for da plataforma
-  // errada, a 1a reproducao rebentava tarde com um unhandledRejection cru. Aqui
-  // verificamos cedo e, se falhar, logamos um ERRO CLARO e acionavel (loud &
-  // early — foi exatamente este o modo de falha silencioso do 1o teste ao vivo).
-  // NAO fazemos process.exit/throw: o bot arranca na mesma (so a reproducao e que
-  // falharia), o objetivo e trocar o erro tardio por um aviso antecipado. O check
-  // vai em try/catch para nunca poder impedir o boot.
+  // P13.2 — ffmpeg health-check at STARTUP. @discordjs/voice transcodes the
+  // audio via prism-media -> ffmpeg; if the binary is missing/from the wrong
+  // platform, the 1st playback would blow up late with a raw unhandledRejection. Here
+  // we check early and, if it fails, log a CLEAR and actionable ERROR (loud &
+  // early — this was exactly the silent failure mode of the 1st live test).
+  // We do NOT process.exit/throw: the bot still starts (only playback would
+  // fail), the goal is to trade the late error for an early warning. The check
+  // goes in a try/catch so it can never prevent the boot.
   try {
     const ff = checkFfmpeg();
     if (ff.ok) {
@@ -126,14 +126,14 @@ async function main(): Promise<void> {
   const baseEngine =
     config.ttsEngine === 'neural'
       ? createEngine(config, cache)
-      : createPerUserEngine(config, cache, db); // db => contadores persistentes do Google HD
-  // Decoradores externos, de dentro para fora:
-  //   selectEngine (multi-segmento) -> CloneEngine (voz clonada) -> ProsodyEngine
-  //   (entoação de pergunta) -> EffectEngine (efeito de voz)
-  // O CloneEngine substitui a SÍNTESE quando req.cloneRef está presente (voz da pessoa);
-  // o EffectEngine aplica o efeito por CIMA do resultado. Ambos caem na voz normal/limpa
-  // em falha e têm cache própria. O sidecar de clone é auto-detetado (tools/clone-venv)
-  // ou vem de CLONE_CMD; ausente => clone inerte (serve sempre a voz normal).
+      : createPerUserEngine(config, cache, db); // db => persistent Google HD counters
+  // External decorators, from inside out:
+  //   selectEngine (multi-segment) -> CloneEngine (cloned voice) -> ProsodyEngine
+  //   (question intonation) -> EffectEngine (voice effect)
+  // CloneEngine replaces the SYNTHESIS when req.cloneRef is present (the person's voice);
+  // EffectEngine applies the effect ON TOP of the result. Both fall back to the normal/clean
+  // voice on failure and have their own cache. The clone sidecar is auto-detected (tools/clone-venv)
+  // or comes from CLONE_CMD; absent => inert clone (always serves the normal voice).
   const cloneCmd = resolveCloneCmd(config.cloneCmd);
   const cloneEngine = new CloneEngine(
     selectEngine(baseEngine, config, availableModels, cache),
@@ -141,28 +141,28 @@ async function main(): Promise<void> {
     cloneCmd,
     undefined, // spawnImpl (default)
     undefined, // readyTimeoutMs (default)
-    config.cloneKey, // cifra em repouso das amostras (no-op sem CLONE_KEY)
+    config.cloneKey, // encryption at rest of the samples (no-op without CLONE_KEY)
   );
   log.info(
     `[index] voice clone: ${cloneEngine.available ? 'engine detected' : 'no engine (normal voice)'}`,
   );
-  // Plano 024 (SECRET-02) — fail-open genuino: com o motor de clone disponível
-  // mas SEM CLONE_KEY, as amostras (dado biométrico, ToS §5(c) + RGPD) ficam
-  // gravadas/lidas em claro (ver src/tts/cloneEngine.ts) sem qualquer sinal ao
-  // operador. Só avisa (não muda comportamento — a cifra em falta é decisão
-  // adiada, não corrigida aqui).
+  // Plan 024 (SECRET-02) — genuine fail-open: with the clone engine available
+  // but WITHOUT CLONE_KEY, the samples (biometric data, ToS §5(c) + GDPR) are
+  // stored/read in the clear (see src/tts/cloneEngine.ts) with no signal to the
+  // operator. It only warns (does not change behavior — the missing encryption is a
+  // deferred decision, not fixed here).
   if (cloneEngine.available && config.cloneKey === undefined) {
     log.warn(
       '[index] CLONE_KEY is not set while the clone engine is active; cloned voice samples ' +
         '(biometric data) will be stored without encryption at rest. Set CLONE_KEY in .env.',
     );
   }
-  // Pré-aquece o modelo de clone no arranque (~35s de GPU), para a 1.ª mensagem clonada
-  // não pagar o cold-load. No-op sem motor; falha cai na voz normal.
+  // Pre-warms the clone model at startup (~35s of GPU), so the 1st cloned message
+  // does not pay the cold-load. No-op without an engine; failure falls back to the normal voice.
   cloneEngine.prewarm();
-  // ProsodyEngine: ENTOAÇÃO DE PERGUNTA (sobe o tom no fim das falas com `?`). Fica por
-  // FORA do clone/multiseg (aplica-se ao WAV FINAL da fala) e por DENTRO do efeito (um
-  // efeito de voz vem por cima). Cache própria 'q'; só corre quando a fala acaba em `?`.
+  // ProsodyEngine: QUESTION INTONATION (raises the pitch at the end of utterances with `?`). It sits
+  // OUTSIDE the clone/multiseg (applies to the FINAL WAV of the utterance) and INSIDE the effect (a
+  // voice effect comes on top). Own cache 'q'; only runs when the utterance ends in `?`.
   const prosodyEngine = new ProsodyEngine(cloneEngine, cache.withNamespace('q'));
   const engine = new EffectEngine(prosodyEngine, cache.withNamespace('fx'));
   log.info(
@@ -183,25 +183,25 @@ async function main(): Promise<void> {
     availableModels,
     players: new Map<string, GuildVoicePlayer>(),
     limiters: new Map(),
-    // xsaid: último autor lido por guild, para não repetir "{nome} disse" em seguidas.
+    // xsaid: last author read per guild, to avoid repeating "{name} said" back-to-back.
     lastSpeaker: new Map<string, string>(),
-    // Cooldown de 5 min da saudação de entrada (anti-spam de entrar/sair da call).
+    // 5-min cooldown of the join greeting (anti-spam of joining/leaving the call).
     greetCooldown: new GreetCooldown(),
     leaderboardPoster: new LeaderboardPoster(),
-    // Tracker de duplicados para o anti-spam de leitura (opt-in por guild).
+    // Duplicate tracker for the reading anti-spam (opt-in per guild).
     dupTracker: new DuplicateTracker(),
-    // Disponibilidade REAL do clone (inclui auto-deteção do venv), para a UI não dizer
-    // "motor não instalado" quando o sidecar foi detetado sem CLONE_CMD no env.
+    // REAL clone availability (includes venv auto-detection), so the UI does not say
+    // "engine not installed" when the sidecar was detected without CLONE_CMD in the env.
     cloneAvailable: cloneEngine.available,
   };
 
-  // Regra de saída: o Vozen só sai da call quando fica SOZINHO (zero humanos no seu
-  // canal) — e por defeito sai IMEDIATAMENTE (ALONE_LEAVE_MS=0). NUNCA sai por
-  // inatividade de TTS: com pelo menos 1 humano, fica na call para sempre. O
-  // AloneWatcher é reavaliado no
-  // handler de VoiceStateUpdate (client.ts). `humansInBotChannel` conta os não-bots
-  // do canal atual do bot (null = o bot não está em voz); `leave` é o mesmo caminho
-  // do onIdle (removePlayer -> destroy da ligação).
+  // Leave rule: Vozen only leaves the call when it becomes ALONE (zero humans in its
+  // channel) — and by default it leaves IMMEDIATELY (ALONE_LEAVE_MS=0). It NEVER leaves due
+  // to TTS inactivity: with at least 1 human, it stays in the call forever. The
+  // AloneWatcher is re-evaluated in the
+  // VoiceStateUpdate handler (client.ts). `humansInBotChannel` counts the non-bots
+  // of the bot's current channel (null = the bot is not in voice); `leave` is the same path
+  // as onIdle (removePlayer -> destroy the connection).
   deps.aloneWatcher = new AloneWatcher({
     humansInBotChannel: (guildId) => {
       const guild = client.guilds.cache.get(guildId);
@@ -215,17 +215,17 @@ async function main(): Promise<void> {
       removePlayer(deps, guildId);
       getVoiceConnection(guildId)?.destroy();
     },
-    // 24/7 in-call: a guild fica no canal mesmo sozinha só se for Premium E tiver o toggle
-    // ligado (/config always-on, default OFF). isGuildPremium cobre Premium direto + passes.
+    // 24/7 in-call: the guild stays in the channel even when alone only if it is Premium AND has the
+    // toggle on (/config always-on, default OFF). isGuildPremium covers direct Premium + passes.
     stayInCall: (guildId) =>
       isGuildPremium(db, guildId, Date.now()) && getGuildConfig(db, guildId).stayInCall,
   });
 
-  // Minijogos (/game). O GameManager e desacoplado de discord.js/SQLite: recebe um
-  // GameEnv com as capacidades de que precisa (falar, enviar ao canal, locale,
-  // traduzir, persistir pontos), todas backed por `deps`/`db`/`client`. `singleVoice`
-  // e o relogio de sistema vivem no manager. Fica em `deps.games`, lido pelo
-  // handleMessage (palpites) e pelo funil de saida (removePlayer -> endGuild).
+  // Minigames (/game). The GameManager is decoupled from discord.js/SQLite: it receives a
+  // GameEnv with the capabilities it needs (speak, send to channel, locale,
+  // translate, persist scores), all backed by `deps`/`db`/`client`. `singleVoice`
+  // and the system clock live in the manager. It sits in `deps.games`, read by
+  // handleMessage (guesses) and by the leave funnel (removePlayer -> endGuild).
   const defaultVoiceOf = (guildId: string): string => {
     try {
       return getGuildConfig(db, guildId).defaultVoice || config.defaultVoice || 'en_US-amy-medium';
@@ -233,8 +233,8 @@ async function main(): Promise<void> {
       return config.defaultVoice || 'en_US-amy-medium';
     }
   };
-  // Emojis do tabuleiro de xadrez: mapa nome->markup preenchido POR REFERÊNCIA no
-  // ClientReady (ver abaixo). Começa vazio -> o xadrez usa ASCII até carregar.
+  // Chess board emojis: name->markup map filled BY REFERENCE in the
+  // ClientReady (see below). Starts empty -> chess uses ASCII until it loads.
   const boardEmojis: Record<string, string> = {};
   deps.games = new GameManager({
     clock: systemClock,
@@ -249,7 +249,7 @@ async function main(): Promise<void> {
         await (ch as { send: (c: unknown) => Promise<unknown> }).send(content);
       }
     },
-    // Apaga a thread descartável de um jogo no fim (via games/thread — best-effort).
+    // Deletes a game's disposable thread at the end (via games/thread — best-effort).
     deleteChannel: (channelId) => deleteChannelSafe(client, channelId),
     localeOf: (guildId) => {
       try {
@@ -266,20 +266,20 @@ async function main(): Promise<void> {
   bindEvents(deps);
   installSignalHandlers(deps);
 
-  // P9.7 — health endpoint HTTP OPCIONAL (uptime monitors). So arranca se
-  // HEALTH_PORT estiver definida. Em try/catch defensivo: um problema a abrir a
-  // porta (ex.: ja em uso) NUNCA deve impedir o bot de arrancar.
+  // P9.7 — OPTIONAL HTTP health endpoint (uptime monitors). Only starts if
+  // HEALTH_PORT is set. In a defensive try/catch: a problem opening the
+  // port (e.g. already in use) must NEVER prevent the bot from starting.
   try {
     startHealthServer(config);
   } catch (err) {
     log.error('[index] failed to start the health server (ignored)', err);
   }
 
-  // RECOMPENSA por voto (growth loop): cada upvote ELEGÍVEL dá VOTE_REWARD_HOURS de Plus a
-  // quem votou (source 'vote' — EXTRA, nunca a qualidade base). COOLDOWN de 30 dias por conta
-  // (claimVoteReward): votar mais vezes conta para o top.gg mas não empilha Plus grátis (não
-  // canibaliza o pago). Sem DM (hard rule) — a pessoa vê o estado no /vote e /premium. O MESMO
-  // callback serve os dois pontos de entrada do webhook (ver a seguir).
+  // Vote REWARD (growth loop): each ELIGIBLE upvote gives VOTE_REWARD_HOURS of Plus to
+  // the voter (source 'vote' — EXTRA, never the base quality). 30-day COOLDOWN per account
+  // (claimVoteReward): voting more times counts for top.gg but does not stack free Plus (does not
+  // cannibalize the paid one). No DM (hard rule) — the person sees the status in /vote and /premium. The SAME
+  // callback serves both webhook entry points (see below).
   const rewardVote = (userId: string): void => {
     try {
       const res = claimVoteReward(db, userId, Date.now());
@@ -297,34 +297,34 @@ async function main(): Promise<void> {
     }
   };
 
-  // P11.5 — webhook top.gg em PORTA DEDICADA (opcional): só arranca com TOPGG_WEBHOOK_PORT.
-  // Em produção usamos antes a rota /webhook/topgg no servidor da API (ver startKofiWebhook
-  // abaixo), que já é pública via Caddy — dispensa porta+rota dedicadas. try/catch defensivo.
+  // P11.5 — top.gg webhook on a DEDICATED PORT (optional): only starts with TOPGG_WEBHOOK_PORT.
+  // In production we instead use the /webhook/topgg route on the API server (see startKofiWebhook
+  // below), which is already public via Caddy — no need for a dedicated port+route. Defensive try/catch.
   try {
     startVoteWebhookServer(config, rewardVote);
   } catch (err) {
     log.error('[index] failed to start the top.gg webhook (ignored)', err);
   }
 
-  // Webhook do Ko-fi (compras -> premium). INERTE sem KOFI_WEBHOOK_TOKEN. Independente do
-  // gateway: arranca já (não espera o ClientReady) para não perder eventos. try/catch para
-  // nunca derrubar o arranque (ex.: porta ocupada).
+  // Ko-fi webhook (purchases -> premium). INERT without KOFI_WEBHOOK_TOKEN. Independent of the
+  // gateway: starts right away (does not wait for ClientReady) to avoid missing events. try/catch to
+  // never take down the startup (e.g. port in use).
   try {
-    // Painel Premium (opt-in): API de leitura no MESMO servidor. resolveGuildName lê o cache
-    // de guilds do cliente AO PEDIDO (já preenchido quando um browser chama), por isso pode
-    // ser criada aqui, antes do ClientReady.
+    // Premium Panel (opt-in): read API on the SAME server. resolveGuildName reads the client's
+    // guild cache ON DEMAND (already populated when a browser calls), so it can
+    // be created here, before ClientReady.
     const statusApi = config.premiumApiEnabled
       ? createStatusApi({
           db,
           now: () => Date.now(),
-          // Encapsulado (não `fetch` cru) para o `this` ficar certo — evita "Illegal invocation".
+          // Wrapped (not raw `fetch`) so `this` is correct — avoids "Illegal invocation".
           fetchImpl: (u, i) => fetch(u, i),
           resolveGuildName: (id) => client.guilds.cache.get(id)?.name ?? null,
           logError: (m, err) => log.error(m, err),
         })
       : undefined;
-    // Dashboard web de config (opt-in, mesmo gate/servidor do painel). botHasGuild lê o cache
-    // de guilds do cliente AO PEDIDO — a autz (MANAGE_GUILD + bot presente) vive no módulo.
+    // Web config dashboard (opt-in, same gate/server as the panel). botHasGuild reads the client's
+    // guild cache ON DEMAND — the authz (MANAGE_GUILD + bot present) lives in the module.
     const dashboardApi = config.premiumApiEnabled
       ? createDashboardApi({
           db,
@@ -344,8 +344,8 @@ async function main(): Promise<void> {
       statusApi,
       dashboardApi,
       apiOrigin: config.premiumApiEnabled ? config.premiumApiOrigin : undefined,
-      // Recompensa de voto na MESMA porta pública (POST /webhook/topgg) — dispensa Caddy
-      // dedicado. Só ativa com TOPGG_WEBHOOK_SECRET (sem porta própria).
+      // Vote reward on the SAME public port (POST /webhook/topgg) — no dedicated Caddy
+      // needed. Only enabled with TOPGG_WEBHOOK_SECRET (without its own port).
       topggWebhookSecret: config.topggWebhookSecret,
       onUpvote: rewardVote,
     });
@@ -353,15 +353,15 @@ async function main(): Promise<void> {
     log.error('[index] failed to start the Premium HTTP server (ignored)', err);
   }
 
-  // Vaga 3 — auto-post da contagem de servidores para o top.gg. OPT-IN (TOPGG_TOKEN).
-  // Arranca no ClientReady para que guilds.cache.size já esteja preenchido. try/catch
-  // defensivo: nunca impedir/derrubar o arranque. O timer é unref'd (não segura o processo).
+  // Wave 3 — auto-post of the server count to top.gg. OPT-IN (TOPGG_TOKEN).
+  // Starts on ClientReady so guilds.cache.size is already populated. Defensive try/catch:
+  // never prevent/take down the startup. The timer is unref'd (does not hold the process).
   client.once(Events.ClientReady, () => {
-    // Diagnóstico de arranque (1x por boot, sem spam): confirma que a app está bem
-    // configurada — a identidade (token == CLIENT_ID) e o "Interactions Endpoint URL"
-    // do Developer Portal, que, se estiver preenchido, ROUBA todas as interações do
-    // gateway (o bot fica online mas não recebe comandos). Lê a config via REST
-    // autenticado do próprio bot (não imprime o token). Best-effort.
+    // Startup diagnostic (1x per boot, no spam): confirms the app is well
+    // configured — the identity (token == CLIENT_ID) and the "Interactions Endpoint URL"
+    // in the Developer Portal, which, if set, STEALS all gateway interactions
+    // (the bot is online but receives no commands). Reads the config via the bot's own
+    // authenticated REST (does not print the token). Best-effort.
     void (async () => {
       try {
         const app = (await client.rest.get(Routes.currentApplication())) as {
@@ -388,12 +388,12 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] failed to start the bot-list updater (ignored)', err);
     }
-    // Carrega os emojis do tabuleiro de xadrez (preenche `boardEmojis` por referência).
-    // Best-effort: falha => o xadrez usa ASCII.
+    // Loads the chess board emojis (fills `boardEmojis` by reference).
+    // Best-effort: failure => chess uses ASCII.
     void loadBoardEmojis(client, boardEmojis);
-    // Premium Apps do Discord: sincroniza os entitlements (compras nativas) com o premium
-    // interno. INERTE se PREMIUM_*_SKU_ID não estiverem definidos — em produção hoje é
-    // no-op (só /redeem), ativa-se quando o operador criar os SKUs pós-verificação.
+    // Discord Premium Apps: syncs the entitlements (native purchases) with the internal
+    // premium. INERT if PREMIUM_*_SKU_ID are not set — in production today it is a
+    // no-op (only /redeem), activated when the operator creates the SKUs post-verification.
     try {
       startEntitlementSync({
         client,
@@ -406,8 +406,8 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] failed to start entitlement synchronization (ignored)', err);
     }
-    // Conformidade §5(b): purga os dados dos servidores que removeram o bot há >30 dias
-    // (marcados em guild_departed no guildDelete real). Corre já e depois 1x/dia.
+    // Compliance §5(b): purges the data of servers that removed the bot >30 days ago
+    // (marked in guild_departed on the real guildDelete). Runs now and then 1x/day.
     try {
       startDepartedPurgeJob(db, (ids) =>
         log.info(
@@ -417,9 +417,9 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] failed to start the departed-guild purge job (ignored)', err);
     }
-    // Minimização de dados: purga as compras Ko-fi PENDENTES (por reclamar) com >90 dias.
-    // Corre já e depois 1x/dia. O comprador reclama muito antes; as renovações não dependem
-    // de pendentes antigos (usam o mapa email->Discord ID). Best-effort.
+    // Data minimization: purges the PENDING (unclaimed) Ko-fi purchases older than 90 days.
+    // Runs now and then 1x/day. The buyer claims much earlier; renewals do not depend
+    // on old pendings (they use the email->Discord ID map). Best-effort.
     try {
       startPendingPurgeJob(db, (removed) =>
         log.info(`[retention] purged ${removed} old pending Ko-fi purchase(s).`),
@@ -427,13 +427,13 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] failed to start the pending Ko-fi purchase purge job (ignored)', err);
     }
-    // DATA-06: sweep de reconciliação de .wav ÓRFÃOS em voice-clones/ — a rede de
-    // segurança dos unlinks best-effort do eraseUser/`/voice clone delete` (se o processo
-    // morrer entre apagar a linha e apagar o ficheiro, ou o unlink rebentar, a amostra
-    // biométrica fica sem nenhuma linha `user_clone` a referi-la). Corre SÓ UMA VEZ no
-    // arranque (`once(ClientReady...)`), nunca em intervalo — órfãos só se acumulam num
-    // crash, não continuamente. O match é contra os `sample_path` REAIS da BD, nunca por
-    // heurística de nome (ver voiceCloneSweep.ts). Best-effort: nunca impede o arranque.
+    // DATA-06: reconciliation sweep of ORPHANED .wav in voice-clones/ — the safety
+    // net for the best-effort unlinks of eraseUser/`/voice clone delete` (if the process
+    // dies between deleting the row and deleting the file, or the unlink blows up, the
+    // biometric sample is left with no `user_clone` row referencing it). Runs ONLY ONCE at
+    // startup (`once(ClientReady...)`), never on an interval — orphans only accumulate on a
+    // crash, not continuously. The match is against the REAL `sample_path` in the DB, never by
+    // a name heuristic (see voiceCloneSweep.ts). Best-effort: never prevents startup.
     try {
       const voiceClonesDir = path.join(path.dirname(config.dbPath), 'voice-clones');
       const sweep = sweepOrphanClones(db, voiceClonesDir);
@@ -446,9 +446,9 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] orphaned clone sweep failed (ignored)', err);
     }
-    // Sweep dos WAV temporários de STT órfãos no tmpdir (crash entre toWav e o rmSync do
-    // finally). Mesma classe do sweep de clones; corre só no arranque, antes de qualquer
-    // sessão STT. Best-effort — nunca impede o arranque.
+    // Sweep of orphaned STT temporary WAVs in the tmpdir (crash between toWav and the rmSync in
+    // finally). Same class as the clone sweep; runs only at startup, before any
+    // STT session. Best-effort — never prevents startup.
     try {
       const removed = sweepOrphanSttTemps();
       if (removed > 0)
@@ -456,9 +456,9 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] orphaned STT temp sweep failed (ignored)', err);
     }
-    // Retenção do gcloud_usage (contadores mensais de chars): apaga meses com mais de ~3
-    // meses. Corre já e depois 1x/dia. Evita crescimento sem fim; o gate de custo só olha
-    // para o mês corrente. Timer unref'd (nunca segura o processo). Best-effort.
+    // gcloud_usage retention (monthly char counters): deletes months older than ~3
+    // months. Runs now and then 1x/day. Avoids unbounded growth; the cost gate only looks
+    // at the current month. Timer unref'd (never holds the process). Best-effort.
     try {
       const purgeGcloud = (): void => {
         try {
@@ -477,16 +477,16 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] failed to start the gcloud_usage purge job (ignored)', err);
     }
-    // 24/7 in-call: repõe os servidores Premium nos canais onde estavam antes do
-    // restart/deploy (as ligações de voz morrem no encerramento; as linhas de
-    // voice_presence sobrevivem). planRejoin (puro) decide o que repor vs esquecer;
-    // aqui só resolvemos o estado real do canal e executamos. Best-effort por guild.
+    // 24/7 in-call: restores the Premium servers to the channels they were in before the
+    // restart/deploy (the voice connections die on shutdown; the voice_presence rows
+    // survive). planRejoin (pure) decides what to restore vs forget;
+    // here we only resolve the real channel state and execute. Best-effort per guild.
     try {
       const channelStateOf = (guildId: string, channelId: string): ChannelState => {
         const guild = client.guilds.cache.get(guildId);
-        if (!guild) return 'gone'; // já não estamos na guild
+        if (!guild) return 'gone'; // we are no longer in the guild
         const chan = guild.channels.cache.get(channelId);
-        if (!chan || !chan.isVoiceBased()) return 'gone'; // canal apagado / já não é de voz
+        if (!chan || !chan.isVoiceBased()) return 'gone'; // channel deleted / no longer a voice channel
         const me = guild.members.me;
         const perms = me ? chan.permissionsFor(me) : null;
         if (!perms?.has(PermissionFlagsBits.Connect) || !perms.has(PermissionFlagsBits.Speak)) {
@@ -522,9 +522,9 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] 24/7 rejoin failed (ignored)', err);
     }
-    // Comandos OWNER-ONLY (/vozengrant): resolve o(s) dono(s) REAL(is) via a application
-    // (User ou membros da Team) + OWNER_ID, e regista o comando SÓ na guild de controlo
-    // (guild command => invisível ao público). deps.ownerIds é a fonte da verdade do gate.
+    // OWNER-ONLY commands (/vozengrant): resolves the REAL owner(s) via the application
+    // (User or Team members) + OWNER_ID, and registers the command ONLY in the control guild
+    // (guild command => invisible to the public). deps.ownerIds is the source of truth for the gate.
     void (async () => {
       try {
         const app = await client.application?.fetch();
@@ -551,15 +551,15 @@ async function main(): Promise<void> {
     })();
   });
 
-  // Sincronizar os comandos NÃO é fatal: é um PUT global fortemente rate-limited
-  // (429s) e os comandos já ficaram registados de arranques anteriores. Se falhar
-  // (429/rede), avisamos e seguimos para o login — o bot arranca com o conjunto de
-  // comandos já registado. Antes, um 429 transitório abortava o arranque e, sob o
-  // supervisor, entrava em crash-loop a re-disparar o PUT rate-limited (queimando a
-  // quota diária de comandos globais e prolongando a falha).
+  // Synchronizing the commands is NOT fatal: it is a heavily rate-limited global PUT
+  // (429s) and the commands were already registered from previous startups. If it fails
+  // (429/network), we warn and proceed to login — the bot starts with the set of
+  // commands already registered. Before, a transient 429 aborted the startup and, under the
+  // supervisor, entered a crash-loop re-firing the rate-limited PUT (burning the
+  // daily global-command quota and prolonging the failure).
   try {
-    // stateFile ao lado da DB: o PUT global só acontece quando os comandos MUDAM
-    // (fingerprint) — menos rate-limit e menos churn de cache do cliente pós-restart.
+    // stateFile next to the DB: the global PUT only happens when the commands CHANGE
+    // (fingerprint) — less rate-limit and less client cache churn post-restart.
     await registerCommands(config.token, config.clientId, {
       stateFile: path.join(path.dirname(config.dbPath), 'commands-state.json'),
     });

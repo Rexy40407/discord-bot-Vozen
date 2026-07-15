@@ -89,28 +89,28 @@ describe('/gencode — OWNER-ONLY', () => {
     db.close();
   });
 
-  it('NÃO-dono -> recusado e NENHUM código é gerado', async () => {
+  it('NON-owner -> refused and NO code is generated', async () => {
     const i = makeGenCode({ callerId: 'intruso', plan: 'plus' });
     await handleInteraction(i as never, makeDeps(db, new Set([OWNER])));
     expect(i.replies.join('\n')).toMatch(/owner only|dono do bot/i);
     expect(countCodes(db)).toBe(0);
   });
 
-  it('ownerIds ausente -> recusa por defeito (fail-closed), 0 códigos', async () => {
+  it('ownerIds absent -> refuses by default (fail-closed), 0 codes', async () => {
     const i = makeGenCode({ callerId: OWNER, plan: 'plus' });
     await handleInteraction(i as never, makeDeps(db, undefined));
     expect(i.replies.join('\n')).toMatch(/owner only|dono do bot/i);
     expect(countCodes(db)).toBe(0);
   });
 
-  it('dono -> gera o nº pedido de códigos (amount)', async () => {
+  it('owner -> generates the requested number of codes (amount)', async () => {
     const i = makeGenCode({ callerId: OWNER, plan: 'premium', days: 30, seats: 3, amount: 3 });
     await handleInteraction(i as never, makeDeps(db, new Set([OWNER])));
     expect(countCodes(db)).toBe(3);
   });
 });
 
-describe('/redeem — resgate do código', () => {
+describe('/redeem — code redemption', () => {
   let db: Database.Database;
   const now = Date.now();
   beforeEach(() => {
@@ -120,7 +120,7 @@ describe('/redeem — resgate do código', () => {
     db.close();
   });
 
-  it('código Plus válido -> concede Plus ao resgatador e marca o código usado', async () => {
+  it('valid Plus code -> grants Plus to the redeemer and marks the code used', async () => {
     insertPremiumCode(db, {
       code: 'VOZEN-AAAA-BBBB',
       plan: 'plus',
@@ -130,13 +130,13 @@ describe('/redeem — resgate do código', () => {
       createdAt: now,
       expiresAt: null,
     });
-    const i = makeRedeem({ callerId: 'friend-1', code: 'vozen-aaaa-bbbb' }); // minúsculas -> normaliza
+    const i = makeRedeem({ callerId: 'friend-1', code: 'vozen-aaaa-bbbb' }); // lowercase -> normalizes
     await handleInteraction(i as never, makeDeps(db, new Set([OWNER])));
     expect(isUserPremium(db, 'friend-1', now + 1000)).toBe(true);
     expect(getPremiumCode(db, 'VOZEN-AAAA-BBBB')?.redeemedBy).toBe('friend-1');
   });
 
-  it('código Premium válido -> concede passe ao resgatador', async () => {
+  it('valid Premium code -> grants a pass to the redeemer', async () => {
     insertPremiumCode(db, {
       code: 'VOZEN-CCCC-DDDD',
       plan: 'premium',
@@ -151,14 +151,14 @@ describe('/redeem — resgate do código', () => {
     expect(getPremiumPass(db, 'friend-2')?.seats).toBe(3);
   });
 
-  it('código inexistente -> erro e nada é concedido', async () => {
+  it('nonexistent code -> error and nothing is granted', async () => {
     const i = makeRedeem({ callerId: 'friend-3', code: 'VOZEN-ZZZZ-ZZZZ' });
     await handleInteraction(i as never, makeDeps(db, new Set([OWNER])));
     expect(i.replies.join('\n')).toMatch(/doesn't exist|não existe/i);
     expect(isUserPremium(db, 'friend-3', now + 1000)).toBe(false);
   });
 
-  it('código já usado -> um 2.º resgate falha', async () => {
+  it('already-used code -> a 2nd redemption fails', async () => {
     insertPremiumCode(db, {
       code: 'VOZEN-ONCE-ONCE',
       plan: 'plus',

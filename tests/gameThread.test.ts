@@ -2,13 +2,13 @@ import { describe, it, expect, vi } from 'vitest';
 import type { Client } from 'discord.js';
 import { createGameThread, deleteChannelSafe } from '../src/games/thread';
 
-// Silenciar o logger nos testes (as mensagens de warn/info fazem parte do contrato
-// de observabilidade, mas aqui só afirmamos o COMPORTAMENTO: apagar → arquivar → nada).
+// Silence the logger in tests (the warn/info messages are part of the observability
+// contract, but here we only assert the BEHAVIOR: delete → archive → nothing).
 vi.mock('../src/logging/logger', () => ({
   log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-/** Client falso: só o que o deleteChannelSafe usa (cache.get + fetch). */
+/** Fake client: only what deleteChannelSafe uses (cache.get + fetch). */
 function makeClient(channel: unknown): Client {
   return {
     channels: {
@@ -18,8 +18,8 @@ function makeClient(channel: unknown): Client {
   } as unknown as Client;
 }
 
-describe('deleteChannelSafe — escada apagar → arquivar → nada', () => {
-  it('apaga a thread quando tem permissão (não arquiva)', async () => {
+describe('deleteChannelSafe — ladder delete → archive → nothing', () => {
+  it('deletes the thread when it has permission (does not archive)', async () => {
     const del = vi.fn(async () => ({}));
     const setArchived = vi.fn(async () => ({}));
     await deleteChannelSafe(makeClient({ delete: del, setArchived }), 'thread-1');
@@ -27,7 +27,7 @@ describe('deleteChannelSafe — escada apagar → arquivar → nada', () => {
     expect(setArchived).not.toHaveBeenCalled();
   });
 
-  it('sem Manage Threads (delete rejeita) → ARQUIVA a thread como fallback', async () => {
+  it('without Manage Threads (delete rejects) → ARCHIVES the thread as fallback', async () => {
     const del = vi.fn(async () => {
       throw new Error('Missing Permissions');
     });
@@ -37,7 +37,7 @@ describe('deleteChannelSafe — escada apagar → arquivar → nada', () => {
     expect(setArchived).toHaveBeenCalledWith(true, expect.any(String));
   });
 
-  it('apagar E arquivar falham → não lança (auto-arquivo é a última rede)', async () => {
+  it('delete AND archive both fail → does not throw (auto-archive is the last net)', async () => {
     const del = vi.fn(async () => {
       throw new Error('Missing Permissions');
     });
@@ -49,17 +49,17 @@ describe('deleteChannelSafe — escada apagar → arquivar → nada', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('thread já não existe → no-op sem lançar', async () => {
+  it('thread no longer exists → no-op without throwing', async () => {
     await expect(deleteChannelSafe(makeClient(null), 'thread-1')).resolves.toBeUndefined();
   });
 });
 
-describe('createGameThread — fallback silencioso', () => {
-  it('canal sem suporte de threads (ex.: voz) → null', async () => {
+describe('createGameThread — silent fallback', () => {
+  it('channel without thread support (e.g. voice) → null', async () => {
     expect(await createGameThread({ type: 2 }, 'jogo')).toBeNull();
   });
 
-  it('threads.create rejeita (sem permissão) → null, sem lançar', async () => {
+  it('threads.create rejects (no permission) → null, without throwing', async () => {
     const channel = {
       type: 0, // GuildText
       threads: {
@@ -71,7 +71,7 @@ describe('createGameThread — fallback silencioso', () => {
     expect(await createGameThread(channel, 'jogo')).toBeNull();
   });
 
-  it('caminho feliz → devolve o id da thread', async () => {
+  it('happy path → returns the thread id', async () => {
     const channel = {
       type: 0,
       threads: { create: async () => ({ id: 'nova-thread' }) },

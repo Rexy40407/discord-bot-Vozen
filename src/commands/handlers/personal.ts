@@ -1,7 +1,7 @@
-// src/commands/handlers/personal.ts — ferramentas PESSOAIS (não-admin): /pronunciation
-// (dicionário de pronúncia individual, limites 3 Free / 50 Premium) e /randomizer
-// (sorteio falado). Ambos beginner-friendly: corridos SEM opções abrem UI interativa
-// (modal / select menu) em vez de erro — o padrão do /setup.
+// src/commands/handlers/personal.ts — PERSONAL (non-admin) tools: /pronunciation
+// (individual pronunciation dictionary, limits 3 Free / 50 Premium) and /randomizer
+// (spoken draw). Both beginner-friendly: run WITHOUT options they open an interactive UI
+// (modal / select menu) instead of an error — the /setup pattern.
 
 import {
   ActionRowBuilder,
@@ -36,10 +36,10 @@ import { localeForUser, reply } from '../helpers';
 import { speakRawText } from './core';
 import { log } from '../../logging/logger';
 
-const MODAL_WAIT_MS = 5 * 60_000; // modais podem demorar — o Discord dá até ~15 min
+const MODAL_WAIT_MS = 5 * 60_000; // modals can take a while — Discord allows up to ~15 min
 const SELECT_WAIT_MS = 60_000;
 
-/** Limite de pronúncias pessoais deste utilizador AQUI (Plus OU servidor Premium => 50). */
+/** This user's personal pronunciation limit HERE (Plus OR Premium server => 50). */
 function pronLimitFor(deps: BotDeps, i: ChatInputCommandInteraction): number {
   const now = Date.now();
   const premium =
@@ -74,7 +74,7 @@ export async function handlePronunciation(
     return;
   }
 
-  // sub === 'add': com as duas opções aplica já; SEM elas abre um modal (beginner-friendly).
+  // sub === 'add': with both options it applies right away; WITHOUT them it opens a modal (beginner-friendly).
   const term = i.options.getString('term')?.trim() ?? '';
   const replacement = i.options.getString('say')?.trim() ?? '';
   if (term && replacement) {
@@ -111,14 +111,14 @@ export async function handlePronunciation(
       filter: (m) => m.customId === `pronAdd:${i.id}` && m.user.id === i.user.id,
     });
   } catch {
-    return; // timeout — o utilizador fechou o modal; nada a dizer
+    return; // timeout — the user closed the modal; nothing to say
   }
   const mTerm = submit.fields.getTextInputValue('term').trim();
   const mSay = submit.fields.getTextInputValue('say').trim();
   await applyAddPronunciation(submit, deps, locale, mTerm, mSay);
 }
 
-/** Aplica o add (validação + limite + upsell) e responde à interação dada. */
+/** Applies the add (validation + limit + upsell) and replies to the given interaction. */
 async function applyAddPronunciation(
   i: ChatInputCommandInteraction | ModalSubmitInteraction,
   deps: BotDeps,
@@ -143,7 +143,7 @@ async function applyAddPronunciation(
   if (res === 'limit') {
     const parts = [t('pron.limitHit', locale, { limit })];
     if (!premium) {
-      // Via paga (Ko-fi) + via GRÁTIS (votar → 24h de Plus) lado a lado.
+      // Paid path (Ko-fi) + FREE path (vote → 24h of Plus) side by side.
       parts.push(t('pron.limitUpsell', locale, { url: deps.config.kofiUrl }));
       const vote = voteUpsellLine(locale, deps.config.clientId);
       if (vote) parts.push(vote);
@@ -154,9 +154,9 @@ async function applyAddPronunciation(
   await send(t('pron.set', locale, { term, replacement }));
 }
 
-// ── /serverpronunciation (admin, cap 3 Free / 50 Premium, para toda a guild) ──────────
+// ── /serverpronunciation (admin, cap 3 Free / 50 Premium, for the whole guild) ──────────
 
-/** Limite de pronúncias do SERVIDOR: 50 com a guild Premium, 3 caso contrário. */
+/** SERVER pronunciation limit: 50 with the guild Premium, 3 otherwise. */
 function serverPronLimit(deps: BotDeps, guildId: string): number {
   return isGuildPremium(deps.db, guildId, Date.now())
     ? SERVER_PRON_LIMIT_PREMIUM
@@ -194,7 +194,7 @@ export async function handleServerPronunciation(
     return;
   }
 
-  // add: com as duas opções aplica já; sem elas abre um modal.
+  // add: with both options it applies right away; without them it opens a modal.
   const term = i.options.getString('term')?.trim() ?? '';
   const say = i.options.getString('say')?.trim() ?? '';
   if (term && say) {
@@ -242,7 +242,7 @@ export async function handleServerPronunciation(
   );
 }
 
-/** Aplica o add de servidor (validação + cap 3/50) e responde à interação dada. */
+/** Applies the server add (validation + cap 3/50) and replies to the given interaction. */
 async function applyAddServerPron(
   i: ChatInputCommandInteraction | ModalSubmitInteraction,
   deps: BotDeps,
@@ -269,7 +269,7 @@ async function applyAddServerPron(
 
 // ── /randomizer ───────────────────────────────────────────────────────────────────────
 
-/** Baralho do modal do randomizer: N campos "Option 1..N". */
+/** Builds the randomizer modal: N "Option 1..N" fields. */
 function randomizerModal(id: string, amount: number, locale: string): ModalBuilder {
   const modal = new ModalBuilder()
     .setCustomId(`randFill:${id}`)
@@ -289,7 +289,7 @@ function randomizerModal(id: string, amount: number, locale: string): ModalBuild
   return modal;
 }
 
-/** Sorteia e anuncia: fala na call se possível, senão responde por texto. */
+/** Draws and announces: speaks in the call if possible, otherwise replies by text. */
 async function drawAndAnnounce(
   i: ChatInputCommandInteraction | ModalSubmitInteraction,
   deps: BotDeps,
@@ -314,7 +314,7 @@ async function drawAndAnnounce(
     }
   }
   const content = `🎲 ${line}${spoke ? '' : `\n${t('rand.notInVoice', locale)}`}`;
-  // Resposta PÚBLICA de propósito: o sorteio interessa ao canal, não só a quem o correu.
+  // PUBLIC reply on purpose: the draw is of interest to the channel, not just to whoever ran it.
   if (i.replied || i.deferred) await i.followUp({ content });
   else await i.reply({ content });
 }
@@ -325,7 +325,7 @@ export async function handleRandomizer(
 ): Promise<void> {
   const locale = localeForUser(deps, i);
 
-  // Caminho 1: lista separada por vírgulas (para >5 opções ou quem prefere escrever).
+  // Path 1: comma-separated list (for >5 options or whoever prefers to type).
   const csv = i.options.getString('options')?.trim();
   if (csv) {
     const opts = csv
@@ -340,10 +340,10 @@ export async function handleRandomizer(
     return;
   }
 
-  // Caminho 2: `amount` dado -> modal com N campos.
+  // Path 2: `amount` given -> modal with N fields.
   let amount = i.options.getInteger('amount') ?? 0;
 
-  // Caminho 3: NADA dado -> select 2..5 (beginner-friendly), depois o modal.
+  // Path 3: NOTHING given -> select 2..5 (beginner-friendly), then the modal.
   if (!amount) {
     const select = new StringSelectMenuBuilder()
       .setCustomId(`randAmount:${i.id}`)
@@ -372,7 +372,7 @@ export async function handleRandomizer(
     }
     if (!picked) return;
     amount = Number(picked.values[0]);
-    // O modal TEM de ser a 1.ª resposta à interação do select.
+    // The modal MUST be the 1st response to the select interaction.
     await picked.showModal(randomizerModal(i.id, amount, locale));
     await i.editReply({ content: t('rand.filling', locale), components: [] }).catch(() => {});
     let submit: ModalSubmitInteraction;
@@ -390,7 +390,7 @@ export async function handleRandomizer(
     return;
   }
 
-  // amount direto (2..5, validado pela definição do comando) -> modal já.
+  // direct amount (2..5, validated by the command definition) -> modal right away.
   await i.showModal(randomizerModal(i.id, amount, locale));
   let submit: ModalSubmitInteraction;
   try {

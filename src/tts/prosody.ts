@@ -1,22 +1,23 @@
-// src/tts/prosody.ts — ENTOAÇÃO DE PERGUNTA sintética (fazer o "?" soar a pergunta).
+// src/tts/prosody.ts — synthetic QUESTION INTONATION (make the "?" sound like a question).
 //
-// PORQUÊ: a subida de tom no fim de uma pergunta que se ouve nalgumas línguas (ex.
-// espanhol) é a voz NATIVA do Google, não uma feature — e varia por língua (o PT/EN da
-// Google soam planos). Para dar a MESMA entoação de pergunta em TODAS as línguas e TODOS
-// os motores, aplicamo-la nós: pegamos no WAV JÁ sintetizado e SOBEMOS o tom só no FIM
-// (o "rabo" da fala), que é a assinatura acústica universal de uma pergunta.
+// WHY: the pitch rise at the end of a question you hear in some languages (e.g.
+// Spanish) is Google's NATIVE voice, not a feature — and it varies by language (Google's
+// PT/EN sound flat). To give the SAME question intonation in ALL languages and ALL
+// engines, we apply it ourselves: we take the ALREADY synthesized WAV and RAISE the pitch
+// only at the END (the "tail" of the speech), which is the universal acoustic signature of
+// a question.
 //
-// COMO: filtros CORE do ffmpeg (asetrate+aresample+atempo — os mesmos dos efeitos
-// deep/chipmunk; nada de rubberband, que pode não vir compilado no ffmpeg-static).
-// Cortamos os últimos ~QUESTION_TAIL_MS em JS (o WAV é sempre 22050/mono/16-bit — o
-// formato canónico do gTTS e do Piper), damos pitch SÓ a esse pedaço, e concatenamos
-// [corpo + rabo-agudo].
+// HOW: ffmpeg CORE filters (asetrate+aresample+atempo — the same as the deep/chipmunk
+// effects; no rubberband, which may not be compiled into ffmpeg-static).
+// We cut the last ~QUESTION_TAIL_MS in JS (the WAV is always 22050/mono/16-bit — the
+// canonical format of gTTS and Piper), pitch ONLY that piece, and concatenate
+// [body + high-pitched tail].
 //
-// Motor-DECORADOR (mesmo padrão do EffectEngine) com cache própria (namespace 'q') e
-// FAIL-SAFE: qualquer erro devolve a voz LIMPA — NUNCA lança (uma síntese que lança faz
-// o player SALTAR a fala => silêncio). Só corre quando a fala ACABA em `?` (o `?` alinha
-// com o rabo do áudio). Motores que não produzem 22050/mono/16 (ex. clone/Kokoro a 24k)
-// caem no fail-safe (splitTailWav devolve null) e ficam sem entoação — sem crashar.
+// DECORATOR engine (same pattern as EffectEngine) with its own cache (namespace 'q') and
+// FAIL-SAFE: any error returns the CLEAN voice — NEVER throws (a synth that throws makes
+// the player SKIP the speech => silence). Only runs when the speech ENDS in `?` (the `?`
+// aligns with the audio tail). Engines that don't produce 22050/mono/16 (e.g. clone/Kokoro
+// at 24k) fall into the fail-safe (splitTailWav returns null) and get no intonation — without crashing.
 
 import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -28,40 +29,40 @@ import { parseWav, buildWav, concatWavs } from './wavConcat';
 import { rmDirSafe } from './cleanupDir';
 import { log } from '../logging/logger';
 
-// Formato canónico (gTTS/Piper). O split assume-o; splitTailWav valida-o e cai fora se não bater.
+// Canonical format (gTTS/Piper). The split assumes it; splitTailWav validates it and bails if it doesn't match.
 const SR = 22050;
 const CHANNELS = 1;
 const BITS = 16;
-const BLOCK_ALIGN = (CHANNELS * BITS) / 8; // 2 bytes por sample-frame (mono 16-bit)
+const BLOCK_ALIGN = (CHANNELS * BITS) / 8; // 2 bytes per sample-frame (mono 16-bit)
 
-// TUNÁVEL: quanto do FIM leva a subida (ms) e quão AGUDO fica (multiplicador de pitch).
-// 500 ms ~= a última palavra/sílaba; 1.10 = +10% de tom. Mais alto soa a "chipmunk" no
-// rabo; mais baixo passa despercebido. Se soar artificial, é aqui que se afina.
+// TUNABLE: how much of the END gets the rise (ms) and how HIGH it goes (pitch multiplier).
+// 500 ms ~= the last word/syllable; 1.10 = +10% pitch. Higher sounds "chipmunk" in the
+// tail; lower goes unnoticed. If it sounds artificial, this is where to tune it.
 const QUESTION_TAIL_MS = 500;
 const QUESTION_PITCH = 1.1;
 
-// asetrate acelera+agudiza; aresample volta a 22050; atempo=1/pitch repõe a DURAÇÃO sem
-// baixar o tom. Resultado: mesmo tamanho, tom mais agudo (igual à mecânica do deep/chipmunk).
+// asetrate speeds up+raises pitch; aresample returns to 22050; atempo=1/pitch restores the
+// DURATION without lowering the pitch. Result: same length, higher pitch (same mechanic as deep/chipmunk).
 export const QUESTION_FILTER = `asetrate=${SR}*${QUESTION_PITCH},aresample=${SR},atempo=${(
   1 / QUESTION_PITCH
 ).toFixed(4)}`;
 
-/** A fala ACABA numa pergunta? (`?` no fim, tolerando aspas/parênteses/espaços a seguir). PURA. */
+/** Does the speech END in a question? (`?` at the end, tolerating quotes/parentheses/spaces after). PURE. */
 export function isQuestion(text: string): boolean {
   return /\?["'”»)\]\s]*$/u.test(text);
 }
 
 /**
- * Parte o WAV em [corpo, rabo] onde o rabo são os últimos `tailMs` ms, cada um já como
- * WAV canónico. Devolve `null` se o input não for 22050/mono/16-bit PCM (ex. clone a 24k)
- * — o chamador cai então na voz limpa. Corte alinhado à sample-frame. PURA.
+ * Splits the WAV into [body, tail] where the tail is the last `tailMs` ms, each already as
+ * a canonical WAV. Returns `null` if the input is not 22050/mono/16-bit PCM (e.g. clone at 24k)
+ * — the caller then falls back to the clean voice. Cut aligned to the sample-frame. PURE.
  */
 export function splitTailWav(wav: Buffer, tailMs: number): { head: Buffer; tail: Buffer } | null {
   let parsed;
   try {
     parsed = parseWav(wav, 0);
   } catch {
-    return null; // não é um WAV RIFF válido
+    return null; // not a valid RIFF WAV
   }
   if (
     parsed.audioFormat !== 1 ||
@@ -69,22 +70,22 @@ export function splitTailWav(wav: Buffer, tailMs: number): { head: Buffer; tail:
     parsed.channels !== CHANNELS ||
     parsed.bits !== BITS
   ) {
-    return null; // formato inesperado -> sem entoação (fail-safe a montante)
+    return null; // unexpected format -> no intonation (fail-safe upstream)
   }
   const data = parsed.data;
   const tailFrames = Math.round((tailMs / 1000) * SR);
   const tailBytes = Math.min(data.length, tailFrames * BLOCK_ALIGN);
   const splitAt = data.length - tailBytes;
   return {
-    head: buildWav(data.subarray(0, splitAt)), // vazio quando a fala é toda "rabo" (curta)
+    head: buildWav(data.subarray(0, splitAt)), // empty when the speech is all "tail" (short)
     tail: buildWav(data.subarray(splitAt)),
   };
 }
 
 /**
- * Motor decorador que dá ENTOAÇÃO DE PERGUNTA às falas que acabam em `?`: sobe o tom no
- * fim via ffmpeg, com cache própria (namespace 'q', keyed por cacheKey(req)+'_q' — como o
- * EffectEngine). Falas sem `?` passam intactas. Qualquer erro -> voz LIMPA (nunca lança).
+ * Decorator engine that gives QUESTION INTONATION to speeches ending in `?`: raises the pitch
+ * at the end via ffmpeg, with its own cache (namespace 'q', keyed by cacheKey(req)+'_q' — like
+ * EffectEngine). Speeches without `?` pass through intact. Any error -> CLEAN voice (never throws).
  */
 export class ProsodyEngine implements TTSEngine {
   constructor(
@@ -105,7 +106,7 @@ export class ProsodyEngine implements TTSEngine {
     let pitchedDir: string | null = null;
     try {
       const split = splitTailWav(readFileSync(base), QUESTION_TAIL_MS);
-      if (!split) return base; // formato inesperado -> voz limpa
+      if (!split) return base; // unexpected format -> clean voice
 
       workDir = mkdtempSync(join(tmpdir(), 'vozen-q-'));
       const tailPath = join(workDir, 'tail.wav');
@@ -122,8 +123,8 @@ export class ProsodyEngine implements TTSEngine {
       log.warn('[prosody] question intonation failed; using clean voice:', err);
       return base;
     } finally {
-      // applyEffect NÃO limpa o seu dir em sucesso (é o chamador que copia e limpa); o
-      // cache.put já copiou o out.wav do workDir, por isso podemos limpar ambos.
+      // applyEffect does NOT clean up its dir on success (the caller copies and cleans up);
+      // cache.put already copied out.wav from the workDir, so we can clean up both.
       if (pitchedDir) rmDirSafe(pitchedDir);
       if (workDir) rmDirSafe(workDir);
     }

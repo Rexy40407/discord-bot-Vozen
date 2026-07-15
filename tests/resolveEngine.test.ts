@@ -13,7 +13,7 @@ const G = 'guild-1';
 const U = 'user-1';
 const NOW = 1_000_000;
 
-describe('resolveUserEngine — gate runtime do motor Google HD (gcloud)', () => {
+describe('resolveUserEngine — runtime gate for the Google HD engine (gcloud)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -22,33 +22,33 @@ describe('resolveUserEngine — gate runtime do motor Google HD (gcloud)', () =>
     db.close();
   });
 
-  it('motores não-gcloud passam intactos (sem tocar em premium)', () => {
+  it('non-gcloud engines pass through untouched (without touching premium)', () => {
     for (const eng of ['google', 'piper', 'kokoro', undefined] as const) {
       expect(resolveUserEngine(db, G, U, eng, NOW).engine).toBe(eng);
     }
   });
 
-  it('gcloud SEM Premium -> despromovido a google (gate)', () => {
+  it('gcloud WITHOUT Premium -> demoted to google (gate)', () => {
     expect(resolveUserEngine(db, G, U, 'gcloud', NOW).engine).toBe('google');
   });
 
-  it('gcloud COM Vozen Plus (user) -> mantém gcloud', () => {
+  it('gcloud WITH Vozen Plus (user) -> keeps gcloud', () => {
     grantUserPremium(db, U, 30, 'test', NOW);
     expect(resolveUserEngine(db, G, U, 'gcloud', NOW).engine).toBe('gcloud');
   });
 
-  it('gcloud COM Premium do servidor (guild) -> mantém gcloud', () => {
+  it('gcloud WITH server (guild) Premium -> keeps gcloud', () => {
     grantGuildPremium(db, G, 30, 'test', NOW);
     expect(resolveUserEngine(db, G, U, 'gcloud', NOW).engine).toBe('gcloud');
   });
 
-  it('gcloud com Premium EXPIRADO -> despromovido a google', () => {
-    grantUserPremium(db, U, 30, 'test', NOW - 60 * 86_400_000); // expirou há muito
+  it('gcloud with EXPIRED Premium -> demoted to google', () => {
+    grantUserPremium(db, U, 30, 'test', NOW - 60 * 86_400_000); // expired long ago
     expect(resolveUserEngine(db, G, U, 'gcloud', NOW).engine).toBe('google');
   });
 });
 
-describe('resolveUserEngine — descritor de orçamento (pool a debitar)', () => {
+describe('resolveUserEngine — budget descriptor (pool to debit)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -57,43 +57,43 @@ describe('resolveUserEngine — descritor de orçamento (pool a debitar)', () =>
     db.close();
   });
 
-  it('Plus -> pool PESSOAL (scope user, key = userId)', () => {
+  it('Plus -> PERSONAL pool (scope user, key = userId)', () => {
     grantUserPremium(db, U, 30, 'test', NOW);
     const r = resolveUserEngine(db, G, U, 'gcloud', NOW);
     expect(r.gcloudBudget).toEqual({ scope: 'user', key: U });
   });
 
-  it('sem Plus mas passe cobre a guild -> pool do PASSE (scope pass, key = dono, seats)', () => {
+  it('no Plus but the pass covers the guild -> PASS pool (scope pass, key = owner, seats)', () => {
     const OWNER = 'owner-1';
-    grantGuildPass(db, OWNER, 8, 30, 'test', NOW); // passe de 8 servidores
-    activateSeat(db, OWNER, G, NOW); // ativa neste servidor
+    grantGuildPass(db, OWNER, 8, 30, 'test', NOW); // 8-server pass
+    activateSeat(db, OWNER, G, NOW); // activate on this server
     const r = resolveUserEngine(db, G, U, 'gcloud', NOW);
     expect(r.engine).toBe('gcloud');
     expect(r.gcloudBudget).toEqual({ scope: 'pass', key: OWNER, seats: 8 });
   });
 
-  it('Plus TEM precedência sobre o passe (não drena o dono do passe)', () => {
+  it('Plus TAKES precedence over the pass (does not drain the pass owner)', () => {
     const OWNER = 'owner-1';
     grantGuildPass(db, OWNER, 8, 30, 'test', NOW);
     activateSeat(db, OWNER, G, NOW);
-    grantUserPremium(db, U, 30, 'test', NOW); // o próprio user tem Plus
+    grantUserPremium(db, U, 30, 'test', NOW); // the user themselves has Plus
     const r = resolveUserEngine(db, G, U, 'gcloud', NOW);
-    expect(r.gcloudBudget).toEqual({ scope: 'user', key: U }); // pool pessoal, não o do passe
+    expect(r.gcloudBudget).toEqual({ scope: 'user', key: U }); // personal pool, not the pass's
   });
 
-  it('Premium DIRETO do servidor (sem passe) -> pool do servidor (scope guild, key = guildId)', () => {
-    grantGuildPremium(db, G, 30, 'test', NOW); // redeem/discord/manual, sem passe
+  it('DIRECT server Premium (no pass) -> server pool (scope guild, key = guildId)', () => {
+    grantGuildPremium(db, G, 30, 'test', NOW); // redeem/discord/manual, no pass
     const r = resolveUserEngine(db, G, U, 'gcloud', NOW);
     expect(r.gcloudBudget).toEqual({ scope: 'guild', key: G });
   });
 
-  it('desempate do dono do passe: activated_at mais ANTIGO ganha', () => {
+  it('pass owner tie-break: OLDEST activated_at wins', () => {
     const A = 'owner-early';
     const B = 'owner-late';
     grantGuildPass(db, A, 3, 30, 'test', NOW);
     grantGuildPass(db, B, 8, 30, 'test', NOW);
-    activateSeat(db, A, G, NOW); // A ativa primeiro (mais antigo)
-    activateSeat(db, B, G, NOW + 1000); // B ativa depois
+    activateSeat(db, A, G, NOW); // A activates first (older)
+    activateSeat(db, B, G, NOW + 1000); // B activates later
     const r = resolveUserEngine(db, G, U, 'gcloud', NOW + 2000);
     expect(r.gcloudBudget?.key).toBe(A);
     expect(r.gcloudBudget?.seats).toBe(3);

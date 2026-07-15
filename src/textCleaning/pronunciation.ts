@@ -8,29 +8,29 @@ function escapeRegExp(s: string): string {
 }
 
 /**
- * Aplica o dicionario de pronuncia ao texto: cada `term` e substituido pelo seu
- * `replacement`, case-insensitive e por palavra completa. Funcao PURA e deterministica.
+ * Applies the pronunciation dictionary to the text: each `term` is replaced by its
+ * `replacement`, case-insensitive and whole-word. PURE, deterministic function.
  *
- * Fronteiras: usa lookarounds zero-width (mesmo estilo unicode que `isBlocked`, mas
- * SEM consumir os caracteres de fronteira) para que termos repetidos ou adjacentes
- * sejam todos substituidos — ao contrario de `isBlocked`, cujo padrao consome a
- * fronteira e e seguro apenas porque so faz `.test()`.
+ * Boundaries: uses zero-width lookarounds (same unicode style as `isBlocked`, but
+ * WITHOUT consuming the boundary characters) so that repeated or adjacent terms
+ * are all replaced — unlike `isBlocked`, whose pattern consumes the
+ * boundary and is safe only because it just does `.test()`.
  *
- * Aplicado DEPOIS do `cleanText` e ANTES do synth. O whitespace residual de um
- * replacement vazio nao e re-colapsado (cleanText ja passou).
+ * Applied AFTER `cleanText` and BEFORE synth. The residual whitespace from an
+ * empty replacement is not re-collapsed (cleanText already ran).
  */
-// Cache de RegExp compiladas por CONTEUDO do dicionario. Sem isto, o loop recompilava uma
-// RegExp unicode por entrada a CADA mensagem lida (o dict chega novo a cada chamada; keia-se
-// pelo conteudo — term E replacement, porque ambos afetam o resultado). Reutilizar e seguro:
-// `String.replace` com RegExp global reseta o `lastIndex`. Cap simples com limpeza no teto.
+// Cache of compiled RegExp keyed by the dictionary's CONTENT. Without this, the loop recompiled a
+// unicode RegExp per entry on EVERY message read (the dict arrives fresh on each call; it is keyed
+// by content — term AND replacement, because both affect the result). Reusing is safe:
+// `String.replace` with a global RegExp resets the `lastIndex`. Simple cap with cleanup at the ceiling.
 const PRON_CACHE_CAP = 256;
 const pronCache = new Map<string, { re: RegExp; replacement: string }[]>();
 
 export function applyPronunciation(text: string, dict: PronunciationEntry[]): string {
   const entries = dict.filter((e) => e.term.trim() !== '');
   if (entries.length === 0) return text;
-  // Separadores de controlo (U+241F campo, U+2426 entrada) que nao aparecem em texto normal
-  // — evitam colisoes de chave entre dicionarios diferentes.
+  // Control separators (U+241F field, U+2426 entry) that do not appear in normal text
+  // — they prevent key collisions between different dictionaries.
   const key = entries.map((e) => `${e.term.trim()}␟${e.replacement}`).join('␦');
   let compiled = pronCache.get(key);
   if (!compiled) {
@@ -46,10 +46,10 @@ export function applyPronunciation(text: string, dict: PronunciationEntry[]): st
   }
   let out = text;
   for (const { re, replacement } of compiled) {
-    // Replacer-FUNÇÃO (não string) para tratar o replacement como LITERAL: uma string
-    // crua faria String.replace interpretar $&, $1, $`, $', $$ como diretivas (o
-    // replacement é controlado pelo admin via /config pronunciation — ex.: "R$"). As
-    // irmãs restoreAccents/expandAbbreviations já usam replacers-função por isto.
+    // A replacer FUNCTION (not a string) to treat the replacement as LITERAL: a raw
+    // string would make String.replace interpret $&, $1, $`, $', $$ as directives (the
+    // replacement is controlled by the admin via /config pronunciation — e.g.: "R$"). The
+    // sibling restoreAccents/expandAbbreviations already use function-replacers for this.
     out = out.replace(re, () => replacement);
   }
   return out;

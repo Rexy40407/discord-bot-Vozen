@@ -1,38 +1,38 @@
 // src/tts/calibration.ts
 /**
- * Calibração de length_scale por modelo Piper.
+ * Per-Piper-model length_scale calibration.
  *
- * Alguns modelos da comunidade foram treinados com prosódia anormalmente
- * rápida ou lenta. Este fator corrige a BASE do length_scale do modelo:
- *   1   = sem correção (a esmagadora maioria dos modelos);
- *   >1  = abranda (o modelo falava rápido demais);
- *   <1  = acelera (o modelo falava devagar demais).
+ * Some community models were trained with abnormally fast or slow prosody.
+ * This factor corrects the BASE length_scale of the model:
+ *   1   = no correction (the vast majority of models);
+ *   >1  = slows down (the model spoke too fast);
+ *   <1  = speeds up (the model spoke too slow).
  *
- * Compõe-se MULTIPLICATIVAMENTE com a velocidade do utilizador, por isso o
- * utilizador mantém o controlo relativo: lengthScale = calibração / speed.
+ * It composes MULTIPLICATIVELY with the user's speed, so the user keeps
+ * relative control: lengthScale = calibration / speed.
  */
 export const VOICE_CALIBRATION: Record<string, number> = {
-  // pt_PT-tugão é a única voz de Português europeu do catálogo Piper e fala
-  // ~30% depressa demais a length_scale=1 (medido: ~53 ms/fonema vs ~75 ms nas
-  // vozes de referência amy/cadu). 1.5 aproxima do natural — é MITIGAÇÃO, não
-  // paridade (o ritmo satura ~5.5s vs 6.4s do cadu; para PT natural usar cadu).
+  // pt_PT-tugão is the only European Portuguese voice in the Piper catalog and speaks
+  // ~30% too fast at length_scale=1 (measured: ~53 ms/phoneme vs ~75 ms in the
+  // reference voices amy/cadu). 1.5 approximates natural — it is MITIGATION, not
+  // parity (the pace saturates at ~5.5s vs 6.4s for cadu; for natural PT use cadu).
   'pt_PT-tugao-medium': 1.5,
 };
 
 /**
- * Fator de length_scale GLOBAL do preset ORGÂNICO (escolhido em A/B pelo
- * operador: "organic forte"). Multiplica POR CIMA da calibração por-voz para
- * abrandar ligeiramente TODAS as vozes — fala menos apressada, som mais natural.
- * 1.10 = +10% de duração. Compõe-se com VOICE_CALIBRATION (que NÃO muda): p.ex.
- * uma voz sem calibração (1) resolve a 1.10; o tugão (1.5) resolve a 1.65.
+ * GLOBAL length_scale factor of the ORGANIC preset (chosen via A/B by the
+ * operator: "strong organic"). Multiplies ON TOP OF the per-voice calibration to
+ * slightly slow down ALL voices — less rushed speech, more natural sound.
+ * 1.10 = +10% duration. Composes with VOICE_CALIBRATION (which does NOT change): e.g.
+ * a voice without calibration (1) resolves to 1.10; the tugão (1.5) resolves to 1.65.
  */
 export const ORGANIC_LENGTH_SCALE = 1.1;
 
 /**
- * length_scale efetivo para um pedido: aplica a calibração da voz (default 1),
- * multiplica pelo fator ORGÂNICO global (ORGANIC_LENGTH_SCALE) e divide pela
- * velocidade do utilizador (speed>0; valores inválidos => 1). Piper: length_scale
- * baixo = mais rápido; alto = mais lento. Esta é a ÚNICA fonte do --length_scale.
+ * Effective length_scale for a request: applies the voice's calibration (default 1),
+ * multiplies by the global ORGANIC factor (ORGANIC_LENGTH_SCALE) and divides by the
+ * user's speed (speed>0; invalid values => 1). Piper: low length_scale = faster;
+ * high = slower. This is the ONLY source of --length_scale.
  */
 export function lengthScaleFor(model: string, speed: number): number {
   const safeSpeed = speed > 0 ? speed : 1;
@@ -41,15 +41,15 @@ export function lengthScaleFor(model: string, speed: number): number {
 }
 
 /**
- * Parâmetros de QUALIDADE de síntese do Piper (independentes da velocidade).
- * Correspondem a flags do binário. Os defaults globais são o preset ORGÂNICO
- * (escolhido em A/B pelo operador: som mais natural), NÃO os defaults do Piper:
- *   noiseScale (--noise_scale)      0.75 (Piper: 0.667) — mais variação tímbrica
- *   noiseW     (--noise_w)          0.95 (Piper: 0.8)   — mais variação de duração
- *   sentenceSilence (--sentence_silence) 0.4 (Piper: 0.2) segundos — respira mais
+ * Piper synthesis QUALITY parameters (independent of speed).
+ * They correspond to flags of the binary. The global defaults are the ORGANIC preset
+ * (chosen via A/B by the operator: more natural sound), NOT Piper's defaults:
+ *   noiseScale (--noise_scale)      0.75 (Piper: 0.667) — more timbral variation
+ *   noiseW     (--noise_w)          0.95 (Piper: 0.8)   — more duration variation
+ *   sentenceSilence (--sentence_silence) 0.4 (Piper: 0.2) seconds — breathes more
  *
- * NB: o length_scale NÃO vive aqui — continua a ser a única fonte a função
- * lengthScaleFor (calibração da voz × ORGANIC_LENGTH_SCALE / velocidade). Ver acima.
+ * NB: the length_scale does NOT live here — the sole source remains the function
+ * lengthScaleFor (voice calibration × ORGANIC_LENGTH_SCALE / speed). See above.
  */
 export interface SynthParams {
   noiseScale: number;
@@ -58,11 +58,11 @@ export interface SynthParams {
 }
 
 /**
- * Defaults GLOBAIS de síntese = preset ORGÂNICO "forte" (escolhido em A/B pelo
- * operador). Fonte ÚNICA — referenciados pela config (fallback das envs
- * NOISE_SCALE/NOISE_W/SENTENCE_SILENCE) E pelo fallback do construtor do
- * PiperEngine, para que os dois nunca divirjam. Continuam env-overridable; estes
- * são apenas o novo default de fábrica (mais natural que os defaults do Piper).
+ * GLOBAL synthesis defaults = "strong" ORGANIC preset (chosen via A/B by the
+ * operator). SINGLE source — referenced by the config (fallback of the
+ * NOISE_SCALE/NOISE_W/SENTENCE_SILENCE envs) AND by the PiperEngine constructor's
+ * fallback, so the two never diverge. They remain env-overridable; these
+ * are just the new factory default (more natural than Piper's defaults).
  */
 export const PIPER_DEFAULT_SYNTH_PARAMS: SynthParams = {
   noiseScale: 0.75,
@@ -71,19 +71,19 @@ export const PIPER_DEFAULT_SYNTH_PARAMS: SynthParams = {
 };
 
 /**
- * Overrides de params de síntese POR-VOZ — a SUPERFÍCIE de afinação para futura
- * calibração "de ouvido". VAZIO por defeito de propósito: enquanto não houver
- * entradas aqui, NENHUMA voz muda em relação aos defaults globais (zero
- * regressão audível). Cada entrada é PARCIAL — só os campos presentes fazem
- * override; os restantes caem nos defaults globais.
+ * PER-VOICE synthesis param overrides — the tuning SURFACE for future
+ * "by-ear" calibration. EMPTY by default on purpose: as long as there are no
+ * entries here, NO voice changes relative to the global defaults (zero
+ * audible regression). Each entry is PARTIAL — only the present fields
+ * override; the rest fall back to the global defaults.
  *
- * A chave `lengthScale` é RESERVADA/documentada mas INERTE hoje: a composição
- * de um override de length_scale com o multiplicador de VOICE_CALIBRATION e a
- * velocidade do utilizador está por definir, por isso synthParamsFor NÃO a
- * resolve (o --length_scale continua a vir exclusivamente de lengthScaleFor).
+ * The `lengthScale` key is RESERVED/documented but INERT today: composing
+ * a length_scale override with the VOICE_CALIBRATION multiplier and the
+ * user's speed is yet to be defined, so synthParamsFor does NOT
+ * resolve it (--length_scale still comes exclusively from lengthScaleFor).
  *
- * NÃO popular nenhum override agora — escolher valores melhores que o default
- * (e que vozes precisam de afinação) é decisão de ouvido do operador.
+ * Do NOT populate any override now — choosing values better than the default
+ * (and which voices need tuning) is the operator's by-ear decision.
  */
 export const VOICE_PARAM_OVERRIDES: Record<
   string,
@@ -91,11 +91,11 @@ export const VOICE_PARAM_OVERRIDES: Record<
 > = {};
 
 /**
- * Resolve os params de qualidade efetivos para uma voz: parte dos defaults
- * globais e aplica por cima o override por-voz (se existir), campo a campo.
- * Devolve sempre uma CÓPIA nova (não muta os defaults passados). Só resolve
- * noiseScale/noiseW/sentenceSilence — o length_scale é tratado à parte por
- * lengthScaleFor (ver VOICE_PARAM_OVERRIDES sobre a chave lengthScale inerte).
+ * Resolves the effective quality params for a voice: starts from the global
+ * defaults and applies the per-voice override on top (if any), field by field.
+ * Always returns a fresh COPY (does not mutate the passed defaults). Only resolves
+ * noiseScale/noiseW/sentenceSilence — the length_scale is handled separately by
+ * lengthScaleFor (see VOICE_PARAM_OVERRIDES about the inert lengthScale key).
  */
 export function synthParamsFor(model: string, globalDefaults: SynthParams): SynthParams {
   const override = VOICE_PARAM_OVERRIDES[model];

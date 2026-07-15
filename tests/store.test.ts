@@ -67,10 +67,10 @@ describe('store', () => {
       expect(getUserVoice(db, G, U)).toEqual({ model: 'b', speed: 1.5, engine: 'google' });
     });
 
-    it('guarda e lê o motor piper', () => {
+    it('stores and reads the piper engine', () => {
       setUserVoice(db, G, U, 'a', 1, 'piper');
       expect(getUserVoice(db, G, U)?.engine).toBe('piper');
-      // Voltar a gravar com 'google' troca o motor.
+      // Saving again with 'google' switches the engine.
       setUserVoice(db, G, U, 'a', 1, 'google');
       expect(getUserVoice(db, G, U)?.engine).toBe('google');
     });
@@ -92,41 +92,41 @@ describe('store', () => {
       expect(getGuildConfig(db, G)).toEqual({
         ttsChannelId: null,
         autoread: false,
-        defaultVoice: '', // vazio = guild nao definiu voz default
+        defaultVoice: '', // empty = guild did not set a default voice
         maxChars: 300,
         ratePerMin: 8,
         enabled: true,
         ttsRoleId: null,
-        locale: 'en', // default: ingles como idioma da interface
-        xsaid: true, // anunciar quem falou LIGADO por defeito
-        autojoin: false, // entrar sozinho na call DESLIGADO por defeito
-        readBots: false, // NÃO ler outros bots por defeito
-        textInVoice: false, // NÃO ler o chat-em-voz por defeito
-        greetOnJoin: true, // saudar quem entra na call LIGADO por defeito
-        greetLocale: 'en', // inglês como língua da saudação por defeito
-        antispam: false, // filtro de spam DESLIGADO por defeito
-        stayInCall: false, // 24/7 in-call DESLIGADO por defeito
-        streakAnnounce: true, // aviso de streak 🔥 LIGADO por defeito
-        soundboard: true, // /sound LIGADO por defeito
+        locale: 'en', // default: English as the interface language
+        xsaid: true, // announce who spoke ON by default
+        autojoin: false, // join the call on its own OFF by default
+        readBots: false, // do NOT read other bots by default
+        textInVoice: false, // do NOT read text-in-voice chat by default
+        greetOnJoin: true, // greet whoever joins the call ON by default
+        greetLocale: 'en', // English as the greeting language by default
+        antispam: false, // spam filter OFF by default
+        stayInCall: false, // 24/7 in-call OFF by default
+        streakAnnounce: true, // streak 🔥 announcement ON by default
+        soundboard: true, // /sound ON by default
       });
     });
 
-    it('ttsRoleId default e null', () => {
+    it('ttsRoleId defaults to null', () => {
       expect(getGuildConfig(db, G).ttsRoleId).toBeNull();
     });
 
-    it('persiste e le ttsRoleId', () => {
+    it('persists and reads ttsRoleId', () => {
       setGuildConfig(db, G, { ttsRoleId: 'role-42' });
       expect(getGuildConfig(db, G).ttsRoleId).toBe('role-42');
     });
 
-    it('pode limpar ttsRoleId de volta a null', () => {
+    it('can clear ttsRoleId back to null', () => {
       setGuildConfig(db, G, { ttsRoleId: 'role-42' });
       setGuildConfig(db, G, { ttsRoleId: null });
       expect(getGuildConfig(db, G).ttsRoleId).toBeNull();
     });
 
-    it('um patch de ttsRoleId nao perde outros campos', () => {
+    it('a ttsRoleId patch does not lose other fields', () => {
       setGuildConfig(db, G, { maxChars: 500, autoread: true });
       setGuildConfig(db, G, { ttsRoleId: 'role-7' });
       const cfg = getGuildConfig(db, G);
@@ -140,35 +140,35 @@ describe('store', () => {
       expect(getGuildConfig(db, G)).toEqual({
         ttsChannelId: 'chan-1',
         autoread: true,
-        defaultVoice: '', // vazio = guild nao definiu voz default
+        defaultVoice: '', // empty = guild did not set a default voice
         maxChars: 300,
         ratePerMin: 8,
         enabled: true,
         ttsRoleId: null,
-        locale: 'en', // default: ingles como idioma da interface
-        xsaid: true, // anunciar quem falou LIGADO por defeito
-        autojoin: false, // entrar sozinho na call DESLIGADO por defeito
-        readBots: false, // NÃO ler outros bots por defeito
-        textInVoice: false, // NÃO ler o chat-em-voz por defeito
-        greetOnJoin: true, // saudar quem entra na call LIGADO por defeito
-        greetLocale: 'en', // inglês como língua da saudação por defeito
-        antispam: false, // filtro de spam DESLIGADO por defeito
-        stayInCall: false, // 24/7 in-call DESLIGADO por defeito
-        streakAnnounce: true, // aviso de streak 🔥 LIGADO por defeito
-        soundboard: true, // /sound LIGADO por defeito
+        locale: 'en', // default: English as the interface language
+        xsaid: true, // announce who spoke ON by default
+        autojoin: false, // join the call on its own OFF by default
+        readBots: false, // do NOT read other bots by default
+        textInVoice: false, // do NOT read text-in-voice chat by default
+        greetOnJoin: true, // greet whoever joins the call ON by default
+        greetLocale: 'en', // English as the greeting language by default
+        antispam: false, // spam filter OFF by default
+        stayInCall: false, // 24/7 in-call OFF by default
+        streakAnnounce: true, // streak 🔥 announcement ON by default
+        soundboard: true, // /sound ON by default
       });
     });
 
-    it('locale default e "en"', () => {
+    it('locale defaults to "en"', () => {
       expect(getGuildConfig(db, G).locale).toBe('en');
     });
 
-    it('persiste e le locale (pt)', () => {
+    it('persists and reads locale (pt)', () => {
       setGuildConfig(db, G, { locale: 'pt' });
       expect(getGuildConfig(db, G).locale).toBe('pt');
     });
 
-    it('um patch de locale nao perde outros campos', () => {
+    it('a locale patch does not lose other fields', () => {
       setGuildConfig(db, G, { maxChars: 500, autoread: true });
       setGuildConfig(db, G, { locale: 'pt' });
       const cfg = getGuildConfig(db, G);
@@ -199,28 +199,28 @@ describe('store', () => {
       expect(getGuildConfig(db, G).ttsChannelId).toBeNull();
     });
 
-    // ── Paridade descritor ↔ resto (plano 014): estes testes rebentam se alguém
-    // acrescentar/remover um campo sem sincronizar as 5 fontes de verdade.
-    it('descritor: props batem com as chaves de GuildConfig, sem colunas duplicadas', () => {
-      // getGuildConfig(absent) devolve o objeto DEFAULTS -> as suas chaves são o
-      // conjunto exato de props de GuildConfig.
+    // ── Descriptor ↔ rest parity (plan 014): these tests blow up if someone
+    // adds/removes a field without syncing the 5 sources of truth.
+    it('descriptor: props match the GuildConfig keys, with no duplicate columns', () => {
+      // getGuildConfig(absent) returns the DEFAULTS object -> its keys are the
+      // exact set of GuildConfig props.
       const configKeys = Object.keys(getGuildConfig(db, 'no-such-guild')).sort();
       const descriptorProps = GUILD_CONFIG_COLUMNS.map((c) => c.prop).sort();
       expect(descriptorProps).toEqual(configKeys);
       const columns = GUILD_CONFIG_COLUMNS.map((c) => c.column);
-      expect(new Set(columns).size).toBe(columns.length); // sem colunas repetidas
+      expect(new Set(columns).size).toBe(columns.length); // no repeated columns
     });
 
-    it('descritor: colunas batem com o CREATE TABLE (table_info)', () => {
+    it('descriptor: columns match the CREATE TABLE (table_info)', () => {
       const info = db.pragma('table_info(guild_config)') as Array<{ name: string }>;
       const actual = new Set(info.map((c) => c.name));
       const expected = new Set(['guild_id', ...GUILD_CONFIG_COLUMNS.map((c) => c.column)]);
       expect(actual).toEqual(expected);
     });
 
-    it('descritor: DEFAULT de cada coluna bate com o CREATE TABLE (dflt_value) — apanha drift', () => {
-      // O teste de nomes acima não vê os DEFAULTs; o rate_per_min chegou a divergir
-      // (db.ts=8 vs descritor=5). Comparar os defaults fecha essa lacuna.
+    it('descriptor: each column DEFAULT matches the CREATE TABLE (dflt_value) — catches drift', () => {
+      // The names test above does not see the DEFAULTs; rate_per_min once diverged
+      // (db.ts=8 vs descriptor=5). Comparing the defaults closes that gap.
       const info = db.pragma('table_info(guild_config)') as Array<{
         name: string;
         dflt_value: string | number | null;
@@ -237,7 +237,7 @@ describe('store', () => {
       }
     });
 
-    it('round-trip de TODOS os campos com valores não-default', () => {
+    it('round-trip of ALL fields with non-default values', () => {
       const full = {
         ttsChannelId: 'c1',
         autoread: true,
@@ -262,10 +262,10 @@ describe('store', () => {
       expect(getGuildConfig(db, G)).toEqual(full);
     });
 
-    it('migra uma DB antiga (só as 8 colunas originais) — backfill dos defaults novos', () => {
+    it('migrates an old DB (only the 8 original columns) — backfill of the new defaults', () => {
       const dir = mkdtempSync(join(tmpdir(), 'voxi-mig-'));
       const path = join(dir, 'old.db');
-      // DB no formato pré-locale: guild_id … tts_role_id (as 8 originais), sem as 7 novas.
+      // DB in the pre-locale format: guild_id … tts_role_id (the 8 originals), without the 7 new ones.
       const raw = new BetterSqlite3(path);
       raw.exec(`
         CREATE TABLE guild_config (
@@ -290,7 +290,7 @@ describe('store', () => {
 
       const migrated = initDb(path);
       try {
-        // Valores antigos preservados; colunas novas = defaults (backfill via ADD COLUMN).
+        // Old values preserved; new columns = defaults (backfill via ADD COLUMN).
         expect(getGuildConfig(migrated, 'old-g')).toEqual({
           ttsChannelId: 'chan-old',
           autoread: true,
@@ -311,7 +311,7 @@ describe('store', () => {
           streakAnnounce: true,
           soundboard: true,
         });
-        // Todas as colunas do descritor passam a existir depois da migração.
+        // All descriptor columns now exist after the migration.
         const info = migrated.pragma('table_info(guild_config)') as Array<{ name: string }>;
         const names = new Set(info.map((c) => c.name));
         for (const col of GUILD_CONFIG_COLUMNS) expect(names.has(col.column)).toBe(true);
@@ -322,7 +322,7 @@ describe('store', () => {
       }
     });
 
-    it('migra a voz Piper pt_PT (tugao) retirada -> pt_PT-google-medium (user_voice + default da guild)', () => {
+    it('migrates the removed Piper pt_PT (tugao) voice -> pt_PT-google-medium (user_voice + guild default)', () => {
       const dir = mkdtempSync(join(tmpdir(), 'voxi-ptpt-'));
       const path = join(dir, 'ptpt.db');
       const raw = new BetterSqlite3(path);
@@ -352,8 +352,8 @@ describe('store', () => {
 
       const migrated = initDb(path);
       try {
-        // A voz Piper pt_PT foi retirada das opcoes; as prefs gravadas migram para a
-        // voz pt-PT do Google (mesma lingua, motor default). Idempotente (no-op depois).
+        // The Piper pt_PT voice was removed from the options; saved prefs migrate to the
+        // Google pt-PT voice (same language, default engine). Idempotent (no-op afterward).
         expect(getUserVoice(migrated, 'g', 'u')?.model).toBe('pt_PT-google-medium');
         expect(getGuildConfig(migrated, 'g2').defaultVoice).toBe('pt_PT-google-medium');
       } finally {
@@ -391,7 +391,7 @@ describe('store', () => {
       expect(getBlocklist(db, 'guild-2')).toEqual([]);
     });
 
-    it('adiciona e obtem palavras acentuadas (salázar, café)', () => {
+    it('adds and gets accented words (salázar, café)', () => {
       addBlockword(db, G, 'salázar');
       addBlockword(db, G, 'café');
       const list = getBlocklist(db, G);
@@ -399,7 +399,7 @@ describe('store', () => {
       expect(list).toContain('café');
     });
 
-    it('remove palavra acentuada correctamente', () => {
+    it('removes an accented word correctly', () => {
       addBlockword(db, G, 'café');
       addBlockword(db, G, 'salázar');
       removeBlockword(db, G, 'café');
@@ -408,9 +408,9 @@ describe('store', () => {
       expect(list).toContain('salázar');
     });
 
-    it('tratamento case-sensitive: "Café" e "café" sao entradas distintas (sem COLLATE NOCASE)', () => {
-      // O schema nao declara COLLATE NOCASE, portanto a distinção maiúscula/minúscula
-      // é preservada — "Café" e "café" coexistem como entradas separadas.
+    it('case-sensitive handling: "Café" and "café" are distinct entries (no COLLATE NOCASE)', () => {
+      // The schema does not declare COLLATE NOCASE, so the upper/lower-case distinction
+      // is preserved — "Café" and "café" coexist as separate entries.
       addBlockword(db, G, 'café');
       addBlockword(db, G, 'Café');
       const list = getBlocklist(db, G);
@@ -421,7 +421,7 @@ describe('store', () => {
   });
 
   describe('server pronunciation (/serverpronunciation, cap 3)', () => {
-    it('adiciona, ordena por termo, e isola por guild', () => {
+    it('adds, sorts by term, and isolates per guild', () => {
       expect(getServerPronunciations(db, G)).toEqual([]);
       expect(addServerPronunciation(db, G, 'zz', 'ultimo', SERVER_PRON_LIMIT)).toBe('ok');
       expect(addServerPronunciation(db, G, 'aa', 'primeiro', SERVER_PRON_LIMIT)).toBe('ok');
@@ -432,13 +432,13 @@ describe('store', () => {
       expect(getServerPronunciations(db, 'guild-2')).toEqual([]);
     });
 
-    it('re-adicionar edita (upsert) e não conta para o cap', () => {
+    it('re-adding edits (upsert) and does not count toward the cap', () => {
       addServerPronunciation(db, G, 'gg', 'good game', SERVER_PRON_LIMIT);
       addServerPronunciation(db, G, 'gg', 'gigi', SERVER_PRON_LIMIT);
       expect(getServerPronunciations(db, G)).toEqual([{ term: 'gg', replacement: 'gigi' }]);
     });
 
-    it('cap 3: aceita 3, bloqueia a 4.ª', () => {
+    it('cap 3: accepts 3, blocks the 4th', () => {
       for (let n = 1; n <= SERVER_PRON_LIMIT; n++) {
         expect(addServerPronunciation(db, G, `t${n}`, 'r', SERVER_PRON_LIMIT)).toBe('ok');
       }
@@ -446,7 +446,7 @@ describe('store', () => {
       expect(getServerPronunciations(db, G)).toHaveLength(SERVER_PRON_LIMIT);
     });
 
-    it('remove: true quando existia, false quando não', () => {
+    it('remove: true when it existed, false when it did not', () => {
       addServerPronunciation(db, G, 'gg', 'good game', SERVER_PRON_LIMIT);
       expect(removeServerPronunciation(db, G, 'gg')).toBe(true);
       expect(removeServerPronunciation(db, G, 'gg')).toBe(false);
@@ -455,52 +455,52 @@ describe('store', () => {
   });
 
   describe('optout', () => {
-    it('isOptedOut e false quando nada foi definido', () => {
+    it('isOptedOut is false when nothing was set', () => {
       expect(isOptedOut(db, G, U)).toBe(false);
     });
 
-    it('setOptOut marca o utilizador e isOptedOut passa a true', () => {
+    it('setOptOut marks the user and isOptedOut becomes true', () => {
       setOptOut(db, G, U);
       expect(isOptedOut(db, G, U)).toBe(true);
     });
 
-    it('setOptOut e idempotente (marcar duas vezes nao rebenta)', () => {
+    it('setOptOut is idempotent (marking twice does not blow up)', () => {
       setOptOut(db, G, U);
       setOptOut(db, G, U);
       expect(isOptedOut(db, G, U)).toBe(true);
     });
 
-    it('setOptIn limpa o opt-out e isOptedOut volta a false', () => {
+    it('setOptIn clears the opt-out and isOptedOut goes back to false', () => {
       setOptOut(db, G, U);
       setOptIn(db, G, U);
       expect(isOptedOut(db, G, U)).toBe(false);
     });
 
-    it('isola o opt-out por guild', () => {
+    it('isolates the opt-out per guild', () => {
       setOptOut(db, G, U);
       expect(isOptedOut(db, 'guild-2', U)).toBe(false);
     });
 
-    it('isola o opt-out por utilizador', () => {
+    it('isolates the opt-out per user', () => {
       setOptOut(db, G, U);
       expect(isOptedOut(db, G, 'user-2')).toBe(false);
     });
   });
 
-  describe('guildConfig — patches sucessivos', () => {
-    it('tres patches sucessivos nao perdem campos anteriores', () => {
+  describe('guildConfig — successive patches', () => {
+    it('three successive patches do not lose earlier fields', () => {
       setGuildConfig(db, G, { ttsChannelId: 'chan-1' });
       setGuildConfig(db, G, { maxChars: 500, ratePerMin: 10 });
       setGuildConfig(db, G, { enabled: false });
       const cfg = getGuildConfig(db, G);
-      expect(cfg.ttsChannelId).toBe('chan-1'); // do 1.º patch
-      expect(cfg.maxChars).toBe(500); // do 2.º patch
-      expect(cfg.ratePerMin).toBe(10); // do 2.º patch
-      expect(cfg.enabled).toBe(false); // do 3.º patch
-      expect(cfg.defaultVoice).toBe(''); // vazio = guild nao definiu voz default
+      expect(cfg.ttsChannelId).toBe('chan-1'); // from the 1st patch
+      expect(cfg.maxChars).toBe(500); // from the 2nd patch
+      expect(cfg.ratePerMin).toBe(10); // from the 2nd patch
+      expect(cfg.enabled).toBe(false); // from the 3rd patch
+      expect(cfg.defaultVoice).toBe(''); // empty = guild did not set a default voice
     });
 
-    it('patch que substitui defaultVoice nao perde outros campos', () => {
+    it('a patch that replaces defaultVoice does not lose other fields', () => {
       setGuildConfig(db, G, { autoread: true, maxChars: 400 });
       setGuildConfig(db, G, { defaultVoice: 'pt_PT-tugão-medium' });
       const cfg = getGuildConfig(db, G);
@@ -511,11 +511,11 @@ describe('store', () => {
   });
 
   describe('nickname (xsaid)', () => {
-    it('sem apelido -> null', () => {
+    it('no nickname -> null', () => {
       expect(getNickname(db, G, 'u1')).toBeNull();
     });
 
-    it('persiste, sobrescreve e limpa', () => {
+    it('persists, overwrites and clears', () => {
       setNickname(db, G, 'u1', 'Zé');
       expect(getNickname(db, G, 'u1')).toBe('Zé');
       setNickname(db, G, 'u1', 'Zezinho');
@@ -524,7 +524,7 @@ describe('store', () => {
       expect(getNickname(db, G, 'u1')).toBeNull();
     });
 
-    it('é por-(guild,user)', () => {
+    it('is per-(guild,user)', () => {
       setNickname(db, G, 'u1', 'A');
       expect(getNickname(db, 'outra-guild', 'u1')).toBeNull();
       expect(getNickname(db, G, 'u2')).toBeNull();
@@ -532,17 +532,17 @@ describe('store', () => {
   });
 
   describe('voiceEffect', () => {
-    it('sem efeito -> none; persiste, sobrescreve e limpa', () => {
+    it('no effect -> none; persists, overwrites and clears', () => {
       expect(getVoiceEffect(db, G, 'u1')).toBe('none');
       setVoiceEffect(db, G, 'u1', 'robot');
       expect(getVoiceEffect(db, G, 'u1')).toBe('robot');
       setVoiceEffect(db, G, 'u1', 'deep');
       expect(getVoiceEffect(db, G, 'u1')).toBe('deep');
-      setVoiceEffect(db, G, 'u1', 'none'); // apaga a linha
+      setVoiceEffect(db, G, 'u1', 'none'); // deletes the row
       expect(getVoiceEffect(db, G, 'u1')).toBe('none');
     });
 
-    it('é por-(guild,user)', () => {
+    it('is per-(guild,user)', () => {
       setVoiceEffect(db, G, 'u1', 'echo');
       expect(getVoiceEffect(db, 'outra', 'u1')).toBe('none');
       expect(getVoiceEffect(db, G, 'u2')).toBe('none');
@@ -550,20 +550,20 @@ describe('store', () => {
   });
 });
 
-describe('initDb — erro de abertura', () => {
-  it('lanca erro com mensagem clara quando o caminho e invalido', () => {
-    // better-sqlite3 NAO cria directorios intermedios: um caminho cujo pai nao
-    // existe falha de forma fiavel (portavel, ao contrario de permission-denied).
+describe('initDb — open error', () => {
+  it('throws with a clear message when the path is invalid', () => {
+    // better-sqlite3 does NOT create intermediate directories: a path whose parent
+    // does not exist fails reliably (portable, unlike permission-denied).
     const bad = join(tmpdir(), `nope-${Date.now()}-${Math.random().toString(36).slice(2)}`, 'x.db');
     expect(() => initDb(bad)).toThrow(/Failed to open the database/);
-    // A mensagem inclui o caminho para diagnostico.
+    // The message includes the path for diagnostics.
     expect(() => initDb(bad)).toThrow(bad);
   });
 
-  it('lanca erro com mensagem clara quando o ficheiro nao e uma BD valida', () => {
-    // Um ficheiro existente que nao e SQLite: new Database() passa (validacao lazy)
-    // e o erro so surge em db.exec ("file is not a database"). O try alargado
-    // transforma isso na mesma mensagem clara em vez de stack trace cru.
+  it('throws with a clear message when the file is not a valid DB', () => {
+    // An existing file that is not SQLite: new Database() passes (lazy validation)
+    // and the error only surfaces in db.exec ("file is not a database"). The widened
+    // try turns that into the same clear message instead of a raw stack trace.
     const dir = mkdtempSync(join(tmpdir(), 'baddb-'));
     const file = join(dir, 'not-a-db.sqlite');
     writeFileSync(file, 'isto nao e uma base de dados sqlite, e texto qualquer\n');
@@ -575,11 +575,11 @@ describe('initDb — erro de abertura', () => {
   });
 });
 
-describe('initDb — migracao tts_role_id em DB de esquema antigo', () => {
-  it('adiciona a coluna tts_role_id a uma DB sem ela e o get devolve null', () => {
-    // initDb abre por caminho, por isso a migracao tem de ser testada em ficheiro
-    // real (nao :memory:). Criamos uma DB com o esquema ANTIGO (sem tts_role_id),
-    // inserimos uma linha, fechamos; depois corremos initDb e confirmamos a coluna.
+describe('initDb — tts_role_id migration on an old-schema DB', () => {
+  it('adds the tts_role_id column to a DB without it and the get returns null', () => {
+    // initDb opens by path, so the migration has to be tested on a real file
+    // (not :memory:). We create a DB with the OLD schema (without tts_role_id),
+    // insert a row, close it; then run initDb and confirm the column.
     const dir = mkdtempSync(join(tmpdir(), 'migdb-'));
     const file = join(dir, 'old-schema.sqlite');
     try {
@@ -603,22 +603,22 @@ describe('initDb — migracao tts_role_id em DB de esquema antigo', () => {
         .run('g-old', 'chan-old', 1, 'en_US-amy-medium', 300, 5, 1);
       old.close();
 
-      // Antes da migracao a coluna nao existe.
+      // Before the migration the column does not exist.
       const before = new BetterSqlite3(file);
       const colsBefore = before.pragma('table_info(guild_config)') as Array<{ name: string }>;
       expect(colsBefore.some((c) => c.name === 'tts_role_id')).toBe(false);
       before.close();
 
-      // initDb corre a migracao idempotente.
+      // initDb runs the idempotent migration.
       const db = initDb(file);
       const colsAfter = db.pragma('table_info(guild_config)') as Array<{ name: string }>;
       expect(colsAfter.some((c) => c.name === 'tts_role_id')).toBe(true);
 
-      // A linha antiga continua la e ttsRoleId vem como null (coluna nova, sem valor).
+      // The old row is still there and ttsRoleId comes back as null (new column, no value).
       expect(getGuildConfig(db, 'g-old').ttsRoleId).toBeNull();
       expect(getGuildConfig(db, 'g-old').ttsChannelId).toBe('chan-old');
 
-      // Idempotente: correr initDb de novo no mesmo ficheiro nao rebenta.
+      // Idempotent: running initDb again on the same file does not blow up.
       db.close();
       const db2 = initDb(file);
       const cols2 = db2.pragma('table_info(guild_config)') as Array<{ name: string }>;
@@ -630,11 +630,11 @@ describe('initDb — migracao tts_role_id em DB de esquema antigo', () => {
   });
 });
 
-describe('initDb — migracao target_id (user_clone) em DB de esquema antigo', () => {
-  it('adiciona target_id e faz backfill = user_id (Fase 2: pessoa gravada pode revogar)', () => {
-    // O caminho real do restart: uma DB com user_clone SEM target_id (esquema antigo,
-    // como a tts.db de produção com 2 clones). A migracao adiciona a coluna e assume
-    // auto-clone (target_id = user_id) nas linhas existentes.
+describe('initDb — target_id (user_clone) migration on an old-schema DB', () => {
+  it('adds target_id and backfills = user_id (Phase 2: recorded person can revoke)', () => {
+    // The real restart path: a DB with user_clone WITHOUT target_id (old schema,
+    // like the production tts.db with 2 clones). The migration adds the column and assumes
+    // auto-clone (target_id = user_id) on the existing rows.
     const dir = mkdtempSync(join(tmpdir(), 'migclone-'));
     const file = join(dir, 'old-clone.sqlite');
     try {
@@ -654,7 +654,7 @@ describe('initDb — migracao target_id (user_clone) em DB de esquema antigo', (
         .run('u-old', '/x/u-old.wav', 111, 1);
       old.close();
 
-      // Antes: sem target_id.
+      // Before: no target_id.
       const before = new BetterSqlite3(file);
       expect(
         (before.pragma('table_info(user_clone)') as Array<{ name: string }>).some(
@@ -663,15 +663,15 @@ describe('initDb — migracao target_id (user_clone) em DB de esquema antigo', (
       ).toBe(false);
       before.close();
 
-      // initDb corre a migracao idempotente + backfill.
+      // initDb runs the idempotent migration + backfill.
       const db = initDb(file);
       const row = getClone(db, 'u-old');
       expect(row).not.toBeNull();
       expect(row!.targetId).toBe('u-old'); // backfill: auto-clone
       expect(row!.samplePath).toBe('/x/u-old.wav');
-      expect(row!.enabled).toBe(true); // preservado
+      expect(row!.enabled).toBe(true); // preserved
 
-      // Idempotente: correr de novo nao rebenta nem duplica a coluna.
+      // Idempotent: running again does not blow up nor duplicate the column.
       db.close();
       const db2 = initDb(file);
       expect(
@@ -686,11 +686,11 @@ describe('initDb — migracao target_id (user_clone) em DB de esquema antigo', (
   });
 });
 
-describe('initDb — migracao locale em DB de esquema antigo', () => {
-  it('adiciona a coluna locale a uma DB sem ela e o get devolve "en"', () => {
-    // Mesmo padrao do teste de tts_role_id: DB com esquema ANTIGO (sem locale),
-    // uma linha inserida, fechada; depois initDb corre a migracao idempotente e
-    // as linhas antigas passam a ler locale='en' (nao null).
+describe('initDb — locale migration on an old-schema DB', () => {
+  it('adds the locale column to a DB without it and the get returns "en"', () => {
+    // Same pattern as the tts_role_id test: DB with the OLD schema (without locale),
+    // a row inserted, closed; then initDb runs the idempotent migration and
+    // the old rows now read locale='en' (not null).
     const dir = mkdtempSync(join(tmpdir(), 'migloc-'));
     const file = join(dir, 'old-schema.sqlite');
     try {
@@ -715,22 +715,22 @@ describe('initDb — migracao locale em DB de esquema antigo', () => {
         .run('g-old', 'chan-old', 1, 'en_US-amy-medium', 300, 5, 1, null);
       old.close();
 
-      // Antes da migracao a coluna nao existe.
+      // Before the migration the column does not exist.
       const before = new BetterSqlite3(file);
       const colsBefore = before.pragma('table_info(guild_config)') as Array<{ name: string }>;
       expect(colsBefore.some((c) => c.name === 'locale')).toBe(false);
       before.close();
 
-      // initDb corre a migracao idempotente.
+      // initDb runs the idempotent migration.
       const db = initDb(file);
       const colsAfter = db.pragma('table_info(guild_config)') as Array<{ name: string }>;
       expect(colsAfter.some((c) => c.name === 'locale')).toBe(true);
 
-      // A linha antiga continua la e locale vem como 'en' (default da coluna nova).
+      // The old row is still there and locale comes back as 'en' (the new column's default).
       expect(getGuildConfig(db, 'g-old').locale).toBe('en');
       expect(getGuildConfig(db, 'g-old').ttsChannelId).toBe('chan-old');
 
-      // Idempotente: correr initDb de novo no mesmo ficheiro nao rebenta.
+      // Idempotent: running initDb again on the same file does not blow up.
       db.close();
       const db2 = initDb(file);
       const cols2 = db2.pragma('table_info(guild_config)') as Array<{ name: string }>;
@@ -742,7 +742,7 @@ describe('initDb — migracao locale em DB de esquema antigo', () => {
   });
 });
 
-// ── cache write-through (plano 010) ──────────────────────────────────────────
+// ── cache write-through (plan 010) ──────────────────────────────────────────
 describe('store — cache write-through', () => {
   let db: Database.Database;
   beforeEach(() => {
@@ -752,9 +752,9 @@ describe('store — cache write-through', () => {
     db.close();
   });
 
-  // A prova mais forte: cada setter tem de fazer o get SEGUINTE devolver o valor novo.
-  // Se a invalidação faltasse, o get servia o valor cacheado velho e estes falhavam.
-  it('cada setter invalida — o get seguinte reflete a escrita', () => {
+  // The strongest proof: every setter must make the NEXT get return the new value.
+  // If invalidation were missing, the get would serve the old cached value and these would fail.
+  it('every setter invalidates — the next get reflects the write', () => {
     // guild_config
     getGuildConfig(db, G);
     setGuildConfig(db, G, { maxChars: 111 });
@@ -769,7 +769,7 @@ describe('store — cache write-through', () => {
     removeBlockword(db, G, 'spam');
     expect(getBlocklist(db, G)).not.toContain('spam');
 
-    // pronunciation PESSOAL (a de guild foi removida no plano v4)
+    // PERSONAL pronunciation (the guild one was removed in the v4 plan)
     getUserPronunciations(db, U);
     addUserPronunciation(db, U, 'gg', 'good game', 3);
     expect(getUserPronunciations(db, U)).toEqual([{ term: 'gg', replacement: 'good game' }]);
@@ -812,28 +812,28 @@ describe('store — cache write-through', () => {
     expect(getClone(db, U)).toBeNull();
   });
 
-  it('deleteClonesByTarget invalida a cache do DONO afetado', () => {
-    saveClone(db, 'owner', '/o.wav', 1000, 'target'); // owner grava a voz de target
-    getClone(db, 'owner'); // popula a cache
+  it('deleteClonesByTarget invalidates the affected OWNER cache', () => {
+    saveClone(db, 'owner', '/o.wav', 1000, 'target'); // owner records target's voice
+    getClone(db, 'owner'); // populates the cache
     const removed = deleteClonesByTarget(db, 'target');
     expect(removed.map((r) => r.ownerId)).toContain('owner');
-    expect(getClone(db, 'owner')).toBeNull(); // não serve o cacheado velho
+    expect(getClone(db, 'owner')).toBeNull(); // does not serve the old cached value
   });
 
-  it('caching NEGATIVO: um get sem linha não re-consulta no 2.º get, mas set invalida', () => {
+  it('NEGATIVE caching: a get with no row does not re-query on the 2nd get, but set invalidates', () => {
     const spy = vi.spyOn(db, 'prepare');
     getNickname(db, G, U); // miss -> SELECT
-    getNickname(db, G, U); // hit -> sem novo SELECT
+    getNickname(db, G, U); // hit -> no new SELECT
     const selects = spy.mock.calls.filter((c) =>
       String(c[0]).includes('FROM user_nickname'),
     ).length;
-    expect(selects).toBe(1); // só um SELECT apesar de dois gets (null foi cacheado)
+    expect(selects).toBe(1); // only one SELECT despite two gets (null was cached)
     spy.mockRestore();
     setNickname(db, G, U, 'Ana');
     expect(getNickname(db, G, U)).toBe('Ana');
   });
 
-  it('isolamento entre instâncias de db (WeakMap): db1 não contamina db2', () => {
+  it('isolation between db instances (WeakMap): db1 does not contaminate db2', () => {
     const db2 = initDb(':memory:');
     try {
       setNickname(db, G, U, 'só-no-db1');
@@ -844,54 +844,54 @@ describe('store — cache write-through', () => {
     }
   });
 
-  it('objeto devolvido NÃO é aliased ao cacheado (cópia rasa)', () => {
+  it('returned object is NOT aliased to the cached one (shallow copy)', () => {
     setGuildConfig(db, G, { maxChars: 250 });
     const a = getGuildConfig(db, G);
-    a.maxChars = 999; // mutação do chamador
-    expect(getGuildConfig(db, G).maxChars).toBe(250); // o cacheado não mudou
+    a.maxChars = 999; // caller mutation
+    expect(getGuildConfig(db, G).maxChars).toBe(250); // the cached one did not change
   });
 
-  it('TTL do clone: staleness limitada a 60s (escrita out-of-band via SQL cru)', () => {
+  it('clone TTL: staleness bounded to 60s (out-of-band write via raw SQL)', () => {
     vi.useFakeTimers();
     try {
       saveClone(db, U, '/velha.wav', 1000);
-      expect(getClone(db, U)?.samplePath).toBe('/velha.wav'); // popula a cache
-      // Simula OUTRO processo (shard) a escrever, SEM passar pelo setter -> não invalida.
+      expect(getClone(db, U)?.samplePath).toBe('/velha.wav'); // populates the cache
+      // Simulates ANOTHER process (shard) writing, WITHOUT going through the setter -> no invalidation.
       db.prepare('UPDATE user_clone SET sample_path = ? WHERE user_id = ?').run('/nova.wav', U);
-      expect(getClone(db, U)?.samplePath).toBe('/velha.wav'); // ainda cacheado
+      expect(getClone(db, U)?.samplePath).toBe('/velha.wav'); // still cached
       vi.advanceTimersByTime(61_000);
-      expect(getClone(db, U)?.samplePath).toBe('/nova.wav'); // TTL expirou -> re-lê
+      expect(getClone(db, U)?.samplePath).toBe('/nova.wav'); // TTL expired -> re-reads
     } finally {
       vi.useRealTimers();
     }
   });
 });
 
-describe('store — migração kofi_supporter (email em claro -> email_hash)', () => {
+describe('store — kofi_supporter migration (cleartext email -> email_hash)', () => {
   let dir: string | undefined;
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
     dir = undefined;
   });
 
-  it('renomeia a coluna email->email_hash numa DB antiga e o store continua a funcionar', () => {
+  it('renames the email->email_hash column on an old DB and the store keeps working', () => {
     dir = mkdtempSync(join(tmpdir(), 'vozen-kofimig-'));
     const file = join(dir, 'old.db');
-    // Simula uma DB ANTIGA: kofi_supporter com a coluna de email EM CLARO (`email`).
+    // Simulates an OLD DB: kofi_supporter with the email column IN CLEARTEXT (`email`).
     const seed = new BetterSqlite3(file);
     seed.exec(
       'CREATE TABLE kofi_supporter (email TEXT PRIMARY KEY, discord_id TEXT NOT NULL, updated_at INTEGER NOT NULL)',
     );
     seed.close();
-    // initDb aplica a migração idempotente -> a coluna passa a chamar-se email_hash.
+    // initDb applies the idempotent migration -> the column is now named email_hash.
     const db = initDb(file);
     const cols = (db.pragma('table_info(kofi_supporter)') as Array<{ name: string }>).map(
       (c) => c.name,
     );
     expect(cols).toContain('email_hash');
     expect(cols).not.toContain('email');
-    // E o store (que agora escreve/lê email_hash) funciona sem rebentar ("no such column").
-    const hash = 'deadbeef'.repeat(8); // 64 hex, forma de um hash
+    // And the store (which now writes/reads email_hash) works without blowing up ("no such column").
+    const hash = 'deadbeef'.repeat(8); // 64 hex, shaped like a hash
     rememberKofiSupporter(db, hash, '123456789012345678', 1);
     expect(lookupKofiSupporter(db, hash)).toBe('123456789012345678');
     db.close();

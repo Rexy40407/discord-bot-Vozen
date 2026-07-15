@@ -7,11 +7,11 @@ import { AudioCache } from '../src/tts/cache';
 import { metrics } from '../src/metrics';
 import type { SynthRequest } from '../src/tts/engine';
 
-// Um "WAV" de brincadeira: os bytes não importam para o teste (não os reproduzimos),
-// só que o que a Google devolve em base64 aterra intacto em disco.
+// A toy "WAV": the bytes do not matter for the test (we do not play them back), only that
+// what Google returns as base64 lands intact on disk.
 const FAKE_WAV = Buffer.from('RIFF....WAVEfake-linear16-pcm');
 
-/** fetch falso que devolve { audioContent } (base64) com 200, e regista o body enviado. */
+/** Fake fetch that returns { audioContent } (base64) with 200, and records the sent body. */
 function okFetch(audio: Buffer): {
   impl: typeof fetch;
   calls: Array<{ url: string; body: unknown }>;
@@ -39,7 +39,7 @@ let cache: AudioCache;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'gcloud-test-'));
-  cache = new AudioCache(dir, 0); // 0 = sem evict, isolado por teste
+  cache = new AudioCache(dir, 0); // 0 = no evict, isolated per test
 });
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
@@ -53,26 +53,26 @@ const req = (over: Partial<SynthRequest> = {}): SynthRequest => ({
   ...over,
 });
 
-describe('bcp47OfModel — id de modelo Piper -> languageCode BCP-47', () => {
+describe('bcp47OfModel — Piper model id -> BCP-47 languageCode', () => {
   it('pt_PT-... -> pt-PT', () => expect(bcp47OfModel('pt_PT-tuga-medium')).toBe('pt-PT'));
   it('en_US-amy-medium -> en-US', () => expect(bcp47OfModel('en_US-amy-medium')).toBe('en-US'));
   it('es_ES-... -> es-ES', () => expect(bcp47OfModel('es_ES-mls-medium')).toBe('es-ES'));
   it('ja_JP-... -> ja-JP', () => expect(bcp47OfModel('ja_JP-x-medium')).toBe('ja-JP'));
-  it('sem locale reconhecível -> en-US (fallback seguro)', () =>
+  it('without a recognizable locale -> en-US (safe fallback)', () =>
     expect(bcp47OfModel('weird')).toBe('en-US'));
 });
 
-describe('GCloudEngine — síntese via API oficial Google Cloud TTS', () => {
-  it('POST synthesize; grava o WAV do audioContent base64; devolve caminho', async () => {
+describe('GCloudEngine — synthesis via the official Google Cloud TTS API', () => {
+  it('POST synthesize; writes the WAV from the base64 audioContent; returns a path', async () => {
     const { impl, calls } = okFetch(FAKE_WAV);
     const eng = new GCloudEngine('KEY', cache, { fetchImpl: impl });
     const out = await eng.synth(req());
     expect(out.endsWith('.wav')).toBe(true);
     expect(readFileSync(out).equals(FAKE_WAV)).toBe(true);
-    // 1 pedido, ao endpoint certo, com a API key no header X-Goog-Api-Key.
+    // 1 request, to the right endpoint, with the API key in the X-Goog-Api-Key header.
     expect(calls).toHaveLength(1);
     expect(calls[0].url).toContain('texttospeech.googleapis.com');
-    // Corpo: LINEAR16 + languageCode derivado do modelo.
+    // Body: LINEAR16 + languageCode derived from the model.
     const body = calls[0].body as {
       audioConfig: { audioEncoding: string };
       voice: { languageCode: string };
@@ -82,16 +82,16 @@ describe('GCloudEngine — síntese via API oficial Google Cloud TTS', () => {
     expect(body.voice.languageCode).toBe('pt-PT');
   });
 
-  it('lê da cache no 2.º pedido igual (sem 2.ª chamada à Google)', async () => {
+  it('reads from cache on the 2nd identical request (no 2nd call to Google)', async () => {
     const { impl, calls } = okFetch(FAKE_WAV);
     const eng = new GCloudEngine('KEY', cache, { fetchImpl: impl });
     const a = await eng.synth(req());
     const b = await eng.synth(req());
     expect(a).toBe(b);
-    expect(calls).toHaveLength(1); // cache hit no 2.º
+    expect(calls).toHaveLength(1); // cache hit on the 2nd
   });
 
-  it('MAIÚSCULAS em runs de 2+ são baixadas no input (não soletra)', async () => {
+  it('UPPERCASE in runs of 2+ is lowered in the input (does not spell out)', async () => {
     const { impl, calls } = okFetch(FAKE_WAV);
     const eng = new GCloudEngine('KEY', cache, { fetchImpl: impl });
     await eng.synth(req({ text: 'VOLTEI já' }));
@@ -99,7 +99,7 @@ describe('GCloudEngine — síntese via API oficial Google Cloud TTS', () => {
     expect(body.input.text).toBe('voltei já');
   });
 
-  it('HTTP != ok -> throw (para o RouterEngine cair no gTTS)', async () => {
+  it('HTTP != ok -> throw (so the RouterEngine falls back to gTTS)', async () => {
     const impl = (async () =>
       ({
         ok: false,
@@ -113,7 +113,7 @@ describe('GCloudEngine — síntese via API oficial Google Cloud TTS', () => {
     await expect(eng.synth(req())).rejects.toThrow(/403/);
   });
 
-  it('audioContent vazio -> throw', async () => {
+  it('empty audioContent -> throw', async () => {
     const impl = (async () =>
       ({
         ok: true,
@@ -128,10 +128,11 @@ describe('GCloudEngine — síntese via API oficial Google Cloud TTS', () => {
   });
 });
 
-// Fase 3 — allowances/contadores no CHOKEPOINT. Com `limits`+`usage`, o motor conta os
-// chars SÓ na chamada real (cache-miss) e RECUSA (throw -> o RouterEngine cai no gTTS)
-// quando: não há orçamento (fail-safe), o texto excede maxChars, o pool mensal esgota, ou
-// o backstop global/dia estoura. Sem `limits` (Fase 1) nada disto se aplica.
+// Phase 3 — allowances/counters at the CHOKEPOINT. With `limits`+`usage`, the engine counts
+// the chars ONLY on the real call (cache-miss) and DENIES (throw -> the RouterEngine falls
+// back to gTTS) when: there is no budget (fail-safe), the text exceeds maxChars, the monthly
+// pool is exhausted, or the global/day backstop blows. Without `limits` (Phase 1) none of
+// this applies.
 function memUsage(): GcloudUsage & { store: Map<string, number> } {
   const store = new Map<string, number>();
   const k = (s: string, key: string, mo: string) => `${s}|${key}|${mo}`;
@@ -148,9 +149,9 @@ const LIMITS: GcloudLimits = {
   pass8Monthly: 1000,
   dailyBudget: 500,
 };
-const FIXED_NOW = () => Date.UTC(2026, 6, 15, 12); // 2026-07-15 (mês '2026-07')
+const FIXED_NOW = () => Date.UTC(2026, 6, 15, 12); // 2026-07-15 (month '2026-07')
 
-describe('GCloudEngine — allowances no chokepoint (Fase 3)', () => {
+describe('GCloudEngine — allowances at the chokepoint (Phase 3)', () => {
   beforeEach(() => metrics.reset());
 
   function eng(usage: GcloudUsage, over: Partial<GcloudLimits> = {}) {
@@ -168,22 +169,22 @@ describe('GCloudEngine — allowances no chokepoint (Fase 3)', () => {
   const budgeted = (over: Partial<SynthRequest> = {}): SynthRequest =>
     req({ text: 'ola', gcloudBudget: { scope: 'user', key: 'u1' }, ...over });
 
-  it('gcloud SEM orçamento + limits presentes -> throw (fail-safe), NÃO chama a Google', async () => {
+  it('gcloud WITHOUT budget + limits present -> throw (fail-safe), does NOT call Google', async () => {
     const u = memUsage();
     const { engine, calls } = eng(u);
-    await expect(engine.synth(req({ text: 'ola' }))).rejects.toThrow(); // sem gcloudBudget
+    await expect(engine.synth(req({ text: 'ola' }))).rejects.toThrow(); // no gcloudBudget
     expect(calls).toHaveLength(0);
     expect(metrics.snapshot().gcloudFallbacks).toBe(1);
   });
 
-  it('texto acima de maxChars -> throw, NÃO chama a Google', async () => {
+  it('text above maxChars -> throw, does NOT call Google', async () => {
     const u = memUsage();
     const { engine, calls } = eng(u);
     await expect(engine.synth(budgeted({ text: 'x'.repeat(11) }))).rejects.toThrow();
     expect(calls).toHaveLength(0);
   });
 
-  it('sob o limite mensal -> sintetiza e CONTA os chars no pool certo', async () => {
+  it('under the monthly limit -> synthesizes and COUNTS the chars in the right pool', async () => {
     const u = memUsage();
     const { engine, calls } = eng(u);
     await engine.synth(budgeted({ text: 'ola' })); // 3 chars
@@ -193,42 +194,42 @@ describe('GCloudEngine — allowances no chokepoint (Fase 3)', () => {
     expect(metrics.snapshot().gcloudSynths).toBe(1);
   });
 
-  it('pool mensal ESGOTADO -> throw, NÃO chama a Google', async () => {
+  it('monthly pool EXHAUSTED -> throw, does NOT call Google', async () => {
     const u = memUsage();
-    u.addMonthly('user', 'u1', '2026-07', 99); // limite plus = 100; sobra 1
+    u.addMonthly('user', 'u1', '2026-07', 99); // plus limit = 100; 1 left
     const { engine, calls } = eng(u);
-    await expect(engine.synth(budgeted({ text: 'ola' }))).rejects.toThrow(); // 3 > 1 -> recusa
+    await expect(engine.synth(budgeted({ text: 'ola' }))).rejects.toThrow(); // 3 > 1 -> denied
     expect(calls).toHaveLength(0);
     expect(metrics.snapshot().gcloudFallbacks).toBe(1);
   });
 
-  it('cache-hit NÃO conta (sem custo Google no 2.º pedido igual)', async () => {
+  it('cache-hit does NOT count (no Google cost on the 2nd identical request)', async () => {
     const u = memUsage();
     const { engine, calls } = eng(u);
     await engine.synth(budgeted({ text: 'ola' }));
     await engine.synth(budgeted({ text: 'ola' })); // cache-hit
     expect(calls).toHaveLength(1);
-    expect(u.getMonthly('user', 'u1', '2026-07')).toBe(3); // contou 1 vez só
+    expect(u.getMonthly('user', 'u1', '2026-07')).toBe(3); // counted only once
   });
 
-  it('pool do PASSE usa o tier pelos seats (3 servidores -> pass3Monthly)', async () => {
+  it('PASS pool uses the tier by seats (3 servers -> pass3Monthly)', async () => {
     const u = memUsage();
-    u.addMonthly('pass', 'owner-1', '2026-07', 399); // pass3 = 400; sobra 1
+    u.addMonthly('pass', 'owner-1', '2026-07', 399); // pass3 = 400; 1 left
     const { engine, calls } = eng(u);
     const r = req({ text: 'ola', gcloudBudget: { scope: 'pass', key: 'owner-1', seats: 3 } });
-    await expect(engine.synth(r)).rejects.toThrow(); // 3 > 1 -> recusa (tier de 3s)
+    await expect(engine.synth(r)).rejects.toThrow(); // 3 > 1 -> denied (3-server tier)
     expect(calls).toHaveLength(0);
   });
 
-  it('backstop GLOBAL/dia estoura -> throw mesmo com pool mensal disponível', async () => {
+  it('GLOBAL/day backstop blows -> throw even with monthly pool available', async () => {
     const u = memUsage();
-    const { engine, calls } = eng(u, { dailyBudget: 2 }); // teto diário baixo
-    await expect(engine.synth(budgeted({ text: 'ola' }))).rejects.toThrow(); // 3 > 2 diário
+    const { engine, calls } = eng(u, { dailyBudget: 2 }); // low daily ceiling
+    await expect(engine.synth(budgeted({ text: 'ola' }))).rejects.toThrow(); // 3 > 2 daily
     expect(calls).toHaveLength(0);
   });
 
-  it('concorrência: 2 syntheses do MESMO pool não excedem o teto (race check-then-act)', async () => {
-    // fetch com barreira: ambos os pedidos passam a validação antes de a Google responder.
+  it('concurrency: 2 syntheses from the SAME pool do not exceed the ceiling (check-then-act race)', async () => {
+    // fetch with a barrier: both requests pass validation before Google responds.
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
     const calls: string[] = [];
@@ -249,7 +250,7 @@ describe('GCloudEngine — allowances no chokepoint (Fase 3)', () => {
     }) as unknown as typeof fetch;
 
     const u = memUsage();
-    // Pool mensal = 5: cabe UMA síntese de 3 chars, não duas (3+3=6 > 5).
+    // Monthly pool = 5: fits ONE synthesis of 3 chars, not two (3+3=6 > 5).
     const engine = new GCloudEngine('KEY', cache, {
       fetchImpl: impl,
       usage: u,
@@ -257,19 +258,19 @@ describe('GCloudEngine — allowances no chokepoint (Fase 3)', () => {
       now: FIXED_NOW,
     });
     const pool = { scope: 'user', key: 'u1' } as const;
-    // Textos DIFERENTES (chaves de cache distintas) mas o MESMO pool de orçamento.
+    // DIFFERENT texts (distinct cache keys) but the SAME budget pool.
     const p1 = engine.synth(req({ text: 'aaa', gcloudBudget: pool }));
     const p2 = engine.synth(req({ text: 'bbb', gcloudBudget: pool }));
     release();
     const results = await Promise.allSettled([p1, p2]);
 
-    // Só UMA pôde ir à Google; o pool nunca ultrapassa o teto.
+    // Only ONE could go to Google; the pool never exceeds the ceiling.
     expect(calls.length).toBe(1);
     expect(u.getMonthly('user', 'u1', '2026-07')).toBeLessThanOrEqual(5);
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
   });
 
-  it('síntese falhada devolve a reserva ao pool (refund)', async () => {
+  it('failed synthesis returns the reservation to the pool (refund)', async () => {
     const u = memUsage();
     const impl = (async () =>
       ({
@@ -289,7 +290,7 @@ describe('GCloudEngine — allowances no chokepoint (Fase 3)', () => {
     await expect(
       engine.synth(req({ text: 'ola', gcloudBudget: { scope: 'user', key: 'u1' } })),
     ).rejects.toThrow();
-    // Falhou -> não deve consumir orçamento.
+    // Failed -> must not consume budget.
     expect(u.getMonthly('user', 'u1', '2026-07')).toBe(0);
   });
 });

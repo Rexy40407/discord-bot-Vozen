@@ -1,14 +1,15 @@
 // src/voice/transcriptionSession.ts
 //
-// Orquestra a TRANSCRIÇÃO ao vivo de um canal de voz (Fase 4). Para cada locutor que
-// começa a falar: (1) GATE consent-first — só quem consentiu neste servidor é captado;
-// (2) capta a utterance (silêncio de 800ms fecha-a); (3) WAV -> sidecar Whisper -> texto;
-// (4) posta "**Nome:** texto" no canal (se não for ruído vazio). A CAPTURA em si (plumbing
-// Opus do receiver) fica num helper à parte (`makeReceiverCapture`) — cola de integração
-// espelhada do recorder — para a ORQUESTRAÇÃO acima ser pura e testável com fakes.
+// Orchestrates the live TRANSCRIPTION of a voice channel (Phase 4). For each speaker who
+// starts talking: (1) consent-first GATE — only those who consented on this server are
+// captured; (2) captures the utterance (800ms of silence closes it); (3) WAV -> Whisper
+// sidecar -> text; (4) posts "**Name:** text" in the channel (if it isn't empty noise). The
+// CAPTURE itself (the receiver's Opus plumbing) lives in a separate helper
+// (`makeReceiverCapture`) — integration glue mirrored from the recorder — so the
+// ORCHESTRATION above is pure and testable with fakes.
 //
-// Serialização de transcrição = a do próprio WhisperTranscriber (cap=1); aqui só evitamos
-// captar o MESMO locutor duas vezes em simultâneo.
+// Transcription serialization = that of WhisperTranscriber itself (cap=1); here we only avoid
+// capturing the SAME speaker twice at once.
 
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -21,7 +22,7 @@ import { isTranscribable, formatTranscript } from './transcriptRouting';
 import type { Transcript } from './whisperTranscriber';
 import { log } from '../logging/logger';
 
-/** Capta UMA vez de fala de um locutor; chama `onUtterance` por cada utterance fechada. */
+/** Captures ONE speaking turn from a speaker; calls `onUtterance` for each closed utterance. */
 export type CaptureFn = (
   userId: string,
   onUtterance: (pcm: Buffer) => void,
@@ -29,19 +30,19 @@ export type CaptureFn = (
 ) => Promise<void>;
 
 export interface TranscriptionSessionDeps {
-  /** GATE: a pessoa consentiu ser transcrita neste servidor? (hasSttConsent ligado à guild) */
+  /** GATE: did the person consent to being transcribed on this server? (hasSttConsent for the guild) */
   hasConsent: (userId: string) => boolean;
-  /** Nome a mostrar no canal para um locutor. */
+  /** Name to display in the channel for a speaker. */
   displayName: (userId: string) => string;
-  /** Transcreve um WAV (WhisperTranscriber.transcribe). */
+  /** Transcribes a WAV (WhisperTranscriber.transcribe). */
   transcribe: (wavPath: string) => Promise<Transcript>;
-  /** Posta a linha no canal (deve usar allowedMentions:{parse:[]}). */
+  /** Posts the line in the channel (must use allowedMentions:{parse:[]}). */
   post: (text: string) => Promise<void>;
-  /** PCM cru -> ficheiro WAV (pcmToWavFile). */
+  /** Raw PCM -> WAV file (pcmToWavFile). */
   toWav: (pcm: Buffer, outPath: string) => Promise<string>;
-  /** Capta a fala de um locutor (default: makeReceiverCapture; testes injetam um fake). */
+  /** Captures a speaker's speech (default: makeReceiverCapture; tests inject a fake). */
   capture: CaptureFn;
-  /** Dir temp para os WAV efémeros (default: os.tmpdir()). */
+  /** Temp dir for the ephemeral WAVs (default: os.tmpdir()). */
   tmpDir?: string;
 }
 
@@ -49,18 +50,18 @@ export class TranscriptionSession {
   private stopped = false;
   private readonly active = new Set<string>();
   private seq = 0;
-  // Componente aleatório por-instância: sem isto, duas sessões concorrentes (guildas
-  // diferentes) geravam o MESMO nome de ficheiro temporário (só o pid+seq variavam, e o
-  // seq de cada instância recomeça em 0) e podiam pisar-se a escrever o WAV uma da outra.
+  // Per-instance random component: without this, two concurrent sessions (different
+  // guilds) generated the SAME temporary file name (only pid+seq varied, and each
+  // instance's seq restarts at 0) and could clobber each other writing the WAV.
   private readonly id = Math.random().toString(36).slice(2, 8);
 
   constructor(private readonly deps: TranscriptionSessionDeps) {}
 
-  /** Reage a um locutor que começou a falar. Aplica o gate e capta+transcreve o turno. */
+  /** Reacts to a speaker who started talking. Applies the gate and captures+transcribes the turn. */
   async onSpeakingStart(userId: string): Promise<void> {
     if (this.stopped) return;
-    if (!this.deps.hasConsent(userId)) return; // consent-first: não-consentido nunca é captado
-    if (this.active.has(userId)) return; // já a captar este locutor
+    if (!this.deps.hasConsent(userId)) return; // consent-first: non-consented is never captured
+    if (this.active.has(userId)) return; // already capturing this speaker
     this.active.add(userId);
     const pending: Promise<void>[] = [];
     try {
@@ -77,7 +78,7 @@ export class TranscriptionSession {
     }
   }
 
-  /** Marca a sessão como parada: novos speaking-start passam a ser ignorados. */
+  /** Marks the session as stopped: new speaking-starts are now ignored. */
   stop(): void {
     this.stopped = true;
   }
@@ -106,45 +107,45 @@ export class TranscriptionSession {
   }
 }
 
-/** Nome dos WAV temporários de STT: prefixo próprio do bot -> seguro varrer por padrão. */
+/** Name of the STT temporary WAVs: the bot's own prefix -> safe to sweep by pattern. */
 const STT_TMP_RE = /^vozen-stt-[\w-]+\.wav$/;
-/** Idade mínima para considerar um temp órfão (um WAV vivo é apagado em ~2s). */
+/** Minimum age to consider a temp orphaned (a live WAV is deleted in ~2s). */
 const STT_ORPHAN_MIN_AGE_MS = 5 * 60_000;
 
 /**
- * Reconciliação de arranque (DATA-hygiene): apaga WAV temporários de STT que ficaram
- * ÓRFÃOS no tmpdir. handleUtterance apaga cada WAV no `finally`, mas um SIGKILL (OOM/deploy)
- * entre o `toWav` e o `finally`, ou um `rmSync` bloqueado no Windows, deixa gravação
- * consentida no disco além do "apagado imediatamente" prometido na PRIVACY §2.4 — a mesma
- * classe de falha que o sweep de clones (voiceCloneSweep) cobre e este não cobria.
+ * Startup reconciliation (DATA-hygiene): deletes STT temporary WAVs that were left
+ * ORPHANED in the tmpdir. handleUtterance deletes each WAV in the `finally`, but a SIGKILL
+ * (OOM/deploy) between `toWav` and the `finally`, or an `rmSync` blocked on Windows, leaves
+ * consented recording on disk beyond the "deleted immediately" promised in PRIVACY §2.4 — the
+ * same class of failure the clone sweep (voiceCloneSweep) covers and this one did not.
  *
- * Seguro por dois motivos: (1) o prefixo `vozen-stt-` é do próprio bot; (2) o guard de
- * idade (>5 min) nunca apanha um WAV vivo, mesmo que outro processo Vozen partilhe o tmpdir.
- * Corre no ClientReady (antes de qualquer sessão STT), best-effort. Devolve o nº apagado.
+ * Safe for two reasons: (1) the `vozen-stt-` prefix is the bot's own; (2) the age guard
+ * (>5 min) never catches a live WAV, even if another Vozen process shares the tmpdir.
+ * Runs on ClientReady (before any STT session), best-effort. Returns the number deleted.
  */
 export function sweepOrphanSttTemps(dir: string = tmpdir(), now: number = Date.now()): number {
   let entries: string[];
   try {
     entries = readdirSync(dir);
   } catch {
-    return 0; // tmpdir inacessível — no-op
+    return 0; // tmpdir inaccessible — no-op
   }
   let removed = 0;
   for (const f of entries) {
     if (!STT_TMP_RE.test(f)) continue;
     const p = join(dir, f);
     try {
-      if (now - statSync(p).mtimeMs < STT_ORPHAN_MIN_AGE_MS) continue; // recente -> pode estar vivo
+      if (now - statSync(p).mtimeMs < STT_ORPHAN_MIN_AGE_MS) continue; // recent -> may be alive
       unlinkSync(p);
       removed++;
     } catch {
-      // best-effort: já removido / bloqueado
+      // best-effort: already removed / blocked
     }
   }
   return removed;
 }
 
-// ── Captura real (integração — plumbing Opus do receiver, espelhado do recorder) ──────────
+// ── Real capture (integration — the receiver's Opus plumbing, mirrored from the recorder) ──────────
 export interface ReceiverCaptureDeps {
   subscribe?: (connection: VoiceConnection, userId: string) => Readable;
   makeDecoder?: () => Duplex;
@@ -161,10 +162,10 @@ function defaultMakeDecoder(): Duplex {
 }
 
 /**
- * Constrói a CaptureFn de produção sobre uma VoiceConnection: subscreve o SSRC do locutor
- * (AfterSilence 800ms), descodifica opus->PCM 48k estéreo, agrupa em utterances com o
- * UtteranceCollector e emite cada uma. Resolve quando o Discord fecha o stream (o locutor
- * parou). O próximo speaking-start re-subscreve.
+ * Builds the production CaptureFn over a VoiceConnection: subscribes to the speaker's SSRC
+ * (AfterSilence 800ms), decodes opus->PCM 48k stereo, groups into utterances with the
+ * UtteranceCollector and emits each one. Resolves when Discord closes the stream (the speaker
+ * stopped). The next speaking-start re-subscribes.
  */
 export function makeReceiverCapture(
   connection: VoiceConnection,
@@ -194,8 +195,8 @@ export function makeReceiverCapture(
         const last = collector.flush();
         if (last) onUtterance(last.pcm);
         decoder.removeAllListeners();
-        // Destruir SEMPRE a fonte: um erro do lado do decoder chega aqui sem passar pelo
-        // stopBoth, e sem isto a subscription do receiver (opus) ficava viva (leak).
+        // ALWAYS destroy the source: an error on the decoder side reaches here without going
+        // through stopBoth, and without this the receiver subscription (opus) stayed alive (leak).
         opus.destroy();
         resolve();
       };

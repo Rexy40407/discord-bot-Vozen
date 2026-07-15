@@ -5,21 +5,21 @@ import { normalizeAnswer, seededIndex } from './util';
 
 const MAX_GUESSES = 8;
 const IDLE_MS = 180_000;
-// Byte ESC do ANSI (construído, não literal no código-fonte, para não haver bytes de
-// controlo crus no ficheiro). Códigos de FUNDO do Discord: 42=verde, 43=amarelo/gold,
-// 40=cinza-escuro; texto a preto/branco (30/37) e negrito (1). É assim que o palpite
-// vira LETRAS coloridas (como o Wordle real), em vez de quadrados emoji + letras à parte.
+// ANSI ESC byte (built, not a literal in source, so there are no raw control
+// bytes in the file). Discord BACKGROUND codes: 42=green, 43=yellow/gold,
+// 40=dark-gray; black/white text (30/37) and bold (1). This is how the guess
+// becomes colored LETTERS (like the real Wordle), instead of emoji squares + separate letters.
 const ESC = String.fromCharCode(27);
 const SGR = { g: '1;30;42', y: '1;30;43', x: '1;37;40' } as const;
 
-/** Estado de cada célula: verde (certo), amarelo (existe), cinza (ausente). */
+/** State of each cell: green (correct), yellow (present), gray (absent). */
 type CellState = 'g' | 'y' | 'x';
 
 /**
- * "Termo/Wordle" — colaborativo: qualquer um escreve uma palavra de 5 letras; o Vozen
- * responde com as LETRAS COLORIDAS (verde=certa no sítio, amarelo=existe/sítio errado,
- * cinza=não existe) num bloco ```ansi. Quem acertar a palavra ganha o ponto; {MAX}
- * tentativas partilhadas. Jogo de TEXTO. Só mensagens com EXATAMENTE 5 letras contam.
+ * "Termo/Wordle" — collaborative: anyone types a 5-letter word; Vozen
+ * replies with the COLORED LETTERS (green=right spot, yellow=present/wrong spot,
+ * gray=not in word) in a ```ansi block. Whoever guesses the word wins the point; {MAX}
+ * shared attempts. TEXT game. Only messages with EXACTLY 5 letters count.
  */
 class WordleGame implements Game {
   readonly id = 'wordle';
@@ -27,10 +27,10 @@ class WordleGame implements Game {
   private guesses = 0;
   private over = false;
   private moves = 0;
-  /** Letras JÁ SABIDAS: `present` estão na palavra; `absent` foram descartadas. */
+  /** Letters ALREADY KNOWN: `present` are in the word; `absent` were ruled out. */
   private readonly present = new Set<string>();
   private readonly absent = new Set<string>();
-  /** Histórico de palpites (letras + estados) — para desenhar a grelha completa. */
+  /** Guess history (letters + states) — to draw the full grid. */
   private readonly rows: { letters: string; states: CellState[] }[] = [];
 
   async start(ctx: GameContext): Promise<void> {
@@ -52,8 +52,8 @@ class WordleGame implements Game {
   }
 
   /**
-   * Estado de cada célula do palpite (regras do Wordle, ciente da contagem de letras
-   * repetidas): verde=certo no sítio, amarelo=existe/sítio errado, cinza=ausente.
+   * State of each guess cell (Wordle rules, aware of repeated-letter counts):
+   * green=right spot, yellow=present/wrong spot, gray=absent.
    */
   private computeStates(guess: string): CellState[] {
     const state: CellState[] = ['x', 'x', 'x', 'x', 'x'];
@@ -76,15 +76,15 @@ class WordleGame implements Game {
     return state;
   }
 
-  /** Há tiles do wordle carregados? (basta o cinza 'a' existir.) */
+  /** Are the wordle tiles loaded? (the gray 'a' existing is enough.) */
   private hasEmojis(ctx: GameContext): boolean {
     return ctx.emoji('wxa') !== undefined;
   }
 
   /**
-   * Grelha COMPLETA (todos os palpites feitos), cada letra um tile-emoji colorido — o
-   * verdadeiro aspeto do Wordle, e funciona no MOBILE (o ANSI não tem cor lá). Devolve
-   * null se faltar algum tile (ex. letra fora de a–z) para o chamador cair no ANSI.
+   * FULL grid (all guesses made), each letter a colored emoji-tile — the
+   * true Wordle look, and it works on MOBILE (ANSI has no color there). Returns
+   * null if any tile is missing (e.g. letter outside a–z) so the caller falls back to ANSI.
    */
   private renderGridEmoji(ctx: GameContext): string | null {
     const lines: string[] = [];
@@ -100,7 +100,7 @@ class WordleGame implements Game {
     return lines.join('\n');
   }
 
-  /** Grelha completa em ANSI (fallback sem tiles): células coloridas em code block. */
+  /** Full grid in ANSI (fallback without tiles): colored cells in a code block. */
   private renderGridAnsi(): string {
     const rows = this.rows.map((r) =>
       [...r.letters.toUpperCase()]
@@ -114,7 +114,7 @@ class WordleGame implements Game {
     return (this.hasEmojis(ctx) ? this.renderGridEmoji(ctx) : null) ?? this.renderGridAnsi();
   }
 
-  /** Regista as letras deste palpite: na palavra (present) ou descartadas (absent). */
+  /** Records this guess's letters: in the word (present) or ruled out (absent). */
   private trackLetters(guess: string): void {
     for (const l of new Set(guess)) {
       if (this.target.includes(l)) this.present.add(l);
@@ -123,8 +123,8 @@ class WordleGame implements Game {
   }
 
   /**
-   * "Teclado" de estado sob o palpite: letras JÁ NA palavra (verde) e letras
-   * DESCARTADAS (riscadas). Linha vazia ('') enquanto não se sabe nada. Ordenadas.
+   * Status "keyboard" under the guess: letters ALREADY IN the word (green) and
+   * RULED-OUT letters (struck through). Empty line ('') while nothing is known. Sorted.
    */
   private keyboard(ctx: GameContext): string {
     const up = (set: Set<string>): string =>
@@ -141,7 +141,7 @@ class WordleGame implements Game {
   onMessage(ctx: GameContext, msg: GameMessage): void {
     if (this.over) return;
     const g = normalizeAnswer(msg.content).replace(/[^a-zà-ſ]/g, '');
-    if (g.length !== 5) return; // so palpites de 5 letras contam
+    if (g.length !== 5) return; // only 5-letter guesses count
     this.armIdle(ctx);
     this.guesses++;
     this.rows.push({ letters: g, states: this.computeStates(g) });
@@ -174,6 +174,6 @@ export const wordleDef: GameDefinition = {
   nameKey: 'game.wordle.name',
   descKey: 'game.wordle.desc',
   needsVoice: false,
-  premium: true, // 💎 Premium (Plus do próprio OU Premium do servidor) — gate em handleGame
+  premium: true, // 💎 Premium (user's own Plus OR server Premium) — gated in handleGame
   create: () => new WordleGame(),
 };

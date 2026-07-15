@@ -26,11 +26,11 @@ import { t } from '../i18n/index';
 import { log } from '../logging/logger';
 
 /**
- * Recolhe a MEDIA a anunciar de uma mensagem: URLs no texto (link/gif, via
- * collectUrlMedia — mesmo RE_URL do cleanText), anexos por tipo (imagem/vídeo/…) e
- * stickers (pelo nome). A ordem é URLs -> anexos -> stickers. `?.values()` funciona
- * tanto para a Collection do discord.js como para o array dos mocks de teste; ausente
- * -> vazio. PURO em relação à `message` (só lê).
+ * Collects the MEDIA to announce from a message: URLs in the text (link/gif, via
+ * collectUrlMedia — same RE_URL as cleanText), attachments by type (image/video/…) and
+ * stickers (by name). The order is URLs -> attachments -> stickers. `?.values()` works
+ * both for the discord.js Collection and for the test mocks' array; absent
+ * -> empty. PURE with respect to `message` (read-only).
  */
 function collectMessageMedia(message: Message): MediaItem[] {
   const content = message.content ?? '';
@@ -42,10 +42,10 @@ function collectMessageMedia(message: Message): MediaItem[] {
 }
 
 /**
- * Autojoin: quando o Vozen ainda não está numa call e o autor está num canal de voz,
- * entra sozinho nesse canal (se autojoin ON e o bot tiver Connect/Speak). Devolve o
- * player criado, ou undefined se não deu para entrar (autojoin OFF, autor fora de voz,
- * sem permissões). Falha silenciosa via try/catch — nunca crasha o handler.
+ * Autojoin: when Vozen is not yet in a call and the author is in a voice channel,
+ * it joins that channel on its own (if autojoin ON and the bot has Connect/Speak). Returns the
+ * created player, or undefined if it could not join (autojoin OFF, author not in voice,
+ * no permissions). Silent failure via try/catch — never crashes the handler.
  */
 function maybeAutojoin(
   message: Message,
@@ -67,7 +67,7 @@ function maybeAutojoin(
       channel.id,
       message.guild.voiceAdapterCreator,
     );
-    becomeSpeakerIfStage(channel); // no-op se não for um canal de palco
+    becomeSpeakerIfStage(channel); // no-op if it is not a stage channel
     return player;
   } catch (err) {
     log.warn('[messageHandler] autojoin failed (ignored)', err);
@@ -76,35 +76,35 @@ function maybeAutojoin(
 }
 
 /**
- * Feedback VISÍVEL de rate-limit: reage com 🐢 à mensagem que foi limitada. Best-effort —
- * precisa de AddReactions; sem permissão/em falha, ignora-se (nunca parte o handler nem
- * enfileira rejeições). Antes, o drop do rate-limit era 100% silencioso e parecia "o bot
- * não fala"; a reação diz ao utilizador que está a ir depressa demais.
+ * VISIBLE rate-limit feedback: reacts with 🐢 to the message that was limited. Best-effort —
+ * needs AddReactions; without permission/on failure, it is ignored (never breaks the handler nor
+ * queues rejections). Before, the rate-limit drop was 100% silent and looked like "the bot
+ * doesn't speak"; the reaction tells the user they are going too fast.
  */
 function reactRateLimited(message: Message): void {
   try {
     void Promise.resolve(message.react?.('🐢')).catch(() => {});
   } catch {
-    /* best-effort — ignora qualquer erro síncrono */
+    /* best-effort — ignore any synchronous error */
   }
 }
 
 /**
- * Janela do cooldown do FEEDBACK de rate-limit (não confundir com a janela do próprio
- * RateLimiter — são independentes): 1 minuto. Ver RateLimitFeedbackCooldown.
+ * Cooldown window for the rate-limit FEEDBACK (not to be confused with the RateLimiter's own
+ * window — they are independent): 1 minute. See RateLimitFeedbackCooldown.
  */
 export const RATE_LIMIT_FEEDBACK_WINDOW_MS = 60 * 1000;
-/** Teto de entradas (anti-crescimento); evict da mais antiga ao exceder — igual ao GreetCooldown/DuplicateTracker. */
+/** Entry cap (anti-growth); evict the oldest on overflow — same as GreetCooldown/DuplicateTracker. */
 const RATE_LIMIT_FEEDBACK_MAX_ENTRIES = 10_000;
 
 /**
- * Cooldown do feedback VISÍVEL de rate-limit (🐢 + log), por (guild, user) — ABUSE-02.
- * Sem isto, um flood num canal autoread virava UMA reação REST + UMA escrita de log POR
- * MENSAGEM largada (tempestade de I/O capaz de encher o disco). A MÉTRICA
- * `messagesRateLimited` continua a contar TODOS os drops (ver handleMessage) — só o
- * feedback visível é que é throttled. Mesmo padrão cap+evict de GreetCooldown/
- * DuplicateTracker: janela FIXA (um drop suprimido não a estende), relógio injetável
- * para testes, Map preserva ordem de inserção -> evict simples da mais antiga.
+ * Cooldown for the VISIBLE rate-limit feedback (🐢 + log), per (guild, user) — ABUSE-02.
+ * Without this, a flood in an autoread channel became ONE REST reaction + ONE log write PER
+ * dropped MESSAGE (an I/O storm capable of filling the disk). The `messagesRateLimited`
+ * METRIC still counts ALL drops (see handleMessage) — only the
+ * visible feedback is throttled. Same cap+evict pattern as GreetCooldown/
+ * DuplicateTracker: FIXED window (a suppressed drop does not extend it), injectable clock
+ * for tests, Map preserves insertion order -> simple evict of the oldest.
  */
 export class RateLimitFeedbackCooldown {
   private readonly last = new Map<string, number>();
@@ -116,16 +116,16 @@ export class RateLimitFeedbackCooldown {
   }
 
   /**
-   * O feedback a (guild, user) deve sair AGORA? True se nunca notificado ou se já
-   * passou >= RATE_LIMIT_FEEDBACK_WINDOW_MS desde a última notificação — regista o
-   * instante (consome a janela). False dentro da janela, SEM renovar o timestamp.
+   * Should the feedback to (guild, user) go out NOW? True if never notified or if
+   * >= RATE_LIMIT_FEEDBACK_WINDOW_MS has passed since the last notification — records the
+   * instant (consumes the window). False within the window, WITHOUT renewing the timestamp.
    */
   shouldNotify(guildId: string, userId: string): boolean {
     const key = RateLimitFeedbackCooldown.keyOf(guildId, userId);
     const nowMs = this.now();
     const prev = this.last.get(key);
     if (prev !== undefined && nowMs - prev < RATE_LIMIT_FEEDBACK_WINDOW_MS) return false;
-    this.last.delete(key); // reinsere no fim (MRU) para o evict acertar na mais antiga
+    this.last.delete(key); // re-insert at the end (MRU) so the evict hits the oldest
     this.last.set(key, nowMs);
     if (this.last.size > RATE_LIMIT_FEEDBACK_MAX_ENTRIES) {
       const oldest = this.last.keys().next().value as string | undefined;
@@ -135,35 +135,35 @@ export class RateLimitFeedbackCooldown {
   }
 }
 
-// Instância partilhada por processo (estado em memória, não persiste — reset no
-// restart é aceitável, mesmo trade-off do GreetCooldown/DuplicateTracker). Não vive em
-// BotDeps porque este ficheiro é o único consumidor (âmbito do plano 030).
+// Instance shared per process (in-memory state, does not persist — reset on
+// restart is acceptable, same trade-off as GreetCooldown/DuplicateTracker). Does not live in
+// BotDeps because this file is the only consumer (scope of plan 030).
 const rateLimitFeedbackCooldown = new RateLimitFeedbackCooldown();
 
 export async function handleMessage(message: Message, deps: BotDeps): Promise<void> {
   try {
     if (!message.guild || !message.guildId) return;
-    // Client ainda não READY (client.user null): não há identidade nem sessão de voz
-    // — ignora a mensagem. Captura `me` UMA vez (antes usávamos `client.user!` mais
-    // abaixo, que contradizia este guard e lançava se chegasse uma mensagem pré-READY).
+    // Client not READY yet (client.user null): there is no identity nor voice session
+    // — ignore the message. Capture `me` ONCE (before we used `client.user!` further
+    // down, which contradicted this guard and threw if a pre-READY message arrived).
     const me = deps.client.user;
     if (!me) return;
-    // O Vozen NUNCA se lê a si próprio — anti-loop, independentemente do read_bots.
+    // Vozen NEVER reads itself — anti-loop, regardless of read_bots.
     if (message.author.id === me.id) return;
 
-    // Kill-switch da guild e gate de bots ANTES do hook dos jogos. O kill-switch
-    // (/config enabled:off) tem de parar TUDO — incluindo um jogo /game a decorrer
-    // (senão continuava a consumir mensagens e a falar). E as mensagens de OUTROS
-    // bots/webhooks só devem chegar ao jogo (como palpites) se read_bots estiver ON.
+    // Guild kill-switch and bot gate BEFORE the games hook. The kill-switch
+    // (/config enabled:off) must stop EVERYTHING — including a running /game
+    // (otherwise it would keep consuming messages and speaking). And messages from OTHER
+    // bots/webhooks should only reach the game (as guesses) if read_bots is ON.
     const cfg = getGuildConfig(deps.db, message.guildId);
     if (!cfg.enabled) return;
     if (message.author.bot && !cfg.readBots) return;
 
-    // Minijogos (/game): se há um jogo ativo NO CANAL desta mensagem, entrega-a ao
-    // jogo (um potencial palpite) e NÃO a lê em voz alta — as respostas dos jogadores
-    // não são TTS. Colocado ANTES da auto-leitura/rate-limit (mas DEPOIS do kill-switch/
-    // read-bots acima): um palpite não deve gastar rate-limit nem exigir canal de
-    // auto-leitura configurado. handleMessage devolve true = consumida -> saímos.
+    // Minigames (/game): if there is an active game IN THE CHANNEL of this message, hand it to
+    // the game (a potential guess) and do NOT read it aloud — players' answers
+    // are not TTS. Placed BEFORE auto-read/rate-limit (but AFTER the kill-switch/
+    // read-bots above): a guess should not spend rate-limit nor require a configured
+    // auto-read channel. handleMessage returns true = consumed -> we exit.
     if (
       deps.games?.handleMessage({
         guildId: message.guildId,
@@ -173,18 +173,18 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
         content: message.content ?? '',
       })
     ) {
-      // Observabilidade do routing dos jogos: uma partida em THREAD só funciona se as
-      // mensagens da thread chegarem aqui (channelId == id da thread). Se um dia isto
-      // deixar de acontecer, os palpites falhariam em SILÊNCIO — este log torna o
-      // caminho visível (confirma que o jogo está a receber input). log.debug (não
-      // info — ABUSE-02): dispara POR MENSAGEM enquanto o jogo decorre; a nível info
-      // um jogo movimentado enchia o log persistente. LOG_LEVEL=debug continua a ver.
+      // Observability of the games routing: a game in a THREAD only works if the
+      // thread's messages reach here (channelId == the thread's id). If one day this
+      // stops happening, the guesses would fail SILENTLY — this log makes the
+      // path visible (confirms the game is receiving input). log.debug (not
+      // info — ABUSE-02): fires PER MESSAGE while the game runs; at info level
+      // a busy game would fill the persistent log. LOG_LEVEL=debug still sees it.
       log.debug(`[game] message consumed in channel ${message.channelId}`);
       return;
     }
 
-    // Há algo a ler quando há TEXTO ou MEDIA (um .gif/imagem/sticker sem texto também
-    // é anunciado). Sem nenhum dos dois -> nada a fazer.
+    // There is something to read when there is TEXT or MEDIA (a .gif/image/sticker without text is
+    // also announced). Without either -> nothing to do.
     const media = collectMessageMedia(message);
     if (!message.content && media.length === 0) return;
 
@@ -196,27 +196,27 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     });
     const isReplyToBot =
       message.reference?.messageId != null && message.mentions.repliedUser?.id === me.id;
-    // text-in-voice: mensagem enviada no chat de texto DENTRO do canal de voz onde o
-    // Vozen está agora (o texto do canal de voz tem channelId == id do canal de voz).
+    // text-in-voice: message sent in the text chat INSIDE the voice channel where
+    // Vozen is now (the voice channel's text has channelId == the voice channel's id).
     const botVoiceChannelId = message.guild.members?.me?.voice?.channelId ?? null;
     const isTextInVoice =
       cfg.textInVoice && botVoiceChannelId != null && botVoiceChannelId === message.channelId;
 
     if (!isAutoreadChannel && !isMention && !isReplyToBot && !isTextInVoice) return;
 
-    // Gating por role: se a guild definiu um role permitido, so o autor com esse
-    // role e lido por auto-leitura (cobre canal, mencao e resposta). Sem role
-    // (null) mantem-se o comportamento atual (sem restricao). Membro ausente -> ignora.
-    // Nota: aplica-se a /tts? Nao. /tts e uma accao explicita do utilizador (escreve
-    // o comando), nao auto-leitura, por isso o gating de role e so para mensagens.
+    // Role gating: if the guild defined an allowed role, only the author with that
+    // role is read by auto-read (covers channel, mention and reply). Without a role
+    // (null) the current behavior is kept (no restriction). Absent member -> ignore.
+    // Note: does it apply to /tts? No. /tts is an explicit user action (they type
+    // the command), not auto-read, so role gating is only for messages.
     if (cfg.ttsRoleId) {
       const member = message.member;
       if (!member || !member.roles.cache.has(cfg.ttsRoleId)) return;
     }
 
-    // Opt-out por utilizador: so silencia a leitura PASSIVA (canal de auto-leitura OU
-    // chat-em-voz). Uma mencao/reply ao bot e uma accao EXPLICITA do utilizador (como
-    // /tts), por isso NAO e bloqueada pelo opt-out — so a leitura automatica e que e.
+    // Per-user opt-out: only silences PASSIVE reading (auto-read channel OR
+    // text-in-voice). A mention/reply to the bot is an EXPLICIT user action (like
+    // /tts), so it is NOT blocked by opt-out — only automatic reading is.
     if (
       (isAutoreadChannel || isTextInVoice) &&
       !isMention &&
@@ -226,16 +226,16 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       return;
     }
 
-    // gating: jogador ativo nesta guild. Com autojoin ON, se o Vozen ainda não está
-    // numa call e o autor está num canal de voz (e o bot tem Connect/Speak), entra
-    // sozinho no canal do autor — em vez de exigir um /join manual.
+    // gating: active player in this guild. With autojoin ON, if Vozen is not yet
+    // in a call and the author is in a voice channel (and the bot has Connect/Speak), it joins
+    // the author's channel on its own — instead of requiring a manual /join.
     let player = getPlayer(deps, message.guildId);
     if (!player) {
       player = maybeAutojoin(message, deps, cfg.autojoin);
       if (!player) return;
     }
 
-    // limpeza com caches da guild
+    // cleanup with the guild's caches
     const cleaned = cleanText(message.content ?? '', {
       maxChars: cfg.maxChars,
       resolveUser: (id: string) =>
@@ -247,39 +247,39 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
         return ch && 'name' in ch ? (ch.name as string) : 'channel';
       },
     });
-    // Guard de vazio endurecido: exige pelo menos UMA letra ou numero (\p{L}\p{N}) no
-    // corpo — OU media a anunciar (um gif/imagem/sticker sem texto é falado na mesma).
-    // Cobre o vazio '' e texto que ficou só com pontuação/símbolos/residuo zero-width
-    // (rede de segurança do strip de emoji): nada disso é "legível". Sem corpo legível
-    // E sem media -> não vale sintetizar.
+    // Hardened empty guard: requires at least ONE letter or number (\p{L}\p{N}) in the
+    // body — OR media to announce (a gif/image/sticker without text is spoken anyway).
+    // Covers the empty '' and text left with only punctuation/symbols/zero-width residue
+    // (the emoji strip's safety net): none of that is "readable". Without a readable body
+    // AND without media -> not worth synthesizing.
     if (!/[\p{L}\p{N}]/u.test(cleaned) && media.length === 0) return;
 
-    // rate-limit por user (limiter persistente por guild). Corre AGORA — DEPOIS do guard de
-    // texto legível — para que uma mensagem que nunca ia ser falada (emoji/link/vazio) NÃO
-    // queime o orçamento e silencie a mensagem legível seguinte (bug antigo: o rate-limit
-    // corria antes do cleanText). O drop é VISÍVEL: reação 🐢 + métrica + log — antes era
-    // um `return` silencioso e parecia "o bot não fala".
+    // per-user rate-limit (persistent per-guild limiter). Runs NOW — AFTER the readable-text
+    // guard — so that a message that was never going to be spoken (emoji/link/empty) does NOT
+    // burn the budget and silence the next readable message (old bug: the rate-limit
+    // ran before cleanText). The drop is VISIBLE: 🐢 reaction + metric + log — before it was
+    // a silent `return` and looked like "the bot doesn't speak".
     const rl = getLimiter(deps, message.guildId, cfg.ratePerMin);
     if (!rl.allow(message.author.id, Date.now())) {
-      // A MÉTRICA conta TODOS os drops (nunca throttled — é o contador real de abuso).
+      // The METRIC counts ALL drops (never throttled — it is the real abuse counter).
       metrics.inc('messagesRateLimited');
-      // log.debug (não info — ABUSE-02): um flood dropava UM log POR MENSAGEM a nível
-      // info, tempestade de escrita no log persistente. LOG_LEVEL=debug continua a ver.
+      // log.debug (not info — ABUSE-02): a flood dropped ONE log PER MESSAGE at info
+      // level, a write storm on the persistent log. LOG_LEVEL=debug still sees it.
       log.debug(`[rate] message from ${message.author.id} dropped (limit ${cfg.ratePerMin}/min)`);
-      // Feedback VISÍVEL (🐢, chamada REST) throttled por (guild,user) — ABUSE-02: sem
-      // isto, o mesmo flood gerava uma reação REST por mensagem largada. Só a 1.ª de
-      // cada janela reage; as seguintes ficam silenciosas (a métrica acima não é afetada).
+      // VISIBLE feedback (🐢, REST call) throttled per (guild,user) — ABUSE-02: without
+      // this, the same flood generated one REST reaction per dropped message. Only the 1st of
+      // each window reacts; the following ones stay silent (the metric above is not affected).
       if (rateLimitFeedbackCooldown.shouldNotify(message.guildId, message.author.id)) {
         reactRateLimited(message);
       }
       return;
     }
 
-    // Anti-spam (opt-in por guild, OFF por defeito): não lê mensagens spamadas —
-    // repetição massiva de tokens NA mensagem (ex. "POKEBOLAS ×39") OU a MESMA
-    // mensagem grande repetida pela mesma pessoa em janela curta. Corre sobre o texto
-    // JÁ limpo/truncado; ANTES do lastSpeaker/bumpTalk (uma msg saltada não conta). O
-    // tracker de duplicados só existe com o mapa injetado (testes antigos → sem dup).
+    // Anti-spam (opt-in per guild, OFF by default): does not read spammed messages —
+    // massive token repetition IN the message (e.g. "POKEBOLAS ×39") OR the SAME
+    // large message repeated by the same person in a short window. Runs over the text
+    // ALREADY cleaned/truncated; BEFORE lastSpeaker/bumpTalk (a skipped msg does not count). The
+    // duplicate tracker only exists with the injected map (old tests → no dup).
     if (cfg.antispam) {
       const dup =
         deps.dupTracker?.isDuplicateSpam(message.guildId, message.author.id, cleaned, Date.now()) ??
@@ -292,12 +292,12 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       }
     }
 
-    // Blocklist (buscada uma vez; reutilizada na redação do req mais abaixo).
+    // Blocklist (fetched once; reused in the req redaction further below).
     const blocklist = getBlocklist(deps.db, message.guildId);
-    // Guard de corpo-só-bloqueado: se o CORPO do utilizador, depois de tirar as palavras
-    // bloqueadas, fica sem nada legível E não há media, não vale a pena falar — nem sequer
-    // anunciar "{nome} disse" (xsaid) para uma mensagem que era só palavra(s) banida(s).
-    // (A redação real do que é sintetizado — incl. gírias expandidas — faz-se no req.)
+    // Body-only-blocked guard: if the user's BODY, after removing the blocked
+    // words, has nothing readable left AND there is no media, it is not worth speaking — not even
+    // announcing "{name} said" (xsaid) for a message that was only banned word(s).
+    // (The actual redaction of what is synthesized — incl. expanded slang — happens in the req.)
     if (
       blocklist.length > 0 &&
       media.length === 0 &&
@@ -305,24 +305,24 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     )
       return;
 
-    // Personalizacao de palavras e agora so via /config pronunciation (aplicada
-    // dentro do prepareSpeech). O texto limpo segue tal e qual como base.
+    // Word personalization is now only via /config pronunciation (applied
+    // inside prepareSpeech). The cleaned text passes through as-is as the base.
     const personal = cleaned;
 
-    // Expansao de girias EN, pronuncia da guild e escolha de voz(es) — incl. a
-    // sintese MISTURADA quando a mensagem junta lingua-base + girias EN conhecidas
-    // (a parte non-slang e detetada por si; as girias EN saem em voz inglesa como
-    // segmento separado). A blocklist e aplicada depois, por REDACAO do req.
+    // EN slang expansion, guild pronunciation and voice(s) choice — incl. the
+    // MIXED synthesis when the message combines base-language + known EN slang
+    // (the non-slang part is detected on its own; the EN slang comes out in an English voice as a
+    // separate segment). The blocklist is applied afterwards, by REDACTING the req.
     const userVoice = getUserVoice(deps.db, message.guildId, message.author.id);
-    // xsaid: anuncia "{nome} disse …" antes da mensagem — MAS não repete o nome quando o
-    // MESMO autor manda mensagens SEGUIDAS (compara com o último locutor lido nesta guild).
-    // A leitura de `lastSpeaker` e a escrita (mais abaixo) ficam no mesmo bloco síncrono
-    // (sem await entre elas), por isso não há corrida (evita o bug #99 do concorrente).
+    // xsaid: announces "{name} said …" before the message — BUT does not repeat the name when the
+    // SAME author sends CONSECUTIVE messages (compares with the last speaker read in this guild).
+    // The read of `lastSpeaker` and the write (further down) are in the same synchronous block
+    // (no await between them), so there is no race (avoids the competitor's bug #99).
     const lastSpeaker = deps.lastSpeaker?.get(message.guildId);
     const announce = cfg.xsaid && lastSpeaker !== message.author.id;
-    // Nome a anunciar: apelido fonético (/voice nickname), senão o displayName do
-    // servidor, senão o username — sempre SANITIZADO p/ TTS (tira emojis/símbolos).
-    // Se nada sobra legível, `speakerName` fica '' e o xsaid não anuncia (sem nome).
+    // Name to announce: phonetic nickname (/voice nickname), otherwise the server's
+    // displayName, otherwise the username — always SANITIZED for TTS (strips emojis/symbols).
+    // If nothing readable is left, `speakerName` stays '' and xsaid does not announce (no name).
     const rawName =
       getNickname(deps.db, message.guildId, message.author.id) ??
       message.member?.displayName ??
@@ -331,7 +331,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     const speakerName = sanitizeSpeakerName(rawName);
     const { req } = prepareSpeech({
       personal,
-      // Pronúncias do autor PRIMEIRO (o termo dele ganha) + as do SERVIDOR a seguir.
+      // The author's pronunciations FIRST (their term wins) + the SERVER's next.
       pronunciations: [
         ...getUserPronunciations(deps.db, message.author.id),
         ...getServerPronunciations(deps.db, message.guildId),
@@ -344,11 +344,11 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       media,
       announceSpeaker: announce ? speakerName : undefined,
     });
-    // Motor escolhido pelo autor (google default | piper | kokoro | gcloud). O resolver
-    // partilhado despromove 'gcloud'->'google' se o Premium não estiver ativo (gate
-    // runtime) e (Fase 3) anexa o descritor de orçamento — os DOIS campos (engine +
-    // gcloudBudget) são exatamente o que o ResolvedEngine devolve. O PerUserEngineRouter
-    // despacha por req.engine.
+    // Engine chosen by the author (google default | piper | kokoro | gcloud). The shared
+    // resolver demotes 'gcloud'->'google' if Premium is not active (runtime
+    // gate) and (Phase 3) attaches the budget descriptor — the TWO fields (engine +
+    // gcloudBudget) are exactly what ResolvedEngine returns. The PerUserEngineRouter
+    // dispatches by req.engine.
     const resolvedEngine = resolveUserEngine(
       deps.db,
       message.guildId,
@@ -359,10 +359,10 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     req.engine = resolvedEngine.engine;
     req.gcloudBudget = resolvedEngine.gcloudBudget;
 
-    // Blocklist: em vez de saltar a mensagem inteira, REDIGE as palavras bloqueadas do
-    // texto REALMENTE falado (req.text + segmentos) — o Vozen lê a mensagem SEM dizer
-    // essas palavras. Se depois de redigir não sobra nada legível (a mensagem era só
-    // palavra(s) bloqueada(s)), não fala. (`blocklist` já foi buscada no guard acima.)
+    // Blocklist: instead of skipping the whole message, REDACTS the blocked words from the
+    // text ACTUALLY spoken (req.text + segments) — Vozen reads the message WITHOUT saying
+    // those words. If after redacting nothing readable is left (the message was only
+    // blocked word(s)), it does not speak. (`blocklist` was already fetched in the guard above.)
     const redacted = redactRequest(req, blocklist);
     const readable =
       hasReadableText(redacted.text) ||
@@ -370,19 +370,19 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     if (!readable) return;
 
     const outReq = redacted;
-    // Efeito de voz (premium): aplicado ao WAV pelo EffectEngine (motor externo).
+    // Voice effect (premium): applied to the WAV by the EffectEngine (external engine).
     outReq.effect = getVoiceEffect(deps.db, message.guildId, message.author.id);
-    // Clone de voz (premium): se o autor tem clone LIGADO, o CloneEngine sintetiza na
-    // voz dele. Sem motor instalado, o engine ignora e serve a voz normal.
+    // Voice clone (premium): if the author has the clone ON, the CloneEngine synthesizes in
+    // their voice. With no engine installed, the engine ignores it and serves the normal voice.
     const clone = getClone(deps.db, message.author.id);
     if (clone?.enabled) outReq.cloneRef = clone.samplePath;
 
-    // Passou tudo: esta mensagem VAI ser lida. Regista o autor como último locutor
-    // (só agora — uma mensagem bloqueada/ignorada não conta para a supressão do xsaid).
+    // Everything passed: this message WILL be read. Records the author as the last speaker
+    // (only now — a blocked/ignored message does not count for the xsaid suppression).
     deps.lastSpeaker?.set(message.guildId, message.author.id);
 
-    // "Tagarelas" (/topspeakers): conta esta mensagem lida + atualiza o streak diário do
-    // autor. Só aqui (a mensagem foi mesmo lida). Best-effort — nunca deve impedir a fala.
+    // "Chatterboxes" (/topspeakers): counts this read message + updates the author's daily
+    // streak. Only here (the message was actually read). Best-effort — must never prevent speech.
     let talk: TalkBump | null = null;
     try {
       talk = bumpTalk(deps.db, message.guildId, message.author.id, new Date());
@@ -390,18 +390,18 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       log.warn('[messageHandler] failed to update speaker statistics (ignored)', err);
     }
 
-    // Silêncio de arranque: o bot só começa a falar `messageLeadMs` depois da mensagem
-    // (silêncio PREPENDido ao WAV). Configurável (MESSAGE_LEAD_MS); 0 = sem espera.
+    // Startup silence: the bot only starts speaking `messageLeadMs` after the message
+    // (silence PREPENDED to the WAV). Configurable (MESSAGE_LEAD_MS); 0 = no wait.
     if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
 
     const queued = await player.say(outReq);
 
-    // Streak 🔥 (F1, estilo TikTok): aviso "Dia N" SÓ na 1.ª mensagem de cada dia, do Dia 2
-    // em diante (anunciar o Dia 1 de cada pessoa todos os dias seria spam), e só se a fala
-    // foi mesmo enfileirada e o toggle está ligado. A menção é VISÍVEL mas NÃO pinga
-    // (allowedMentions vazio, igual ao leaderboard) — num servidor movimentado, notificar
-    // cada pessoa todos os dias seria chato. Best-effort: um envio falhado (sem permissão de
-    // escrita no canal, etc.) NUNCA pode partir a fala.
+    // Streak 🔥 (F1, TikTok style): "Day N" notice ONLY on the 1st message of each day, from Day 2
+    // onwards (announcing everyone's Day 1 every day would be spam), and only if the speech
+    // was actually queued and the toggle is on. The mention is VISIBLE but does NOT ping
+    // (empty allowedMentions, same as the leaderboard) — on a busy server, notifying
+    // each person every day would be annoying. Best-effort: a failed send (no write permission
+    // in the channel, etc.) can NEVER break the speech.
     if (queued && talk?.firstOfDay && talk.streak >= 2 && cfg.streakAnnounce) {
       try {
         const ch = message.channel;
@@ -416,11 +416,11 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       }
     }
 
-    // Leaderboard automático (F2): de vez em quando, o Vozen posta o top de tagarelas no
-    // canal do /setup. Ativado por ATIVIDADE (só conta mensagens mesmo lidas, em guilds com
-    // canal configurado); o decisor faz o limiar + cooldown + sorteio. As menções são
-    // suprimidas (post não-solicitado não deve pingar 10 pessoas). Best-effort: um envio
-    // falhado (sem permissão de escrita, etc.) NUNCA pode partir a fala.
+    // Automatic leaderboard (F2): once in a while, Vozen posts the top chatterboxes in
+    // the /setup channel. Triggered by ACTIVITY (only counts actually-read messages, in guilds with
+    // a configured channel); the decider does the threshold + cooldown + draw. Mentions are
+    // suppressed (an unsolicited post should not ping 10 people). Best-effort: a failed send
+    // (no write permission, etc.) can NEVER break the speech.
     if (queued && cfg.ttsChannelId && deps.leaderboardPoster?.record(message.guildId)) {
       try {
         const rows = getTopSpeakers(deps.db, message.guildId, new Date(), 10);

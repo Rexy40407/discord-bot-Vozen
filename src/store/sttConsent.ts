@@ -1,12 +1,12 @@
 import type Database from 'better-sqlite3';
 
-// Consentimento para o STT (Fase 4), por-locutor e por-SERVIDOR. CONSENT-FIRST: a linha só
-// existe DEPOIS de a pessoa consentir — a sua presença É o consentimento. `hasSttConsent` é o
-// GATE que decide se a fala de um locutor entra no receiver de transcrição. Consentir é
-// 1-clique-lembrado: pede-se UMA vez por guild e `consent_at` fixa o momento (grants repetidos
-// preservam o original). Revogar apaga a linha. NÃO é cacheada: o gate corre uma vez por
-// locutor ao ARRANCAR a transcrição (não por-frame), logo a leitura direta chega e evita
-// staleness de revogação (relevante p/ RGPD).
+// STT consent (Phase 4), per-speaker and per-SERVER. CONSENT-FIRST: the row only exists
+// AFTER the person consents — their presence IS the consent. `hasSttConsent` is the GATE
+// that decides whether a speaker's speech enters the transcription receiver. Consenting is
+// 1-click-remembered: it is asked ONCE per guild and `consent_at` pins the moment (repeated
+// grants preserve the original). Revoking deletes the row. It is NOT cached: the gate runs
+// once per speaker when STARTING transcription (not per-frame), so a direct read is enough
+// and avoids revocation staleness (relevant for GDPR).
 
 export interface SttConsentRow {
   userId: string;
@@ -14,7 +14,7 @@ export interface SttConsentRow {
   consentAt: number;
 }
 
-/** Devolve a linha de consentimento (ou null se a pessoa não consentiu neste servidor). */
+/** Returns the consent row (or null if the person did not consent in this server). */
 export function getSttConsent(
   db: Database.Database,
   userId: string,
@@ -29,15 +29,15 @@ export function getSttConsent(
   return { userId: row.user_id, guildId: row.guild_id, consentAt: row.consent_at };
 }
 
-/** GATE: a pessoa consentiu a ser transcrita neste servidor? */
+/** GATE: has the person consented to being transcribed in this server? */
 export function hasSttConsent(db: Database.Database, userId: string, guildId: string): boolean {
   return getSttConsent(db, userId, guildId) !== null;
 }
 
 /**
- * Regista o consentimento (idempotente). Um grant repetido PRESERVA o `consent_at` original
- * (o consentimento é 1-clique-na-vida por servidor; regravar a data apagaria o registo real do
- * momento em que a pessoa consentiu).
+ * Records the consent (idempotent). A repeated grant PRESERVES the original `consent_at`
+ * (consent is 1-click-for-life per server; rewriting the date would erase the real record of
+ * the moment the person consented).
  */
 export function grantSttConsent(
   db: Database.Database,
@@ -52,7 +52,7 @@ export function grantSttConsent(
   ).run(userId, guildId, now);
 }
 
-/** Revoga o consentimento (apaga a linha). Devolve true se havia consentimento a revogar. */
+/** Revokes the consent (deletes the row). Returns true if there was consent to revoke. */
 export function revokeSttConsent(db: Database.Database, userId: string, guildId: string): boolean {
   const res = db
     .prepare('DELETE FROM stt_consent WHERE user_id = ? AND guild_id = ?')

@@ -1,13 +1,13 @@
 import type Database from 'better-sqlite3';
-// Tabela CACHEADA (lida a cada mensagem): todo o setter TEM de chamar invalidate.
+// CACHED table (read on every message): every setter MUST call invalidate.
 import { cached, invalidate } from './cache';
 
 interface WordRow {
   word: string;
 }
 
-/** Teto de palavras bloqueadas por guild — limita crescimento e o custo de leitura por
- *  mensagem (cada palavra e um scan; ver moderation/filter). Admin-gated, mas nao ilimitado. */
+/** Cap on blocked words per guild — limits growth and the per-message read cost
+ *  (each word is a scan; see moderation/filter). Admin-gated, but not unlimited. */
 export const MAX_BLOCKWORDS = 500;
 
 export function getBlocklist(db: Database.Database, guildId: string): string[] {
@@ -17,7 +17,7 @@ export function getBlocklist(db: Database.Database, guildId: string): string[] {
       .all(guildId) as WordRow[];
     return rows.map((r) => r.word);
   });
-  return [...words]; // cópia: o chamador não deve mutar o array cacheado
+  return [...words]; // copy: the caller must not mutate the cached array
 }
 
 export function addBlockword(db: Database.Database, guildId: string, word: string): 'ok' | 'limit' {

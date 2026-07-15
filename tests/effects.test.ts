@@ -16,8 +16,8 @@ import {
 import { AudioCache } from '../src/tts/cache';
 import type { SynthRequest, TTSEngine } from '../src/tts/engine';
 
-describe('effects — metadados', () => {
-  it('none/robot/echo são grátis; os restantes premium', () => {
+describe('effects — metadata', () => {
+  it('none/robot/echo are free; the rest premium', () => {
     expect(isPremiumEffect('none')).toBe(false);
     expect(isPremiumEffect('robot')).toBe(false);
     expect(isPremiumEffect('echo')).toBe(false);
@@ -26,19 +26,19 @@ describe('effects — metadados', () => {
     expect(FREE_EFFECTS).toContain('robot');
   });
 
-  it('isVoiceEffect valida', () => {
+  it('isVoiceEffect validates', () => {
     expect(isVoiceEffect('robot')).toBe(true);
     expect(isVoiceEffect('banana')).toBe(false);
   });
 
-  it("ffmpegFilterFor: 'none'/desconhecido -> null; efeito real -> filtro", () => {
+  it("ffmpegFilterFor: 'none'/unknown -> null; real effect -> filter", () => {
     expect(ffmpegFilterFor('none')).toBeNull();
     expect(ffmpegFilterFor('banana')).toBeNull();
     expect(ffmpegFilterFor('robot')).toContain('tremolo');
     expect(ffmpegFilterFor('deep')).toContain('asetrate');
   });
 
-  it('choices: premium levam 💎, uma por efeito', () => {
+  it('choices: premium ones carry 💎, one per effect', () => {
     expect(EFFECT_CHOICES).toHaveLength(VOICE_EFFECTS.length);
     for (const c of EFFECT_CHOICES) {
       expect(VOICE_EFFECTS).toContain(c.value);
@@ -47,7 +47,7 @@ describe('effects — metadados', () => {
   });
 });
 
-// Fake do `spawn` do ffmpeg: 'ok' escreve o out.wav e sai 0; 'fail' sai 1; 'error' emite erro.
+// Fake of ffmpeg's `spawn`: 'ok' writes out.wav and exits 0; 'fail' exits 1; 'error' emits an error.
 function fakeFfmpeg(behavior: 'ok' | 'fail' | 'error') {
   return ((_ff: string, args: readonly string[]) => {
     const child = new EventEmitter() as EventEmitter & {
@@ -74,13 +74,13 @@ function fakeFfmpeg(behavior: 'ok' | 'fail' | 'error') {
   }) as any;
 }
 
-describe('applyEffect — passo ffmpeg (spawn injetado)', () => {
+describe('applyEffect — ffmpeg step (injected spawn)', () => {
   let base: string;
   afterEach(() => {
     if (base && existsSync(base)) rmSync(base, { force: true });
   });
 
-  it('sucesso (code 0) -> resolve com um caminho de WAV existente', async () => {
+  it('success (code 0) -> resolves with an existing WAV path', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'fx-base-'));
     base = join(dir, 'base.wav');
     writeFileSync(base, Buffer.from('RIFFbase'));
@@ -92,7 +92,7 @@ describe('applyEffect — passo ffmpeg (spawn injetado)', () => {
     rmSync(join(out, '..'), { recursive: true, force: true });
   });
 
-  it('falha (code 1) -> rejeita', async () => {
+  it('failure (code 1) -> rejects', async () => {
     await expect(
       applyEffect('/x/base.wav', 'badfilter', {
         ffmpegPath: '/fake/ffmpeg',
@@ -101,7 +101,7 @@ describe('applyEffect — passo ffmpeg (spawn injetado)', () => {
     ).rejects.toThrow(/saiu com 1/);
   });
 
-  it('erro a arrancar o ffmpeg -> rejeita', async () => {
+  it('error starting ffmpeg -> rejects', async () => {
     await expect(
       applyEffect('/x/base.wav', 'aecho', {
         ffmpegPath: '/fake/ffmpeg',
@@ -114,7 +114,7 @@ describe('applyEffect — passo ffmpeg (spawn injetado)', () => {
 const REQ: SynthRequest = { text: 'ola', model: 'en_US-amy-medium', speed: 1 };
 const innerReturning = (p: string): TTSEngine => ({ synth: async () => p });
 
-describe('EffectEngine — decorador', () => {
+describe('EffectEngine — decorator', () => {
   const dirs: string[] = [];
   const cache = () => {
     const d = mkdtempSync(join(tmpdir(), 'fx-cache-'));
@@ -125,7 +125,7 @@ describe('EffectEngine — decorador', () => {
     for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
   });
 
-  it("efeito 'none'/ausente -> devolve o WAV base tal e qual (não chama ffmpeg)", async () => {
+  it("effect 'none'/absent -> returns the base WAV as-is (does not call ffmpeg)", async () => {
     const eng = new EffectEngine(innerReturning('/base.wav'), cache(), {
       spawnImpl: fakeFfmpeg('fail'),
     });
@@ -133,18 +133,18 @@ describe('EffectEngine — decorador', () => {
     expect(await eng.synth({ ...REQ, effect: 'none' })).toBe('/base.wav');
   });
 
-  it('CRÍTICO: falha do ffmpeg -> cai na VOZ LIMPA (nunca lança)', async () => {
+  it('CRITICAL: ffmpeg failure -> falls back to the CLEAN VOICE (never throws)', async () => {
     const eng = new EffectEngine(innerReturning('/base.wav'), cache(), {
       ffmpegPath: '/fake/ffmpeg',
       spawnImpl: fakeFfmpeg('fail'),
     });
-    // robot é um efeito real; o ffmpeg falso "falha" -> deve devolver o base, sem throw.
+    // robot is a real effect; the fake ffmpeg "fails" -> should return the base, without throwing.
     await expect(eng.synth({ ...REQ, effect: 'robot' })).resolves.toBe('/base.wav');
   });
 
-  it('sucesso -> devolve um caminho na cache fx (e faz cache-hit no 2.º)', async () => {
-    // O base tem de existir para o applyEffect o receber; o fake ignora-o mas o EffectEngine
-    // passa-o. O fake escreve o out.wav -> cache.put copia-o.
+  it('success -> returns a path in the fx cache (and cache-hits on the 2nd)', async () => {
+    // The base must exist for applyEffect to receive it; the fake ignores it but the EffectEngine
+    // passes it. The fake writes out.wav -> cache.put copies it.
     const bdir = mkdtempSync(join(tmpdir(), 'fx-b-'));
     dirs.push(bdir);
     const basePath = join(bdir, 'base.wav');
@@ -156,7 +156,7 @@ describe('EffectEngine — decorador', () => {
     const out1 = await eng.synth({ ...REQ, effect: 'echo' });
     expect(out1).not.toBe(basePath);
     expect(existsSync(out1)).toBe(true);
-    // 2.ª chamada idêntica -> cache-hit (mesmo caminho).
+    // 2nd identical call -> cache-hit (same path).
     const out2 = await eng.synth({ ...REQ, effect: 'echo' });
     expect(out2).toBe(out1);
   });

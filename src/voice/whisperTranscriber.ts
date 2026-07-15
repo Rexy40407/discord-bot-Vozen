@@ -1,37 +1,37 @@
 // src/voice/whisperTranscriber.ts
 //
-// Cliente do SIDECAR de STT (tools/whisper_sidecar.py) — processo Python PERSISTENTE que
-// carrega o modelo faster-whisper UMA vez e transcreve N pedidos. Gestão de processo
-// espelhada do KokoroEngine, com dois desvios do protocolo do Kokoro:
-//   (1) o sidecar imprime {"ready":true} SOZINHO ao arrancar (não há mensagem de warmup a
-//       enviar — ele carrega o modelo e anuncia);
-//   (2) 1 pedido = 1 LINHA com o caminho de um WAV; resposta = {"text","lang"} ou {"error"}.
-// É SÉRIE (uma linha de cada vez no stdin) => dá de graça o "cap de 1 transcrição
-// concorrente" que o spike pediu para não saturar o CPU partilhado com o Piper.
+// Client of the STT SIDECAR (tools/whisper_sidecar.py) — a PERSISTENT Python process that
+// loads the faster-whisper model ONCE and transcribes N requests. Process management
+// mirrored from KokoroEngine, with two deviations from the Kokoro protocol:
+//   (1) the sidecar prints {"ready":true} ON ITS OWN at startup (there is no warmup message
+//       to send — it loads the model and announces);
+//   (2) 1 request = 1 LINE with the path to a WAV; response = {"text","lang"} or {"error"}.
+// It is SERIAL (one line at a time on stdin) => gives for free the "cap of 1 concurrent
+// transcription" that the spike asked for, so as not to saturate the CPU shared with Piper.
 //
-// Falhar é seguro: sem sidecar instalado `available=false` e o STT fica inerte (o comando
-// /transcribe responde "indisponível"). Um pedido preso mata e reinicia o sidecar.
+// Failing is safe: with no sidecar installed `available=false` and STT stays inert (the
+// /transcribe command replies "unavailable"). A stuck request kills and restarts the sidecar.
 
 import { spawn, type ChildProcess } from 'node:child_process';
 import { log } from '../logging/logger';
 import { Semaphore } from '../tts/semaphore';
 
-/** Teto por transcrição (o spike deu ~2.2s p/ 13.6s de fala; teto generoso mas finito). */
+/** Cap per transcription (the spike gave ~2.2s for 13.6s of speech; generous but finite cap). */
 const TRANSCRIBE_TIMEOUT_MS = 30_000;
-/** Teto à espera do {ready} (load do modelo `base` ~1-2s em CPU; 1.ª vez descarrega ~140MB). */
+/** Cap waiting for {ready} (loading the `base` model ~1-2s on CPU; 1st time downloads ~140MB). */
 const READY_TIMEOUT_MS = 120_000;
 
 /**
- * Cap de CONCORRÊNCIA GLOBAL de sessões STT (todas as guilds, processo inteiro) — plano
- * 029/ABUSE-01. Cada `new WhisperTranscriber` arranca um processo Python PERSISTENTE com o
- * seu próprio modelo faster-whisper `base` em RAM (centenas de MB); ao contrário do Kokoro
- * (singleton partilhado por todas as guilds), os Whisper multiplicam-se COM as sessões. Sem
- * cap, N guilds Premium a transcrever ao mesmo tempo = N cópias do modelo em RAM — no VPS
- * (que já faz OOM a ~3.3GB, ver CLAUDE.md) chega para matar o processo INTEIRO (todas as
- * guilds perdem TTS, não só o STT degrada). `docs/SPIKE-STT.md` já recomendava "cap de 1
- * transcrição concorrente"; isto aplica-o a nível de PROCESSO — o cap-1 DENTRO de uma sessão
- * (stdin série, ver `pump()`/`onLine()` abaixo) já existia mas nunca cruzava sessões.
- * Default 1; override por `STT_MAX_CONCURRENCY` (inteiro positivo) em instâncias com mais RAM.
+ * GLOBAL CONCURRENCY cap for STT sessions (all guilds, whole process) — plan
+ * 029/ABUSE-01. Each `new WhisperTranscriber` starts a PERSISTENT Python process with its
+ * own faster-whisper `base` model in RAM (hundreds of MB); unlike Kokoro
+ * (a singleton shared by all guilds), the Whispers multiply WITH the sessions. Without a
+ * cap, N Premium guilds transcribing at the same time = N copies of the model in RAM — on the VPS
+ * (which already OOMs at ~3.3GB, see CLAUDE.md) that is enough to kill the WHOLE process (all
+ * guilds lose TTS, not only STT degrades). `docs/SPIKE-STT.md` already recommended "cap of 1
+ * concurrent transcription"; this applies it at the PROCESS level — the cap-1 WITHIN a session
+ * (serial stdin, see `pump()`/`onLine()` below) already existed but never crossed sessions.
+ * Default 1; override via `STT_MAX_CONCURRENCY` (positive integer) on instances with more RAM.
  */
 export function resolveSttConcurrency(): number {
   const env = process.env.STT_MAX_CONCURRENCY;
@@ -42,15 +42,15 @@ export function resolveSttConcurrency(): number {
   return 1;
 }
 
-/** Nº máximo de sessões STT concorrentes neste processo (lido UMA vez ao carregar o módulo). */
+/** Max number of concurrent STT sessions in this process (read ONCE when the module loads). */
 export const MAX_CONCURRENT_STT = resolveSttConcurrency();
 
 /**
- * Semáforo GLOBAL de sessões STT, partilhado por TODAS as guilds deste processo. O handler
- * (`/transcribe start`) reserva um permit com `tryAcquire()` ANTES de arrancar a sessão
- * (síncrono — nunca espera, `null` sinaliza cap atingido) e liberta-o em TODOS os caminhos de
- * teardown via o closure de release devolvido (já idempotente — chamar duas vezes não
- * over-liberta, ver `Semaphore.makeRelease`).
+ * GLOBAL STT session semaphore, shared by ALL guilds in this process. The handler
+ * (`/transcribe start`) reserves a permit with `tryAcquire()` BEFORE starting the session
+ * (synchronous — never waits, `null` signals the cap is reached) and releases it on ALL
+ * teardown paths via the returned release closure (already idempotent — calling it twice does not
+ * over-release, see `Semaphore.makeRelease`).
  */
 export const globalSttSemaphore = new Semaphore(MAX_CONCURRENT_STT);
 
@@ -77,22 +77,22 @@ export class WhisperTranscriber {
 
   constructor(
     private readonly cmd: { exe: string; args: string[] } | null,
-    // Injeção do spawn para testes (default: child_process.spawn real).
+    // Spawn injection for tests (default: the real child_process.spawn).
     private readonly spawnImpl: typeof spawn = spawn,
     private readonly readyTimeoutMs: number = READY_TIMEOUT_MS,
   ) {}
 
-  /** Há sidecar Whisper instalado nesta instância? */
+  /** Is there a Whisper sidecar installed on this instance? */
   get available(): boolean {
     return this.cmd !== null;
   }
 
-  /** Arranca o sidecar já (carrega o modelo antes do 1.º pedido). */
+  /** Starts the sidecar now (loads the model before the 1st request). */
   prewarm(): void {
     if (this.cmd) this.ensureChild();
   }
 
-  /** Transcreve um ficheiro WAV. Rejeita se o sidecar não existir, der erro ou expirar. */
+  /** Transcribes a WAV file. Rejects if the sidecar does not exist, errors, or times out. */
   transcribe(wavPath: string): Promise<Transcript> {
     return new Promise<Transcript>((resolve, reject) => {
       if (!this.cmd) {
@@ -104,7 +104,7 @@ export class WhisperTranscriber {
     });
   }
 
-  /** Mata o sidecar e rejeita o que estiver pendente (chamar ao parar a transcrição). */
+  /** Kills the sidecar and rejects whatever is pending (call when stopping transcription). */
   dispose(): void {
     this.restart();
   }
@@ -116,14 +116,14 @@ export class WhisperTranscriber {
       for (const j of this.queue.splice(0)) j.reject(err);
       return;
     }
-    if (!this.ready) return; // à espera do {ready}; onLine chama pump() quando ficar pronto
+    if (!this.ready) return; // waiting for {ready}; onLine calls pump() once it becomes ready
     const job = this.queue.shift()!;
     this.active = job;
     job.timer = setTimeout(() => {
       if (this.active !== job) return;
       this.active = null;
       job.reject(new Error(`whisper: timeout ${TRANSCRIBE_TIMEOUT_MS}ms`));
-      this.restart(); // um pedido preso mata o sidecar -> reinicia limpo
+      this.restart(); // a stuck request kills the sidecar -> restarts clean
     }, TRANSCRIBE_TIMEOUT_MS);
     try {
       this.child!.stdin!.write(job.path + '\n');
@@ -147,18 +147,18 @@ export class WhisperTranscriber {
       child.stdout!.on('data', (c: Buffer) => this.onData(c));
       child.stderr!.on('data', (c: Buffer) => log.info(`[whisper-py] ${c.toString().trim()}`));
       child.on('exit', (code) => {
-        if (this.child !== child) return; // evento de um child JÁ substituído — ignora
+        if (this.child !== child) return; // event from an ALREADY-replaced child — ignore
         log.warn(`[whisper] sidecar exited (code ${code})`);
         this.teardown();
       });
       child.on('error', (err) => {
-        if (this.child !== child) return; // evento de um child JÁ substituído — ignora
+        if (this.child !== child) return; // event from an ALREADY-replaced child — ignore
         log.warn('[whisper] sidecar failure:', err);
         this.teardown();
       });
       this.readyTimer = setTimeout(() => {
         this.readyTimer = null;
-        if (this.ready) return; // corrida benigna
+        if (this.ready) return; // benign race
         log.warn(`[whisper] sidecar was not ready after ${this.readyTimeoutMs}ms; restarting`);
         this.restart();
       }, this.readyTimeoutMs);
@@ -187,7 +187,7 @@ export class WhisperTranscriber {
     try {
       msg = JSON.parse(line);
     } catch {
-      return; // linha não-protocolo (log solto) — ignora
+      return; // non-protocol line (stray log) — ignore
     }
     if (msg.ready) {
       if (this.readyTimer) {
@@ -218,8 +218,8 @@ export class WhisperTranscriber {
     this.ready = false;
     this.starting = false;
     this.child = null;
-    // Descarta bytes parciais do processo morto: senão colam-se à 1.ª linha do sidecar
-    // respawnado e partem o JSON.parse (pior caso: corrompem o {ready}).
+    // Discard partial bytes from the dead process: otherwise they stick to the 1st line of the
+    // respawned sidecar and break JSON.parse (worst case: they corrupt the {ready}).
     this.buffer = '';
     if (this.active) {
       if (this.active.timer) clearTimeout(this.active.timer);
@@ -233,7 +233,7 @@ export class WhisperTranscriber {
     try {
       this.child?.kill('SIGKILL');
     } catch {
-      // já morto
+      // already dead
     }
     this.teardown();
   }

@@ -2,15 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { resolveWhisperCmd, DEFAULT_WHISPER_MODEL } from '../src/voice/whisperSidecar';
 
-// Resolução do comando do sidecar Whisper (STT). `exists` injetável para não depender do venv.
-// Paths construídos com join() para bater com a plataforma (Windows usa '\\', Linux '/').
+// Resolution of the Whisper sidecar command (STT). `exists` is injectable so it doesn't depend on the venv.
+// Paths built with join() to match the platform (Windows uses '\\', Linux '/').
 const CWD = join('/', 'proj');
 const PY_LINUX = join(CWD, 'tools', 'whisper-venv', 'bin', 'python');
 const PY_WIN = join(CWD, 'tools', 'whisper-venv', 'Scripts', 'python.exe');
 const SCRIPT = join(CWD, 'tools', 'whisper_sidecar.py');
 
 describe('resolveWhisperCmd', () => {
-  it('venv (bin/python) + script presentes -> comando com --model', () => {
+  it('venv (bin/python) + script present -> command with --model', () => {
     const cmd = resolveWhisperCmd('base', {
       cwd: CWD,
       exists: (p) => p === PY_LINUX || p === SCRIPT,
@@ -20,7 +20,7 @@ describe('resolveWhisperCmd', () => {
     expect(cmd!.args).toEqual([SCRIPT, '--model', 'base']);
   });
 
-  it('venv Windows (Scripts/python.exe) também é detetado', () => {
+  it('Windows venv (Scripts/python.exe) is detected too', () => {
     const cmd = resolveWhisperCmd('tiny', {
       cwd: CWD,
       exists: (p) => p === PY_WIN || p === SCRIPT,
@@ -29,15 +29,15 @@ describe('resolveWhisperCmd', () => {
     expect(cmd!.args[2]).toBe('tiny');
   });
 
-  it('sem venv -> null (STT inerte)', () => {
+  it('no venv -> null (STT inert)', () => {
     expect(resolveWhisperCmd('base', { cwd: CWD, exists: (p) => p === SCRIPT })).toBeNull();
   });
 
-  it('sem script -> null', () => {
+  it('no script -> null', () => {
     expect(resolveWhisperCmd('base', { cwd: CWD, exists: (p) => p === PY_LINUX })).toBeNull();
   });
 
-  it('modelo default é base', () => {
+  it('default model is base', () => {
     expect(DEFAULT_WHISPER_MODEL).toBe('base');
     const cmd = resolveWhisperCmd(undefined, {
       cwd: CWD,

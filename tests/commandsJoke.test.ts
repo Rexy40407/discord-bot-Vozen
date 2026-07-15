@@ -77,9 +77,9 @@ describe('/joke', () => {
     db.close();
   });
 
-  it('sem player ativo responde "join" e NAO chama say', async () => {
+  it('with no active player responds "join" and does NOT call say', async () => {
     const say = vi.fn();
-    const deps = makeDeps(db); // sem player
+    const deps = makeDeps(db); // no player
     const i = makeJokeInteraction({ idioma: 'en', risos: false });
 
     await handleInteraction(i as any, deps);
@@ -88,7 +88,7 @@ describe('/joke', () => {
     expect(i.replies.some((r) => /join/i.test(r))).toBe(true);
   });
 
-  it('idioma desconhecido responde erro e NAO chama say', async () => {
+  it('unknown language responds with an error and does NOT call say', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeJokeInteraction({ idioma: 'xx-nao-existe', risos: false });
@@ -99,8 +99,8 @@ describe('/joke', () => {
     expect(i.replies.length).toBeGreaterThan(0);
   });
 
-  it('escolhe a voz cujo modelo casa com o prefixo da lingua escolhida', async () => {
-    // idioma russo -> modelo tem de comecar por 'ru_', e a piada em Cirilico.
+  it('picks the voice whose model matches the chosen language prefix', async () => {
+    // Russian language -> the model must start with 'ru_', and the joke in Cyrillic.
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeJokeInteraction({ idioma: 'ru', risos: false });
@@ -113,30 +113,30 @@ describe('/joke', () => {
     expect(req.text).toMatch(CYRILLIC);
   });
 
-  it('risos:true enfileira DUAS falas: a piada, e depois o riso com pausa (leadSilenceMs:1000)', async () => {
+  it('laughter:true enqueues TWO utterances: the joke, then the laugh with a pause (leadSilenceMs:1000)', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeJokeInteraction({ idioma: 'ru', risos: true });
 
     await handleInteraction(i as any, deps);
 
-    // Duas falas separadas: a piada (imediata) e o riso (com 1s de silencio a frente).
+    // Two separate utterances: the joke (immediate) and the laugh (with 1s of silence in front).
     expect(say).toHaveBeenCalledTimes(2);
 
-    // 1.ª fala: SO a piada, SEM riso e SEM leadSilenceMs.
+    // 1st utterance: ONLY the joke, WITHOUT laugh and WITHOUT leadSilenceMs.
     const jokeReq = say.mock.calls[0][0];
     expect(jokeReq.text.endsWith(laughterFor('ru_'))).toBe(false);
     expect(jokeReq.leadSilenceMs).toBeUndefined();
 
-    // 2.ª fala: o riso da lingua, com 1000ms de silencio a frente (a pausa real).
+    // 2nd utterance: the language's laugh, with 1000ms of silence in front (the real pause).
     const laughReq = say.mock.calls[1][0];
     expect(laughReq.text).toBe(laughterFor('ru_'));
     expect(laughReq.leadSilenceMs).toBe(1000);
-    // Mesma voz da piada.
+    // Same voice as the joke.
     expect(laughReq.model).toBe(jokeReq.model);
   });
 
-  it('risos:false enfileira UMA so fala: a piada, sem riso', async () => {
+  it('laughter:false enqueues just ONE utterance: the joke, without laugh', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeJokeInteraction({ idioma: 'en', risos: false });
@@ -149,9 +149,9 @@ describe('/joke', () => {
     expect(req.leadSilenceMs).toBeUndefined();
   });
 
-  it('risos:true com fila cheia (say false na piada): NAO enfileira o riso e responde busy', async () => {
-    // A piada nao entrou na fila (cap) -> nao adianta enfileirar o riso. Uma so
-    // chamada a say, e a resposta e busy (nao "playing").
+  it('laughter:true with a full queue (say false on the joke): does NOT enqueue the laugh and responds busy', async () => {
+    // The joke did not enter the queue (cap) -> no point enqueuing the laugh. Just one
+    // call to say, and the response is busy (not "playing").
     const say = vi.fn().mockResolvedValue(false);
     const deps = makeDeps(db, { say });
     const i = makeJokeInteraction({ idioma: 'ru', risos: true });
@@ -162,8 +162,8 @@ describe('/joke', () => {
     expect(i.replies.some((r) => /busy/i.test(r))).toBe(true);
   });
 
-  it('sem modelo instalado para a lingua cai no default (.env)', async () => {
-    // availableModels sem 'ka_' -> a voz cai no config.defaultVoice.
+  it('with no model installed for the language falls back to the default (.env)', async () => {
+    // availableModels without 'ka_' -> the voice falls back to config.defaultVoice.
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say }, ['en_US-amy-medium']);
     const i = makeJokeInteraction({ idioma: 'ka', risos: false });
@@ -175,7 +175,7 @@ describe('/joke', () => {
     expect(req.model).toBe('en_US-amy-medium');
   });
 
-  it('say() false (fila cheia) responde "busy"', async () => {
+  it('say() false (full queue) responds "busy"', async () => {
     const say = vi.fn().mockResolvedValue(false);
     const deps = makeDeps(db, { say });
     const i = makeJokeInteraction({ idioma: 'en', risos: false });
@@ -185,11 +185,11 @@ describe('/joke', () => {
     expect(i.replies.some((r) => /busy/i.test(r))).toBe(true);
   });
 
-  // ── rate-limit por-utilizador (mesmo limiter do /tts) ───────────────────────
-  // ratePerMin=0 -> RateLimiter.allow devolve sempre false. Sem o guard, o /joke
-  // enfileirava sem limite (vetor de spam da fila de voz). Idioma VALIDO ('en')
-  // para o teste falhar pelo limiter e nao pelo unknownLang.
-  it('quando o limiter nega responde tts.tooFast e NAO chama say', async () => {
+  // ── per-user rate-limit (same limiter as /tts) ───────────────────────
+  // ratePerMin=0 -> RateLimiter.allow always returns false. Without the guard, /joke
+  // would enqueue without limit (voice-queue spam vector). VALID language ('en')
+  // so the test fails because of the limiter and not because of unknownLang.
+  it('when the limiter denies, responds tts.tooFast and does NOT call say', async () => {
     setGuildConfig(db, GUILD, { ratePerMin: 0 });
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
@@ -203,30 +203,30 @@ describe('/joke', () => {
   });
 });
 
-describe('filterJokeLanguages (autocomplete idioma)', () => {
-  it('filtra por substring do display name em ingles', () => {
+describe('filterJokeLanguages (language autocomplete)', () => {
+  it('filters by substring of the English display name', () => {
     const out = filterJokeLanguages('russ');
     expect(out).toEqual([{ name: 'Russian', value: 'ru' }]);
   });
 
-  it('e case-insensitive e ignora espacos', () => {
+  it('is case-insensitive and ignores spaces', () => {
     expect(filterJokeLanguages('  ARAB ')).toEqual([{ name: 'Arabic', value: 'ar' }]);
   });
 
-  it('query vazia devolve no maximo 25 (cap do Discord), embora hajam 34 linguas', () => {
+  it('empty query returns at most 25 (Discord cap), even though there are 34 languages', () => {
     expect(JOKE_LANGUAGES.length).toBeGreaterThan(25);
     expect(filterJokeLanguages('').length).toBe(25);
   });
 
-  it('query sem match devolve []', () => {
+  it('query with no match returns []', () => {
     expect(filterJokeLanguages('zzzz')).toEqual([]);
   });
 });
 
-// Bug-hunt 2026-07: o /joke construía os SynthRequest SEM `engine`, por isso um user
-// de Piper ouvia as piadas no Google (ao contrário de /laugh e /voice preview, que
-// seguem o motor escolhido). O MODELO segue a língua; o MOTOR tem de seguir o user.
-describe('/joke — segue o MOTOR escolhido pelo utilizador (google/piper)', () => {
+// Bug-hunt 2026-07: /joke built the SynthRequest WITHOUT `engine`, so a Piper user
+// heard the jokes on Google (unlike /laugh and /voice preview, which follow the
+// chosen engine). The MODEL follows the language; the ENGINE must follow the user.
+describe('/joke — follows the ENGINE chosen by the user (google/piper)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -235,7 +235,7 @@ describe('/joke — segue o MOTOR escolhido pelo utilizador (google/piper)', () 
     db.close();
   });
 
-  it('user com engine:piper -> a piada E o riso são sintetizados com engine:piper', async () => {
+  it('user with engine:piper -> the joke AND the laugh are synthesized with engine:piper', async () => {
     setUserVoice(db, GUILD, USER, 'en_US-amy-medium', 1.0, 'piper');
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
@@ -243,14 +243,14 @@ describe('/joke — segue o MOTOR escolhido pelo utilizador (google/piper)', () 
 
     await handleInteraction(i as any, deps);
 
-    // Duas falas: piada + riso. Ambas com engine:piper.
+    // Two utterances: joke + laugh. Both with engine:piper.
     expect(say).toHaveBeenCalledTimes(2);
     for (const call of say.mock.calls) {
       expect(call[0].engine).toBe('piper');
     }
   });
 
-  it('user default (sem escolha) -> engine undefined (= Google), comportamento inalterado', async () => {
+  it('default user (no choice) -> engine undefined (= Google), unchanged behavior', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeJokeInteraction({ idioma: 'en', risos: false });
@@ -265,7 +265,7 @@ describe('/joke — segue o MOTOR escolhido pelo utilizador (google/piper)', () 
 describe('handleAutocomplete — language', () => {
   const deps = { availableModels: ['en_US-amy-medium'] } as any;
 
-  it('opcao focada "language": responde com as linguas filtradas', async () => {
+  it('focused "language" option: responds with the filtered languages', async () => {
     const respond = vi.fn();
     const i = {
       options: { getFocused: () => ({ name: 'language', value: 'french' }) },

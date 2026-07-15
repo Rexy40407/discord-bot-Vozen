@@ -1,4 +1,4 @@
-// src/commands/handlers/config.ts — handlers de /config, /setup e /stats (admin) extraídos de index.ts (plano 015).
+// src/commands/handlers/config.ts — /config, /setup and /stats (admin) handlers extracted from index.ts (plan 015).
 import {
   ChatInputCommandInteraction,
   GuildMember,
@@ -44,8 +44,8 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
     }
     return;
   }
-  // NB: o antigo grupo `pronunciation` (dicionário de SERVIDOR) foi removido no plano
-  // v4 — pronúncias agora são só pessoais, via /pronunciation (handlers/personal.ts).
+  // NB: the old `pronunciation` group (SERVER dictionary) was removed in plan
+  // v4 — pronunciations are now personal only, via /pronunciation (handlers/personal.ts).
   const sub = i.options.getSubcommand();
   if (sub === 'tts-channel') {
     const ch = i.options.getChannel('channel', true);
@@ -54,7 +54,7 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
       return;
     }
     const me = deps.client.user;
-    // ch pode ser um objeto parcial (APIChannel) — usa guild.channels.cache para obter o canal completo
+    // ch may be a partial object (APIChannel) — use guild.channels.cache to get the full channel
     const fullCh = i.guild?.channels.cache.get(ch.id);
     const perms = me && fullCh ? fullCh.permissionsFor(me) : null;
     if (!perms || !perms.has(PermissionFlagsBits.ViewChannel)) {
@@ -84,7 +84,7 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
     setGuildConfig(deps.db, i.guildId!, { ratePerMin: v });
     await reply(i, t('config.rateLimitSet', locale, { value: v }));
   } else if (sub === 'role') {
-    // Opcao de role e opcional: omiti-la (getRole devolve null) limpa a restricao.
+    // The role option is optional: omitting it (getRole returns null) clears the restriction.
     const role = i.options.getRole('role', false);
     if (role) {
       setGuildConfig(deps.db, i.guildId!, { ttsRoleId: role.id });
@@ -94,61 +94,61 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
       await reply(i, t('config.roleCleared', locale));
     }
   } else if (sub === 'enabled') {
-    // Kill-switch do servidor: o messageHandler ja ignora tudo quando enabled=false.
+    // Server kill-switch: the messageHandler already ignores everything when enabled=false.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { enabled: on });
     await reply(i, on ? t('config.enabledOn', locale) : t('config.enabledOff', locale));
   } else if (sub === 'xsaid') {
-    // Anuncio "{nome} disse" antes de cada mensagem (quem falou). LIGADO por defeito.
+    // "{name} said" announcement before each message (who spoke). ON by default.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { xsaid: on });
     await reply(i, on ? t('config.xsaidOn', locale) : t('config.xsaidOff', locale));
   } else if (sub === 'autojoin') {
-    // O bot entra sozinho na call do autor quando chega mensagem. DESLIGADO por defeito.
+    // The bot joins the author's call on its own when a message arrives. OFF by default.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { autojoin: on });
     await reply(i, on ? t('config.autojoinOn', locale) : t('config.autojoinOff', locale));
   } else if (sub === 'always-on') {
-    // 24/7 in-call: o bot fica no canal mesmo vazio + é reposto no arranque. DESLIGADO por
-    // defeito (opt-in). Só tem EFEITO com Premium (o gate no AloneWatcher/rejoin exige-o);
-    // guardar o toggle é livre — a mensagem ON avisa que precisa de Premium.
+    // 24/7 in-call: the bot stays in the channel even when empty + is restored on startup. OFF by
+    // default (opt-in). It only takes EFFECT with Premium (the gate in AloneWatcher/rejoin requires it);
+    // storing the toggle is free — the ON message warns that it needs Premium.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { stayInCall: on });
     await reply(i, on ? t('config.stayOn', locale) : t('config.stayOff', locale));
   } else if (sub === 'read-bots') {
-    // Ler outros bots/webhooks. DESLIGADO por defeito (o Vozen nunca se lê a si próprio).
+    // Read other bots/webhooks. OFF by default (Vozen never reads itself).
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { readBots: on });
     await reply(i, on ? t('config.readBotsOn', locale) : t('config.readBotsOff', locale));
   } else if (sub === 'text-in-voice') {
-    // Ler o chat de texto dentro do canal de voz onde o Vozen está. DESLIGADO por defeito.
+    // Read the text chat inside the voice channel where Vozen is. OFF by default.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { textInVoice: on });
     await reply(i, on ? t('config.textInVoiceOn', locale) : t('config.textInVoiceOff', locale));
   } else if (sub === 'antispam') {
-    // Não ler mensagens spamadas (repetição massiva / mesma msg grande repetida).
-    // DESLIGADO por defeito (opt-in).
+    // Do not read spammed messages (massive repetition / same large msg repeated).
+    // OFF by default (opt-in).
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { antispam: on });
     await reply(i, on ? t('config.antispamOn', locale) : t('config.antispamOff', locale));
   } else if (sub === 'streaks') {
-    // Aviso de streak 🔥 na 1.ª mensagem do dia de cada pessoa. LIGADO por defeito.
+    // Streak 🔥 notice on each person's 1st message of the day. ON by default.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { streakAnnounce: on });
     await reply(i, on ? t('config.streaksOn', locale) : t('config.streaksOff', locale));
   } else if (sub === 'soundboard') {
-    // Kill-switch por-servidor do /sound (clips de som na call). LIGADO por defeito.
+    // Per-server kill-switch for /sound (sound clips in the call). ON by default.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { soundboard: on });
     await reply(i, on ? t('config.soundboardOn', locale) : t('config.soundboardOff', locale));
   } else if (sub === 'greet') {
-    // Saudação de voz a quem entra na call. LIGADA por defeito.
+    // Voice greeting for whoever joins the call. ON by default.
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { greetOnJoin: on });
     await reply(i, on ? t('config.greetOn', locale) : t('config.greetOff', locale));
   } else if (sub === 'greet-language') {
-    // Língua da saudação (choices estáticas -> já validadas pelo Discord; revalidamos
-    // defensivamente contra o conjunto de saudações suportadas).
+    // Greeting language (static choices -> already validated by Discord; we revalidate
+    // defensively against the set of supported greetings).
     const lang = i.options.getString('language', true);
     if (!GREET_LOCALES.has(lang)) {
       await reply(i, t('config.language.unsupported', locale));
@@ -158,15 +158,15 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
     const label = GREET_LANGUAGE_CHOICES.find((c) => c.value === lang)?.name ?? lang;
     await reply(i, t('config.greetLangSet', locale, { language: label }));
   } else if (sub === 'default-voice') {
-    // Valida contra os modelos disponiveis, tal como /voice set.
+    // Validate against the available models, just like /voice set.
     const model = i.options.getString('model', true);
     if (!deps.availableModels.includes(model)) {
       await reply(i, t('voice.unknownModel', locale));
       return;
     }
     setGuildConfig(deps.db, i.guildId!, { defaultVoice: model });
-    // Copy beginner-friendly: lidera com o nome amigavel (voiceDisplayName) e mantem
-    // o id cru copy-pasteavel. Comportamento inalterado (so params de apresentacao).
+    // Beginner-friendly copy: leads with the friendly name (voiceDisplayName) and keeps
+    // the raw id copy-pasteable. Behavior unchanged (presentation params only).
     await reply(
       i,
       t('config.defaultVoiceSet', locale, {
@@ -175,10 +175,10 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
       }),
     );
   } else if (sub === 'language') {
-    // Troca do idioma da INTERFACE. As choices ja limitam a SUPPORTED_LOCALES, mas
-    // validamos de novo (defensivo) — includes() precisa do cast porque o array e
-    // `readonly ['en','pt']` e o input e string. Locale invalido -> erro amigavel
-    // no locale ATUAL (o pedido nao e utilizavel); nao persiste nada.
+    // Switch the INTERFACE language. The choices already limit to SUPPORTED_LOCALES, but
+    // we validate again (defensive) — includes() needs the cast because the array is
+    // `readonly ['en','pt']` and the input is string. Invalid locale -> friendly error
+    // in the CURRENT locale (the request is not usable); nothing is persisted.
     const requested = i.options.getString('locale', true);
     if (!SUPPORTED_LOCALES.includes(requested as SupportedLocale)) {
       await reply(i, t('config.language.unsupported', locale));
@@ -186,8 +186,8 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
     }
     const chosen = requested as SupportedLocale;
     setGuildConfig(deps.db, i.guildId!, { locale: chosen });
-    // Confirmacao JA na NOVA lingua (usa `chosen`, nao `locale`): o admin ve logo
-    // que a mudanca surtiu efeito. {language} = nome legivel do idioma escolhido.
+    // Confirmation ALREADY in the NEW language (uses `chosen`, not `locale`): the admin sees
+    // right away that the change took effect. {language} = readable name of the chosen language.
     await reply(i, t('config.language.set', chosen, { language: LOCALE_DISPLAY_NAMES[chosen] }));
   } else if (sub === 'show') {
     const cfg = getGuildConfig(deps.db, i.guildId!);
@@ -226,11 +226,11 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
   }
 }
 
-// Estado de cada item do checklist de permissoes:
-//  - 'ok'         -> o bot tem a permissao
-//  - 'missing'    -> o bot NAO tem a permissao (precisa de ser corrigida)
-//  - 'unchecked'  -> nao foi possivel verificar agora (ex.: perms de voz quando
-//                    o invocador nao esta num canal de voz) — sera validada no /join
+// State of each permissions-checklist item:
+//  - 'ok'         -> the bot has the permission
+//  - 'missing'    -> the bot does NOT have the permission (needs to be fixed)
+//  - 'unchecked'  -> could not be checked now (e.g. voice perms when
+//                    the invoker is not in a voice channel) — will be validated on /join
 type PermState = 'ok' | 'missing' | 'unchecked';
 
 function permLine(label: string, state: PermState, locale: string): string {
@@ -240,20 +240,20 @@ function permLine(label: string, state: PermState, locale: string): string {
 }
 
 /**
- * /setup — assistente guiado para admins. Reduz a friccao de "settings nao
- * beginner-friendly": configura o canal de auto-leitura + liga autoread num so
- * passo e devolve um checklist claro das permissoes do bot.
+ * /setup — guided wizard for admins. Reduces the friction of "settings not
+ * beginner-friendly": configures the auto-read channel + turns on autoread in a single
+ * step and returns a clear checklist of the bot's permissions.
  *
- * Decisoes de design (o contrato e omisso nalguns pontos):
- *  - Apenas um *tipo de canal invalido* (nao-texto) BLOQUEIA a gravacao. Perms em
- *    falta (texto OU voz) NAO bloqueiam: gravamos canal+autoread na mesma e
- *    avisamos no checklist. O objetivo e tirar o admin do estado "tentei tudo".
- *  - ViewChannel em falta e tratado como as restantes: aparece no checklist como
- *    "falta" mas a config e gravada na mesma (consistente com a politica de voz).
- *  - Resolucao do canal: a opcao `canal` pode chegar como APIChannel parcial
- *    (so id), tal como no /config tts-channel — resolvemos via guild.channels.cache.
- *    O canal da interacao (i.channel) ja vem completo; o fallback `?? ref`
- *    garante que esse caminho funciona mesmo sem hit na cache.
+ * Design decisions (the contract is silent on some points):
+ *  - Only an *invalid channel type* (non-text) BLOCKS the save. Missing perms
+ *    (text OR voice) do NOT block: we save channel+autoread anyway and
+ *    warn in the checklist. The goal is to get the admin out of the "I tried everything" state.
+ *  - A missing ViewChannel is treated like the rest: it appears in the checklist as
+ *    "missing" but the config is saved anyway (consistent with the voice policy).
+ *  - Channel resolution: the `channel` option may arrive as a partial APIChannel
+ *    (id only), just like in /config tts-channel — we resolve via guild.channels.cache.
+ *    The interaction channel (i.channel) already comes full; the `?? ref` fallback
+ *    ensures that path works even without a cache hit.
  */
 export async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
@@ -263,15 +263,15 @@ export async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps)
     return;
   }
 
-  // (a) Resolver o canal alvo: opcao `channel` ou, se omitida, o canal da interacao.
+  // (a) Resolve the target channel: `channel` option or, if omitted, the interaction channel.
   const ref =
     (i.options.getChannel('channel', false) as { id: string; type?: number } | null) ?? i.channel;
   if (!ref || !('id' in ref)) {
     await reply(i, t('setup.noChannel', locale));
     return;
   }
-  // Resolve o canal completo (com permissionsFor) a partir da cache; o canal da
-  // interacao ja e completo, por isso o fallback `?? ref` cobre esse caso.
+  // Resolve the full channel (with permissionsFor) from the cache; the interaction
+  // channel is already full, so the `?? ref` fallback covers that case.
   const fullCh = (i.guild?.channels.cache.get(ref.id) ?? ref) as {
     id: string;
     type?: number;
@@ -285,16 +285,16 @@ export async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps)
 
   const me = deps.client.user;
   const textPerms = me && fullCh.permissionsFor ? fullCh.permissionsFor(me) : null;
-  // O canal de texto precisa de ViewChannel E SendMessages (contrato 3a). Cada uma
-  // tem a sua propria linha de checklist, com o seu estado independente — assim o
-  // admin ve exatamente qual falta (antes fundiamos as duas e mostravamos "❌
-  // ViewChannel" mesmo quando so faltava SendMessages, o que enganava).
+  // The text channel needs ViewChannel AND SendMessages (contract 3a). Each one
+  // has its own checklist line, with its own independent state — so the
+  // admin sees exactly which one is missing (before, we merged the two and showed "❌
+  // ViewChannel" even when only SendMessages was missing, which was misleading).
   const canView = textPerms?.has(PermissionFlagsBits.ViewChannel) ?? false;
   const canSend = textPerms?.has(PermissionFlagsBits.SendMessages) ?? false;
   const viewState: PermState = canView ? 'ok' : 'missing';
   const sendState: PermState = canSend ? 'ok' : 'missing';
 
-  // (b) Perms de voz: so da para verificar se o invocador esta num canal de voz.
+  // (b) Voice perms: can only be checked if the invoker is in a voice channel.
   const voiceCh = member?.voice?.channel as
     | { name?: string; permissionsFor?: (u: unknown) => { has: (flag: bigint) => boolean } | null }
     | null
@@ -307,17 +307,17 @@ export async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps)
     speakState = vp?.has(PermissionFlagsBits.Speak) ? 'ok' : 'missing';
   }
 
-  // (c) Configura num so passo — SEMPRE, mesmo que faltem perms (so avisamos).
+  // (c) Configure in a single step — ALWAYS, even if perms are missing (we only warn).
   setGuildConfig(deps.db, i.guildId!, { ttsChannelId: fullCh.id, autoread: true });
 
-  // (c2) Onboarding de 1-passo: se o invocador esta num canal de voz E o bot tem
-  // Connect+Speak la (connectState/speakState === 'ok'), juntamo-nos JA a voz
-  // reutilizando a MESMA logica de /join (helper partilhado joinUserVoice) — o
-  // principiante fica pronto sem ter de correr /join a seguir. Se faltarem perms
-  // ou nao estiver em voz, NAO tentamos juntar (o checklist ja avisa) — a reconci-
-  // liacao e: /join = "entrar na voz" simples; /setup = onboarding guiado (config
-  // + juntar-se quando da). O joinUserVoice NAO responde a interacao; dobramos o
-  // resultado numa linha do checklist para manter UMA unica resposta.
+  // (c2) 1-step onboarding: if the invoker is in a voice channel AND the bot has
+  // Connect+Speak there (connectState/speakState === 'ok'), we join the voice NOW
+  // reusing the SAME logic as /join (shared helper joinUserVoice) — the
+  // beginner is ready without having to run /join afterwards. If perms are missing
+  // or they are not in voice, we do NOT try to join (the checklist already warns) — the
+  // reconciliation is: /join = simple "enter voice"; /setup = guided onboarding (config
+  // + joining when possible). joinUserVoice does NOT reply to the interaction; we fold the
+  // result into a checklist line to keep a SINGLE reply.
   let joinedChannelName: string | null = null;
   if (connectState === 'ok' && speakState === 'ok') {
     const outcome = joinUserVoice(i, deps);
@@ -326,7 +326,7 @@ export async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps)
     }
   }
 
-  // (d) Resumo beginner-friendly.
+  // (d) Beginner-friendly summary.
   const lines: string[] = [
     t('setup.done', locale),
     t('setup.channelLine', locale, { channel: `<#${fullCh.id}>` }),
@@ -350,8 +350,8 @@ export async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps)
   if (connectState === 'unchecked' || speakState === 'unchecked') {
     lines.push('', t('setup.voiceUncheckedNote', locale));
   }
-  // Ja juntos a voz -> proximo passo e so escrever; senao (nao estava em voz mas
-  // tudo o resto ok) mantemos a dica de correr /join.
+  // Already joined to voice -> next step is just to type; otherwise (not in voice but
+  // everything else ok) we keep the hint to run /join.
   if (!anyMissing && connectState === 'ok' && speakState === 'ok') {
     lines.push(
       '',
@@ -359,13 +359,13 @@ export async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps)
     );
   }
 
-  // Guia para MEMBROS: o admin acabou de configurar o servidor, mas os MEMBROS
-  // precisam de saber o passo seguinte. Fechamos SEMPRE o /setup com o fluxo em 3
-  // passos (join voz -> /join -> escrever) para o admin partilhar. Curto e a
-  // apontar para /help (a referencia completa) — nao a duplica.
+  // Guide for MEMBERS: the admin just configured the server, but MEMBERS
+  // need to know the next step. We ALWAYS close /setup with the 3-step
+  // flow (join voice -> /join -> type) for the admin to share. Short and
+  // pointing to /help (the full reference) — it does not duplicate it.
   lines.push('', t('setup.membersHeader', locale), t('setup.membersBody', locale));
 
-  // Cartão: verde quando está tudo OK, amarelo quando falta alguma permissão.
+  // Card: green when everything is OK, yellow when some permission is missing.
   const embed = brandEmbed(anyMissing ? 'warning' : 'success').setDescription(lines.join('\n'));
   await i.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }

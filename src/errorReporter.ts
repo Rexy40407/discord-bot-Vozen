@@ -1,26 +1,26 @@
 // src/errorReporter.ts — Vaga 3
 //
-// Envia erros INESPERADOS (gateway, unhandledRejection, uncaughtException) para um
-// webhook do Discord, para o operador ver problemas em produção sem ter de ler logs.
-// OPT-IN: sem ERROR_WEBHOOK_URL, é no-op. DEDUP por hash do stack — o MESMO erro a
-// repetir-se não faz spam do canal. NUNCA lança (um problema a reportar o erro não
-// pode ele próprio derrubar o bot).
+// Sends UNEXPECTED errors (gateway, unhandledRejection, uncaughtException) to a
+// Discord webhook, so the operator can see production problems without reading logs.
+// OPT-IN: without ERROR_WEBHOOK_URL, it is a no-op. DEDUP by stack hash — the SAME
+// error repeating does not spam the channel. NEVER throws (a problem reporting the
+// error must not itself take down the bot).
 
 import { createHash } from 'node:crypto';
 import { log } from './logging/logger';
 
-/** Limpa a janela de dedup quando chega a este nº de erros distintos (evita crescer sem fim). */
+/** Clears the dedup window when it reaches this number of distinct errors (prevents unbounded growth). */
 const DEDUP_CAP = 500;
-/** Margem abaixo do limite de 2000 chars do content do Discord. */
+/** Margin below Discord's 2000-char content limit. */
 const MAX_CONTENT = 1900;
 
 function hashError(error: unknown): string {
   const e = error as { stack?: string; message?: string };
   let key = e?.stack || e?.message;
   if (!key) {
-    // Rejeições NÃO-Error (objeto simples, string, etc.) — comum no unhandledRejection.
-    // Sem isto, tudo caía em String(error) === "[object Object]" e colidia num só hash,
-    // deduplicando falhas genuinamente diferentes. Serializa (guardado) para distinguir.
+    // NON-Error rejections (plain object, string, etc.) — common in unhandledRejection.
+    // Without this, everything fell into String(error) === "[object Object]" and collided
+    // on a single hash, deduplicating genuinely different failures. Serialize (guarded) to distinguish.
     try {
       key = JSON.stringify(error);
     } catch {
@@ -30,31 +30,31 @@ function hashError(error: unknown): string {
   return createHash('sha1').update(String(key).slice(0, 1000)).digest('hex');
 }
 
-/** Corpo máximo encaminhado (antes do invólucro cabeçalho+code block). */
+/** Maximum forwarded body (before the header+code-block wrapper). */
 const MAX_BODY = 1500;
-// Forma de um token de bot do Discord (3 blocos base64url separados por '.').
+// Shape of a Discord bot token (3 base64url blocks separated by '.').
 const DISCORD_TOKEN_RE = /[\w-]{23,28}\.[\w-]{6,7}\.[\w-]{27,}/g;
-// Chave da OpenAI ("sk-..."): pode aparecer solta em erros do SDK, não só em
-// Authorization (ex.: mensagens de erro do cliente HTTP que ecoam a config).
+// OpenAI key ("sk-..."): can appear loose in SDK errors, not only in
+// Authorization (e.g. HTTP-client error messages that echo the config).
 const OPENAI_KEY_RE = /sk-[A-Za-z0-9_-]{20,}/g;
-// Header x-goog-api-key (Google Cloud TTS/Translate): valor da chave.
+// x-goog-api-key header (Google Cloud TTS/Translate): the key value.
 const GOOGLE_HEADER_RE = /x-goog-api-key['":\s]*[:=]\s*['"]?[A-Za-z0-9_-]{10,}/gi;
-// Query param key=... — a API REST da Google aceita a chave na própria URL
-// (?key=<chave>), por isso um erro HTTP pode ecoar o URL completo.
+// key=... query param — Google's REST API accepts the key in the URL itself
+// (?key=<key>), so an HTTP error may echo the full URL.
 const GOOGLE_QUERY_KEY_RE = /([?&]key=)[A-Za-z0-9_-]{10,}/gi;
-// Credencial "Bearer xxx" (headers HTTP ecoados em mensagens de erro).
+// "Bearer xxx" credential (HTTP headers echoed in error messages).
 const BEARER_RE = /Bearer\s+[\w.~+/=-]+/gi;
-// Header Authorization genérico (esquemas != Bearer, ex. Basic, ou uma chave crua sem
-// esquema). O lookahead exclui "Bearer" (já tratado acima, com o marcador "Bearer […]");
-// o valor tem de COMEÇAR por um char não-espaço para o \s* anterior não conseguir "devolver"
-// o espaço e assim contornar o lookahead ao ficar posicionado mesmo antes de "Bearer".
+// Generic Authorization header (schemes != Bearer, e.g. Basic, or a raw key without
+// a scheme). The lookahead excludes "Bearer" (already handled above, with the "Bearer […]"
+// marker); the value must START with a non-space char so the preceding \s* cannot "give back"
+// the space and thus bypass the lookahead by sitting right before "Bearer".
 const AUTH_HEADER_RE = /authorization\s*[:=]\s*['"]?(?!Bearer\b)[^\s"'`,;\r\n][^"'`,;\r\n]*/gi;
 
 /**
- * SEC-03 / SECRET-03: o texto de um erro pode ecoar credenciais (token do bot num erro
- * do discord.js, chave da OpenAI/Google, header Authorization num erro HTTP). Redige-as
- * ANTES do envio para o webhook (que é um canal de chat) e limita o tamanho — redigir
- * primeiro, cortar depois, para um corte nunca deixar meio token/chave visível.
+ * SEC-03 / SECRET-03: an error's text can echo credentials (bot token in a discord.js
+ * error, OpenAI/Google key, Authorization header in an HTTP error). Redact them BEFORE
+ * sending to the webhook (which is a chat channel) and cap the size — redact first, cut
+ * after, so a cut never leaves half a token/key visible.
  */
 function scrub(text: string): string {
   return text
@@ -67,7 +67,7 @@ function scrub(text: string): string {
     .slice(0, MAX_BODY);
 }
 
-/** Formata o erro como content de webhook (cabeçalho + stack num code block, truncado). */
+/** Formats the error as webhook content (header + stack in a code block, truncated). */
 export function formatErrorMessage(error: unknown, context: string): string {
   const e = error as { stack?: string; message?: string };
   const head = `⚠️ **Vozen** — erro em \`${context}\``;
@@ -78,14 +78,14 @@ export function formatErrorMessage(error: unknown, context: string): string {
 }
 
 export interface ErrorReporter {
-  /** Envia o erro (fire-and-forget-friendly). Devolve true se enviado, false se
-   * suprimido (dedup / sem url) ou falhou. NUNCA lança. */
+  /** Sends the error (fire-and-forget-friendly). Returns true if sent, false if
+   * suppressed (dedup / no url) or it failed. NEVER throws. */
   report(error: unknown, context: string): Promise<boolean>;
 }
 
 /**
- * Cria um reporter com a sua PRÓPRIA janela de dedup (isolável em testes). `url`
- * ausente => report() é no-op. `fetchImpl` injetável para teste.
+ * Creates a reporter with its OWN dedup window (isolable in tests). `url`
+ * absent => report() is a no-op. `fetchImpl` injectable for tests.
  */
 export function createErrorReporter(
   url: string | undefined,
@@ -96,11 +96,11 @@ export function createErrorReporter(
     async report(error, context) {
       if (!url) return false;
       const h = hashError(error);
-      if (seen.has(h)) return false; // já reportado — não faz spam
+      if (seen.has(h)) return false; // already reported — no spam
       if (seen.size >= DEDUP_CAP) seen.clear();
-      // Marca ANTES do await para deduplicar envios concorrentes do MESMO erro; mas
-      // remove se o envio FALHAR, para que a próxima ocorrência possa re-tentar — senão
-      // uma falha transitória (429/5xx/rede) perdia esse sinal para sempre nesta janela.
+      // Mark BEFORE the await to deduplicate concurrent sends of the SAME error; but
+      // remove it if the send FAILS, so the next occurrence can retry — otherwise a
+      // transient failure (429/5xx/network) would lose that signal forever in this window.
       seen.add(h);
       try {
         const res = await fetchImpl(url, {

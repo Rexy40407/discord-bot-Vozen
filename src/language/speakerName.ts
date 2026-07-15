@@ -1,21 +1,21 @@
 // src/language/speakerName.ts
 //
-// Sanitiza o nome do autor para ser LIDO em voz alta pelo xsaid. Nomes de Discord
-// vêm cheios de emojis, símbolos e underscores ("🔥xX_Pro_Xx🔥") que soam a lixo no
-// TTS. Aqui tiramos o que não é fala e deixamos algo pronunciável. PURO.
+// Sanitizes the author name so it can be READ aloud by xsaid. Discord names come
+// full of emojis, symbols and underscores ("🔥xX_Pro_Xx🔥") that sound like garbage in
+// TTS. Here we strip whatever is not speech and leave something pronounceable. PURE.
 
 const RE_CUSTOM_EMOJI = /<a?:\w+:\d+>/g;
 const RE_PICTOGRAPHIC = /\p{Extended_Pictographic}/gu;
-// Mantém SÓ letras, números, espaços e separadores suaves (- e apóstrofos). Tudo o
-// resto — símbolos decorativos (▓★|~), e também os componentes zero-width de emoji
-// (ZWJ, VS16, keycap) e regional indicators, que não são \p{L}/\p{N}/espaço — cai aqui.
+// Keeps ONLY letters, numbers, spaces and soft separators (- and apostrophes). Everything
+// else — decorative symbols (▓★|~), and also the zero-width emoji components
+// (ZWJ, VS16, keycap) and regional indicators, which are not \p{L}/\p{N}/space — falls here.
 const RE_DECOR = /[^\p{L}\p{N}\s\-'’]/gu;
 const RE_WS = /\s+/g;
 const MAX_NAME_CHARS = 40;
 
 /**
- * Devolve um nome pronunciável, ou '' se depois de limpar não sobra nada legível
- * (nome 100% emojis) — o chamador decide o fallback (username / genérico / sem xsaid).
+ * Returns a pronounceable name, or '' if after cleaning nothing readable is left
+ * (a 100% emoji name) — the caller decides the fallback (username / generic / no xsaid).
  */
 export function sanitizeSpeakerName(raw: string): string {
   let s = raw
@@ -26,6 +26,6 @@ export function sanitizeSpeakerName(raw: string): string {
     .replace(RE_WS, ' ')
     .trim();
   if (s.length > MAX_NAME_CHARS) s = s.slice(0, MAX_NAME_CHARS).trim();
-  // Só vale como nome se tiver pelo menos uma letra/número.
+  // Only counts as a name if it has at least one letter/number.
   return /[\p{L}\p{N}]/u.test(s) ? s : '';
 }

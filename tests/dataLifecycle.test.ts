@@ -1,10 +1,10 @@
 // tests/dataLifecycle.test.ts
 //
-// Conformidade (RGPD / Política do Discord §5(b)): a purga por-servidor e o erase
-// por-utilizador têm de cobrir TODAS as tabelas com os dados dessa entidade, e NÃO
-// tocar nos registos financeiros/entitlement retidos. O teste `rot-guard` FALHA se
-// alguém adicionar uma tabela nova com guild_id/user_id sem a categorizar — é a rede
-// que mantém a purga/erase completas à medida que o schema cresce.
+// Compliance (GDPR / Discord Policy §5(b)): the per-server purge and the per-user
+// erase must cover ALL tables holding that entity's data, and must NOT
+// touch the retained financial/entitlement records. The `rot-guard` test FAILS if
+// someone adds a new table with guild_id/user_id without categorizing it — it's the net
+// that keeps the purge/erase complete as the schema grows.
 import { describe, it, expect } from 'vitest';
 import Database from 'better-sqlite3';
 import { initDb } from '../src/store/db';
@@ -27,7 +27,7 @@ function count(db: Database.Database, table: string, col: string, id: string): n
   ).n;
 }
 
-/** Insere 1 linha em cada tabela guild-scoped para um guildId (colunas mínimas + defaults). */
+/** Inserts 1 row in each guild-scoped table for a guildId (minimal columns + defaults). */
 function seedGuild(db: Database.Database, g: string, u: string): void {
   db.prepare('INSERT INTO user_voice (guild_id, user_id, voice_model, speed) VALUES (?,?,?,?)').run(
     g,
@@ -67,7 +67,7 @@ function seedGuild(db: Database.Database, g: string, u: string): void {
     1,
   );
   db.prepare('INSERT INTO stt_consent (user_id, guild_id, consent_at) VALUES (?,?,?)').run(u, g, 1);
-  // Retidas (financeiro/entitlement) — NÃO devem ser tocadas pela purga.
+  // Retained (financial/entitlement) — must NOT be touched by the purge.
   db.prepare('INSERT INTO premium_guild (guild_id, expires_at, source) VALUES (?,?,?)').run(
     g,
     9_999_999_999_999,
@@ -79,7 +79,7 @@ function seedGuild(db: Database.Database, g: string, u: string): void {
 }
 
 describe('purgeGuild', () => {
-  it('apaga todos os dados guild-scoped de UM servidor, deixa os outros e os registos financeiros', () => {
+  it('deletes all guild-scoped data of ONE server, leaves the others and the financial records', () => {
     const db = initDb(':memory:');
     try {
       seedGuild(db, 'G', 'U');
@@ -87,13 +87,13 @@ describe('purgeGuild', () => {
 
       purgeGuild(db, 'G');
 
-      // Todas as tabelas de purga: G apagado, OTHER intacto.
+      // All purge tables: G deleted, OTHER intact.
       for (const t of GUILD_PURGE_TABLES) {
-        if (t === 'guild_departed') continue; // não semeado aqui
+        if (t === 'guild_departed') continue; // not seeded here
         expect(count(db, t, 'guild_id', 'G')).toBe(0);
         expect(count(db, t, 'guild_id', 'OTHER')).toBe(1);
       }
-      // Retidas: NÃO apagadas (registo financeiro do servidor + licença paga).
+      // Retained: NOT deleted (server's financial record + paid licence).
       expect(count(db, 'premium_guild', 'guild_id', 'G')).toBe(1);
       expect(count(db, 'premium_pass_activation', 'guild_id', 'G')).toBe(1);
     } finally {
@@ -103,7 +103,7 @@ describe('purgeGuild', () => {
 });
 
 describe('eraseUser', () => {
-  it('invalida o cache de pronunciation_user (senão serve pronúncias apagadas após o erase)', () => {
+  it('invalidates the pronunciation_user cache (otherwise serves deleted pronunciations after the erase)', () => {
     const db = initDb(':memory:');
     try {
       db.prepare('INSERT INTO pronunciation_user (user_id, term, replacement) VALUES (?,?,?)').run(
@@ -111,24 +111,24 @@ describe('eraseUser', () => {
         'nginx',
         'engine x',
       );
-      // Popula o cache em memória (chave `pronunciation_user`).
+      // Populates the in-memory cache (key `pronunciation_user`).
       expect(getUserPronunciations(db, 'U')).toHaveLength(1);
-      // O erase apaga as linhas E tem de invalidar o cache do utilizador.
+      // The erase deletes the rows AND must invalidate the user's cache.
       eraseUser(db, 'U');
-      // Sem o fix, isto devolve a entrada em cache (dado apagado a persistir — falha RGPD).
+      // Without the fix, this returns the cached entry (deleted data persisting — GDPR failure).
       expect(getUserPronunciations(db, 'U')).toEqual([]);
     } finally {
       db.close();
     }
   });
 
-  it('apaga os dados pessoais do utilizador em TODOS os servidores, retém o financeiro, devolve os WAVs', () => {
+  it('deletes the user personal data in ALL servers, retains the financial, returns the WAVs', () => {
     const db = initDb(':memory:');
     try {
-      // U tem dados em 2 servidores.
+      // U has data in 2 servers.
       seedGuild(db, 'G1', 'U');
       seedGuild(db, 'G2', 'U');
-      // Tabelas user-scoped globais.
+      // Global user-scoped tables.
       db.prepare('INSERT INTO user_abbreviation (user_id, term, replacement) VALUES (?,?,?)').run(
         'U',
         'idk',
@@ -139,7 +139,7 @@ describe('eraseUser', () => {
         'nginx',
         'engine x',
       );
-      // Identificadores do utilizador guardados sob OUTRO nome (bespoke erase).
+      // User identifiers stored under ANOTHER name (bespoke erase).
       db.prepare(
         'INSERT INTO kofi_supporter (email_hash, discord_id, updated_at) VALUES (?,?,?)',
       ).run('hash-de-U', 'U', 1);
@@ -149,14 +149,14 @@ describe('eraseUser', () => {
         '2026-07',
         100,
       );
-      // Consumo do SERVIDOR (scope guild) — NÃO é dado pessoal de U, fica retido.
+      // SERVER usage (guild scope) — NOT U's personal data, stays retained.
       db.prepare('INSERT INTO gcloud_usage (scope, key, month, chars) VALUES (?,?,?,?)').run(
         'guild',
         'G1',
         '2026-07',
         50,
       );
-      // Financeiro/entitlement do utilizador (RETIDO).
+      // User's financial/entitlement (RETAINED).
       db.prepare('INSERT INTO premium_user (user_id, expires_at, source) VALUES (?,?,?)').run(
         'U',
         9_999_999_999_999,
@@ -165,7 +165,7 @@ describe('eraseUser', () => {
       db.prepare(
         'INSERT INTO premium_pass (user_id, seats, expires_at, source) VALUES (?,?,?,?)',
       ).run('U', 3, 9_999_999_999_999, 'kofi');
-      // Clone do próprio (auto-clone) + clone da voz de U gravado por OUTRO (biométrico de U).
+      // Own clone (self-clone) + clone of U's voice recorded by ANOTHER (U's biometric).
       db.prepare(
         'INSERT INTO user_clone (user_id, sample_path, consent_at, enabled, target_id) VALUES (?,?,?,?,?)',
       ).run('U', '/data/clones/U.wav', 1, 1, 'U');
@@ -175,21 +175,21 @@ describe('eraseUser', () => {
 
       const res = eraseUser(db, 'U');
 
-      // Tabelas de erase: zero linhas de U (em qualquer servidor).
+      // Erase tables: zero rows of U (in any server).
       for (const t of USER_ERASE_TABLES) {
         expect(count(db, t, 'user_id', 'U')).toBe(0);
       }
-      // O clone da voz de U gravado por outro (target_id = U) também foi revogado.
+      // The clone of U's voice recorded by another (target_id = U) was also revoked.
       expect(count(db, 'user_clone', 'target_id', 'U')).toBe(0);
-      // Bespoke: o link Ko-fi (discord_id) e o consumo pessoal (key) de U foram apagados;
-      // o consumo do SERVIDOR (scope guild) fica retido (não é dado pessoal de U).
+      // Bespoke: U's Ko-fi link (discord_id) and personal usage (key) were deleted;
+      // the SERVER usage (guild scope) stays retained (not U's personal data).
       expect(count(db, 'kofi_supporter', 'discord_id', 'U')).toBe(0);
       expect(count(db, 'gcloud_usage', 'key', 'U')).toBe(0);
       expect(count(db, 'gcloud_usage', 'key', 'G1')).toBe(1);
-      // Retidas: intactas.
+      // Retained: intact.
       expect(count(db, 'premium_user', 'user_id', 'U')).toBe(1);
       expect(count(db, 'premium_pass', 'user_id', 'U')).toBe(1);
-      // Devolve os caminhos dos WAVs para o chamador apagar (o próprio + o gravado por outro).
+      // Returns the WAV paths for the caller to delete (the own one + the one recorded by another).
       expect(res.removedSamplePaths.sort()).toEqual(
         ['/data/clones/OWNER-of-U.wav', '/data/clones/U.wav'].sort(),
       );
@@ -199,8 +199,8 @@ describe('eraseUser', () => {
   });
 });
 
-describe('rot-guard: categorização vs schema real', () => {
-  it('TODA a tabela com guild_id está categorizada (purga OU retida) e o mesmo para user_id', () => {
+describe('rot-guard: categorization vs real schema', () => {
+  it('EVERY table with guild_id is categorized (purge OR retained) and the same for user_id', () => {
     const db = initDb(':memory:');
     try {
       const tables = (
@@ -225,10 +225,10 @@ describe('rot-guard: categorização vs schema real', () => {
             `tabela '${t}' tem user_id mas não está em USER_ERASE_TABLES nem USER_RETAINED_TABLES`,
           ).toContain(t);
         }
-        // ALARGADO: um ID de utilizador guardado sob OUTRO nome (discord_id, key,
-        // created_by…) escapava ao guard antigo E à eliminação. Qualquer coluna em forma
-        // de identificador (além de user_id/guild_id, já cobertos acima) obriga a tabela a
-        // estar categorizada numa das 4 listas OU tratada/isenta explicitamente.
+        // EXTENDED: a user ID stored under ANOTHER name (discord_id, key,
+        // created_by…) escaped both the old guard AND the deletion. Any identifier-shaped
+        // column (besides user_id/guild_id, already covered above) requires the table to
+        // be categorized in one of the 4 lists OR explicitly handled/exempted.
         const idCols = cols.filter(
           (c) =>
             c !== 'user_id' &&
@@ -255,7 +255,7 @@ describe('rot-guard: categorização vs schema real', () => {
     }
   });
 
-  it('as listas de purga/retenção são disjuntas e só referem tabelas existentes', () => {
+  it('the purge/retention lists are disjoint and only reference existing tables', () => {
     const db = initDb(':memory:');
     try {
       const exists = new Set(
@@ -276,7 +276,7 @@ describe('rot-guard: categorização vs schema real', () => {
         ...LIFECYCLE_REVIEWED_EXEMPT,
       ];
       for (const t of all) expect(exists, `lista refere tabela inexistente '${t}'`).toContain(t);
-      // Disjunção por-eixo: nenhuma tabela é ao mesmo tempo purgada e retida.
+      // Per-axis disjointness: no table is both purged and retained at the same time.
       for (const t of GUILD_PURGE_TABLES) expect(GUILD_RETAINED_TABLES).not.toContain(t);
       for (const t of USER_ERASE_TABLES) expect(USER_RETAINED_TABLES).not.toContain(t);
     } finally {
@@ -285,8 +285,8 @@ describe('rot-guard: categorização vs schema real', () => {
   });
 });
 
-describe('purgeOldGcloudUsage — retenção mensal', () => {
-  it('apaga meses ANTERIORES ao cutoff e mantém o cutoff e os posteriores', () => {
+describe('purgeOldGcloudUsage — monthly retention', () => {
+  it('deletes months BEFORE the cutoff and keeps the cutoff and the later ones', () => {
     const db = initDb(':memory:');
     try {
       db.prepare('INSERT INTO gcloud_usage (scope, key, month, chars) VALUES (?,?,?,?)').run(
@@ -302,7 +302,7 @@ describe('purgeOldGcloudUsage — retenção mensal', () => {
         20,
       );
       const removed = purgeOldGcloudUsage(db, '2026-06');
-      expect(removed).toBe(1); // só o mês '2026-04'
+      expect(removed).toBe(1); // only the month '2026-04'
       expect(count(db, 'gcloud_usage', 'month', '2026-04')).toBe(0);
       expect(count(db, 'gcloud_usage', 'month', '2026-07')).toBe(1);
     } finally {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Mock minimo de @discordjs/voice — nao e usado no caminho do /tts (o player e
-// injectado nas deps), mas o import de index.ts precisa de resolver.
+// Minimal mock of @discordjs/voice — not used in the /tts path (the player is
+// injected into the deps), but index.ts's import needs to resolve.
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
   getVoiceConnection: () => undefined,
@@ -46,7 +46,7 @@ function makeTtsInteraction(text: string) {
     editReply: async (o: string | { content: string }) => {
       replies.push(typeof o === 'string' ? o : o.content);
     },
-    // guild.members.cache / channels.cache usados pelo cleanText resolver.
+    // guild.members.cache / channels.cache used by the cleanText resolver.
     guild: {
       members: { cache: new Map() },
       channels: { cache: new Map() },
@@ -61,7 +61,7 @@ function makeTtsInteraction(text: string) {
   };
 }
 
-describe('/tts — say() cheio nao mente "queued"', () => {
+describe('/tts — full say() does not lie "queued"', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -71,7 +71,7 @@ describe('/tts — say() cheio nao mente "queued"', () => {
     db.close();
   });
 
-  it('quando say() devolve true responde "queued"', async () => {
+  it('when say() returns true responds "queued"', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeTtsInteraction('ola mundo');
@@ -84,7 +84,7 @@ describe('/tts — say() cheio nao mente "queued"', () => {
     expect(i.replies.some((r) => /busy/i.test(r))).toBe(false);
   });
 
-  it('quando say() devolve false (fila cheia) responde "busy", NAO "queued"', async () => {
+  it('when say() returns false (queue full) responds "busy", NOT "queued"', async () => {
     const say = vi.fn().mockResolvedValue(false);
     const deps = makeDeps(db, { say });
     const i = makeTtsInteraction('ola mundo');
@@ -98,7 +98,7 @@ describe('/tts — say() cheio nao mente "queued"', () => {
   });
 });
 
-describe('/tts — guard de vazio (nada legivel -> nao sintetiza)', () => {
+describe('/tts — empty guard (nothing readable -> does not synthesize)', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -108,9 +108,9 @@ describe('/tts — guard de vazio (nada legivel -> nao sintetiza)', () => {
     db.close();
   });
 
-  // ❤️ (U+2764 U+FE0F): antes do fix o VS16 sobrevivia -> resíduo truthy passava
-  // o guard `if (!cleaned)` -> Piper sintetizava clipe vazio. Agora é ignorado.
-  it('só emoji ❤️ (VS16) → nothingAfterClean, NÃO chama say', async () => {
+  // ❤️ (U+2764 U+FE0F): before the fix the VS16 survived -> truthy residue passed
+  // the `if (!cleaned)` guard -> Piper synthesized an empty clip. Now it is ignored.
+  it('only emoji ❤️ (VS16) → nothingAfterClean, does NOT call say', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeTtsInteraction('❤️');
@@ -118,11 +118,11 @@ describe('/tts — guard de vazio (nada legivel -> nao sintetiza)', () => {
     await handleInteraction(i as any, deps);
 
     expect(say).not.toHaveBeenCalled();
-    // t('tts.nothingAfterClean', 'en') fala em "nothing"/"read".
+    // t('tts.nothingAfterClean', 'en') mentions "nothing"/"read".
     expect(i.replies.some((r) => /nothing|read/i.test(r))).toBe(true);
   });
 
-  it('só bandeira 🇦🇩 (regional indicators) → NÃO chama say', async () => {
+  it('only flag 🇦🇩 (regional indicators) → does NOT call say', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeTtsInteraction('🇦🇩');
@@ -132,9 +132,9 @@ describe('/tts — guard de vazio (nada legivel -> nao sintetiza)', () => {
     expect(say).not.toHaveBeenCalled();
   });
 
-  // Isola a mudança do guard: cleanText('!!!') = '!!!' (truthy) -> o antigo guard
-  // deixava passar; o novo exige \p{L}\p{N}.
-  it('só pontuação ("!!!") → NÃO chama say', async () => {
+  // Isolates the guard change: cleanText('!!!') = '!!!' (truthy) -> the old guard
+  // let it through; the new one requires \p{L}\p{N}.
+  it('only punctuation ("!!!") → does NOT call say', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeTtsInteraction('!!!');
@@ -144,7 +144,7 @@ describe('/tts — guard de vazio (nada legivel -> nao sintetiza)', () => {
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('texto com dígitos ("$100") → chama say (contém \\p{N})', async () => {
+  it('text with digits ("$100") → calls say (contains \\p{N})', async () => {
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makeTtsInteraction('$100');
@@ -154,9 +154,9 @@ describe('/tts — guard de vazio (nada legivel -> nao sintetiza)', () => {
     expect(say).toHaveBeenCalledOnce();
   });
 
-  // Beginner-friendly: sem player, a mensagem GUIA o principiante (entra num canal
-  // de voz E corre /join), em vez de so constatar o estado.
-  it('sem player responde uma mensagem que GUIA a juntar-se a voz e correr /join', async () => {
+  // Beginner-friendly: without a player, the message GUIDES the beginner (join a voice
+  // channel AND run /join), instead of just stating the state.
+  it('without a player responds with a message that GUIDES to join voice and run /join', async () => {
     const say = vi.fn();
     const deps = makeDeps(db); // sem player
     const i = makeTtsInteraction('Hello everyone!');
@@ -165,12 +165,12 @@ describe('/tts — guard de vazio (nada legivel -> nao sintetiza)', () => {
 
     expect(say).not.toHaveBeenCalled();
     const text = i.replies.join('\n');
-    expect(text).toMatch(/\/join/); // aponta o comando a correr
-    expect(text).toMatch(/voice channel/i); // diz para entrar num canal de voz
+    expect(text).toMatch(/\/join/); // points to the command to run
+    expect(text).toMatch(/voice channel/i); // tells to join a voice channel
   });
 
-  // nothingAfterClean deve ser instrutivo (dizer o que fazer), nao so terse.
-  it('só emoji → nothingAfterClean pede texto legivel/normal', async () => {
+  // nothingAfterClean should be instructive (say what to do), not just terse.
+  it('only emoji → nothingAfterClean asks for readable/normal text', async () => {
     const say = vi.fn();
     const deps = makeDeps(db, { say });
     const i = makeTtsInteraction('❤️');
@@ -179,7 +179,7 @@ describe('/tts — guard de vazio (nada legivel -> nao sintetiza)', () => {
 
     expect(say).not.toHaveBeenCalled();
     const text = i.replies.join('\n');
-    // continua a falar de "nothing/read" (compat) mas agora sugere texto normal
+    // still mentions "nothing/read" (compat) but now suggests normal text
     expect(text).toMatch(/nothing|read/i);
     expect(text).toMatch(/some text|letters|words|normal/i);
   });

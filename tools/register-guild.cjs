@@ -1,14 +1,14 @@
-// tools/register-guild.cjs — regista os slash commands GUILD-SCOPED em todos os
-// servidores onde o bot está (ou num guild id passado em argv). Ao contrário do
-// registo GLOBAL (registerCommands.ts), os comandos de guild aparecem NA HORA — sem
-// o atraso de propagação (~1h) nem a cache do cliente. Útil para ver já uma opção
-// nova (ex.: o motor Kokoro no /voice set) sem esperar pela propagação global.
+// tools/register-guild.cjs — registers the GUILD-SCOPED slash commands in all
+// servers where the bot is (or in a guild id passed via argv). Unlike the
+// GLOBAL registration (registerCommands.ts), guild commands appear INSTANTLY — without
+// the propagation delay (~1h) or the client cache. Useful to see a new option
+// right away (e.g. the Kokoro engine in /voice set) without waiting for global propagation.
 //
-// O token vem do loadConfig() (que faz require('dotenv/config')) — NUNCA é impresso.
-// Uso: node tools/register-guild.cjs [guildId]   (sem arg = todos os guilds do bot)
+// The token comes from loadConfig() (which does require('dotenv/config')) — it is NEVER printed.
+// Usage: node tools/register-guild.cjs [guildId]   (no arg = all of the bot's guilds)
 //
-// NOTA: um comando de guild com o mesmo nome SOBREPÕE o global nesse servidor. Para
-// voltar ao global puro mais tarde, correr tools/clear-guild-commands.cjs.
+// NOTE: a guild command with the same name OVERRIDES the global one in that server. To
+// return to pure global later, run tools/clear-guild-commands.cjs.
 
 const { REST, Routes } = require('discord.js');
 const { loadConfig } = require('../dist/config/index.js');

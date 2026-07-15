@@ -7,13 +7,13 @@ import {
   pickWyr,
 } from '../src/content/microfun';
 
-describe('funLocaleOf — normaliza o locale da UI para en|pt', () => {
-  it("'pt' e 'pt-BR' -> pt; tudo o resto -> en", () => {
+describe('funLocaleOf — normalizes the UI locale to en|pt', () => {
+  it("'pt' and 'pt-BR' -> pt; everything else -> en", () => {
     expect(funLocaleOf('pt')).toBe('pt');
     expect(funLocaleOf('pt-BR')).toBe('pt');
     expect(funLocaleOf('en')).toBe('en');
     expect(funLocaleOf('en-US')).toBe('en');
-    expect(funLocaleOf('de')).toBe('en'); // línguas sem banco caem no inglês
+    expect(funLocaleOf('de')).toBe('en'); // languages without a bank fall back to English
     expect(funLocaleOf('')).toBe('en');
   });
 });
@@ -25,21 +25,21 @@ const pickers = [
   { name: 'wyr', fn: pickWyr },
 ] as const;
 
-describe('pick* — puros, determinísticos e sempre devolvem uma frase não-vazia', () => {
+describe('pick* — pure, deterministic and always return a non-empty phrase', () => {
   for (const { name, fn } of pickers) {
-    it(`${name}: mesmo seed -> mesma frase (determinístico)`, () => {
+    it(`${name}: same seed -> same phrase (deterministic)`, () => {
       expect(fn('en', 42)).toBe(fn('en', 42));
       expect(fn('pt', 7)).toBe(fn('pt', 7));
     });
 
-    it(`${name}: devolve string não-vazia para en e pt, em qualquer seed`, () => {
+    it(`${name}: returns a non-empty string for en and pt, at any seed`, () => {
       for (const seed of [0, 1, 5, 13, 99, 1000]) {
         expect(fn('en', seed).length).toBeGreaterThan(0);
         expect(fn('pt', seed).length).toBeGreaterThan(0);
       }
     });
 
-    it(`${name}: índice dá a volta (seed grande não rebenta)`, () => {
+    it(`${name}: index wraps around (large seed does not blow up)`, () => {
       expect(() => fn('en', Number.MAX_SAFE_INTEGER)).not.toThrow();
       expect(fn('en', 0)).toBe(fn('en', 0));
     });

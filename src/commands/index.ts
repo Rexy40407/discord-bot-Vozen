@@ -7,7 +7,7 @@ import { log } from '../logging/logger';
 import { t, SUPPORTED_LOCALES, LOCALE_DISPLAY_NAMES } from '../i18n/index';
 import { getUserPronunciations, getServerPronunciations } from '../store/pronunciation';
 
-// Handlers extraídos por domínio (plano 015): index.ts fica como registry/dispatcher fino.
+// Handlers extracted by domain (plan 015): index.ts stays as a thin registry/dispatcher.
 import { handleJoin, handleLeave, handleTts, handleSkip, handleShutup } from './handlers/core';
 import { handleVoice } from './handlers/voice';
 import { handleTranscribe } from './handlers/transcribe';
@@ -42,19 +42,19 @@ import {
 import { handlePrivacy } from './handlers/privacy';
 import { localeFor } from './helpers';
 
-// Re-exports: mantêm os caminhos de import públicos inalterados para quem já importa daqui.
+// Re-exports: keep the public import paths unchanged for anyone already importing from here.
 export { localeForUser, INVITE_PERMISSIONS, localePrefixOf, formatDuration } from './helpers';
 export { joinUserVoice, handleMessageContextMenu, type JoinOutcome } from './handlers/core';
 
 export { commandDefs, ownerCommandDefs } from './definitions';
 
 /**
- * Filtra os modelos disponíveis pelo que o utilizador escreveu (case-insensitive),
- * limitado a 25 (máximo do Discord para autocomplete). Função pura e testável.
+ * Filters the available models by what the user typed (case-insensitive), limited to 25
+ * (Discord's maximum for autocomplete). Pure and testable function.
  *
- * `locale` (o locale do cliente Discord de quem escreve, `i.locale`) escreve os nomes
- * das línguas NA LÍNGUA DO UTILIZADOR (ex.: "Alemão"/"Allemand"/"German") via
- * makeLocalizedNamer. Sem `locale` -> autónimos (comportamento antigo, usado nos testes).
+ * `locale` (the Discord client locale of whoever is typing, `i.locale`) writes the
+ * language names IN THE USER'S LANGUAGE (e.g. "Alemão"/"Allemand"/"German") via
+ * makeLocalizedNamer. Without `locale` -> autonyms (old behavior, used in the tests).
  */
 export function filterModelChoices(
   models: string[],
@@ -62,13 +62,13 @@ export function filterModelChoices(
   locale?: string,
 ): { name: string; value: string }[] {
   const q = query.trim().toLowerCase();
-  // voice:false -> o picker mostra só a LÍNGUA (como sempre), agora na língua do user.
+  // voice:false -> the picker shows only the LANGUAGE (as always), now in the user's language.
   const namer = makeLocalizedNamer(locale, models, { voice: false });
   return (
     models
       .map((m) => ({ name: namer(m), value: m }))
-      // Procura pelo nome localizado E pelo id cru (o user pode escrever na sua língua
-      // OU o nome técnico/voz). Também casa o autónimo para não regredir a pesquisa.
+      // Searches by the localized name AND the raw id (the user may type in their language
+      // OR the technical/voice name). Also matches the autonym so the search doesn't regress.
       .filter(
         (c) =>
           c.name.toLowerCase().includes(q) ||
@@ -81,10 +81,10 @@ export function filterModelChoices(
 }
 
 /**
- * Filtra as linguas suportadas do /joke pelo que o utilizador escreve na opcao
- * `idioma` (case-insensitive, por substring do display name em INGLES), limitado a
- * 25 (maximo do Discord para autocomplete). Suportamos 34 linguas > 25, por isso o
- * cap e mesmo necessario (uma query vazia excederia o limite). Pura e testavel.
+ * Filters the supported languages of /joke by what the user types in the `idioma`
+ * option (case-insensitive, by substring of the ENGLISH display name), limited to 25
+ * (Discord's maximum for autocomplete). We support 34 languages > 25, so the cap is
+ * really necessary (an empty query would exceed the limit). Pure and testable.
  */
 export function filterJokeLanguages(query: string): { name: string; value: string }[] {
   const q = query.trim().toLowerCase();
@@ -94,13 +94,13 @@ export function filterJokeLanguages(query: string): { name: string; value: strin
 }
 
 /**
- * Filtra os locales da INTERFACE suportados pelo que o utilizador escreve na opcao
- * `locale` do /config language (case-insensitive, por substring do endonimo OU do
- * codigo), limitado a 25 (maximo do Discord para autocomplete). Suportamos 34
- * linguas > 25, por isso o cap e mesmo necessario (uma query vazia excederia o
- * limite) — foi por isto que este comando passou de choices estaticas a
- * autocomplete. Pura e testavel. name = endonimo (LOCALE_DISPLAY_NAMES), value =
- * codigo (o que se grava em guild_config.locale).
+ * Filters the supported INTERFACE locales by what the user types in the `locale`
+ * option of /config language (case-insensitive, by substring of the endonym OR the
+ * code), limited to 25 (Discord's maximum for autocomplete). We support 34 languages
+ * > 25, so the cap is really necessary (an empty query would exceed the limit) — this
+ * is why this command moved from static choices to autocomplete. Pure and testable.
+ * name = endonym (LOCALE_DISPLAY_NAMES), value = code (what is stored in
+ * guild_config.locale).
  */
 export function filterLocaleChoices(query: string): { name: string; value: string }[] {
   const q = query.trim().toLowerCase();
@@ -113,17 +113,18 @@ export function filterLocaleChoices(query: string): { name: string; value: strin
 }
 
 /**
- * Autocomplete das opções `model` (/voice set, /voice preview, /config
- * default-voice) e `idioma` (/joke): mostra as vozes REALMENTE instaladas / as
- * linguas suportadas para o utilizador escolher de uma lista, em vez de escrever o
- * nome à mão. Beginner-friendly. Qualquer outra opção -> [] (sem sugestões).
+ * Autocomplete for the `model` (/voice set, /voice preview, /config default-voice) and
+ * `idioma` (/joke) options: shows the ACTUALLY installed voices / the supported
+ * languages for the user to pick from a list, instead of typing the name by hand.
+ * Beginner-friendly. Any other option -> [] (no suggestions).
  */
 /**
- * Choices do autocomplete do `/pronunciation remove` (e `/serverpronunciation remove`):
- * lista as pronúncias GUARDADAS em vez de obrigar a escrever o termo de cor. Casa por
- * substring do termo OU da substituição (quem só se lembra do "como se diz" também
- * encontra). name = "termo → substituição" (legível); value = o termo CRU — é o que o
- * handler passa ao removeUserPronunciation/removeServerPronunciation. PURA/testável.
+ * Choices for the `/pronunciation remove` (and `/serverpronunciation remove`)
+ * autocomplete: lists the SAVED pronunciations instead of forcing the user to type the
+ * term from memory. Matches by substring of the term OR the replacement (someone who
+ * only remembers the "how it's said" also finds it). name = "term → replacement"
+ * (readable); value = the RAW term — it's what the handler passes to
+ * removeUserPronunciation/removeServerPronunciation. PURE/testable.
  */
 export function filterPronunciationChoices(
   entries: { term: string; replacement: string }[],
@@ -139,10 +140,10 @@ export function filterPronunciationChoices(
 }
 
 /**
- * Sanitiza choices de autocomplete para os limites do Discord: máx. 25 entradas,
- * `name` 1–100 chars, `value` ≤100 chars. UMA entrada inválida faz a API rejeitar o
- * payload INTEIRO com 400 → o cliente mostra "Falha ao carregar opções". Este é o
- * único ponto de passagem antes do respond(), por isso a garantia é estrutural.
+ * Sanitizes autocomplete choices to Discord's limits: max. 25 entries, `name` 1–100
+ * chars, `value` ≤100 chars. ONE invalid entry makes the API reject the WHOLE payload
+ * with 400 → the client shows "Failed to load options". This is the single pass-through
+ * point before respond(), so the guarantee is structural.
  */
 export function sanitizeAutocompleteChoices(
   choices: { name: string; value: string }[],
@@ -153,37 +154,37 @@ export function sanitizeAutocompleteChoices(
   }));
 }
 
-/** Calcula as choices de UMA interação de autocomplete. Síncrono e sem I/O — o
- *  orçamento de ~3s do autocomplete (sem defer possível) gasta-se na REDE, não aqui. */
+/** Computes the choices for ONE autocomplete interaction. Synchronous and I/O-free — the
+ *  autocomplete's ~3s budget (no defer possible) is spent on the NETWORK, not here. */
 function computeAutocompleteChoices(
   i: AutocompleteInteraction,
   deps: BotDeps,
   focused: { name: string; value: string },
 ): { name: string; value: string }[] {
   if (focused.name === 'model') {
-    // i.locale = locale do cliente Discord de quem escreve -> nomes das línguas
-    // escritos NA LÍNGUA DELE (ex.: "Alemão" para PT, "Allemand" para FR).
+    // i.locale = the Discord client locale of whoever is typing -> language names
+    // written IN THEIR LANGUAGE (e.g. "Alemão" for PT, "Allemand" for FR).
     return filterModelChoices(deps.availableModels, focused.value, i.locale);
   }
   if (focused.name === 'language') {
-    // A opção `language` existe em DOIS comandos: /joke (~34 línguas) e /game play
-    // word-chain (só as 4 línguas latinas com wordlist). Roteamos por comando.
+    // The `language` option exists in TWO commands: /joke (~34 languages) and /game play
+    // word-chain (only the 4 Latin languages with a wordlist). We route by command.
     if (i.commandName === 'game') return filterWordChainLanguages(focused.value);
     return filterJokeLanguages(focused.value);
   }
-  // /config language: a opcao chama-se `locale` (NAO `language` — essa e do /joke).
-  // 34 linguas > 25 choices estaticas do Discord, por isso e autocomplete.
+  // /config language: the option is called `locale` (NOT `language` — that's /joke's).
+  // 34 languages > 25 static Discord choices, so it's autocomplete.
   if (focused.name === 'locale') {
     return filterLocaleChoices(focused.value);
   }
-  // /game play: nomes dos jogos na LINGUA do utilizador. filterGameChoices espera o
-  // codigo base ('pt', 'fr'); normalizamos o i.locale do Discord ('pt-BR' -> 'pt').
+  // /game play: game names in the user's LANGUAGE. filterGameChoices expects the base
+  // code ('pt', 'fr'); we normalize the Discord i.locale ('pt-BR' -> 'pt').
   if (focused.name === 'game') {
     const base = (i.locale || '').split('-')[0].toLowerCase() || 'en';
     return filterGameChoices(focused.value, base);
   }
-  // /pronunciation remove + /serverpronunciation remove: a opção `term` lista as
-  // pronúncias JÁ GUARDADAS (pessoais ou do servidor) — escolher em vez de escrever.
+  // /pronunciation remove + /serverpronunciation remove: the `term` option lists the
+  // ALREADY-SAVED pronunciations (personal or server) — pick instead of typing.
   if (focused.name === 'term') {
     if (i.commandName === 'pronunciation') {
       return filterPronunciationChoices(getUserPronunciations(deps.db, i.user.id), focused.value);
@@ -195,8 +196,8 @@ function computeAutocompleteChoices(
     }
     return [];
   }
-  // /voice clone record `user`: lista quem está na call COM o bot (os únicos alvos
-  // válidos — gravar exige estar no canal do bot). Fora de uma call, lista vazia.
+  // /voice clone record `user`: lists who is in the call WITH the bot (the only valid
+  // targets — recording requires being in the bot's channel). Outside a call, empty list.
   if (focused.name === 'user') {
     const botChannel = i.guild?.members.me?.voice?.channel ?? null;
     const q = focused.value.trim().toLowerCase();
@@ -217,20 +218,20 @@ function computeAutocompleteChoices(
 }
 
 export async function handleAutocomplete(i: AutocompleteInteraction, deps: BotDeps): Promise<void> {
-  // Instrumentação anti-"Falha ao carregar opções". O autocomplete NÃO pode ser
-  // deferido e o token morre ~3s depois de o utilizador escrever; o orçamento
-  // divide-se em: entrega gateway->bot (age), handler (síncrono, ~0ms) e o POST
-  // REST da resposta. Medimos cada troço para que, quando falhar, o log diga QUAL
-  // troço comeu o tempo — sem isto o sintoma é invisível e "recorrente".
+  // Anti-"Failed to load options" instrumentation. Autocomplete CANNOT be deferred and
+  // the token dies ~3s after the user types; the budget splits into: gateway->bot
+  // delivery (age), handler (synchronous, ~0ms) and the REST POST of the response. We
+  // measure each leg so that, when it fails, the log says WHICH leg ate the time —
+  // without this the symptom is invisible and "recurrent".
   const t0 = Date.now();
-  const age = t0 - (i.createdTimestamp ?? t0); // atraso JÁ gasto antes de chegarmos a correr
+  const age = t0 - (i.createdTimestamp ?? t0); // delay ALREADY spent before we get to run
   let focusedName = '?';
   try {
     const focused = i.options.getFocused(true);
     focusedName = focused.name;
     if (age > 2500) {
-      // O token está (quase) morto à chegada: responder só geraria um 10062. A causa
-      // é a MONTANTE do handler — gateway/rede/CPU da máquina — e fica registada.
+      // The token is (almost) dead on arrival: responding would only produce a 10062.
+      // The cause is UPSTREAM of the handler — gateway/network/machine CPU — and is logged.
       log.warn(
         `[autocomplete] interação "${i.commandName}:${focusedName}" chegou ${age}ms atrasada — resposta já impossível (gateway/rede/CPU saturados).`,
       );
@@ -244,9 +245,9 @@ export async function handleAutocomplete(i: AutocompleteInteraction, deps: BotDe
       );
     }
   } catch (err) {
-    // 10062 = a resposta chegou ao Discord depois do token expirar. Não é bug do
-    // handler (que é síncrono): é latência de rede/CPU — classificado à parte para
-    // o diagnóstico do "Falha ao carregar opções" recorrente.
+    // 10062 = the response reached Discord after the token expired. Not a handler bug
+    // (it's synchronous): it's network/CPU latency — classified separately for the
+    // diagnosis of the recurring "Failed to load options".
     if ((err as { code?: number }).code === 10062) {
       log.warn(
         `[autocomplete] resposta tardia (10062): "${i.commandName}:${focusedName}" entrega=${age}ms total=${Date.now() - t0}ms.`,
@@ -337,13 +338,13 @@ export async function handleInteraction(
   } catch (err) {
     log.error('[command] error in', i.commandName, err);
     if (!i.isRepliable()) return;
-    // localeFor nunca lanca (fallback DEFAULT_LOCALE em falha/db ausente), por isso
-    // e seguro no catch — a mensagem de erro nunca fica presa por uma leitura de config.
+    // localeFor never throws (falls back to DEFAULT_LOCALE on failure/missing db), so
+    // it's safe in the catch — the error message never gets stuck on a config read.
     const locale = localeFor(deps, i.guildId);
     const msg = t('error.generic', locale);
     if (i.deferred && !i.replied) {
-      // Ja foi deferido (caso do /tts): editReply para o utilizador receber o erro
-      // em vez de ficar preso em "a pensar...".
+      // Already deferred (the /tts case): editReply so the user receives the error
+      // instead of being stuck at "thinking...".
       await i.editReply({ content: msg }).catch(() => {});
     } else if (!i.replied) {
       await i.reply({ content: msg, flags: MessageFlags.Ephemeral }).catch(() => {});

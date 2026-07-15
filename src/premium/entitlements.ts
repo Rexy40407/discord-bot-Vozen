@@ -1,41 +1,41 @@
 // src/premium/entitlements.ts
 //
-// Ponte entre os "entitlements" (compras Premium Apps) do Discord e o premium interno.
-// A Política de Monetização do Discord exige que features pagas sejam também compráveis
-// via Premium Apps; quando o operador cria os SKUs e define PREMIUM_GUILD_SKU_ID /
-// PREMIUM_USER_SKU_ID, cada compra ativa vira um grant nas tabelas premium_* (source
-// 'discord'). SEM esses IDs configurados, TUDO isto fica INERTE (o bot corre como hoje,
-// só com códigos /redeem) — por isso é seguro ter em produção antes de a app estar
-// verificada e a monetização nativa ligada.
+// Bridge between Discord's "entitlements" (Premium Apps purchases) and internal premium.
+// Discord's Monetization Policy requires that paid features also be purchasable via
+// Premium Apps; when the operator creates the SKUs and sets PREMIUM_GUILD_SKU_ID /
+// PREMIUM_USER_SKU_ID, each active purchase becomes a grant in the premium_* tables
+// (source 'discord'). WITHOUT those IDs configured, ALL of this stays INERT (the bot runs
+// as it does today, only with /redeem codes) — so it is safe to have in production before
+// the app is verified and native monetization is turned on.
 //
-// A lógica é PURA e testável: recebe objetos tipo-Entitlement (não depende de discord.js).
+// The logic is PURE and testable: it takes Entitlement-like objects (no dependency on discord.js).
 
 import type { EntitlementGrant } from '../store/premium';
 
-/** SKUs configurados (env). Ausentes => o mapeamento desse tipo não produz grants. */
+/** Configured SKUs (env). Absent => that type's mapping produces no grants. */
 export interface EntitlementSkuConfig {
   guildSkuId?: string;
   userSkuId?: string;
 }
 
-/** Forma mínima de um Entitlement do Discord de que precisamos (subset de discord.js). */
+/** Minimal shape of a Discord Entitlement that we need (subset of discord.js). */
 export interface EntitlementLike {
   skuId: string;
   guildId?: string | null;
   userId?: string | null;
-  /** Fim da subscrição (unix ms) ou null = compra única/perpétua. */
+  /** End of the subscription (unix ms) or null = one-time/perpetual purchase. */
   endsTimestamp?: number | null;
-  /** true quando o entitlement foi removido (reembolso). */
+  /** true when the entitlement has been removed (refund). */
   deleted?: boolean;
 }
 
 /**
- * Compras únicas (endsTimestamp null) são perpétuas; damos-lhes um expiry muito à frente
- * (renovado a cada sync). ~100 anos — na prática "para sempre" sem overflow de datas.
+ * One-time purchases (endsTimestamp null) are perpetual; we give them an expiry far in the
+ * future (refreshed on each sync). ~100 years — in practice "forever" without date overflow.
  */
 export const PERPETUAL_MS = 100 * 365 * 24 * 60 * 60 * 1000;
 
-/** true se o entitlement está ATIVO agora (não removido e não expirado). */
+/** true if the entitlement is ACTIVE now (not removed and not expired). */
 export function isEntitlementActive(e: EntitlementLike, now: number): boolean {
   if (e.deleted) return false;
   const ends = e.endsTimestamp ?? null;
@@ -43,9 +43,9 @@ export function isEntitlementActive(e: EntitlementLike, now: number): boolean {
 }
 
 /**
- * Traduz a lista COMPLETA de entitlements do Discord nos grants premium ativos, segundo
- * os SKUs configurados. Ignora entitlements inativos, de SKUs desconhecidos, ou sem o
- * id do alvo (guild/user). Função pura.
+ * Translates the COMPLETE list of Discord entitlements into the active premium grants, per
+ * the configured SKUs. Ignores inactive entitlements, those from unknown SKUs, or those
+ * without the target id (guild/user). Pure function.
  */
 export function activeEntitlementGrants(
   entitlements: EntitlementLike[],
@@ -65,18 +65,18 @@ export function activeEntitlementGrants(
   return grants;
 }
 
-/** true se há pelo menos um SKU configurado (senão o subsistema fica inerte). */
+/** true if there is at least one configured SKU (otherwise the subsystem stays inert). */
 export function entitlementsEnabled(sku: EntitlementSkuConfig): boolean {
   return !!(sku.guildSkuId || sku.userSkuId);
 }
 
 /**
- * Junta TODAS as páginas de um endpoint cursor-based (o `/entitlements` do Discord NÃO
- * auto-pagina: devolve no máximo `pageSize` por chamada). CRÍTICO para a reconciliação:
- * a sync apaga o premium 'discord' que não vier na lista, por isso a lista TEM de ser
- * completa — senão, ao passar de `pageSize` subscrições, revogaríamos clientes pagantes.
- * `fetchPage(after)` devolve a próxima página (após o id `after`); paramos quando uma
- * página vem incompleta (< pageSize) ou vazia. `maxPages` é uma guarda anti-loop.
+ * Joins ALL pages of a cursor-based endpoint (Discord's `/entitlements` does NOT
+ * auto-paginate: it returns at most `pageSize` per call). CRITICAL for reconciliation:
+ * the sync deletes the 'discord' premium that does not come in the list, so the list MUST
+ * be complete — otherwise, past `pageSize` subscriptions, we would revoke paying customers.
+ * `fetchPage(after)` returns the next page (after the id `after`); we stop when a page comes
+ * back incomplete (< pageSize) or empty. `maxPages` is an anti-loop guard.
  */
 export async function collectPaged<T extends { id: string }>(
   fetchPage: (after: string | undefined) => Promise<T[]>,

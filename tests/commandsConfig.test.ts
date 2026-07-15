@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ChannelType } from 'discord.js';
 
-// Mock minimo de @discordjs/voice — nao e usado no /config, mas o import resolve-o.
+// Minimal @discordjs/voice mock — not used in /config, but the import resolves it.
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
   getVoiceConnection: () => undefined,
@@ -77,7 +77,7 @@ function makeConfigInteraction(opts: {
 
 // ── max-chars ────────────────────────────────────────────────────────────────
 
-describe('/config max-chars — validacao de range', () => {
+describe('/config max-chars — range validation', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -87,15 +87,15 @@ describe('/config max-chars — validacao de range', () => {
     db.close();
   });
 
-  it('rejeita valor 0 com mensagem clara e nao aplica', async () => {
+  it('rejects value 0 with a clear message and does not apply', async () => {
     const i = makeConfigInteraction({ sub: 'max-chars', optionsMap: { value: 0 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     expect(i.replies.some((r) => /max-chars|entre|1.*2000|2000.*1/i.test(r))).toBe(true);
-    expect(getGuildConfig(db, GUILD).maxChars).toBe(300); // default intacto
+    expect(getGuildConfig(db, GUILD).maxChars).toBe(300); // default intact
   });
 
-  it('rejeita valor 2001 com mensagem clara e nao aplica', async () => {
+  it('rejects value 2001 with a clear message and does not apply', async () => {
     const i = makeConfigInteraction({ sub: 'max-chars', optionsMap: { value: 2001 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
@@ -103,15 +103,15 @@ describe('/config max-chars — validacao de range', () => {
     expect(getGuildConfig(db, GUILD).maxChars).toBe(300);
   });
 
-  it('rejeita valor 9999 (muito acima do maximo) e nao persiste', async () => {
+  it('rejects value 9999 (well above the maximum) and does not persist', async () => {
     const i = makeConfigInteraction({ sub: 'max-chars', optionsMap: { value: 9999 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     expect(i.replies.some((r) => /max-chars|entre|1.*2000|2000.*1/i.test(r))).toBe(true);
-    expect(getGuildConfig(db, GUILD).maxChars).toBe(300); // default intacto
+    expect(getGuildConfig(db, GUILD).maxChars).toBe(300); // default intact
   });
 
-  it('aceita valor 500 e persiste', async () => {
+  it('accepts value 500 and persists', async () => {
     const i = makeConfigInteraction({ sub: 'max-chars', optionsMap: { value: 500 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
@@ -119,14 +119,14 @@ describe('/config max-chars — validacao de range', () => {
     expect(getGuildConfig(db, GUILD).maxChars).toBe(500);
   });
 
-  it('aceita valor limite 1 e persiste', async () => {
+  it('accepts boundary value 1 and persists', async () => {
     const i = makeConfigInteraction({ sub: 'max-chars', optionsMap: { value: 1 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     expect(getGuildConfig(db, GUILD).maxChars).toBe(1);
   });
 
-  it('aceita valor limite 2000 e persiste', async () => {
+  it('accepts boundary value 2000 and persists', async () => {
     const i = makeConfigInteraction({ sub: 'max-chars', optionsMap: { value: 2000 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
@@ -136,7 +136,7 @@ describe('/config max-chars — validacao de range', () => {
 
 // ── rate-limit ───────────────────────────────────────────────────────────────
 
-describe('/config rate-limit — validacao de range', () => {
+describe('/config rate-limit — range validation', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -146,15 +146,15 @@ describe('/config rate-limit — validacao de range', () => {
     db.close();
   });
 
-  it('rejeita valor 0 com mensagem clara e nao aplica', async () => {
+  it('rejects value 0 with a clear message and does not apply', async () => {
     const i = makeConfigInteraction({ sub: 'rate-limit', optionsMap: { value: 0 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     expect(i.replies.some((r) => /rate-limit|entre|1.*120|120.*1/i.test(r))).toBe(true);
-    expect(getGuildConfig(db, GUILD).ratePerMin).toBe(8); // default intacto
+    expect(getGuildConfig(db, GUILD).ratePerMin).toBe(8); // default intact
   });
 
-  it('rejeita valor 121 com mensagem clara e nao aplica', async () => {
+  it('rejects value 121 with a clear message and does not apply', async () => {
     const i = makeConfigInteraction({ sub: 'rate-limit', optionsMap: { value: 121 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
@@ -162,15 +162,15 @@ describe('/config rate-limit — validacao de range', () => {
     expect(getGuildConfig(db, GUILD).ratePerMin).toBe(8);
   });
 
-  it('rejeita valor 9999 (muito acima do maximo) e nao persiste', async () => {
+  it('rejects value 9999 (well above the maximum) and does not persist', async () => {
     const i = makeConfigInteraction({ sub: 'rate-limit', optionsMap: { value: 9999 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     expect(i.replies.some((r) => /rate-limit|entre|1.*120|120.*1/i.test(r))).toBe(true);
-    expect(getGuildConfig(db, GUILD).ratePerMin).toBe(8); // default intacto
+    expect(getGuildConfig(db, GUILD).ratePerMin).toBe(8); // default intact
   });
 
-  it('aceita valor 10 e persiste', async () => {
+  it('accepts value 10 and persists', async () => {
     const i = makeConfigInteraction({ sub: 'rate-limit', optionsMap: { value: 10 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
@@ -178,14 +178,14 @@ describe('/config rate-limit — validacao de range', () => {
     expect(getGuildConfig(db, GUILD).ratePerMin).toBe(10);
   });
 
-  it('aceita valor limite 1 e persiste', async () => {
+  it('accepts boundary value 1 and persists', async () => {
     const i = makeConfigInteraction({ sub: 'rate-limit', optionsMap: { value: 1 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     expect(getGuildConfig(db, GUILD).ratePerMin).toBe(1);
   });
 
-  it('aceita valor limite 120 e persiste', async () => {
+  it('accepts boundary value 120 and persists', async () => {
     const i = makeConfigInteraction({ sub: 'rate-limit', optionsMap: { value: 120 } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
@@ -195,7 +195,7 @@ describe('/config rate-limit — validacao de range', () => {
 
 // ── tts-channel ──────────────────────────────────────────────────────────────
 
-describe('/config tts-channel — validacao de tipo e acesso', () => {
+describe('/config tts-channel — type and access validation', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -205,7 +205,7 @@ describe('/config tts-channel — validacao de tipo e acesso', () => {
     db.close();
   });
 
-  it('rejeita canal de voz (tipo errado) com mensagem clara', async () => {
+  it('rejects a voice channel (wrong type) with a clear message', async () => {
     const fakeChannel = { id: 'ch-voice', type: ChannelType.GuildVoice };
     const i = makeConfigInteraction({
       sub: 'tts-channel',
@@ -213,14 +213,14 @@ describe('/config tts-channel — validacao de tipo e acesso', () => {
     });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
-    // Migrado PT->EN (P16.2): "Pick a text channel (not a voice channel or a category)."
+    // Migrated PT->EN (P16.2): "Pick a text channel (not a voice channel or a category)."
     expect(
       i.replies.some((r) => /text channel|voice channel|category|texto|voz|categoria/i.test(r)),
     ).toBe(true);
     expect(getGuildConfig(db, GUILD).ttsChannelId).toBeNull();
   });
 
-  it('rejeita canal de texto sem permissao ViewChannel', async () => {
+  it('rejects a text channel without ViewChannel permission', async () => {
     const fakeChannel = { id: 'ch-noaccess', type: ChannelType.GuildText };
     const guild = {
       channels: {
@@ -242,7 +242,7 @@ describe('/config tts-channel — validacao de tipo e acesso', () => {
     expect(getGuildConfig(db, GUILD).ttsChannelId).toBeNull();
   });
 
-  it('aceita canal de texto acessivel e persiste', async () => {
+  it('accepts an accessible text channel and persists', async () => {
     const fakeChannel = { id: 'ch-ok', type: ChannelType.GuildText };
     const guild = {
       channels: {
@@ -267,7 +267,7 @@ describe('/config tts-channel — validacao de tipo e acesso', () => {
 
 // ── role (gating por role) ────────────────────────────────────────────────────
 
-describe('/config role — definir e limpar', () => {
+describe('/config role — set and clear', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -277,7 +277,7 @@ describe('/config role — definir e limpar', () => {
     db.close();
   });
 
-  it('define o ttsRoleId quando um role e fornecido', async () => {
+  it('sets the ttsRoleId when a role is provided', async () => {
     const fakeRole = { id: 'role-99', name: 'Leitores' };
     const i = makeConfigInteraction({ sub: 'role', optionsMap: { role: fakeRole } });
     const deps = makeConfigDeps(db);
@@ -286,8 +286,8 @@ describe('/config role — definir e limpar', () => {
     expect(getGuildConfig(db, GUILD).ttsRoleId).toBe('role-99');
   });
 
-  it('limpa o ttsRoleId quando o role e omitido', async () => {
-    // Primeiro definir, depois limpar (role omitido → getRole devolve null).
+  it('clears the ttsRoleId when the role is omitted', async () => {
+    // First set, then clear (role omitted → getRole returns null).
     setGuildConfig(db, GUILD, { ttsRoleId: 'role-99' });
     const i = makeConfigInteraction({ sub: 'role', optionsMap: {} });
     const deps = makeConfigDeps(db);
@@ -299,7 +299,7 @@ describe('/config role — definir e limpar', () => {
 
 // ── blockword add/remove ─────────────────────────────────────────────────────
 
-describe('/config blockword — validacao de palavra vazia', () => {
+describe('/config blockword — empty-word validation', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -309,7 +309,7 @@ describe('/config blockword — validacao de palavra vazia', () => {
     db.close();
   });
 
-  it('blockword add: rejeita string vazia com mensagem clara', async () => {
+  it('blockword add: rejects an empty string with a clear message', async () => {
     const i = makeConfigInteraction({
       group: 'blockword',
       sub: 'add',
@@ -317,12 +317,12 @@ describe('/config blockword — validacao de palavra vazia', () => {
     });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
-    // Migrado PT->EN (P16.2): "The word can't be empty."
+    // Migrated PT->EN (P16.2): "The word can't be empty."
     expect(i.replies.some((r) => /empty|word|vazia|vazio|palavra/i.test(r))).toBe(true);
     expect(getBlocklist(db, GUILD)).toHaveLength(0);
   });
 
-  it('blockword add: rejeita string so com espacos (apos trim)', async () => {
+  it('blockword add: rejects a whitespace-only string (after trim)', async () => {
     const i = makeConfigInteraction({
       group: 'blockword',
       sub: 'add',
@@ -330,12 +330,12 @@ describe('/config blockword — validacao de palavra vazia', () => {
     });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
-    // Migrado PT->EN (P16.2): "The word can't be empty."
+    // Migrated PT->EN (P16.2): "The word can't be empty."
     expect(i.replies.some((r) => /empty|word|vazia|vazio|palavra/i.test(r))).toBe(true);
     expect(getBlocklist(db, GUILD)).toHaveLength(0);
   });
 
-  it('blockword add: aceita palavra valida, guarda trimada', async () => {
+  it('blockword add: accepts a valid word, stores it trimmed', async () => {
     const i = makeConfigInteraction({
       group: 'blockword',
       sub: 'add',
@@ -345,11 +345,11 @@ describe('/config blockword — validacao de palavra vazia', () => {
     await handleInteraction(i as any, deps);
     expect(i.replies.some((r) => /spam/i.test(r))).toBe(true);
     expect(getBlocklist(db, GUILD)).toContain('spam');
-    // Nao guarda com espacos
+    // Does not store with spaces
     expect(getBlocklist(db, GUILD)).not.toContain('  spam  ');
   });
 
-  it('blockword remove: rejeita string vazia com mensagem clara', async () => {
+  it('blockword remove: rejects an empty string with a clear message', async () => {
     const i = makeConfigInteraction({
       group: 'blockword',
       sub: 'remove',
@@ -357,12 +357,12 @@ describe('/config blockword — validacao de palavra vazia', () => {
     });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
-    // Migrado PT->EN (P16.2): "The word can't be empty."
+    // Migrated PT->EN (P16.2): "The word can't be empty."
     expect(i.replies.some((r) => /empty|word|vazia|vazio|palavra/i.test(r))).toBe(true);
   });
 
-  it('blockword remove: aceita palavra valida', async () => {
-    // Pre-adicionar via blocklist diretamente para depois remover
+  it('blockword remove: accepts a valid word', async () => {
+    // Pre-add directly via blocklist so it can then be removed
     const { addBlockword } = await import('../src/store/blocklist.js');
     addBlockword(db, GUILD, 'spam');
 
@@ -373,18 +373,18 @@ describe('/config blockword — validacao de palavra vazia', () => {
     });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
-    // Migrado PT->EN (P16.2): "Unblocked: spam."
+    // Migrated PT->EN (P16.2): "Unblocked: spam."
     expect(i.replies.some((r) => /unblocked/i.test(r))).toBe(true);
     expect(getBlocklist(db, GUILD)).not.toContain('spam');
   });
 });
 
-// NB: os testes do /config pronunciation foram removidos com a feature (plano v4) —
-// as pronúncias agora são pessoais via /pronunciation; ver tests/pronunciationUser.test.ts.
+// NB: the /config pronunciation tests were removed with the feature (plan v4) —
+// pronunciations are now personal via /pronunciation; see tests/pronunciationUser.test.ts.
 
 // ── enabled (kill-switch) ─────────────────────────────────────────────────────
 
-describe('/config enabled — kill-switch do servidor', () => {
+describe('/config enabled — server kill-switch', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -394,22 +394,22 @@ describe('/config enabled — kill-switch do servidor', () => {
     db.close();
   });
 
-  it('desliga o TTS (enabled=false) e persiste', async () => {
+  it('turns TTS off (enabled=false) and persists', async () => {
     const i = makeConfigInteraction({ sub: 'enabled', optionsMap: { active: false } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
-    // Migrado PT->EN (P16.2): "TTS is now **off** for this server."
+    // Migrated PT->EN (P16.2): "TTS is now **off** for this server."
     expect(i.replies.some((r) => /off|disabled|desativ|deslig/i.test(r))).toBe(true);
     expect(getGuildConfig(db, GUILD).enabled).toBe(false);
   });
 
-  it('liga o TTS (enabled=true) e persiste', async () => {
-    // Primeiro desligar para confirmar que volta a ligar.
+  it('turns TTS on (enabled=true) and persists', async () => {
+    // First turn it off to confirm it turns back on.
     setGuildConfig(db, GUILD, { enabled: false });
     const i = makeConfigInteraction({ sub: 'enabled', optionsMap: { active: true } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
-    // Migrado PT->EN (P16.2): "TTS is now **on** for this server."
+    // Migrated PT->EN (P16.2): "TTS is now **on** for this server."
     expect(i.replies.some((r) => /\bon\b|enabled|ativ|lig/i.test(r))).toBe(true);
     expect(getGuildConfig(db, GUILD).enabled).toBe(true);
   });
@@ -417,7 +417,7 @@ describe('/config enabled — kill-switch do servidor', () => {
 
 // ── default-voice ─────────────────────────────────────────────────────────────
 
-describe('/config default-voice — valida modelo disponivel', () => {
+describe('/config default-voice — validates an available model', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -427,21 +427,21 @@ describe('/config default-voice — valida modelo disponivel', () => {
     db.close();
   });
 
-  it('aceita modelo disponivel e persiste o default_voice da guild', async () => {
+  it('accepts an available model and persists the guild default_voice', async () => {
     const i = makeConfigInteraction({
       sub: 'default-voice',
       optionsMap: { model: 'pt_PT-tugão-medium' },
     });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
-    // Mantem o id cru copy-pasteavel na resposta...
+    // Keeps the raw copy-pasteable id in the reply...
     expect(i.replies.some((r) => /pt_PT-tugão-medium/.test(r))).toBe(true);
-    // ...e lidera com o nome amigavel da voz escolhida (beginner-friendly).
+    // ...and leads with the friendly name of the chosen voice (beginner-friendly).
     expect(i.replies.some((r) => /Português \(Portugal\) — Tugão/.test(r))).toBe(true);
     expect(getGuildConfig(db, GUILD).defaultVoice).toBe('pt_PT-tugão-medium');
   });
 
-  it('rejeita modelo desconhecido com mensagem clara e nao aplica', async () => {
+  it('rejects an unknown model with a clear message and does not apply', async () => {
     const i = makeConfigInteraction({
       sub: 'default-voice',
       optionsMap: { model: 'xx_XX-naoexiste' },
@@ -449,14 +449,14 @@ describe('/config default-voice — valida modelo disponivel', () => {
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     expect(i.replies.some((r) => /desconhecido|list/i.test(r))).toBe(true);
-    // default_voice da guild fica vazio (nao definido)
+    // the guild default_voice stays empty (not set)
     expect(getGuildConfig(db, GUILD).defaultVoice).toBe('');
   });
 });
 
 // ── /config show ──────────────────────────────────────────────────────────────
 
-describe('/config show — mostra config atual do servidor', () => {
+describe('/config show — shows the current server config', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -466,8 +466,8 @@ describe('/config show — mostra config atual do servidor', () => {
     db.close();
   });
 
-  it('mostra os valores guardados (nao os defaults)', async () => {
-    // Configurar valores nao-default para confirmar que vem do store, nao hard-coded
+  it('shows the stored values (not the defaults)', async () => {
+    // Set non-default values to confirm they come from the store, not hard-coded
     setGuildConfig(db, GUILD, {
       ttsChannelId: 'ch-show-test',
       autoread: true,
@@ -486,44 +486,44 @@ describe('/config show — mostra config atual do servidor', () => {
 
     const text = i.replies.join('\n');
     expect(text).toMatch(/ch-show-test/);
-    // Migrado PT->EN (P16.2): "Auto-read: on" / "Enabled: off"
+    // Migrated PT->EN (P16.2): "Auto-read: on" / "Enabled: off"
     expect(text).toMatch(/auto-?read.*on|on.*auto-?read/i);
     expect(text).toMatch(/role-show-test/);
     expect(text).toMatch(/enabled.*off|off.*enabled/i);
     expect(text).toMatch(/pt_PT-tugão-medium/);
     expect(text).toMatch(/123/);
     expect(text).toMatch(/7/);
-    expect(text).toMatch(/2/); // 2 palavras na blocklist
+    expect(text).toMatch(/2/); // 2 words in the blocklist
   });
 
-  it('mostra (nenhum) para canal nao definido e qualquer para role nao definido', async () => {
-    // Sem nenhuma config definida — defaults
+  it('shows (none) for an unset channel and anyone for an unset role', async () => {
+    // No config set — defaults
     const i = makeConfigInteraction({ sub: 'show' });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
 
     const text = i.replies.join('\n');
-    // Migrado PT->EN (P16.2): canal "(none)", role "anyone", voz "(auto-detect)"
+    // Migrated PT->EN (P16.2): channel "(none)", role "anyone", voice "(auto-detect)"
     expect(text).toMatch(/\(none\)|nenhum/i);
     expect(text).toMatch(/anyone|qualquer/i);
     expect(text).toMatch(/auto-?detect|dete/i);
   });
 
-  it('mostra deteção automática para defaultVoice vazio', async () => {
+  it('shows auto-detect for an empty defaultVoice', async () => {
     setGuildConfig(db, GUILD, { defaultVoice: '' });
     const i = makeConfigInteraction({ sub: 'show' });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
 
     const text = i.replies.join('\n');
-    // Migrado PT->EN (P16.2): "(auto-detect)"
+    // Migrated PT->EN (P16.2): "(auto-detect)"
     expect(text).toMatch(/auto-?detect|dete/i);
   });
 });
 
 // ── /config reset ─────────────────────────────────────────────────────────────
 
-describe('/config reset — repoe config aos defaults', () => {
+describe('/config reset — restores config to defaults', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -533,8 +533,8 @@ describe('/config reset — repoe config aos defaults', () => {
     db.close();
   });
 
-  it('repoe a config aos defaults apos configurar valores nao-default', async () => {
-    // Configurar valores nao-default
+  it('restores the config to defaults after setting non-default values', async () => {
+    // Set non-default values
     setGuildConfig(db, GUILD, {
       ttsChannelId: 'ch-reset-test',
       autoread: true,
@@ -549,10 +549,10 @@ describe('/config reset — repoe config aos defaults', () => {
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
 
-    // Resposta de confirmacao clara
+    // Clear confirmation reply
     expect(i.replies.some((r) => /reposta|defeito|default/i.test(r))).toBe(true);
 
-    // Config volta aos defaults
+    // Config goes back to defaults
     const cfg = getGuildConfig(db, GUILD);
     expect(cfg.ttsChannelId).toBeNull();
     expect(cfg.autoread).toBe(false);
@@ -563,37 +563,37 @@ describe('/config reset — repoe config aos defaults', () => {
     expect(cfg.ratePerMin).toBe(8);
   });
 
-  it('blocklist e mantida apos reset', async () => {
-    // Adicionar dados na blocklist
+  it('blocklist is kept after reset', async () => {
+    // Add data to the blocklist
     addBlockword(db, GUILD, 'spam');
-    // Configurar algo nao-default para confirmar que o reset e da config base
+    // Set something non-default to confirm the reset is of the base config
     setGuildConfig(db, GUILD, { maxChars: 999 });
 
     const i = makeConfigInteraction({ sub: 'reset' });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
 
-    // Config base reposta
+    // Base config restored
     expect(getGuildConfig(db, GUILD).maxChars).toBe(300);
-    // Blocklist mantida — nao destruida pelo reset
+    // Blocklist kept — not destroyed by the reset
     expect(getBlocklist(db, GUILD)).toContain('spam');
   });
 
-  it('reset em guild sem config previa nao rebenta', async () => {
-    // Sem nenhum setGuildConfig anterior — apagar uma linha que nao existe e no-op
+  it('reset on a guild with no prior config does not blow up', async () => {
+    // No prior setGuildConfig — deleting a row that does not exist is a no-op
     const i = makeConfigInteraction({ sub: 'reset' });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
 
     expect(i.replies.some((r) => /reposta|defeito|default/i.test(r))).toBe(true);
-    // Getconfig ainda devolve defaults
+    // Getconfig still returns defaults
     expect(getGuildConfig(db, GUILD).maxChars).toBe(300);
   });
 });
 
-// ── /config language — troca do idioma da interface ──────────────────────────
+// ── /config language — switching the interface language ──────────────────────
 
-describe('/config language — troca do idioma da interface', () => {
+describe('/config language — switching the interface language', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -603,9 +603,9 @@ describe('/config language — troca do idioma da interface', () => {
     db.close();
   });
 
-  it('set pt: persiste locale="pt" e confirma JA em portugues', async () => {
-    // Guild comeca no default 'en'; uma confirmacao em PT prova que a resposta sai
-    // na NOVA lingua (o handler passa `chosen`, nao o locale atual, ao t()).
+  it('set pt: persists locale="pt" and confirms ALREADY in Portuguese', async () => {
+    // Guild starts at the default 'en'; a PT confirmation proves the reply comes out
+    // in the NEW language (the handler passes `chosen`, not the current locale, to t()).
     const i = makeConfigInteraction({ sub: 'language', optionsMap: { locale: 'pt' } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
@@ -613,12 +613,12 @@ describe('/config language — troca do idioma da interface', () => {
     // t('config.language.set', 'pt') = "Idioma da interface definido para Português."
     expect(i.replies.join('\n')).toMatch(/idioma da interface/i);
     expect(i.replies.join('\n')).toMatch(/Português/);
-    // e NAO a versao inglesa
+    // and NOT the English version
     expect(i.replies.join('\n')).not.toMatch(/interface language set/i);
   });
 
-  it('set en: partindo de pt, volta a en, persiste e confirma em ingles', async () => {
-    // Pre-definir pt para provar a troca nos DOIS sentidos.
+  it('set en: starting from pt, goes back to en, persists and confirms in English', async () => {
+    // Pre-set pt to prove the switch in BOTH directions.
     setGuildConfig(db, GUILD, { locale: 'pt' });
     const i = makeConfigInteraction({ sub: 'language', optionsMap: { locale: 'en' } });
     const deps = makeConfigDeps(db);
@@ -629,22 +629,22 @@ describe('/config language — troca do idioma da interface', () => {
     expect(i.replies.join('\n')).not.toMatch(/idioma da interface/i);
   });
 
-  it('locale invalido: erro amigavel e NAO persiste (fica no default en)', async () => {
-    // 'xx' nao esta em SUPPORTED_LOCALES — as choices impediriam isto no Discord,
-    // mas a validacao defensiva do handler tem de o apanhar na mesma.
+  it('invalid locale: friendly error and does NOT persist (stays at default en)', async () => {
+    // 'xx' is not in SUPPORTED_LOCALES — the choices would prevent this in Discord,
+    // but the handler's defensive validation has to catch it anyway.
     const i = makeConfigInteraction({ sub: 'language', optionsMap: { locale: 'xx' } });
     const deps = makeConfigDeps(db);
     await handleInteraction(i as any, deps);
     // t('config.language.unsupported', 'en') = "That language isn't supported yet."
     expect(i.replies.join('\n')).toMatch(/isn't supported|not supported|nao e suportado/i);
-    // Nada persistido: continua no default 'en'.
+    // Nothing persisted: still at default 'en'.
     expect(getGuildConfig(db, GUILD).locale).toBe('en');
   });
 });
 
-// ── wiring do locale: a MESMA resposta sai em PT quando a guild tem locale='pt' ──
+// ── locale wiring: the SAME reply comes out in PT when the guild has locale='pt' ──
 
-describe('/config — wiring do locale (PT quando locale="pt")', () => {
+describe('/config — locale wiring (PT when locale="pt")', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -654,23 +654,23 @@ describe('/config — wiring do locale (PT quando locale="pt")', () => {
     db.close();
   });
 
-  it('EN por defeito: "reset" responde em ingles', async () => {
+  it('EN by default: "reset" replies in English', async () => {
     const i = makeConfigInteraction({ sub: 'reset' });
     await handleInteraction(i as any, makeConfigDeps(db));
     // t('config.reset', 'en') = "Config reset to defaults. …"
     expect(i.replies.join('\n')).toMatch(/reset to defaults/i);
   });
 
-  it('PT: com locale="pt" a mesma resposta sai em portugues', async () => {
-    // Prova o wiring: o handler le getGuildConfig(guildId).locale e passa-o a t().
-    // 'config.reset' tem valor `pt`, por isso o fallback a `en` NAO se aplica —
-    // se o wiring do locale estivesse partido, sairia o `en` e o assert falhava.
+  it('PT: with locale="pt" the same reply comes out in Portuguese', async () => {
+    // Proves the wiring: the handler reads getGuildConfig(guildId).locale and passes it to t().
+    // 'config.reset' has a `pt` value, so the fallback to `en` does NOT apply —
+    // if the locale wiring were broken, `en` would come out and the assert would fail.
     setGuildConfig(db, GUILD, { locale: 'pt' });
     const i = makeConfigInteraction({ sub: 'reset' });
     await handleInteraction(i as any, makeConfigDeps(db));
     // t('config.reset', 'pt') = "Config reposta aos valores por defeito. …"
     expect(i.replies.join('\n')).toMatch(/reposta aos valores por defeito/i);
-    // e NAO a versao inglesa
+    // and NOT the English version
     expect(i.replies.join('\n')).not.toMatch(/reset to defaults/i);
   });
 });
@@ -686,18 +686,18 @@ describe('/config always-on — toggle 24/7 in-call (default OFF)', () => {
     db.close();
   });
 
-  it('default OFF (mesmo sem tocar em nada)', () => {
+  it('default OFF (even without touching anything)', () => {
     expect(getGuildConfig(db, GUILD).stayInCall).toBe(false);
   });
 
-  it('ligar persiste stayInCall=true e avisa que precisa de Premium', async () => {
+  it('turning on persists stayInCall=true and warns that Premium is required', async () => {
     const i = makeConfigInteraction({ sub: 'always-on', optionsMap: { active: true } });
     await handleInteraction(i as any, makeConfigDeps(db));
     expect(getGuildConfig(db, GUILD).stayInCall).toBe(true);
     expect(i.replies.join('\n')).toMatch(/Premium/i);
   });
 
-  it('desligar persiste stayInCall=false', async () => {
+  it('turning off persists stayInCall=false', async () => {
     setGuildConfig(db, GUILD, { stayInCall: true });
     const i = makeConfigInteraction({ sub: 'always-on', optionsMap: { active: false } });
     await handleInteraction(i as any, makeConfigDeps(db));
@@ -705,9 +705,9 @@ describe('/config always-on — toggle 24/7 in-call (default OFF)', () => {
   });
 });
 
-// ── streaks (aviso de streak 🔥) ─────────────────────────────────────────────
+// ── streaks (streak announcement 🔥) ─────────────────────────────────────────
 
-describe('/config streaks — toggle do aviso de streak (default ON)', () => {
+describe('/config streaks — streak announcement toggle (default ON)', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -716,17 +716,17 @@ describe('/config streaks — toggle do aviso de streak (default ON)', () => {
     db.close();
   });
 
-  it('default ON (mesmo sem tocar em nada)', () => {
+  it('default ON (even without touching anything)', () => {
     expect(getGuildConfig(db, GUILD).streakAnnounce).toBe(true);
   });
 
-  it('desligar persiste streakAnnounce=false', async () => {
+  it('turning off persists streakAnnounce=false', async () => {
     const i = makeConfigInteraction({ sub: 'streaks', optionsMap: { active: false } });
     await handleInteraction(i as any, makeConfigDeps(db));
     expect(getGuildConfig(db, GUILD).streakAnnounce).toBe(false);
   });
 
-  it('religar persiste streakAnnounce=true', async () => {
+  it('turning back on persists streakAnnounce=true', async () => {
     setGuildConfig(db, GUILD, { streakAnnounce: false });
     const i = makeConfigInteraction({ sub: 'streaks', optionsMap: { active: true } });
     await handleInteraction(i as any, makeConfigDeps(db));

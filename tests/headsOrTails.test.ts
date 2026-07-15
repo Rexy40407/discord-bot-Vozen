@@ -58,10 +58,10 @@ function harness() {
 const G = 'g1';
 const C = 'c1';
 const ROUNDS = 5;
-// Ritmo de uma ronda: janela de palpites (8s) + pausa entre rondas (2.5s).
+// Pace of one round: guess window (8s) + pause between rounds (2.5s).
 const ROUND_MS = 8_000 + 2_500;
 
-/** Flips previstos: o jogo usa makeRng(seed) e tira 1 número por ronda (seed = now() no start). */
+/** Predicted flips: the game uses makeRng(seed) and draws 1 number per round (seed = now() at start). */
 function predictedFlips(seed: number): ('heads' | 'tails')[] {
   const rng = makeRng(seed);
   return Array.from({ length: ROUNDS }, () => (rng() % 2 === 0 ? 'heads' : 'tails'));
@@ -72,15 +72,15 @@ function msg(authorId: string, authorName: string, content: string) {
 }
 
 describe('Heads or Tails', () => {
-  it('quem acerta pontua; quem erra não; 5 rondas completas', async () => {
+  it('whoever gets it right scores; whoever is wrong does not; 5 full rounds', async () => {
     const { env, clock, send, persistScores } = harness();
-    const flips = predictedFlips(clock.now()); // seed = now() no start
+    const flips = predictedFlips(clock.now()); // seed = now() at start
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('headsOrTails')!.create());
     await flush();
 
     for (let r = 0; r < ROUNDS; r++) {
-      // "Winner" escreve o lado certo; "Loser" o contrário — dentro da janela.
+      // "Winner" writes the correct side; "Loser" the opposite — within the window.
       const right = flips[r];
       const wrong = right === 'heads' ? 'tails' : 'heads';
       mgr.handleMessage(msg('winner', 'W', right));
@@ -98,7 +98,7 @@ describe('Heads or Tails', () => {
     expect(points.get('loser')).toBeUndefined();
   });
 
-  it('só o PRIMEIRO palpite da ronda conta (mudar depois não vale)', async () => {
+  it('only the FIRST guess of the round counts (changing it afterwards is invalid)', async () => {
     const { env, clock, persistScores } = harness();
     const flips = predictedFlips(clock.now());
     const mgr = new GameManager(env);
@@ -108,7 +108,7 @@ describe('Heads or Tails', () => {
     for (let r = 0; r < ROUNDS; r++) {
       const right = flips[r];
       const wrong = right === 'heads' ? 'tails' : 'heads';
-      // Palpita CERTO primeiro, depois tenta mudar para o errado — o 1.º fica.
+      // Guesses RIGHT first, then tries to change to the wrong one — the 1st stays.
       mgr.handleMessage(msg('sticky', 'S', right));
       mgr.handleMessage(msg('sticky', 'S', wrong));
       await flush();
@@ -119,7 +119,7 @@ describe('Heads or Tails', () => {
     expect(points.get('sticky')).toBe(ROUNDS);
   });
 
-  it('ninguém palpita -> noWinners, sem crash, jogo termina', async () => {
+  it('nobody guesses -> noWinners, no crash, game ends', async () => {
     const { env, clock, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('headsOrTails')!.create());
@@ -131,13 +131,13 @@ describe('Heads or Tails', () => {
     }
     const sent = send.mock.calls.map((c) => String(c[1]));
     expect(sent.some((s) => s.includes('game.headsOrTails.noWinners'))).toBe(true);
-    // Sem pontos o manager (corretamente) não persiste nada — mas o jogo TEM de ter
-    // terminado e libertado o lock da guild.
+    // With no points the manager (correctly) persists nothing — but the game MUST have
+    // ended and released the guild lock.
     expect(persistScores).not.toHaveBeenCalled();
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('conversa que não é palpite é ignorada (não conta como escolha)', async () => {
+  it('chatter that is not a guess is ignored (does not count as a choice)', async () => {
     const { env, clock, persistScores } = harness();
     const flips = predictedFlips(clock.now());
     const mgr = new GameManager(env);

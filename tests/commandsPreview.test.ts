@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Mock mínimo de @discordjs/voice — não é usado no /voice preview, mas o import
-// de index.ts resolve-o.
+// Minimal mock of @discordjs/voice — not used in /voice preview, but the import
+// from index.ts resolves it.
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
   getVoiceConnection: () => undefined,
@@ -16,8 +16,8 @@ import type Database from 'better-sqlite3';
 
 const GUILD = 'g-preview';
 const USER = 'u-preview';
-// Migrado PT->EN (P16.2): a frase-amostra falada pelo /voice preview passou a
-// ingles por defeito (t('preview.sample', 'en')).
+// Migrated PT->EN (P16.2): the sample phrase spoken by /voice preview now defaults
+// to English (t('preview.sample', 'en')).
 const SAMPLE = "Hi, I'm Vozen. type it, hear it.";
 
 function makeDeps(db: Database.Database, player?: { say: ReturnType<typeof vi.fn> }): BotDeps {
@@ -37,9 +37,9 @@ function makeDeps(db: Database.Database, player?: { say: ReturnType<typeof vi.fn
 
 function makePreviewInteraction(opts: { model?: string | null } = {}) {
   const replies: string[] = [];
-  // model === undefined → opção não fornecida (getString devolve null)
-  // model === null    → idem (forçado explicitamente)
-  // model === 'xxx'   → opção fornecida com valor 'xxx'
+  // model === undefined → option not provided (getString returns null)
+  // model === null    → idem (explicitly forced)
+  // model === 'xxx'   → option provided with value 'xxx'
   const modelValue = opts.model !== undefined ? opts.model : null;
   return {
     commandName: 'voice',
@@ -74,8 +74,8 @@ describe('/voice preview', () => {
     db.close();
   });
 
-  it('com model válido chama player.say com a frase de amostra e o model correto', async () => {
-    // say() devolve true (enfileirou) -> a resposta e "playing a sample".
+  it('with a valid model calls player.say with the sample phrase and the correct model', async () => {
+    // say() returns true (queued) -> the response is "playing a sample".
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
     const i = makePreviewInteraction({ model: 'pt_PT-tugão-medium' });
@@ -86,13 +86,13 @@ describe('/voice preview', () => {
     const req = say.mock.calls[0][0];
     expect(req.text).toBe(SAMPLE);
     expect(req.model).toBe('pt_PT-tugão-medium');
-    // Migrado PT->EN: "Playing a sample…"
+    // Migrated PT->EN: "Playing a sample…"
     expect(i.replies.some((r) => /sample/i.test(r))).toBe(true);
   });
 
-  it('quando say() devolve false (fila cheia) responde "busy", NAO "sample"', async () => {
-    // P18.1: fila no cap -> say() resolve false -> o preview responde tts.busy em
-    // vez de mentir "a reproduzir uma amostra".
+  it('when say() returns false (queue full) responds "busy", NOT "sample"', async () => {
+    // P18.1: queue at cap -> say() resolves false -> the preview responds tts.busy
+    // instead of lying "playing a sample".
     const say = vi.fn().mockResolvedValue(false);
     const deps = makeDeps(db, { say });
     const i = makePreviewInteraction({ model: 'en_US-amy-medium' });
@@ -105,7 +105,7 @@ describe('/voice preview', () => {
     expect(i.replies.some((r) => /sample/i.test(r))).toBe(false);
   });
 
-  it('model inválido responde com mensagem de erro e NÃO chama say', async () => {
+  it('invalid model responds with an error message and does NOT call say', async () => {
     const say = vi.fn();
     const deps = makeDeps(db, { say });
     const i = makePreviewInteraction({ model: 'modelo-inexistente' });
@@ -116,9 +116,9 @@ describe('/voice preview', () => {
     expect(i.replies.some((r) => /desconhecido|voice list/i.test(r))).toBe(true);
   });
 
-  it('sem player ativo responde "usa /join" e NÃO chama say', async () => {
+  it('with no active player responds "use /join" and does NOT call say', async () => {
     const say = vi.fn();
-    // deps SEM player
+    // deps WITHOUT a player
     const deps = makeDeps(db);
     const i = makePreviewInteraction({ model: 'en_US-amy-medium' });
 
@@ -128,13 +128,13 @@ describe('/voice preview', () => {
     expect(i.replies.some((r) => /join/i.test(r))).toBe(true);
   });
 
-  it('sem model usa a voz guardada do utilizador', async () => {
-    // Guarda uma voz específica para o utilizador antes de chamar o comando.
+  it('with no model uses the user saved voice', async () => {
+    // Save a specific voice for the user before calling the command.
     setUserVoice(db, GUILD, USER, 'pt_PT-tugão-medium', 1.2);
 
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
-    // model === null → nenhuma opção fornecida
+    // model === null → no option provided
     const i = makePreviewInteraction({ model: null });
 
     await handleInteraction(i as any, deps);
@@ -146,23 +146,23 @@ describe('/voice preview', () => {
     expect(req.speed).toBe(1.2);
   });
 
-  // ABUSE-03: /voice preview NÃO tinha rate-limit — dava para spamar sem limite,
-  // monopolizando a fila (1 worker) da guild e forçando cache-miss ao ciclar `model:`.
-  // Mesmo padrão do /laugh (getLimiter().allow() antes de construir o SynthRequest).
-  it('rate-limit: 2.ª invocação rápida (ratePerMin:1) responde tts.tooFast e NÃO chama say outra vez', async () => {
+  // ABUSE-03: /voice preview had NO rate-limit — it could be spammed without limit,
+  // monopolizing the guild's queue (1 worker) and forcing cache-misses by cycling `model:`.
+  // Same pattern as /laugh (getLimiter().allow() before building the SynthRequest).
+  it('rate-limit: quick 2nd invocation (ratePerMin:1) responds tts.tooFast and does NOT call say again', async () => {
     setGuildConfig(db, GUILD, { ratePerMin: 1 });
     const say = vi.fn().mockResolvedValue(true);
     const deps = makeDeps(db, { say });
 
-    // 1.ª invocação: consome o único token -> toca a amostra normalmente.
+    // 1st invocation: consumes the only token -> plays the sample normally.
     const i1 = makePreviewInteraction({ model: 'en_US-amy-medium' });
     await handleInteraction(i1 as any, deps);
     expect(say).toHaveBeenCalledOnce();
 
-    // 2.ª invocação (mesmo utilizador, mesmo minuto): limiter bloqueia ANTES do say.
+    // 2nd invocation (same user, same minute): limiter blocks BEFORE say.
     const i2 = makePreviewInteraction({ model: 'en_US-amy-medium' });
     await handleInteraction(i2 as any, deps);
-    expect(say).toHaveBeenCalledOnce(); // continua 1 — a 2.ª não chegou a enfileirar
+    expect(say).toHaveBeenCalledOnce(); // still 1 — the 2nd never got queued
     // t('tts.tooFast', 'en') = "Whoa, slow down a little — try again in a moment."
     expect(i2.replies.some((r) => /slow down/i.test(r))).toBe(true);
   });

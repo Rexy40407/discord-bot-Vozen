@@ -1,32 +1,32 @@
 // src/voice/transcriptRouting.ts
 //
-// Routing PURO do STT (Fase 4): do texto cru que o sidecar Whisper devolve até à mensagem
-// que vai para o canal. Sem IO, sem rede — testável em isolamento. A decisão de POSTAR é
-// separada da FORMATAÇÃO para o chamador poder saltar utterances vazias sem construir nada.
+// PURE STT routing (Phase 4): from the raw text the Whisper sidecar returns to the message
+// that goes to the channel. No IO, no network — testable in isolation. The decision to POST is
+// separate from the FORMATTING so the caller can skip empty utterances without building anything.
 
-/** Apara e colapsa espaços/quebras internas num único espaço. */
+/** Trims and collapses internal spaces/breaks into a single space. */
 export function cleanTranscriptText(raw: string): string {
   return raw.replace(/\s+/g, ' ').trim();
 }
 
 /**
- * Vale a pena postar? O Whisper devolve "" (ou só espaço) para silêncio/ruído que o
- * vad_filter deixou passar — não poluímos o canal com isso.
+ * Worth posting? Whisper returns "" (or just space) for silence/noise that the
+ * vad_filter let through — we don't pollute the channel with that.
  */
 export function isTranscribable(raw: string): boolean {
   return cleanTranscriptText(raw).length > 0;
 }
 
 /**
- * Neutraliza pings de MASSA (@everyone/@here) inserindo um zero-width space a seguir ao @.
- * Defesa em profundidade: o envio já deve usar allowedMentions:{parse:[]}, mas uma
- * transcrição nunca deve conseguir tocar toda a gente mesmo que essa config falhe.
+ * Neutralizes MASS pings (@everyone/@here) by inserting a zero-width space after the @.
+ * Defense in depth: the send should already use allowedMentions:{parse:[]}, but a
+ * transcription must never be able to reach everyone even if that config fails.
  */
 function defuseMentions(s: string): string {
   return s.replace(/@(everyone|here)/gi, '@​$1');
 }
 
-/** Mensagem de canal: "**Nome:** texto". Apara o texto e desarma pings de massa. */
+/** Channel message: "**Name:** text". Trims the text and defuses mass pings. */
 export function formatTranscript(displayName: string, text: string): string {
   return `**${defuseMentions(displayName)}:** ${defuseMentions(cleanTranscriptText(text))}`;
 }

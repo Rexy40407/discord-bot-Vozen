@@ -1,10 +1,10 @@
-// Setup GLOBAL da suite de testes (vitest `setupFiles`).
+// GLOBAL setup for the test suite (vitest `setupFiles`).
 //
-// Força o caminho ONE-SHOT do Piper (`PIPER_PERSISTENT=0`) durante os testes. Em
-// produção o pool persistente está ON por defeito (T2.1), mas os testes que mockam o
-// `child_process.spawn` (piper.test.ts, piperConcurrency.test.ts) assumem o protocolo
-// one-shot (close/error), não o do pool (linhas de stdout). O pool persistente é
-// testado em ISOLAMENTO em piperPool.test.ts (injeta o spawn directamente), pelo que
-// esta flag não o afecta. Fixar aqui evita que qualquer teste futuro caia no pool sem
-// querer.
+// Forces the Piper ONE-SHOT path (`PIPER_PERSISTENT=0`) during the tests. In
+// production the persistent pool is ON by default (T2.1), but the tests that mock
+// `child_process.spawn` (piper.test.ts, piperConcurrency.test.ts) assume the one-shot
+// protocol (close/error), not the pool's (stdout lines). The persistent pool is tested
+// in ISOLATION in piperPool.test.ts (which injects the spawn directly), so this flag
+// does not affect it. Pinning it here prevents any future test from falling into the
+// pool by accident.
 process.env.PIPER_PERSISTENT = '0';

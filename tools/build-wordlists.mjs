@@ -1,16 +1,16 @@
 // tools/build-wordlists.mjs
 //
-// Gera as wordlists do minijogo "cadeia de palavras" (word-chain) a partir das
-// listas de frequência do hermitdave/FrequencyWords (OpenSubtitles, CC-BY-SA-4.0).
-// Uma língua por ficheiro: assets/wordlists/{lang}.txt (uma palavra por linha, já
-// NORMALIZADA, só a-z, >=3 letras, sem duplicados, ordenada, sem profanidade óbvia).
+// Generates the wordlists for the "word chain" (word-chain) minigame from the
+// hermitdave/FrequencyWords frequency lists (OpenSubtitles, CC-BY-SA-4.0).
+// One language per file: assets/wordlists/{lang}.txt (one word per line, already
+// NORMALIZED, only a-z, >=3 letters, no duplicates, sorted, no obvious profanity).
 //
-// O runtime só carrega o Set — zero processamento no arranque. NÃO está no
-// package.json (ferramenta de build); corre à mão quando se quer regenerar:
+// The runtime only loads the Set — zero processing at startup. NOT in
+// package.json (build tool); run by hand when you want to regenerate:
 //   node tools/build-wordlists.mjs
 //
-// Atribuição (CC-BY-SA-4.0): dados derivados de hermitdave/FrequencyWords.
-// Ver assets/wordlists/NOTICE.txt.
+// Attribution (CC-BY-SA-4.0): data derived from hermitdave/FrequencyWords.
+// See assets/wordlists/NOTICE.txt.
 
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -18,20 +18,20 @@ import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(root, 'assets', 'wordlists');
-const CACHE = join(root, 'scratchpad', 'dict-spike'); // reutiliza o download do spike se existir
+const CACHE = join(root, 'scratchpad', 'dict-spike'); // reuses the spike download if it exists
 
 const LANGS = ['pt', 'en', 'es', 'fr'];
 
-// IMPORTANTE: esta normalização TEM de ser byte-a-byte igual à normalize() de
-// src/games/wordchain/core.ts — senão o runtime normaliza o input do utilizador de
-// forma diferente da lista e palavras válidas são rejeitadas. Há um teste em core que
-// fixa os outputs canónicos (Cães->caes, éléphant->elephant).
+// IMPORTANT: this normalization MUST be byte-for-byte identical to the normalize() in
+// src/games/wordchain/core.ts — otherwise the runtime normalizes the user's input
+// differently from the list and valid words are rejected. There is a test in core that
+// pins the canonical outputs (Cães->caes, éléphant->elephant).
 const RE_PLAYABLE = /^[a-z]+$/;
 function normalize(w) {
   return w
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // remove diacríticos combinados
-    .toLowerCase() // ANTES das ligaduras, para apanhar maiúsculas (Æ, Ø, Ł…)
+    .replace(/[̀-ͯ]/g, '') // remove combining diacritics
+    .toLowerCase() // BEFORE the ligatures, to catch uppercase (Æ, Ø, Ł…)
     .replace(/ß/g, 'ss')
     .replace(/æ/g, 'ae')
     .replace(/œ/g, 'oe')
@@ -40,9 +40,9 @@ function normalize(w) {
     .replace(/ł/g, 'l');
 }
 
-// Profanidade/insultos a NUNCA aceitar (o bot lê as palavras em voz alta, por isso
-// uma "palavra válida" ofensiva sairia pelos altifalantes). Lista compacta e
-// deliberadamente conservadora — foco em insultos e asneira forte. Extensível.
+// Profanity/slurs to NEVER accept (the bot reads the words out loud, so an
+// offensive "valid word" would come out of the speakers). Compact and
+// deliberately conservative list — focused on slurs and strong swearing. Extensible.
 const PROFANITY = {
   pt: [
     'caralho',
@@ -175,9 +175,9 @@ function loadRaw(lang) {
   );
 }
 
-// As listas de legendas contaminam-se entre línguas (aparece "fuck" na lista PT,
-// "mierda" na lista FR, etc.). Por isso banimos a UNIÃO de toda a profanidade de
-// todas as línguas em TODAS as listas, não só a da própria língua.
+// The subtitle lists contaminate each other across languages ("fuck" appears in the PT
+// list, "mierda" in the FR list, etc.). So we ban the UNION of all profanity from
+// all languages in ALL lists, not just that of the language itself.
 const BANNED_ALL = new Set(Object.values(PROFANITY).flat());
 
 mkdirSync(OUT, { recursive: true });

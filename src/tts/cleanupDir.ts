@@ -2,16 +2,16 @@ import { rmSync } from 'node:fs';
 import { log } from '../logging/logger';
 
 /**
- * Remove um diretório temporário de forma recursiva que NUNCA lança. O `rmSync` com
- * `force:true` só engole ENOENT — NÃO um ficheiro em uso (EPERM/EBUSY no Windows,
- * quando um processo piper/ffmpeg acabou de ser morto e o SO ainda não libertou o
- * handle). Se isso acontecer num `finally`, o erro de limpeza:
- *   1. MASCARA a rejeição original (ex. "Piper timeout" vira "EPERM"), e
- *   2. pode transformar uma síntese BEM-SUCEDIDA (o WAV já foi copiado para a cache)
- *      numa rejeição, deixando a mensagem muda por um erro de limpeza.
- * Por isso a limpeza vive aqui, embrulhada em try/catch — o mesmo padrão que o
- * `cleanup()` do `mp3ToWav` (gtts) já usa. Um temp dir vazado é logado e esquecido,
- * nunca propaga.
+ * Removes a temporary directory recursively in a way that NEVER throws. `rmSync` with
+ * `force:true` only swallows ENOENT — NOT a file in use (EPERM/EBUSY on Windows,
+ * when a piper/ffmpeg process was just killed and the OS hasn't released the
+ * handle yet). If that happens in a `finally`, the cleanup error:
+ *   1. MASKS the original rejection (e.g. "Piper timeout" becomes "EPERM"), and
+ *   2. can turn a SUCCESSFUL synthesis (the WAV was already copied to the cache)
+ *      into a rejection, leaving the message mute due to a cleanup error.
+ * So cleanup lives here, wrapped in try/catch — the same pattern that
+ * `mp3ToWav`'s (gtts) `cleanup()` already uses. A leaked temp dir is logged and forgotten,
+ * never propagated.
  */
 export function rmDirSafe(dir: string): void {
   try {

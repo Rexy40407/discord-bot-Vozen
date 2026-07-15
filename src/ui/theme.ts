@@ -1,35 +1,35 @@
 // src/ui/theme.ts
 //
-// Tema visual do Vozen: paleta de marca + fábrica de embeds. Um sítio ÚNICO para as
-// cores, para todas as superfícies (comandos, jogos, placares) terem o mesmo aspeto
-// em vez de hex soltos espalhados. Mantém-se propositadamente pequeno.
+// Vozen's visual theme: brand palette + embed factory. A SINGLE place for the
+// colors, so that all surfaces (commands, games, leaderboards) have the same look
+// instead of loose hex scattered around. Kept deliberately small.
 
 import { EmbedBuilder } from 'discord.js';
 
 /**
- * Paleta de marca. `brand` (blurple) já era a cor intencional do /help e /welcome;
- * as restantes seguem as cores oficiais do Discord (semânticas familiares) + o dourado
- * do Premium. Números hex (ColorResolvable) — o que o EmbedBuilder.setColor espera.
+ * Brand palette. `brand` (blurple) was already the intended color of /help and /welcome;
+ * the rest follow Discord's official colors (familiar semantics) + Premium's
+ * gold. Hex numbers (ColorResolvable) — what EmbedBuilder.setColor expects.
  */
 export const COLORS = {
-  brand: 0x5865f2, // blurple — primária
-  success: 0x57f287, // verde
-  warning: 0xfee75c, // amarelo
-  danger: 0xed4245, // vermelho
-  premium: 0xf1c40f, // dourado — estados Premium ativos
+  brand: 0x5865f2, // blurple — primary
+  success: 0x57f287, // green
+  warning: 0xfee75c, // yellow
+  danger: 0xed4245, // red
+  premium: 0xf1c40f, // gold — active Premium states
 } as const;
 
 export type BrandColor = keyof typeof COLORS;
 
 /**
- * Novo embed já com a cor de marca (ou a variante pedida). Base comum de TODAS as
- * superfícies em embed — mudar a cor aqui muda o bot inteiro.
+ * A new embed already with the brand color (or the requested variant). Common base of ALL
+ * embed surfaces — changing the color here changes the whole bot.
  */
 export function brandEmbed(color: BrandColor = 'brand'): EmbedBuilder {
   return new EmbedBuilder().setColor(COLORS[color]);
 }
 
-/** Rótulo de posição: medalha para o top 3, `#n` para o resto. Usado em placares. */
+/** Position label: a medal for the top 3, `#n` for the rest. Used in leaderboards. */
 export function rankMedal(rank: number): string {
   return rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
 }

@@ -1,18 +1,18 @@
-// src/tts/gtts.ts — motor TTS GRATUITO via Google Translate TTS ("gTTS").
+// src/tts/gtts.ts — FREE TTS engine via Google Translate TTS ("gTTS").
 //
-// Porquê: o Piper (self-host) lê palavras estrangeiras de forma mecânica. As vozes
-// da Google (neurais, multilingues) leem texto MISTO com naturalidade numa só voz —
-// é o que o Discord-TTS usa por defeito. Este motor traz essa qualidade ao Vozen SEM
-// API key nem custo, atrás da flag TTS_ENGINE=gtts.
+// Why: Piper (self-hosted) reads foreign words mechanically. Google's voices (neural,
+// multilingual) read MIXED text naturally in a single voice — it is what Discord-TTS uses
+// by default. This engine brings that quality to Vozen WITHOUT an API key or cost, behind
+// the TTS_ENGINE=gtts flag.
 //
-// AVISO (fragilidade honesta): o endpoint translate_tts é NÃO-OFICIAL. A Google
-// pode limitar por IP (HTTP 429) ou mudá-lo sem aviso. Por isso é OPT-IN e o Piper
-// continua o default/fallback. Cada request tem um limite de ~200 caracteres, por
-// isso texto longo é partido em pedaços, sintetizado e concatenado.
+// WARNING (honest fragility): the translate_tts endpoint is UNOFFICIAL. Google may rate
+// limit by IP (HTTP 429) or change it without notice. That is why it is OPT-IN and Piper
+// remains the default/fallback. Each request has a ~200-character limit, so long text is
+// split into chunks, synthesized, and concatenated.
 //
-// Formato: o gTTS devolve MP3; convertemo-lo para WAV 22050Hz mono 16-bit (o MESMO
-// do Piper) via ffmpeg-static, para encaixar sem atrito no pipeline (cache,
-// leadSilenceMs, player).
+// Format: gTTS returns MP3; we convert it to WAV 22050Hz mono 16-bit (the SAME as Piper)
+// via ffmpeg-static, to fit frictionlessly into the pipeline (cache, leadSilenceMs,
+// player).
 import { spawn } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { rmDirSafe } from './cleanupDir';
@@ -28,25 +28,25 @@ import { log } from '../logging/logger';
 const GTTS_URL = 'https://translate.google.com/translate_tts';
 const GTTS_TIMEOUT_MS = 15000;
 /**
- * Tempo máximo para a conversão MP3→WAV via ffmpeg. Uma conversão de um chunk curto
- * é sub-segundo; este teto (igual ao da rede) garante que um ffmpeg PRESO nunca
- * deixa a Promise por resolver — o que travaria o worker de reprodução para sempre
- * (o gTTS é o motor por defeito). Espelha o PIPER_TIMEOUT_MS do motor local.
+ * Maximum time for the MP3→WAV conversion via ffmpeg. A conversion of a short chunk is
+ * sub-second; this ceiling (same as the network one) guarantees a STUCK ffmpeg never
+ * leaves the Promise unresolved — which would stall the playback worker forever (gTTS is
+ * the default engine). Mirrors the PIPER_TIMEOUT_MS of the local engine.
  */
 const GTTS_FFMPEG_TIMEOUT_MS = 15000;
-/** Limite prático de caracteres por request do endpoint translate_tts. */
+/** Practical character limit per request of the translate_tts endpoint. */
 const GTTS_MAX_CHARS = 200;
-/** Tentativas EXTRA por pedido quando o erro é TRANSITÓRIO (rede/5xx/429). Default 2. */
+/** EXTRA attempts per request when the error is TRANSIENT (network/5xx/429). Default 2. */
 const GTTS_DEFAULT_RETRIES = 2;
-/** Máx. de pedaços buscados em paralelo à Google. Default 3; 1 = serial (antigo). */
+/** Max chunks fetched in parallel from Google. Default 3; 1 = serial (old). */
 const GTTS_DEFAULT_CHUNK_CONCURRENCY = 3;
 
 /**
- * map com CONCORRÊNCIA LIMITADA, PRESERVANDO A ORDEM: corre `fn` sobre `items` com
- * no máximo `limit` invocações em voo, escrevendo cada resultado no índice do input
- * (a ordem do array de saída é a do input, independente da ordem de conclusão — crítico
- * para os frames MP3 concatenados na ordem certa). Se algum `fn` rejeita, o Promise.all
- * rejeita (sem unhandled rejection — todas as promessas estão ligadas ao mesmo all).
+ * map with BOUNDED CONCURRENCY, PRESERVING ORDER: runs `fn` over `items` with at most
+ * `limit` invocations in flight, writing each result at the input's index (the output
+ * array's order is the input's, independent of completion order — critical for the MP3
+ * frames concatenated in the right order). If any `fn` rejects, the Promise.all rejects
+ * (no unhandled rejection — all promises are tied to the same all).
  */
 export async function mapWithConcurrency<T, R>(
   items: readonly T[],
@@ -65,10 +65,10 @@ export async function mapWithConcurrency<T, R>(
   await Promise.all(workers);
   return results;
 }
-/** Espera base entre tentativas (backoff linear: 300ms, 600ms, …). */
+/** Base wait between attempts (linear backoff: 300ms, 600ms, …). */
 const GTTS_RETRY_BASE_MS = 300;
 
-/** Erro etiquetado com se vale a pena repetir (transitório) ou não (falha dura). */
+/** Error tagged with whether it is worth retrying (transient) or not (hard failure). */
 type TaggedError = Error & { retryable?: boolean };
 function taggedError(message: string, retryable: boolean): TaggedError {
   const e = new Error(message) as TaggedError;
@@ -77,19 +77,19 @@ function taggedError(message: string, retryable: boolean): TaggedError {
 }
 
 /**
- * Um estado HTTP é TRANSITÓRIO (vale a pena repetir) quando é 429 (limite momentâneo
- * da Google) ou 5xx (erro do servidor). 403 e outros 4xx são falhas DURAS (repetir não
- * ajuda — ex.: bloqueio). PURA.
+ * An HTTP status is TRANSIENT (worth retrying) when it is 429 (Google's momentary rate
+ * limit) or 5xx (server error). 403 and other 4xx are HARD failures (retrying does not
+ * help — e.g. a block). PURE.
  */
 export function isRetryableStatus(status: number): boolean {
   return status === 429 || status >= 500;
 }
 
 /**
- * Corre `fn`, repetindo-a até `retries` vezes SÓ quando o erro está etiquetado como
- * `retryable` (transitório), com backoff linear (`baseDelayMs` × tentativa). Um erro
- * não-retryable (ex.: timeout, 403) falha IMEDIATAMENTE — evita empilhar esperas. O
- * `sleep` é injetável para testes. PURA (sem estado global). Propaga o último erro.
+ * Runs `fn`, retrying it up to `retries` times ONLY when the error is tagged as
+ * `retryable` (transient), with linear backoff (`baseDelayMs` × attempt). A non-retryable
+ * error (e.g. timeout, 403) fails IMMEDIATELY — avoids stacking waits. `sleep` is
+ * injectable for tests. PURE (no global state). Propagates the last error.
  */
 export async function retryAsync<T>(
   fn: () => Promise<T>,
@@ -115,16 +115,16 @@ export async function retryAsync<T>(
   }
   throw lastErr;
 }
-/** A Google rejeita o User-Agent default do fetch; finge um browser. */
+/** Google rejects fetch's default User-Agent; pretend to be a browser. */
 const GTTS_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
 
 /**
- * Código de língua para o gTTS a partir de um id de modelo Piper. O `tl` do
- * translate_tts é ISO-639-1 (ex. 'pt', 'en', 'es') — que é exatamente o prefixo do
- * id do modelo antes do '_' (pt_BR -> 'pt', en_US -> 'en'). Alguns precisam de
- * override (zh -> zh-CN). Sem '_' ou desconhecido -> 'en'. NOTA: 'pt' no Google é
- * português do Brasil por defeito, que é o que queremos. PURA.
+ * Language code for gTTS from a Piper model id. The `tl` of translate_tts is ISO-639-1
+ * (e.g. 'pt', 'en', 'es') — which is exactly the model id's prefix before the '_'
+ * (pt_BR -> 'pt', en_US -> 'en'). Some need an override (zh -> zh-CN). Without '_' or
+ * unknown -> 'en'. NOTE: 'pt' in Google is Brazilian Portuguese by default, which is what
+ * we want. PURE.
  */
 export function gttsLangOfModel(model: string): string {
   const us = model.indexOf('_');
@@ -135,9 +135,9 @@ export function gttsLangOfModel(model: string): string {
 }
 
 /**
- * Parte `text` em pedaços de <= `max` caracteres, quebrando em fronteiras de PALAVRA
- * (nunca a meio de uma). Uma palavra maior que `max` é cortada à força (raro). Texto
- * vazio -> []. PURA e determinística.
+ * Splits `text` into chunks of <= `max` characters, breaking at WORD boundaries (never in
+ * the middle of one). A word larger than `max` is force-cut (rare). Empty text -> []. PURE
+ * and deterministic.
  */
 export function chunkText(text: string, max: number): string[] {
   const words = text.split(/\s+/).filter((w) => w.length > 0);
@@ -145,16 +145,16 @@ export function chunkText(text: string, max: number): string[] {
   let cur = '';
   for (const w of words) {
     if (w.length > max) {
-      // Palavra gigante: fecha o atual e corta a palavra em bocados de `max`.
+      // Giant word: close the current one and cut the word into `max`-sized pieces.
       if (cur) {
         chunks.push(cur);
         cur = '';
       }
-      // Corta por CODE POINT (Array.from), nao por unidade UTF-16 (w.slice): um corte a
-      // meio de um par de surrogates (emoji / char nao-BMP) deixaria um surrogate
-      // solitario e o encodeURIComponent do q= no fetchChunk lancaria URIError -> a fala
-      // falhava com input hostil (spam de nao-BMP sem espacos). Assim cada pedaco e texto
-      // valido. `max` passa a contar code points (<= chars UTF-16), o que e mais seguro.
+      // Cut by CODE POINT (Array.from), not by UTF-16 unit (w.slice): a cut in the middle
+      // of a surrogate pair (emoji / non-BMP char) would leave a lone surrogate and the
+      // encodeURIComponent of q= in fetchChunk would throw URIError -> speech would fail on
+      // hostile input (spam of non-BMP without spaces). This way each chunk is valid text.
+      // `max` now counts code points (<= UTF-16 chars), which is safer.
       const cps = Array.from(w);
       for (let i = 0; i < cps.length; i += max) chunks.push(cps.slice(i, i + max).join(''));
       continue;
@@ -173,34 +173,34 @@ export function chunkText(text: string, max: number): string[] {
 }
 
 /**
- * O Google translate_tts SOLETRA palavras TODO-MAIÚSCULAS (interpreta-as como siglas):
- * "VOLTEI" -> "V-O-L-T-E-I", em vez de ler a palavra. Confirmado empiricamente em 22
- * das ~34 línguas do bot (es, en, fr, de, it, nl, pl, ro, tr, ar, sv, el, cs, da, lv,
- * ne, sk, sr, sw, vi, ca, cy; NÃO acontece em pt, ru, uk, zh, fi, hu, is). Para o Vozen
- * LER a palavra em vez de a soletrar, baixamos RUNS de 2+ maiúsculas para minúsculas
- * antes de enviar à Google.
+ * Google translate_tts SPELLS OUT ALL-CAPS words (interprets them as acronyms):
+ * "VOLTEI" -> "V-O-L-T-E-I", instead of reading the word. Confirmed empirically in 22 of
+ * the bot's ~34 languages (es, en, fr, de, it, nl, pl, ro, tr, ar, sv, el, cs, da, lv,
+ * ne, sk, sr, sw, vi, ca, cy; does NOT happen in pt, ru, uk, zh, fi, hu, is). For Vozen to
+ * READ the word instead of spelling it, we lower RUNS of 2+ uppercase letters to lowercase
+ * before sending to Google.
  *
- * É gTTS-ESPECÍFICO: o Piper (neural) já lê maiúsculas como palavra, por isso a
- * transformação vive aqui e não no cleanText (partilhado). Uma ÚNICA maiúscula (início
- * de frase, "I", "A", ou o "V" de "Voltei") NÃO é tocada — só corridas de 2+. Trade-off
- * aceite: siglas legítimas ("NASA") passam a ser lidas como palavra, mas em chat o
- * TODO-MAIÚSCULAS é quase sempre ênfase/gritar, não uma sigla. PURA.
+ * It is gTTS-SPECIFIC: Piper (neural) already reads uppercase as a word, so the transform
+ * lives here and not in cleanText (shared). A SINGLE uppercase letter (sentence start,
+ * "I", "A", or the "V" of "Voltei") is NOT touched — only runs of 2+. Accepted trade-off:
+ * legitimate acronyms ("NASA") become read as a word, but in chat ALL-CAPS is almost
+ * always emphasis/shouting, not an acronym. PURE.
  *
- * A transformação em si vive em deCaps.ts (partilhada com Kokoro/Clone/Neural, que têm
- * o mesmo problema); aqui fica só o wrapper com o nome histórico e a nota gTTS.
+ * The transform itself lives in deCaps.ts (shared with Kokoro/Clone/Neural, which have the
+ * same problem); here we keep only the wrapper with the historical name and the gTTS note.
  */
 export function deCapsForGoogle(text: string): string {
   return lowerAllCapsRuns(text);
 }
 
 export interface GttsOptions {
-  /** fetch injetável (testes). Default: o `fetch` global. */
+  /** injectable fetch (tests). Default: the global `fetch`. */
   fetchImpl?: typeof fetch;
-  /** sleep injetável (testes deterministicos). Default: setTimeout real. */
+  /** injectable sleep (deterministic tests). Default: real setTimeout. */
   sleepImpl?: (ms: number) => Promise<void>;
-  /** tentativas EXTRA por pedido para erros transitórios. Default GTTS_DEFAULT_RETRIES. */
+  /** EXTRA attempts per request for transient errors. Default GTTS_DEFAULT_RETRIES. */
   retries?: number;
-  /** Máx. de pedaços buscados em paralelo. Default GTTS_DEFAULT_CHUNK_CONCURRENCY. */
+  /** Max chunks fetched in parallel. Default GTTS_DEFAULT_CHUNK_CONCURRENCY. */
   chunkConcurrency?: number;
 }
 
@@ -225,24 +225,24 @@ export class GTTSEngine implements TTSEngine {
     if (cached) return cached;
 
     const lang = gttsLangOfModel(req.model);
-    // deCapsForGoogle: evita que a Google SOLETRE palavras todo-maiúsculas (ver função).
+    // deCapsForGoogle: prevents Google from SPELLING OUT all-caps words (see function).
     const chunks = chunkText(deCapsForGoogle(req.text), GTTS_MAX_CHARS);
     if (chunks.length === 0) {
       throw new Error('gTTS: empty text');
     }
 
-    // Um MP3 por pedaço; concatenam-se os bytes (frames MP3 do mesmo formato) e o
-    // ffmpeg demuxa o stream inteiro de uma vez. Fan-out LIMITADO (default 3): pedaços
-    // em paralelo, ORDEM preservada no array. O retry/backoff por pedaço (fetchChunk)
-    // fica intacto; um pedaço que falhe (esgotadas as tentativas) rejeita a síntese
-    // inteira — exatamente como o loop serial antigo.
+    // One MP3 per chunk; the bytes are concatenated (MP3 frames of the same format) and
+    // ffmpeg demuxes the whole stream at once. BOUNDED fan-out (default 3): chunks in
+    // parallel, ORDER preserved in the array. The per-chunk retry/backoff (fetchChunk)
+    // stays intact; a chunk that fails (attempts exhausted) rejects the whole synthesis —
+    // exactly like the old serial loop.
     const mp3s = await mapWithConcurrency(chunks, this.chunkConcurrency, (c) =>
       this.fetchChunk(c, lang),
     );
     const mp3 = Buffer.concat(mp3s);
 
     let wav = await mp3ToWav(mp3, req.speed);
-    // Silêncio de arranque (mesma semântica do Piper): PREPENDido ao WAV.
+    // Lead silence (same semantics as Piper): PREPENDED to the WAV.
     if (req.leadSilenceMs && req.leadSilenceMs > 0) {
       wav = concatWavs([silenceWav(req.leadSilenceMs), wav], { silenceMs: 0 });
     }
@@ -258,10 +258,10 @@ export class GTTSEngine implements TTSEngine {
   }
 
   /**
-   * Busca UM pedaço, com RETRY para falhas TRANSITÓRIAS (rede intermitente, 5xx, 429
-   * momentâneo) — a Google translate_tts é um endpoint não-oficial e falha às vezes por
-   * um instante. NÃO repete timeouts (evita empilhar 15s×N) nem 403/bloqueios (repetir
-   * não ajuda). Mantém a MESMA voz da Google — não muda de motor.
+   * Fetches ONE chunk, with RETRY for TRANSIENT failures (intermittent network, 5xx,
+   * momentary 429) — Google translate_tts is an unofficial endpoint and fails now and then
+   * for an instant. Does NOT retry timeouts (avoids stacking 15s×N) or 403/blocks (retrying
+   * does not help). Keeps the SAME Google voice — does not switch engines.
    */
   private async fetchChunk(text: string, lang: string): Promise<Buffer> {
     return retryAsync(() => this.fetchChunkOnce(text, lang), {
@@ -272,7 +272,7 @@ export class GTTSEngine implements TTSEngine {
     });
   }
 
-  /** Uma tentativa de busca. Lança um erro ETIQUETADO (retryable) para o retry decidir. */
+  /** One fetch attempt. Throws a TAGGED error (retryable) for the retry to decide. */
   private async fetchChunkOnce(text: string, lang: string): Promise<Buffer> {
     const url =
       `${GTTS_URL}?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(lang)}` +
@@ -288,16 +288,16 @@ export class GTTSEngine implements TTSEngine {
     } catch (err) {
       const isTimeout = (err as Error)?.name === 'AbortError';
       const reason = isTimeout ? `timeout (${GTTS_TIMEOUT_MS}ms)` : (err as Error).message;
-      // Timeout NÃO é retryable (não empilhar esperas de 15s); outra falha de rede é transitória.
-      throw taggedError(`gTTS: falha de rede (${reason})`, !isTimeout);
+      // A timeout is NOT retryable (do not stack 15s waits); another network failure is transient.
+      throw taggedError(`gTTS: network failure (${reason})`, !isTimeout);
     } finally {
       clearTimeout(timer);
     }
     if (!res.ok) {
-      // 429 = rate-limit da Google (o preço de um endpoint não-oficial); 5xx = erro do
-      // servidor. Ambos transitórios -> retry. 403/outros 4xx -> falha dura.
+      // 429 = Google rate-limit (the price of an unofficial endpoint); 5xx = server error.
+      // Both transient -> retry. 403/other 4xx -> hard failure.
       throw taggedError(
-        `gTTS: HTTP ${res.status} ${res.statusText} (429 = limite da Google)`,
+        `gTTS: HTTP ${res.status} ${res.statusText} (429 = Google rate limit)`,
         isRetryableStatus(res.status),
       );
     }
@@ -308,18 +308,18 @@ export class GTTSEngine implements TTSEngine {
 }
 
 /**
- * Converte um buffer MP3 em WAV 22050Hz mono 16-bit (formato do Piper) via
- * ffmpeg-static. `speed` != 1 aplica o filtro `atempo` (0.5–2.0). Usa ficheiros
- * temporários (mesmo padrão do resto do pipeline). Rejeita em erro do ffmpeg.
+ * Converts an MP3 buffer into WAV 22050Hz mono 16-bit (Piper's format) via ffmpeg-static.
+ * `speed` != 1 applies the `atempo` filter (0.5–2.0). Uses temporary files (same pattern
+ * as the rest of the pipeline). Rejects on ffmpeg error.
  */
 function mp3ToWav(mp3: Buffer, speed: number): Promise<Buffer> {
   const ff = ffmpegPath as unknown as string | null;
   if (!ff) {
     return Promise.reject(new Error('gTTS: ffmpeg-static not found (run install.js)'));
   }
-  // Setup síncrono guardado: se mkdtempSync/writeFileSync lançar (disco cheio,
-  // EACCES), limpamos o workDir já criado antes de propagar — senão vazava um temp
-  // dir por conversão falhada.
+  // Guarded synchronous setup: if mkdtempSync/writeFileSync throws (disk full, EACCES),
+  // we clean up the already-created workDir before propagating — otherwise it would leak a
+  // temp dir per failed conversion.
   const workDir = mkdtempSync(join(tmpdir(), 'gtts-conv-'));
   const inPath = join(workDir, 'in.mp3');
   const outPath = join(workDir, 'out.wav');
@@ -341,21 +341,21 @@ function mp3ToWav(mp3: Buffer, speed: number): Promise<Buffer> {
     const child = spawn(ff, args, { stdio: ['ignore', 'ignore', 'pipe'] });
     let stderr = '';
     let settled = false;
-    // Limpeza best-effort que NUNCA lança: uma falha a apagar o tmp (ex.: Windows
-    // EBUSY logo após o SIGKILL, antes de o SO libertar os handles do ffmpeg morto)
-    // não pode impedir a Promise de resolver/rejeitar. CRÍTICO: settle-se SEMPRE ANTES
-    // de chamar cleanup(), senão um throw da limpeza (com o latch `settled` já ligado)
-    // deixaria a Promise PENDENTE para sempre e travava o worker de voz da guild.
+    // Best-effort cleanup that NEVER throws: a failure to delete the tmp (e.g. Windows
+    // EBUSY right after the SIGKILL, before the OS releases the dead ffmpeg's handles)
+    // must not prevent the Promise from resolving/rejecting. CRITICAL: always settle BEFORE
+    // calling cleanup(), otherwise a throw from cleanup (with the `settled` latch already
+    // on) would leave the Promise PENDING forever and stall the guild's voice worker.
     const cleanup = (): void => {
       try {
         rmSync(workDir, { recursive: true, force: true });
       } catch {
-        // ignora — limpeza best-effort
+        // ignore — best-effort cleanup
       }
     };
-    // Guarda-tempo: um ffmpeg preso (child bloqueado, pipe entupido) nunca emitiria
-    // 'close' — a Promise ficaria pendente e travaria o worker de reprodução da
-    // guild PARA SEMPRE. Ao expirar, matamos o processo e rejeitamos.
+    // Time guard: a stuck ffmpeg (blocked child, clogged pipe) would never emit 'close' —
+    // the Promise would stay pending and stall the guild's playback worker FOREVER. On
+    // expiry, we kill the process and reject.
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
@@ -363,9 +363,9 @@ function mp3ToWav(mp3: Buffer, speed: number): Promise<Buffer> {
       try {
         child.kill('SIGKILL');
       } catch {
-        // já morto
+        // already dead
       }
-      reject(new Error(`gTTS: ffmpeg excedeu ${GTTS_FFMPEG_TIMEOUT_MS}ms (morto)`));
+      reject(new Error(`gTTS: ffmpeg exceeded ${GTTS_FFMPEG_TIMEOUT_MS}ms (killed)`));
       cleanup();
     }, GTTS_FFMPEG_TIMEOUT_MS);
     child.stderr?.on('data', (d: Buffer) => {
@@ -375,7 +375,7 @@ function mp3ToWav(mp3: Buffer, speed: number): Promise<Buffer> {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      reject(new Error(`gTTS: falha ao iniciar ffmpeg: ${err.message}`));
+      reject(new Error(`gTTS: failed to start ffmpeg: ${err.message}`));
       cleanup();
     });
     child.on('close', (code) => {
@@ -387,14 +387,14 @@ function mp3ToWav(mp3: Buffer, speed: number): Promise<Buffer> {
         try {
           buf = readFileSync(outPath);
         } catch (e) {
-          reject(new Error(`gTTS: falha a ler o WAV convertido: ${(e as Error).message}`));
+          reject(new Error(`gTTS: failed to read the converted WAV: ${(e as Error).message}`));
           cleanup();
           return;
         }
         resolve(buf);
         cleanup();
       } else {
-        reject(new Error(`gTTS: ffmpeg saiu com ${code}: ${stderr.trim()}`));
+        reject(new Error(`gTTS: ffmpeg exited with ${code}: ${stderr.trim()}`));
         cleanup();
       }
     });

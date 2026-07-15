@@ -1,27 +1,27 @@
-// src/textCleaning/accents.ts — restauro de acentos por-língua.
+// src/textCleaning/accents.ts — per-language accent restoration.
 //
-// PROBLEMA: em chat casual escreve-se muitas vezes SEM acentos ("nao", "voce",
-// "amanha"). O Piper/espeak lê a grafia literal e soa MAL (verificado: "nao" e "não"
-// produzem áudio diferente). SOLUÇÃO: antes de sintetizar, repor os acentos das
-// palavras mais comuns da língua DETETADA.
+// PROBLEM: in casual chat people often write WITHOUT accents ("nao", "voce",
+// "amanha"). Piper/espeak reads the literal spelling and sounds BAD (verified: "nao" and "não"
+// produce different audio). SOLUTION: before synthesizing, restore the accents of the
+// most common words of the DETECTED language.
 //
-// REGRA DE CURADORIA (intra-língua, não cross-língua): só entra uma palavra se a
-// forma SEM acento NÃO for, ela própria, uma OUTRA palavra comum da mesma língua
-// (em QUALQUER flexão e QUALQUER capitalização — o match é case-insensitive). Por
-// isso ficam DE FORA os pares ambíguos (pt: esta/está, e/é, so/só, pais/país,
-// pode/pôde, publico/público, musica/música, pratica/prática, manha/manhã…). Na
-// dúvida, EXCLUI — uma troca errada é pior que um acento em falta. Aplica-se SÓ à
-// língua correspondente (o dicionário `por` só corre quando a lingua é `por`).
+// CURATION RULE (intra-language, not cross-language): a word only goes in if its
+// UNACCENTED form is NOT, itself, ANOTHER common word of the same language
+// (in ANY inflection and ANY capitalization — the match is case-insensitive). That
+// is why the ambiguous pairs are LEFT OUT (pt: esta/está, e/é, so/só, pais/país,
+// pode/pôde, publico/público, musica/música, pratica/prática, manha/manhã…). When in
+// doubt, EXCLUDE — a wrong swap is worse than a missing accent. Applies ONLY to the
+// corresponding language (the `por` dictionary only runs when the language is `por`).
 //
-// Chaves em minúsculas, sem acento; valores com acento e TAMBÉM em minúsculas (a
-// capitalização do output é reposta por `matchCase` a partir do token casado, e o
-// case é irrelevante para o fonema — o Piper/espeak ignora-o). `restoreAccents` casa
-// por FRONTEIRA de palavra (mesmo estilo de expandAbbreviations) e preserva a
-// capitalização do token (minúsculas / Primeira-maiúscula / TUDO-MAIÚSCULAS).
+// Keys in lowercase, no accent; values with accent and ALSO in lowercase (the
+// output capitalization is restored by `matchCase` from the matched token, and the
+// case is irrelevant to the phoneme — Piper/espeak ignores it). `restoreAccents` matches
+// on WORD BOUNDARY (same style as expandAbbreviations) and preserves the token's
+// capitalization (lowercase / First-uppercase / ALL-UPPERCASE).
 
-/** ISO 639-3 (o output de detectLang) -> dicionário sem-acento -> com-acento. */
+/** ISO 639-3 (the output of detectLang) -> unaccented dictionary -> accented. */
 const DICTS: Record<string, Record<string, string>> = {
-  // ── Português ──────────────────────────────────────────────────────────────
+  // ── Portuguese ─────────────────────────────────────────────────────────────
   por: {
     nao: 'não',
     sao: 'são',
@@ -111,7 +111,7 @@ const DICTS: Record<string, Record<string, string>> = {
     musculo: 'músculo',
     ate: 'até',
   },
-  // ── Espanhol (só palavras de conteúdo NÃO-ambíguas; fora que/qué, si/sí, tu/tú…) ─
+  // ── Spanish (only NON-ambiguous content words; excluding que/qué, si/sí, tu/tú…) ─
   spa: {
     informacion: 'información',
     corazon: 'corazón',
@@ -139,7 +139,7 @@ const DICTS: Record<string, Record<string, string>> = {
     despues: 'después',
     quiza: 'quizá',
   },
-  // ── Francês (palavras comuns de conteúdo; fora a/à, ou/où, la/là…) ────────────
+  // ── French (common content words; excluding a/à, ou/où, la/là…) ──────────────
   fra: {
     francais: 'français',
     tres: 'très',
@@ -162,20 +162,20 @@ const DICTS: Record<string, Record<string, string>> = {
     prefere: 'préfère',
     achete: 'achète',
   },
-  // ── Alemão ───────────────────────────────────────────────────────────────────
-  // O trema (Umlaut ä/ö/ü) MUDA o fonema (ex. "schon"[ʃoːn] vs "schön"[ʃøːn]) e é
-  // muito omitido em chat ("fur", "konnen", "grun"). Repô-lo melhora nitidamente o
-  // áudio. MAS o alemão é um campo minado de pares mínimos distinguidos SÓ pelo
-  // trema — por isso a curadoria aqui é AINDA mais estrita: só entram palavras cuja
-  // forma sem-trema NÃO exista como QUALQUER palavra alemã, em QUALQUER flexão e
-  // QUALQUER capitalização (o match é case-insensitive). Os infinitivos (-en) e as
-  // formas claramente-não-palavra são o terreno seguro; as conjugadas colidem.
+  // ── German ───────────────────────────────────────────────────────────────────
+  // The umlaut (ä/ö/ü) CHANGES the phoneme (e.g. "schon"[ʃoːn] vs "schön"[ʃøːn]) and is
+  // very often omitted in chat ("fur", "konnen", "grun"). Restoring it clearly improves the
+  // audio. BUT German is a minefield of minimal pairs distinguished ONLY by the
+  // umlaut — so the curation here is EVEN stricter: only words whose
+  // umlaut-less form does NOT exist as ANY German word, in ANY inflection and
+  // ANY capitalization (the match is case-insensitive), go in. The infinitives (-en) and the
+  // clearly-not-a-word forms are the safe ground; the conjugated ones collide.
   //
-  // Valores em minúsculas (o case não afeta o fonema; `matchCase` repõe-no do token).
-  // O ß fica DE FORA de propósito: "ss"->"ß" quase não muda o fonema (ganho ~nulo) e
-  // o "ss" é ortografia legítima (suíço), logo trocá-lo seria um risco sem retorno.
+  // Values in lowercase (the case does not affect the phoneme; `matchCase` restores it from the token).
+  // The ß is deliberately LEFT OUT: "ss"->"ß" barely changes the phoneme (~zero gain) and
+  // "ss" is legitimate spelling (Swiss), so swapping it would be a risk with no return.
   deu: {
-    fur: 'für', // fur = palavra inglesa, não alemã
+    fur: 'für', // fur = English word, not German
     konnen: 'können',
     mussen: 'müssen',
     durfen: 'dürfen',
@@ -194,19 +194,19 @@ const DICTS: Record<string, Record<string, string>> = {
     funf: 'fünf',
     glucklich: 'glücklich',
     zuruck: 'zurück',
-    // ── EXCLUÍDOS (a forma sem-trema É outra palavra alemã comum) ──────────────
-    //   schon/schön (schon = "já"), wurde/würde, mochte/möchte, mochten/möchten,
+    // ── EXCLUDED (the umlaut-less form IS another common German word) ──────────
+    //   schon/schön (schon = "already"), wurde/würde, mochte/möchte, mochten/möchten,
     //   hatte/hätte, konnte/könnte, musste/müsste, durfte/dürfte, wusste/wüsste,
-    //   ware/wäre (+ Ware = mercadoria), wahlen/wählen (Wahlen = eleições),
-    //   zahlen/zählen (zahlen = pagar), lauft/läuft (ihr lauft), hort/hört (Hort),
-    //   spat/spät (Spat = mineral), gluck/glück (Gluck = apelido do compositor).
-    //   Também EXCLUÍDO über/uber: colide com a marca "Uber" (match case-insensitive)
-    //   — na dúvida, exclui (regra do próprio ficheiro).
+    //   ware/wäre (+ Ware = goods), wahlen/wählen (Wahlen = elections),
+    //   zahlen/zählen (zahlen = to pay), lauft/läuft (ihr lauft), hort/hört (Hort),
+    //   spat/spät (Spat = mineral), gluck/glück (Gluck = the composer's surname).
+    //   Also EXCLUDED über/uber: collides with the brand "Uber" (case-insensitive match)
+    //   — when in doubt, exclude (the file's own rule).
   },
 };
 
-// Remove as chaves-marcador com '_' (nunca casam: normalize não produz '_') que só
-// existem para evitar duplicados literais acima.
+// Remove the marker keys with '_' (they never match: normalize does not produce '_') that only
+// exist to avoid literal duplicates above.
 for (const lang of Object.keys(DICTS)) {
   for (const k of Object.keys(DICTS[lang])) if (k.includes('_')) delete DICTS[lang][k];
 }
@@ -215,9 +215,9 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Regexes PRÉ-COMPILADAS por-língua uma vez no load (não por mensagem). `restoreAccents`
-// está no hot path; recompilar dezenas de RegExp com \p{...}+lookbehind a cada mensagem
-// (88 só no pt) era CPU desperdiçada. Construído DEPOIS da limpeza de chaves com '_' acima.
+// Regexes PRE-COMPILED per-language once at load (not per message). `restoreAccents`
+// is on the hot path; recompiling dozens of RegExp with \p{...}+lookbehind on every message
+// (88 in pt alone) was wasted CPU. Built AFTER the cleanup of '_' keys above.
 const COMPILED_DICTS: Record<string, ReadonlyArray<readonly [RegExp, string]>> = {};
 for (const lang of Object.keys(DICTS)) {
   COMPILED_DICTS[lang] = Object.keys(DICTS[lang]).map((key) => [
@@ -226,21 +226,21 @@ for (const lang of Object.keys(DICTS)) {
   ]);
 }
 
-/** Aplica a capitalização de `sample` (o token casado) à forma acentuada `accented`. */
+/** Applies the capitalization of `sample` (the matched token) to the accented form `accented`. */
 function matchCase(sample: string, accented: string): string {
   if (sample === sample.toUpperCase() && sample !== sample.toLowerCase()) {
-    return accented.toUpperCase(); // TUDO MAIÚSCULAS
+    return accented.toUpperCase(); // ALL UPPERCASE
   }
   if (sample[0] === sample[0].toUpperCase() && sample[0] !== sample[0].toLowerCase()) {
-    return accented[0].toUpperCase() + accented.slice(1); // Primeira-maiúscula
+    return accented[0].toUpperCase() + accented.slice(1); // First-uppercase
   }
-  return accented; // minúsculas
+  return accented; // lowercase
 }
 
 /**
- * Repõe os acentos das palavras conhecidas de `lang` (código ISO 639-3) em `text`.
- * No-op se `lang` não tiver dicionário. Match por FRONTEIRA de palavra
- * (`[^\p{L}\p{N}]`), case-insensitive, preservando a capitalização. PURO.
+ * Restores the accents of the known words of `lang` (ISO 639-3 code) in `text`.
+ * No-op if `lang` has no dictionary. Matches on WORD BOUNDARY
+ * (`[^\p{L}\p{N}]`), case-insensitive, preserving capitalization. PURE.
  */
 export function restoreAccents(text: string, lang: string): string {
   const compiled = COMPILED_DICTS[lang];
@@ -253,9 +253,9 @@ export function restoreAccents(text: string, lang: string): string {
 }
 
 /**
- * Código ISO 639-3 (para `restoreAccents`) a partir de um nome de modelo Piper, mas
- * SÓ para as línguas com dicionário de acentos (senão ''). Usado no caminho de voz
- * FIXA (deteção OFF), onde a língua vem da voz escolhida, não do texto.
+ * ISO 639-3 code (for `restoreAccents`) from a Piper model name, but
+ * ONLY for the languages with an accent dictionary (otherwise ''). Used in the FIXED-voice
+ * path (detection OFF), where the language comes from the chosen voice, not the text.
  */
 export function accentLangOfModel(model: string): string {
   const us = model.indexOf('_');

@@ -1,19 +1,19 @@
 // tools/gen-sfx.mjs
 //
-// Gera os clips do soundboard (/sound) como tons SINTÉTICOS — sem direitos de terceiros
-// (CC0 por autoria própria). Saída: WAV PCM 22050 Hz / mono / 16-bit em assets/sfx/.
-// As chaves têm de bater com src/content/sounds.ts (o teste tests/sounds.test.ts falha
-// se algum clip registado não tiver ficheiro). Correr:  node tools/gen-sfx.mjs
+// Generates the soundboard clips (/sound) as SYNTHETIC tones — no third-party rights
+// (CC0 by own authorship). Output: WAV PCM 22050 Hz / mono / 16-bit in assets/sfx/.
+// The keys must match src/content/sounds.ts (the test tests/sounds.test.ts fails
+// if any registered clip has no file). Run:  node tools/gen-sfx.mjs
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = join(__dirname, '..', 'assets', 'sfx');
-const SR = 22050; // sample rate (igual ao Piper — seguro no pipeline)
+const SR = 22050; // sample rate (same as Piper — safe in the pipeline)
 const TAU = Math.PI * 2;
 
-// ── osciladores (fase contínua p/ evitar cliques) ────────────────────────────────
+// ── oscillators (continuous phase to avoid clicks) ────────────────────────────────
 const sine = (ph) => Math.sin(ph);
 const square = (ph) => (Math.sin(ph) >= 0 ? 1 : -1);
 const saw = (ph) => {
@@ -21,7 +21,7 @@ const saw = (ph) => {
   return 2 * t - 1;
 };
 
-/** Nota: oscilador `osc` à frequência `freq` com decaimento exponencial `tau` (s). */
+/** Note: oscillator `osc` at frequency `freq` with exponential decay `tau` (s). */
 function note(seconds, freq, osc = sine, tau = 0.25, gain = 0.6) {
   let ph = 0;
   const dphBase = (TAU * freq) / SR;
@@ -34,7 +34,7 @@ function note(seconds, freq, osc = sine, tau = 0.25, gain = 0.6) {
   return out;
 }
 
-/** Tom com glissando linear de f0->f1 (para o "womp" do trombone). */
+/** Tone with a linear glissando from f0->f1 (for the trombone "womp"). */
 function glide(seconds, f0, f1, osc = saw, gain = 0.5) {
   const n = Math.floor(seconds * SR);
   const out = new Float64Array(n);
@@ -49,8 +49,8 @@ function glide(seconds, f0, f1, osc = saw, gain = 0.5) {
 
 const silence = (seconds) => new Float64Array(Math.floor(seconds * SR));
 
-// PRNG determinístico (mulberry32): ruído REPRODUTÍVEL — o gen-sfx tem de dar sempre o
-// mesmo WAV (Math.random tornaria a geração não-determinística).
+// Deterministic PRNG (mulberry32): REPRODUCIBLE noise — gen-sfx must always produce the
+// same WAV (Math.random would make the generation non-deterministic).
 function mulberry32(seed) {
   return function () {
     seed |= 0;
@@ -60,7 +60,7 @@ function mulberry32(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-/** Ruído branco (semente fixa -> determinístico). Base de whoosh/percussão. */
+/** White noise (fixed seed -> deterministic). Base for whoosh/percussion. */
 function noise(seconds, gain = 0.5, seed = 1) {
   const n = Math.floor(seconds * SR);
   const rng = mulberry32(seed);
@@ -68,7 +68,7 @@ function noise(seconds, gain = 0.5, seed = 1) {
   for (let i = 0; i < n; i++) out[i] = (rng() * 2 - 1) * gain;
   return out;
 }
-/** Passa-baixo de 1 pólo: suaviza o ruído (chiado -> "whoosh"/"sh"). */
+/** 1-pole low-pass: smooths the noise (hiss -> "whoosh"/"sh"). */
 function lowpass(buf, alpha = 0.05) {
   const out = new Float64Array(buf.length);
   let y = 0;
@@ -78,14 +78,14 @@ function lowpass(buf, alpha = 0.05) {
   }
   return out;
 }
-/** Envelope em meia-onda (sobe e desce) — swells como o whoosh. */
+/** Half-wave envelope (rises and falls) — swells like the whoosh. */
 function swell(buf) {
   const n = buf.length;
   for (let i = 0; i < n; i++) buf[i] *= Math.sin((Math.PI * i) / n);
   return buf;
 }
 
-/** Concatena vários Float64Array. */
+/** Concatenates several Float64Array. */
 function concat(parts) {
   const total = parts.reduce((a, p) => a + p.length, 0);
   const out = new Float64Array(total);
@@ -97,7 +97,7 @@ function concat(parts) {
   return out;
 }
 
-/** Soma (mistura) arrays alinhados no início; comprimento = o maior. */
+/** Sums (mixes) arrays aligned at the start; length = the longest. */
 function mix(parts) {
   const total = Math.max(...parts.map((p) => p.length));
   const out = new Float64Array(total);
@@ -105,7 +105,7 @@ function mix(parts) {
   return out;
 }
 
-/** Fade-in/out curto (ms) anti-clique nas extremidades. */
+/** Short fade-in/out (ms) anti-click at the edges. */
 function fade(buf, ms = 5) {
   const k = Math.min(Math.floor((ms / 1000) * SR), Math.floor(buf.length / 2));
   for (let i = 0; i < k; i++) {
@@ -116,7 +116,7 @@ function fade(buf, ms = 5) {
   return buf;
 }
 
-/** Normaliza a um pico alvo (evita clipping mantendo volume audível). */
+/** Normalizes to a target peak (avoids clipping while keeping audible volume). */
 function normalize(buf, peak = 0.85) {
   let max = 0;
   for (const s of buf) max = Math.max(max, Math.abs(s));
@@ -150,18 +150,18 @@ function toWav(buf) {
   return Buffer.concat([header, data]);
 }
 
-// ── os clips (chaves == src/content/sounds.ts) ───────────────────────────────────
+// ── the clips (keys == src/content/sounds.ts) ───────────────────────────────────
 const honk = (secs, f) =>
   mix([note(secs, f, saw, secs, 0.5), note(secs, f * 1.01, saw, secs, 0.25)]);
 
 const CLIPS = {
-  // Duas buzinadas de sawtooth ricas.
+  // Two rich sawtooth honks.
   airhorn: () => concat([fade(honk(0.4, 300)), silence(0.06), fade(honk(0.55, 300))]),
-  // Sino: fundamental + harmónico, decaimento longo.
+  // Bell: fundamental + harmonic, long decay.
   ding: () => fade(mix([note(0.7, 1180, sine, 0.28, 0.6), note(0.7, 2360, sine, 0.18, 0.2)])),
-  // Buzzer de resposta errada: square grave e áspero.
+  // Wrong-answer buzzer: low, harsh square.
   buzzer: () => fade(note(0.6, 140, square, 0.6, 0.5)),
-  // Ta-da!: arpejo C5-E5-G5 rápido + C6 sustido.
+  // Ta-da!: fast C5-E5-G5 arpeggio + sustained C6.
   tada: () =>
     concat([
       fade(note(0.1, 523.25, sine, 0.12, 0.5)),
@@ -169,7 +169,7 @@ const CLIPS = {
       fade(note(0.1, 783.99, sine, 0.12, 0.5)),
       fade(mix([note(0.6, 1046.5, sine, 0.5, 0.5), note(0.6, 1568, sine, 0.4, 0.2)])),
     ]),
-  // Sad trombone "womp womp womp womp": 4 notas descendentes, glissando na última.
+  // Sad trombone "womp womp womp womp": 4 descending notes, glissando on the last.
   'sad-trombone': () =>
     concat([
       fade(glide(0.32, 233, 220, saw, 0.5)),
@@ -180,19 +180,19 @@ const CLIPS = {
       silence(0.05),
       fade(glide(0.7, 175, 120, saw, 0.5)),
     ]),
-  // Beep simples.
+  // Simple beep.
   beep: () => fade(note(0.22, 800, sine, 0.5, 0.6)),
-  // Coin estilo plataformas: B5 curto -> E6 sustido.
+  // Platformer-style coin: short B5 -> sustained E6.
   coin: () =>
     concat([
       fade(note(0.07, 987.77, sine, 0.08, 0.5), 3),
       fade(note(0.5, 1318.51, sine, 0.35, 0.5)),
     ]),
-  // Pop: blip com queda rápida de tom.
+  // Pop: blip with a fast pitch drop.
   pop: () => fade(glide(0.08, 1400, 400, sine, 0.7), 3),
-  // Laser "pew": glissando descendente em square.
+  // Laser "pew": descending square glissando.
   laser: () => fade(glide(0.4, 2000, 180, square, 0.4)),
-  // Success: corridinha ascendente C5-D5-E5-G5 + C6 sustido (level-up).
+  // Success: ascending run C5-D5-E5-G5 + sustained C6 (level-up).
   success: () =>
     concat([
       fade(note(0.08, 523.25, sine, 0.1, 0.5), 3),
@@ -201,17 +201,17 @@ const CLIPS = {
       fade(note(0.08, 783.99, sine, 0.1, 0.5), 3),
       fade(mix([note(0.5, 1046.5, sine, 0.4, 0.5), note(0.5, 1568, sine, 0.3, 0.15)])),
     ]),
-  // Error "uh-oh": duas notas graves descendentes em square.
+  // Error "uh-oh": two descending low square notes.
   error: () =>
     concat([
       fade(note(0.22, 196, square, 0.25, 0.45)),
       silence(0.05),
       fade(note(0.4, 155.56, square, 0.4, 0.45)),
     ]),
-  // Boing: mola — sobe e volta a descer (glissando saw).
+  // Boing: spring — rises and falls back down (saw glissando).
   boing: () =>
     concat([fade(glide(0.12, 180, 520, saw, 0.5), 3), fade(glide(0.4, 520, 150, saw, 0.5))]),
-  // Sparkle: brilho mágico — 4 notas altas rápidas + a última a ressoar.
+  // Sparkle: magical shimmer — 4 fast high notes + the last one ringing out.
   sparkle: () =>
     concat([
       fade(note(0.08, 1046.5, sine, 0.1, 0.4), 3),
@@ -219,7 +219,7 @@ const CLIPS = {
       fade(note(0.08, 1567.98, sine, 0.1, 0.4), 3),
       fade(note(0.45, 2093, sine, 0.35, 0.4)),
     ]),
-  // Whoosh: ruído passa-baixo com envelope em swell.
+  // Whoosh: low-pass noise with a swell envelope.
   whoosh: () => fade(swell(lowpass(noise(0.45, 0.9, 7), 0.06))),
 };
 

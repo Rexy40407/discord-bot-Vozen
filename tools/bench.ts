@@ -1,19 +1,19 @@
 /**
- * tools/bench.ts — Régua de performance do Vozen (spec Fase 0 / T0.1).
+ * tools/bench.ts — Vozen performance ruler (spec Phase 0 / T0.1).
  *
- * Corre com:  npx tsx tools/bench.ts
+ * Run with:  npx tsx tools/bench.ts
  *
- * Mede, com o Piper REAL (usa PIPER_PATH/MODELS_DIR do .env):
- *  - latência de síntese FRIO (cache miss) por tamanho de texto (curto/médio/longo);
- *  - latência QUENTE (cache hit);
- *  - overhead aproximado do spawn (síntese de texto mínimo);
- *  - hit-rate da cache num replay sintético;
- *  - RAM (rss) e o cap de concorrência resolvido.
- * Escreve/atualiza BENCHMARKS.md com a baseline. PURO em relação ao bot (não liga ao
- * Discord; usa uma cache temporária isolada). NÃO faz parte do build de produção.
+ * Measures, with the REAL Piper (uses PIPER_PATH/MODELS_DIR from .env):
+ *  - COLD synthesis latency (cache miss) by text size (short/medium/long);
+ *  - WARM latency (cache hit);
+ *  - approximate spawn overhead (minimal-text synthesis);
+ *  - cache hit-rate on a synthetic replay;
+ *  - RAM (rss) and the resolved concurrency cap.
+ * Writes/updates BENCHMARKS.md with the baseline. PURE relative to the bot (doesn't
+ * connect to Discord; uses an isolated temporary cache). NOT part of the production build.
  *
- * NOTA (motiva o T2.2): hoje NÃO há streaming — o áudio só toca quando o WAV inteiro
- * está pronto, por isso "tempo até à 1.ª palavra" == tempo total de síntese medido aqui.
+ * NOTE (motivates T2.2): today there is NO streaming — audio only plays once the whole
+ * WAV is ready, so "time to first word" == total synthesis time measured here.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
   log('');
 
   if (!existsSync(config.piperPath) && !config.piperPath.includes('/')) {
-    // piperPath pode ser um comando no PATH; testamos com --help.
+    // piperPath may be a command on the PATH; we test with --help.
     const probe = spawnSync(config.piperPath, ['--help'], { timeout: 5000 });
     if (probe.error) {
       log('> ⚠️ Piper was not found or executable; benchmark aborted.');
@@ -110,7 +110,7 @@ async function main(): Promise<void> {
   try {
     const rssBefore = process.memoryUsage().rss;
 
-    // ── Latência FRIO por tamanho (cache miss garantido: texto único por corrida) ──
+    // ── COLD latency by size (guaranteed cache miss: unique text per run) ──
     const sizes: Array<{ name: string; n: number; runs: number }> = [
       { name: 'short (~6 words)', n: 6, runs: 8 },
       { name: 'medium (~30 words)', n: 30, runs: 8 },
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
     }
     log('');
 
-    // ── Latência QUENTE (cache hit): re-sintetiza os mesmos pedidos já em cache ──
+    // ── WARM latency (cache hit): re-synthesizes the same requests already cached ──
     log('## WARM latency (cache hit)');
     log('');
     log('| Amostra | ms |');
@@ -156,7 +156,7 @@ async function main(): Promise<void> {
     }
     log('');
 
-    // ── Overhead aproximado do spawn: síntese de 1 palavra, cache miss × N ──
+    // ── Approximate spawn overhead: 1-word synthesis, cache miss × N ──
     log('## Spawn overhead (one-word synthesis)');
     log('');
     const spawnDurs: number[] = [];
@@ -171,11 +171,11 @@ async function main(): Promise<void> {
     );
     log('');
 
-    // ── Hit-rate da cache num replay sintético (chat: mistura de repetições) ──
+    // ── Cache hit-rate on a synthetic replay (chat: mix of repetitions) ──
     log('## Cache hit rate (synthetic replay)');
     log('');
     const phrases = ['bom dia', 'ola pessoal', 'tudo bem', 'ok', 'obrigado'];
-    // 30 mensagens: 60% repetições das frases acima, 40% únicas.
+    // 30 messages: 60% repetitions of the phrases above, 40% unique.
     let hits = 0;
     let total = 0;
     for (let i = 0; i < 30; i++) {
@@ -209,8 +209,8 @@ async function main(): Promise<void> {
     writeFileSync(join(process.cwd(), 'BENCHMARKS.md'), lines.join('\n') + '\n');
     console.log(`\n✅ BENCHMARKS.md written (${models.length} models, cap ${cap}).`);
   } finally {
-    // Fecha os processos piper quentes (se PIPER_PERSISTENT esteve ON) — senao o
-    // event loop fica vivo pelos filhos e o processo nao termina.
+    // Close the warm piper processes (if PIPER_PERSISTENT was ON) — otherwise the
+    // event loop stays alive through the children and the process doesn't exit.
     shutdownPiperPool();
     rmSync(cacheDir, { recursive: true, force: true });
   }

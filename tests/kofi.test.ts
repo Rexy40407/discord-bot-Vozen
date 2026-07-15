@@ -16,9 +16,9 @@ import { applyKofiGrant, resolveKofiDiscordId } from '../src/premium/kofiWebhook
 import { startKofiWebhook } from '../src/premium/kofiWebhook';
 import { findUnclaimedPendingByTx } from '../src/store/kofiPending';
 
-const DID = '123456789012345678'; // 18 dígitos
+const DID = '123456789012345678'; // 18 digits
 const EMAIL = 'buyer@example.com';
-const TOKEN = 'kofi-webhook-secret-xyz'; // chave do HMAC do email nos testes
+const TOKEN = 'kofi-webhook-secret-xyz'; // HMAC key of the email in tests
 
 function kofiJson(over: Record<string, unknown>): string {
   return JSON.stringify({
@@ -32,21 +32,21 @@ function kofiJson(over: Record<string, unknown>): string {
   });
 }
 
-describe('kofi — parsing do payload', () => {
-  it('form-encoded (data=<json>) é lido', () => {
+describe('kofi — payload parsing', () => {
+  it('form-encoded (data=<json>) is read', () => {
     const raw = 'data=' + encodeURIComponent(kofiJson({}));
     const e = parseKofiPayload(raw);
     expect(e?.verificationToken).toBe('tok');
     expect(e?.tierName).toBe('Vozen Premium — Monthly');
     expect(e?.message).toContain(DID);
   });
-  it('JSON puro também (útil em testes)', () => {
+  it('plain JSON too (useful in tests)', () => {
     expect(parseKofiPayload(kofiJson({}))?.type).toBe('Subscription');
   });
-  it('lixo -> null', () => {
+  it('garbage -> null', () => {
     expect(parseKofiPayload('nonsense{')).toBeNull();
   });
-  it('shop_items -> shopItemsText concatenado', () => {
+  it('shop_items -> concatenated shopItemsText', () => {
     const raw = kofiJson({
       type: 'Shop Order',
       tier_name: null,
@@ -56,15 +56,15 @@ describe('kofi — parsing do payload', () => {
   });
 });
 
-describe('kofi — token e Discord ID', () => {
-  it('verifyKofiToken: igual passa, diferente/vazio falha', () => {
+describe('kofi — token and Discord ID', () => {
+  it('verifyKofiToken: equal passes, different/empty fails', () => {
     const e = parseKofiPayload(kofiJson({}))!;
     expect(verifyKofiToken(e, 'tok')).toBe(true);
     expect(verifyKofiToken(e, 'outro')).toBe(false);
     expect(verifyKofiToken(e, undefined)).toBe(false);
     expect(verifyKofiToken(e, '')).toBe(false);
   });
-  it('extractDiscordId: apanha 17–20 dígitos, senão null', () => {
+  it('extractDiscordId: catches 17–20 digits, otherwise null', () => {
     expect(extractDiscordId(`o meu id é ${DID} obrigado`)).toBe(DID);
     expect(extractDiscordId('sem id')).toBeNull();
     expect(extractDiscordId(null)).toBeNull();
@@ -72,35 +72,35 @@ describe('kofi — token e Discord ID', () => {
   });
 });
 
-describe('kofi — mapeamento produto -> grant', () => {
+describe('kofi — product -> grant mapping', () => {
   const now = 1_000_000;
-  it('Premium mensal -> premium, 30 dias, 2 licenças', () => {
+  it('monthly Premium -> premium, 30 days, 2 licenses', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({}))!, now)!;
     expect(g.plan).toBe('premium');
     expect(g.days).toBe(30);
     expect(g.seats).toBe(PREMIUM_PASS_SEATS);
     expect(g.discordId).toBe(DID);
   });
-  it('Premium anual -> 365 dias', () => {
+  it('annual Premium -> 365 days', () => {
     const g = mapKofiToGrant(
       parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium — Annual' }))!,
       now,
     )!;
     expect(g.days).toBe(365);
   });
-  it('Plus -> plan plus', () => {
+  it('Plus -> plus plan', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({ tier_name: 'Vozen Plus' }))!, now)!;
     expect(g.plan).toBe('plus');
   });
-  it('Premium Max mensal -> premium, 30 dias, 8 licenças (deal grande = 8 servidores)', () => {
+  it('monthly Premium Max -> premium, 30 days, 8 licenses (big deal = 8 servers)', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium Max' }))!, now)!;
     expect(g.plan).toBe('premium');
-    // Decisão de produto 2026-07-11: o deal grande passou de 10 para 8 servidores.
+    // Product decision 2026-07-11: the big deal went from 10 to 8 servers.
     expect(PREMIUM_MAX_SEATS).toBe(8);
     expect(g.seats).toBe(PREMIUM_MAX_SEATS);
     expect(g.days).toBe(30);
   });
-  it('Premium Max anual -> 8 licenças, 365 dias', () => {
+  it('annual Premium Max -> 8 licenses, 365 days', () => {
     const g = mapKofiToGrant(
       parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium Max — Annual' }))!,
       now,
@@ -108,15 +108,15 @@ describe('kofi — mapeamento produto -> grant', () => {
     expect(g.seats).toBe(PREMIUM_MAX_SEATS);
     expect(g.days).toBe(365);
   });
-  it('Premium SEM "max" mantém 3 licenças (não é mal-mapeado para Max)', () => {
+  it('Premium WITHOUT "max" keeps 3 licenses (is not mis-mapped to Max)', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium' }))!, now)!;
     expect(g.seats).toBe(PREMIUM_PASS_SEATS);
   });
-  // Nomes REAIS dos produtos no Ko-fi (2026-07): o nº de servidores vem do nome
-  // "(N servers)", já não da palavra "max" (que foi retirada dos produtos).
-  // Desde 2026-07-11 o deal grande é "(8 servers)"; "(10 servers)" fica testado
-  // como grandfathering (renovações de compras antigas mantêm as 10 licenças).
-  it('produto real: "Premium (8 servers) 1 month" -> 8 licenças, 30 dias', () => {
+  // REAL product names on Ko-fi (2026-07): the number of servers comes from the
+  // "(N servers)" name, no longer from the word "max" (which was removed from the products).
+  // Since 2026-07-11 the big deal is "(8 servers)"; "(10 servers)" is tested
+  // as grandfathering (renewals of old purchases keep the 10 licenses).
+  it('real product: "Premium (8 servers) 1 month" -> 8 licenses, 30 days', () => {
     const g = mapKofiToGrant(
       parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium (8 servers) 1 month' }))!,
       now,
@@ -125,7 +125,7 @@ describe('kofi — mapeamento produto -> grant', () => {
     expect(g.seats).toBe(8);
     expect(g.days).toBe(30);
   });
-  it('produto real: "Premium (8 servers) 1 year" -> 8 licenças, 365 dias', () => {
+  it('real product: "Premium (8 servers) 1 year" -> 8 licenses, 365 days', () => {
     const g = mapKofiToGrant(
       parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium (8 servers) 1 year' }))!,
       now,
@@ -133,7 +133,7 @@ describe('kofi — mapeamento produto -> grant', () => {
     expect(g.seats).toBe(8);
     expect(g.days).toBe(365);
   });
-  it('grandfathering: "Premium (10 servers) 1 month" -> continua a dar 10 licenças', () => {
+  it('grandfathering: "Premium (10 servers) 1 month" -> still gives 10 licenses', () => {
     const g = mapKofiToGrant(
       parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium (10 servers) 1 month' }))!,
       now,
@@ -142,7 +142,7 @@ describe('kofi — mapeamento produto -> grant', () => {
     expect(g.seats).toBe(10);
     expect(g.days).toBe(30);
   });
-  it('produto real: "Premium (3 servers) 1 year" -> 3 licenças, 365 dias', () => {
+  it('real product: "Premium (3 servers) 1 year" -> 3 licenses, 365 days', () => {
     const g = mapKofiToGrant(
       parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium (3 servers) 1 year' }))!,
       now,
@@ -150,7 +150,7 @@ describe('kofi — mapeamento produto -> grant', () => {
     expect(g.seats).toBe(3);
     expect(g.days).toBe(365);
   });
-  it('grandfathering: "Premium (10 servers) 1 year" -> continua a dar 10 licenças', () => {
+  it('grandfathering: "Premium (10 servers) 1 year" -> still gives 10 licenses', () => {
     const g = mapKofiToGrant(
       parseKofiPayload(kofiJson({ tier_name: 'Vozen Premium (10 servers) 1 year' }))!,
       now,
@@ -158,7 +158,7 @@ describe('kofi — mapeamento produto -> grant', () => {
     expect(g.seats).toBe(10);
     expect(g.days).toBe(365);
   });
-  it('produto real: "Plus 1 year" -> plus, 365 dias; "Plus 1 month" -> 30 dias', () => {
+  it('real product: "Plus 1 year" -> plus, 365 days; "Plus 1 month" -> 30 days', () => {
     const yr = mapKofiToGrant(
       parseKofiPayload(kofiJson({ tier_name: 'Vozen Plus 1 year' }))!,
       now,
@@ -172,7 +172,7 @@ describe('kofi — mapeamento produto -> grant', () => {
     expect(mo.plan).toBe('plus');
     expect(mo.days).toBe(30);
   });
-  it('anual via shop_items (variation_name)', () => {
+  it('annual via shop_items (variation_name)', () => {
     const raw = kofiJson({
       type: 'Shop Order',
       tier_name: null,
@@ -182,13 +182,13 @@ describe('kofi — mapeamento produto -> grant', () => {
     expect(g.plan).toBe('plus');
     expect(g.days).toBe(365);
   });
-  it('donativo avulso (sem premium/plus) -> null (ignorado)', () => {
+  it('one-off donation (no premium/plus) -> null (ignored)', () => {
     const raw = kofiJson({ type: 'Donation', tier_name: null, message: 'obrigado!' });
     expect(mapKofiToGrant(parseKofiPayload(raw)!, now)).toBeNull();
   });
 });
 
-describe('kofi — aplicação do grant no store', () => {
+describe('kofi — applying the grant in the store', () => {
   let db: Database.Database;
   const now = 1_000_000;
   beforeEach(() => {
@@ -198,7 +198,7 @@ describe('kofi — aplicação do grant no store', () => {
     db.close();
   });
 
-  it('premium -> passe de 2 licenças no comprador', () => {
+  it('premium -> 2-license pass on the buyer', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({}))!, now)!;
     const exp = applyKofiGrant(db, g, now);
     expect(exp).toBe(now + 30 * 86_400_000);
@@ -206,12 +206,12 @@ describe('kofi — aplicação do grant no store', () => {
     expect(pass.seats).toBe(3);
     expect(pass.source).toBe('kofi');
   });
-  it('plus -> Vozen Plus no utilizador', () => {
+  it('plus -> Vozen Plus on the user', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({ tier_name: 'Vozen Plus' }))!, now)!;
     applyKofiGrant(db, g, now);
     expect(isUserPremium(db, DID, now + 1000)).toBe(true);
   });
-  it('sem Discord ID -> não aplica, devolve null (grant manual)', () => {
+  it('no Discord ID -> does not apply, returns null (manual grant)', () => {
     const g = mapKofiToGrant(parseKofiPayload(kofiJson({ message: 'sem id aqui' }))!, now)!;
     expect(g.discordId).toBeNull();
     expect(applyKofiGrant(db, g, now)).toBeNull();
@@ -219,23 +219,23 @@ describe('kofi — aplicação do grant no store', () => {
   });
 });
 
-describe('kofi — hashKofiEmail (minimização de PII)', () => {
-  it('determinístico e case/space-insensitive (mesma pessoa -> mesmo hash)', () => {
+describe('kofi — hashKofiEmail (PII minimization)', () => {
+  it('deterministic and case/space-insensitive (same person -> same hash)', () => {
     expect(hashKofiEmail(TOKEN, EMAIL)).toBe(hashKofiEmail(TOKEN, EMAIL));
     expect(hashKofiEmail(TOKEN, '  Buyer@Example.COM ')).toBe(hashKofiEmail(TOKEN, EMAIL));
   });
-  it('é hex de 64 chars e NUNCA revela o email', () => {
+  it('is 64-char hex and NEVER reveals the email', () => {
     const h = hashKofiEmail(TOKEN, EMAIL);
     expect(h).toMatch(/^[a-f0-9]{64}$/);
     expect(h).not.toContain('buyer');
     expect(h).not.toContain('example');
   });
-  it('depende do token (segredo do webhook = chave do HMAC)', () => {
+  it('depends on the token (webhook secret = HMAC key)', () => {
     expect(hashKofiEmail('token-A', EMAIL)).not.toBe(hashKofiEmail('token-B', EMAIL));
   });
 });
 
-describe('kofi — renovações (email -> Discord ID)', () => {
+describe('kofi — renewals (email -> Discord ID)', () => {
   let db: Database.Database;
   const now = 1_000_000;
   beforeEach(() => {
@@ -245,48 +245,48 @@ describe('kofi — renovações (email -> Discord ID)', () => {
     db.close();
   });
 
-  it('parse traz o email do comprador', () => {
+  it('parse carries the buyer email', () => {
     expect(parseKofiPayload(kofiJson({}))?.email).toBe(EMAIL);
   });
 
-  it('1.ª compra: Discord ID da mensagem é memorizado por email', () => {
+  it('1st purchase: the Discord ID from the message is remembered by email', () => {
     const e = parseKofiPayload(kofiJson({}))!;
     const g = mapKofiToGrant(e, now)!;
     expect(resolveKofiDiscordId(db, e, g, now, TOKEN)).toBe(DID);
   });
 
-  it('renovação SEM mensagem: reencontra o Discord ID pelo email', () => {
-    // 1.ª compra memoriza
+  it('renewal WITHOUT message: re-finds the Discord ID by email', () => {
+    // 1st purchase remembers
     const e1 = parseKofiPayload(kofiJson({}))!;
     resolveKofiDiscordId(db, e1, mapKofiToGrant(e1, now)!, now, TOKEN);
-    // renovação: sem Discord ID na mensagem, mesmo email
+    // renewal: no Discord ID in the message, same email
     const e2 = parseKofiPayload(kofiJson({ message: 'Renewal' }))!;
     const g2 = mapKofiToGrant(e2, now)!;
-    expect(g2.discordId).toBeNull(); // a mensagem já não o traz
+    expect(g2.discordId).toBeNull(); // the message no longer carries it
     const resolvedId = resolveKofiDiscordId(db, e2, g2, now, TOKEN);
-    expect(resolvedId).toBe(DID); // ...mas o email reencontra-o
-    // e o grant aplica-se e estende o passe
+    expect(resolvedId).toBe(DID); // ...but the email re-finds it
+    // and the grant applies and extends the pass
     const exp = applyKofiGrant(db, { ...g2, discordId: resolvedId }, now + 30 * 86_400_000);
     expect(exp).not.toBeNull();
     expect(getPremiumPass(db, DID)).not.toBeNull();
   });
 
-  it('renovação de email desconhecido -> null (cai no grant manual)', () => {
+  it('renewal from an unknown email -> null (falls into manual grant)', () => {
     const e = parseKofiPayload(kofiJson({ message: 'no id', email: 'stranger@x.com' }))!;
     const g = mapKofiToGrant(e, now)!;
     expect(resolveKofiDiscordId(db, e, g, now, TOKEN)).toBeNull();
   });
 
-  it('SEC: a BD NÃO guarda o email em claro — só o hash HMAC (minimização de PII)', () => {
+  it('SEC: the DB does NOT store the email in clear — only the HMAC hash (PII minimization)', () => {
     const e = parseKofiPayload(kofiJson({}))!;
     resolveKofiDiscordId(db, e, mapKofiToGrant(e, now)!, now, TOKEN);
-    // Vasculha TODAS as colunas de todas as linhas: o email em claro não pode aparecer.
+    // Scans ALL columns of all rows: the email in clear must not appear.
     const rows = db.prepare('SELECT * FROM kofi_supporter').all() as Record<string, unknown>[];
     expect(rows.length).toBe(1);
     const dump = JSON.stringify(rows);
-    expect(dump).not.toContain(EMAIL); // nem o email...
-    expect(dump).not.toContain('example.com'); // ...nem o domínio
-    expect(dump).toContain(hashKofiEmail(TOKEN, EMAIL)); // guarda o hash
+    expect(dump).not.toContain(EMAIL); // neither the email...
+    expect(dump).not.toContain('example.com'); // ...nor the domain
+    expect(dump).toContain(hashKofiEmail(TOKEN, EMAIL)); // stores the hash
   });
 });
 
@@ -305,7 +305,7 @@ describe('kofiWebhook — API Premium HTTP', () => {
     db.close();
   });
 
-  // Cola HTTP do endpoint do painel: preflight, método, wiring do 200 + header CORS.
+  // HTTP glue of the panel endpoint: preflight, method, 200 wiring + CORS header.
   async function startApi(
     getStatus: () => Promise<{ code: number; body: unknown }>,
   ): Promise<string> {
@@ -327,7 +327,7 @@ describe('kofiWebhook — API Premium HTTP', () => {
     return `http://127.0.0.1:${addr.port}/api/me/premium`;
   }
 
-  it('OPTIONS -> 204 com CORS + Allow-Methods (preflight do browser)', async () => {
+  it('OPTIONS -> 204 with CORS + Allow-Methods (browser preflight)', async () => {
     const url = await startApi(async () => ({ code: 200, body: {} }));
     const res = await fetch(url, { method: 'OPTIONS' });
     expect(res.status).toBe(204);
@@ -335,14 +335,14 @@ describe('kofiWebhook — API Premium HTTP', () => {
     expect(res.headers.get('access-control-allow-methods')).toMatch(/GET/);
   });
 
-  it('método não-GET/OPTIONS (ex. PUT) -> 405 com header CORS', async () => {
+  it('non-GET/OPTIONS method (e.g. PUT) -> 405 with CORS header', async () => {
     const url = await startApi(async () => ({ code: 200, body: {} }));
     const res = await fetch(url, { method: 'PUT' });
     expect(res.status).toBe(405);
     expect(res.headers.get('access-control-allow-origin')).toBe('https://vozen.org');
   });
 
-  it('GET com token válido -> 200 com o body do statusApi + Content-Type + CORS', async () => {
+  it('GET with a valid token -> 200 with the statusApi body + Content-Type + CORS', async () => {
     const url = await startApi(async () => ({ code: 200, body: { premium: true, plan: 'plus' } }));
     const res = await fetch(url, { headers: { Authorization: 'Bearer bom' } });
     expect(res.status).toBe(200);
@@ -353,7 +353,7 @@ describe('kofiWebhook — API Premium HTTP', () => {
     expect(await res.json()).toEqual({ premium: true, plan: 'plus' });
   });
 
-  it('limita o mapa de rate-limit por IP para não crescer sem fim', async () => {
+  it('limits the per-IP rate-limit map so it does not grow without bound', async () => {
     const statusApi = {
       getStatus: vi.fn(async () => ({ code: 401, body: { error: 'invalid_token' } })),
       resolveIdentity: vi.fn(),
@@ -389,7 +389,7 @@ describe('kofiWebhook — API Premium HTTP', () => {
     expect((await req('10.0.0.1')).status).toBe(401);
   });
 
-  it('XFF forjado à esquerda NÃO roda buckets (identidade = último elemento)', async () => {
+  it('XFF forged on the left does NOT rotate buckets (identity = last element)', async () => {
     const statusApi = {
       getStatus: vi.fn(async () => ({ code: 401, body: { error: 'invalid_token' } })),
       resolveIdentity: vi.fn(),
@@ -409,7 +409,7 @@ describe('kofiWebhook — API Premium HTTP', () => {
     if (!addr || typeof addr === 'string') throw new Error('porta efémera indisponível');
     const url = `http://127.0.0.1:${addr.port}/api/me/premium`;
 
-    // 30 pedidos com prefixo forjado DIFERENTE mas o mesmo IP real no fim -> mesma janela.
+    // 30 requests with a DIFFERENT forged prefix but the same real IP at the end -> same window.
     for (let i = 0; i < 30; i++) {
       const res = await fetch(url, {
         headers: { Authorization: 'Bearer mau', 'X-Forwarded-For': `1.2.3.${i}, 10.9.9.9` },
@@ -423,7 +423,7 @@ describe('kofiWebhook — API Premium HTTP', () => {
   });
 });
 
-describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o grant)', () => {
+describe('kofi — webhook idempotency (Ko-fi retries do not duplicate the grant)', () => {
   let db: Database.Database;
   let server: Server | null = null;
 
@@ -438,7 +438,7 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     db.close();
   });
 
-  it('recordKofiTransaction: 1.ª vez true, duplicado false', () => {
+  it('recordKofiTransaction: 1st time true, duplicate false', () => {
     expect(recordKofiTransaction(db, 'tx-a', 1000)).toBe(true);
     expect(recordKofiTransaction(db, 'tx-a', 2000)).toBe(false);
     expect(recordKofiTransaction(db, 'tx-b', 3000)).toBe(true);
@@ -458,7 +458,7 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     return `http://127.0.0.1:${addr.port}/`;
   }
 
-  it('mesma entrega 2x (mesmo kofi_transaction_id) -> o expiry só estende UMA vez', async () => {
+  it('same delivery 2x (same kofi_transaction_id) -> the expiry only extends ONCE', async () => {
     server = startKofiWebhook({
       db,
       token: 'tok',
@@ -475,13 +475,13 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     const passAfter1 = getPremiumPass(db, DID);
     expect(passAfter1).not.toBeNull();
 
-    // Retry do Ko-fi: MESMO tx id -> 200 (ack) mas SEM re-aplicar o grant.
+    // Ko-fi retry: SAME tx id -> 200 (ack) but WITHOUT re-applying the grant.
     expect(await startAndPost(payload)).toBe(200);
     const passAfter2 = getPremiumPass(db, DID);
     expect(passAfter2?.expiresAt).toBe(passAfter1?.expiresAt);
   });
 
-  it('renovação legítima (tx id DIFERENTE) -> estende de novo', async () => {
+  it('legitimate renewal (DIFFERENT tx id) -> extends again', async () => {
     server = startKofiWebhook({
       db,
       token: 'tok',
@@ -499,7 +499,7 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     expect(after2).toBeGreaterThan(after1);
   });
 
-  it('payload SEM tx id (atípico) -> processa na mesma (não fica bloqueado)', async () => {
+  it('payload WITHOUT tx id (atypical) -> processes anyway (does not get blocked)', async () => {
     server = startKofiWebhook({
       db,
       token: 'tok',
@@ -514,7 +514,7 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     expect(getPremiumPass(db, DID)).not.toBeNull();
   });
 
-  it('ramos de erro do POST: token errado 401 (sem grant), lixo 400, corpo >64KB 413', async () => {
+  it('POST error branches: wrong token 401 (no grant), garbage 400, body >64KB 413', async () => {
     server = startKofiWebhook({
       db,
       token: 'tok',
@@ -525,27 +525,27 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     });
     await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
 
-    // Token de verificação errado -> 401 e NADA é aplicado no store.
+    // Wrong verification token -> 401 and NOTHING is applied in the store.
     expect(await startAndPost(kofiJson({ verification_token: 'errado' }))).toBe(401);
     expect(getPremiumPass(db, DID)).toBeNull();
 
-    // Payload ilegível -> 400.
+    // Unreadable payload -> 400.
     expect(await startAndPost('nonsense{')).toBe(400);
 
-    // Corpo acima do teto de 64KB -> abortado cedo: ou 413, ou o socket é destruído a
-    // meio do upload (o fetch vê ECONNRESET). Ambos provam o guard anti-DoS.
+    // Body above the 64KB cap -> aborted early: either 413, or the socket is destroyed
+    // mid-upload (the fetch sees ECONNRESET). Both prove the anti-DoS guard.
     const oversized = await startAndPost('x'.repeat(65 * 1024)).then(
       (status) => status,
       () => 'reset' as const,
     );
     expect([413, 'reset']).toContain(oversized);
 
-    // E depois dos erros, um POST válido continua a funcionar.
+    // And after the errors, a valid POST still works.
     expect(await startAndPost(kofiJson({ kofi_transaction_id: 'tx-ok' }))).toBe(200);
     expect(getPremiumPass(db, DID)).not.toBeNull();
   });
 
-  it('falha de DB no grant -> 503 (Ko-fi re-tenta), não 200 que perderia a compra', async () => {
+  it('DB failure on the grant -> 503 (Ko-fi retries), not 200 which would lose the purchase', async () => {
     server = startKofiWebhook({
       db,
       token: 'tok',
@@ -556,9 +556,9 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     });
     await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
 
-    // Simula uma falha de escrita (SQLITE_BUSY, disco cheio, I/O) DURANTE a transação do
-    // grant — o payload é válido, só a persistência é que rebenta. O Ko-fi só re-tenta em
-    // não-2xx, por isso responder 200 aqui perdia a compra paga em silêncio.
+    // Simulates a write failure (SQLITE_BUSY, disk full, I/O) DURING the grant
+    // transaction — the payload is valid, only persistence blows up. Ko-fi only retries on
+    // non-2xx, so responding 200 here would silently lose the paid purchase.
     (db as { transaction: unknown }).transaction = () => () => {
       throw new Error('SQLITE_BUSY: simulado');
     };
@@ -567,11 +567,11 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     expect(status).toBe(503);
   });
 
-  it('compra SEM Discord ID -> guarda um PENDENTE reclamável (tx id + hash do email)', async () => {
-    // Regressão do fluxo real (logs de produção): a subscrição do Ko-fi não tem caixa de
-    // mensagem, por isso a compra chega sem Discord ID. Em vez de só logar, guardamos um
-    // pendente para o comprador reclamar no site. Indexado pelo tx id (recibo) e pelo hash do
-    // email (renovações), NUNCA o email em claro.
+  it('purchase WITHOUT Discord ID -> stores a claimable PENDING (tx id + email hash)', async () => {
+    // Regression of the real flow (production logs): the Ko-fi subscription has no message
+    // box, so the purchase arrives without a Discord ID. Instead of just logging, we store a
+    // pending for the buyer to claim on the site. Indexed by the tx id (receipt) and the email
+    // hash (renewals), NEVER the email in clear.
     server = startKofiWebhook({
       db,
       token: 'tok',
@@ -582,21 +582,21 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     });
     await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
 
-    // Mensagem sem Discord ID (mas com email do comprador, como o Ko-fi real envia).
+    // Message without a Discord ID (but with the buyer email, as the real Ko-fi sends).
     expect(
       await startAndPost(kofiJson({ message: 'obrigado!', kofi_transaction_id: 'tx-pend-1' })),
     ).toBe(200);
     const p = findUnclaimedPendingByTx(db, 'tx-pend-1')!;
     expect(p).not.toBeNull();
-    expect(p.plan).toBe('premium'); // tier default do kofiJson é "Vozen Premium — Monthly"
+    expect(p.plan).toBe('premium'); // kofiJson default tier is "Vozen Premium — Monthly"
     expect(p.seats).toBe(PREMIUM_PASS_SEATS);
     expect(p.days).toBe(30);
-    expect(p.emailHash).toBe(hashKofiEmail('tok', EMAIL)); // hash, nunca o email
-    // E NÃO ativou nada direto (não há Discord ID ainda).
+    expect(p.emailHash).toBe(hashKofiEmail('tok', EMAIL)); // hash, never the email
+    // And it did NOT activate anything directly (there is no Discord ID yet).
     expect(getPremiumPass(db, DID)).toBeNull();
   });
 
-  it('compra COM Discord ID -> ativa direto e NÃO cria pendente', async () => {
+  it('purchase WITH Discord ID -> activates directly and does NOT create a pending', async () => {
     server = startKofiWebhook({
       db,
       token: 'tok',
@@ -607,13 +607,13 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     });
     await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
 
-    // kofiJson traz por defeito "Discord: <DID>" na mensagem -> ativa já.
+    // kofiJson carries "Discord: <DID>" in the message by default -> activates immediately.
     expect(await startAndPost(kofiJson({ kofi_transaction_id: 'tx-direto' }))).toBe(200);
     expect(getPremiumPass(db, DID)).not.toBeNull();
-    expect(findUnclaimedPendingByTx(db, 'tx-direto')).toBeNull(); // nada pendente
+    expect(findUnclaimedPendingByTx(db, 'tx-direto')).toBeNull(); // nothing pending
   });
 
-  it('grant manual: NÃO regista o nome do comprador (PII), só o tx id', async () => {
+  it('manual grant: does NOT log the buyer name (PII), only the tx id', async () => {
     const logs: string[] = [];
     server = startKofiWebhook({
       db,
@@ -627,8 +627,8 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     });
     await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
 
-    // Compra sem Discord ID resolúvel (mensagem sem id + email desconhecido) -> caminho do
-    // grant MANUAL, onde antes se registava o nome do comprador (PII).
+    // Purchase without a resolvable Discord ID (message without id + unknown email) -> the
+    // MANUAL grant path, where the buyer name (PII) used to be logged.
     const status = await startAndPost(
       kofiJson({
         message: 'obrigado!',
@@ -639,7 +639,7 @@ describe('kofi — idempotência do webhook (retries do Ko-fi não duplicam o gr
     );
     expect(status).toBe(200);
     const joined = logs.join('\n');
-    expect(joined).toContain('tx-anon'); // dá para reconciliar a compra no Ko-fi...
-    expect(joined).not.toContain('João Comprador'); // ...mas o nome NUNCA entra no log.
+    expect(joined).toContain('tx-anon'); // the purchase can be reconciled on Ko-fi...
+    expect(joined).not.toContain('João Comprador'); // ...but the name NEVER enters the log.
   });
 });

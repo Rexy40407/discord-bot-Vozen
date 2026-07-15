@@ -1,23 +1,23 @@
 // tests/smoke.test.ts
 //
-// P10.4 — SMOKE / BOOT TEST SEM TOKEN.
+// P10.4 — SMOKE / BOOT TEST WITHOUT A TOKEN.
 //
-// Replica a sequencia de arranque de src/index.ts (main()) ATE imediatamente
-// ANTES do `client.login` — sem NUNCA ligar ao Discord nem fazer rede. O objetivo
-// e apanhar cedo um problema de montagem das deps reais (config -> db -> engine ->
-// presenca -> command builders) que hoje so se veria numa verificacao ao vivo (com
-// token/Piper/rede reais). O teste É o entregavel: se a montagem rebentar, e
-// exatamente isto que ele serve para apanhar.
+// Replicates the startup sequence of src/index.ts (main()) UP TO immediately
+// BEFORE `client.login` — without EVER connecting to Discord or doing any network.
+// The goal is to catch early an assembly problem in the real deps (config -> db ->
+// engine -> presence -> command builders) that today would only show up in a live
+// verification (with real token/Piper/network). The test IS the deliverable: if the
+// assembly blows up, this is exactly what it is meant to catch.
 //
-// O que NAO fazemos de proposito (tocaria em sockets/token):
-//   - NAO importamos ../src/index (o fundo do modulo corre main() -> client.login
-//     -> rede, e process.exit(1) em falha mataria o vitest). Montamos a partir dos
-//     modulos individuais.
-//   - NAO chamamos createClient/bindEvents/installSignalHandlers/startHealthServer/
-//     startVoteWebhookServer nem registerCommands (rest.put = rede).
-//   - NAO chamamos engine.synth (spawn do Piper) — so afirmamos que o contrato existe.
+// What we deliberately DO NOT do (would touch sockets/token):
+//   - We do NOT import ../src/index (the module's bottom runs main() -> client.login
+//     -> network, and process.exit(1) on failure would kill vitest). We assemble from
+//     the individual modules.
+//   - We do NOT call createClient/bindEvents/installSignalHandlers/startHealthServer/
+//     startVoteWebhookServer or registerCommands (rest.put = network).
+//   - We do NOT call engine.synth (Piper spawn) — we only assert the contract exists.
 //
-// Hermetico: env minimo definido aqui (repoe process.env no fim, como config.test.ts).
+// Hermetic: minimal env defined here (restores process.env at the end, like config.test.ts).
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -32,8 +32,8 @@ import { commandDefs } from '../src/commands/index';
 import { MultiSegmentEngine } from '../src/tts/multiSegment';
 import type Database from 'better-sqlite3';
 
-// Replica local dos 3 lines de discoverModels (privado em index.ts, nao exportado —
-// nao refatoramos index.ts so para o expor, seria scope creep). Dir vazio => [].
+// Local replica of the 3 lines of discoverModels (private in index.ts, not exported —
+// we do not refactor index.ts just to expose it, that would be scope creep). Empty dir => [].
 function discoverModels(modelsDir: string): string[] {
   if (!existsSync(modelsDir)) return [];
   return readdirSync(modelsDir)
@@ -42,9 +42,9 @@ function discoverModels(modelsDir: string): string[] {
     .sort();
 }
 
-// Env minimo para um boot 'piper' (default) valido e hermetico. Limpamos os
-// opcionais para nao herdar um .env/env ambiente (ex.: TTS_ENGINE=neural sem key
-// faria createEngine lancar) — mesmo racional do config.test.ts.
+// Minimal env for a valid, hermetic 'piper' (default) boot. We clear the optionals
+// so as not to inherit a .env/ambient env (e.g. TTS_ENGINE=neural without a key would
+// make createEngine throw) — same rationale as config.test.ts.
 function setSmokeEnv(modelsDir: string): void {
   const env: Record<string, string | undefined> = {
     DISCORD_TOKEN: 'x',
@@ -52,7 +52,7 @@ function setSmokeEnv(modelsDir: string): void {
     PIPER_PATH: 'piper-dummy',
     MODELS_DIR: modelsDir,
     DB_PATH: ':memory:',
-    // opcionais limpos -> boot no caminho default (piper, sem servidores extra)
+    // optionals cleared -> boot on the default path (piper, no extra servers)
     TTS_ENGINE: undefined,
     OPENAI_API_KEY: undefined,
     MULTILINGUAL_SEGMENTS: undefined,
@@ -69,16 +69,16 @@ function setSmokeEnv(modelsDir: string): void {
   }
 }
 
-describe('smoke: boot sem token (monta deps reais sem ligar ao Discord)', () => {
+describe('smoke: boot without a token (assembles real deps without connecting to Discord)', () => {
   const saved = { ...process.env };
   let cacheDir: string;
   let modelsDir: string;
   let db: Database.Database | undefined;
 
   beforeEach(() => {
-    // Cache dir hermetico via mkdtemp: NAO replicamos o join(dirname(dbPath),
-    // 'audio-cache') do main() porque com DB_PATH=':memory:' dava './audio-cache'
-    // na raiz do repo. modelsDir e um temp VAZIO -> discoverModels devolve [].
+    // Hermetic cache dir via mkdtemp: we do NOT replicate main()'s join(dirname(dbPath),
+    // 'audio-cache') because with DB_PATH=':memory:' it gave './audio-cache' at the
+    // repo root. modelsDir is an EMPTY temp -> discoverModels returns [].
     cacheDir = mkdtempSync(path.join(tmpdir(), 'smoke-cache-'));
     modelsDir = mkdtempSync(path.join(tmpdir(), 'smoke-models-'));
     setSmokeEnv(modelsDir);
@@ -88,7 +88,7 @@ describe('smoke: boot sem token (monta deps reais sem ligar ao Discord)', () => 
     try {
       db?.close();
     } catch {
-      // ignorar
+      // ignore
     }
     db = undefined;
     rmSync(cacheDir, { recursive: true, force: true });
@@ -96,60 +96,60 @@ describe('smoke: boot sem token (monta deps reais sem ligar ao Discord)', () => 
     process.env = { ...saved };
   });
 
-  it('monta config -> db -> engine -> presenca -> command builders sem lancar', () => {
-    // Toda a montagem corre dentro do expect(...).not.toThrow para que QUALQUER
-    // rebentar de arranque seja o modo de falha do teste (o que ele serve para apanhar).
+  it('assembles config -> db -> engine -> presence -> command builders without throwing', () => {
+    // The entire assembly runs inside expect(...).not.toThrow so that ANY
+    // startup blow-up is the test's failure mode (what it is meant to catch).
     expect(() => {
-      // 1) config (loadConfig exige DISCORD_TOKEN + CLIENT_ID reais no env)
+      // 1) config (loadConfig requires real DISCORD_TOKEN + CLIENT_ID in the env)
       const config = loadConfig();
       expect(config.token).toBe('x');
       expect(config.clientId).toBe('123');
       expect(config.ttsEngine).toBe('piper');
 
-      // 2) db em memoria (mesma chamada do main(), sem tocar no disco)
+      // 2) in-memory db (same call as main(), without touching the disk)
       db = initDb(':memory:');
       expect(db.open).toBe(true);
-      // query trivial: o schema inicial aplicou-se (tabela existe)
+      // trivial query: the initial schema was applied (table exists)
       const row = db
         .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='guild_config'")
         .get() as { name?: string } | undefined;
       expect(row?.name).toBe('guild_config');
 
-      // 3) cache + descoberta de modelos (dir temp vazio -> [])
+      // 3) cache + model discovery (empty temp dir -> [])
       const cache = new AudioCache(cacheDir);
       const availableModels = discoverModels(config.modelsDir);
       expect(Array.isArray(availableModels)).toBe(true);
       expect(availableModels).toEqual([]);
 
-      // 4) motor TTS real (piper) + selectEngine (flag ON por defeito -> embrulha
-      // o base num MultiSegmentEngine, que mistura vozes por lingua)
+      // 4) real TTS engine (piper) + selectEngine (flag ON by default -> wraps
+      // the base in a MultiSegmentEngine, which mixes voices per language)
       const baseEngine = createEngine(config, cache);
       const engine = selectEngine(baseEngine, config, availableModels, cache);
       expect(typeof engine.synth).toBe('function');
-      // multilingualSegments ON por defeito -> selectEngine embrulha o base
+      // multilingualSegments ON by default -> selectEngine wraps the base
       expect(config.multilingualSegments).toBe(true);
       expect(engine).toBeInstanceOf(MultiSegmentEngine);
 
-      // 5) presenca (funcao pura) -> tem atividades
+      // 5) presence (pure function) -> has activities
       const presence = buildPresence(config);
       expect(presence.activities?.length).toBeGreaterThan(0);
     }).not.toThrow();
   });
 
-  it('os command builders constroem (commandDefs nao-vazio, .toJSON valido)', () => {
-    // A importacao de commandDefs ja corre os SlashCommandBuilder + .toJSON() no
-    // load do modulo; se algum builder fosse invalido, esse import teria lancado.
-    // Aqui confirmamos que o artefacto basico existe e tem a forma esperada, sem
-    // registar nada na API do Discord (registerCommands faz rest.put = rede).
+  it('the command builders build (commandDefs non-empty, valid .toJSON)', () => {
+    // Importing commandDefs already runs the SlashCommandBuilders + .toJSON() at
+    // module load; if any builder were invalid, that import would have thrown.
+    // Here we confirm the basic artifact exists and has the expected shape, without
+    // registering anything with the Discord API (registerCommands does rest.put = network).
     expect(commandDefs.length).toBeGreaterThan(0);
     for (const def of commandDefs) {
       expect(typeof def.name).toBe('string');
       expect(def.name.length).toBeGreaterThan(0);
-      // Comandos slash (type ausente/1) têm description; os context-menu (USER=2,
-      // MESSAGE=3) NÃO têm — a description é proibida nesses. Aceitamos ambos.
+      // Slash commands (type absent/1) have a description; context-menu ones (USER=2,
+      // MESSAGE=3) do NOT — the description is forbidden on those. We accept both.
       const isContextMenu = def.type === 2 || def.type === 3;
-      // `description` só existe no ramo slash da união; o TS não estreita por def.type,
-      // por isso acedemos via forma estrutural (o context-menu não a tem).
+      // `description` only exists on the slash branch of the union; TS does not narrow by
+      // def.type, so we access it structurally (the context-menu one does not have it).
       const description = (def as { description?: string }).description;
       if (isContextMenu) {
         expect(description ?? '').toBe('');
@@ -159,28 +159,28 @@ describe('smoke: boot sem token (monta deps reais sem ligar ao Discord)', () => 
     }
   });
 
-  // Bug-hunt 2026-07: comandos que dependem de guild (voz/config/store) NÃO devem ser
-  // invocáveis em DM (lá guildId é null -> SqliteError guild_id NOT NULL / respostas
-  // enganadoras). Os comandos só-de-texto (invite/vote/help/uptime/botstats) FICAM
-  // disponíveis em DM. InteractionContextType.Guild === 0.
-  // Regressão (duplicados vistos no Discord): nomes de comandos ÚNICOS no conjunto.
-  // NB: o duplicado real era global+por-guild (registo duplo), mas este teste garante
-  // que nunca é o próprio commandDefs a introduzir dois comandos com o mesmo nome.
-  it('não há comandos com nomes repetidos', () => {
+  // Bug-hunt 2026-07: guild-dependent commands (voice/config/store) must NOT be
+  // invocable in DMs (there guildId is null -> SqliteError guild_id NOT NULL / misleading
+  // responses). The text-only commands (invite/vote/help/uptime/botstats) STAY
+  // available in DMs. InteractionContextType.Guild === 0.
+  // Regression (duplicates seen in Discord): UNIQUE command names in the set.
+  // NB: the real duplicate was global+per-guild (double registration), but this test
+  // ensures commandDefs itself never introduces two commands with the same name.
+  it('there are no commands with duplicate names', () => {
     const names = commandDefs.map((d) => d.name);
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it('comandos de guild estão restritos ao contexto Guild; os públicos não', () => {
-    // /redeem também é DM-capable: concede à CONTA de quem resgata, não a uma guild.
+  it('guild commands are restricted to the Guild context; the public ones are not', () => {
+    // /redeem is also DM-capable: it grants to the redeemer's ACCOUNT, not to a guild.
     const DM_CAPABLE = new Set(['invite', 'vote', 'help', 'uptime', 'botstats', 'redeem']);
     for (const def of commandDefs) {
       const contexts = (def as { contexts?: number[] }).contexts;
       if (DM_CAPABLE.has(def.name)) {
-        // Público: sem restrição de contexto (usável em DM e em guild).
+        // Public: no context restriction (usable in DMs and in a guild).
         expect(contexts ?? null).toBeNull();
       } else {
-        // Guild-only: exatamente [Guild] (0).
+        // Guild-only: exactly [Guild] (0).
         expect(contexts).toEqual([0]);
       }
     }

@@ -8,20 +8,20 @@ import { AudioCache } from '../src/tts/cache';
 import type { SynthRequest } from '../src/tts/engine';
 
 describe('resolveKokoroCmd', () => {
-  it('KOKORO_CMD explícito ganha; ausente e sem venv/modelo -> null', () => {
+  it('explicit KOKORO_CMD wins; absent and without venv/model -> null', () => {
     expect(resolveKokoroCmd('py kokoro_server.py')).toEqual({
       exe: 'py',
       args: ['kokoro_server.py'],
     });
-    // Sem tools/kokoro-venv no cwd de teste -> null. (Tolera a máquina do dev onde
-    // o setup já correu e a venv existe.)
+    // Without tools/kokoro-venv in the test cwd -> null. (Tolerates the dev machine where
+    // setup already ran and the venv exists.)
     const r = resolveKokoroCmd(undefined);
     expect(r === null || typeof r === 'object').toBe(true);
   });
 });
 
 describe('KOKORO_VOICES', () => {
-  it('mapeia as línguas validadas no spike e NÃO inclui o Mandarim (zh)', () => {
+  it('maps the languages validated in the spike and does NOT include Mandarin (zh)', () => {
     expect(Object.keys(KOKORO_VOICES).sort()).toEqual(['en', 'es', 'fr', 'hi', 'it', 'ja', 'pt']);
     expect(KOKORO_VOICES.pt).toEqual({ lang: 'pt-br', voice: 'pf_dora' });
     expect(KOKORO_VOICES.zh).toBeUndefined();
@@ -29,8 +29,8 @@ describe('KOKORO_VOICES', () => {
 });
 
 /**
- * Sidecar Python FALSO: responde ao protocolo — warmup -> {ready}; pedido -> escreve
- * o WAV em `out` e responde {ok,out} (ou {ok:false} se 'fail'; ou nada se 'never-ready').
+ * FAKE Python sidecar: answers the protocol — warmup -> {ready}; request -> writes
+ * the WAV to `out` and replies {ok,out} (or {ok:false} if 'fail'; or nothing if 'never-ready').
  */
 function fakeSidecar(behavior: 'ok' | 'fail' | 'never-ready' = 'ok', counter?: { spawns: number }) {
   return (() => {
@@ -77,7 +77,7 @@ function fakeSidecar(behavior: 'ok' | 'fail' | 'never-ready' = 'ok', counter?: {
 
 const REQ = (extra: Partial<SynthRequest> = {}): SynthRequest => ({
   text: 'ola mundo',
-  model: 'pt_PT-tugao-medium', // langKey 'pt' -> mapeado
+  model: 'pt_PT-tugao-medium', // langKey 'pt' -> mapped
   speed: 1,
   ...extra,
 });
@@ -93,20 +93,20 @@ describe('KokoroEngine', () => {
     for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
   });
 
-  it('sem sidecar (cmd null) -> LANÇA (o router cai no gTTS)', async () => {
+  it('no sidecar (cmd null) -> THROWS (the router falls back to gTTS)', async () => {
     const eng = new KokoroEngine(cache(), null);
     expect(eng.available).toBe(false);
     await expect(eng.synth(REQ())).rejects.toThrow(/unavailable/i);
   });
 
-  it('língua não mapeada -> LANÇA sem sequer arrancar o sidecar', async () => {
+  it('unmapped language -> THROWS without even starting the sidecar', async () => {
     const counter = { spawns: 0 };
     const eng = new KokoroEngine(cache(), { exe: 'x', args: [] }, fakeSidecar('ok', counter));
     await expect(eng.synth(REQ({ model: 'zz_XX-foo-medium' }))).rejects.toThrow(/unsupported/i);
     expect(counter.spawns).toBe(0);
   });
 
-  it('caminho feliz -> sintetiza via sidecar, cacheia e devolve o WAV (2.º = hit)', async () => {
+  it('happy path -> synthesizes via sidecar, caches and returns the WAV (2nd = hit)', async () => {
     const eng = new KokoroEngine(cache(), { exe: 'x', args: [] }, fakeSidecar('ok'), 50);
     const out1 = await eng.synth(REQ());
     expect(typeof out1).toBe('string');
@@ -115,12 +115,12 @@ describe('KokoroEngine', () => {
     expect(out2).toBe(out1); // cache-hit
   });
 
-  it('CRÍTICO: falha do sidecar -> LANÇA (não engole; o router é que faz fallback)', async () => {
+  it('CRITICAL: sidecar failure -> THROWS (does not swallow; the router does the fallback)', async () => {
     const eng = new KokoroEngine(cache(), { exe: 'x', args: [] }, fakeSidecar('fail'), 50);
     await expect(eng.synth(REQ())).rejects.toThrow(/onnx boom/);
   });
 
-  it('sidecar vivo mas nunca pronto -> deadline expira e o job rejeita', async () => {
+  it('sidecar alive but never ready -> deadline expires and the job rejects', async () => {
     const eng = new KokoroEngine(cache(), { exe: 'x', args: [] }, fakeSidecar('never-ready'), 30);
     await expect(eng.synth(REQ())).rejects.toThrow();
   });

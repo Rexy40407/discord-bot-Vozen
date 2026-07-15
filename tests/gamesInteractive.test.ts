@@ -37,7 +37,7 @@ class FakeClock implements Clock {
 
 function harness() {
   const clock = new FakeClock();
-  // Params tipados p/ o typecheck: sem eles, .mock.calls fica tuplo vazio (TS2493/2352).
+  // Typed params for the typecheck: without them, .mock.calls is an empty tuple (TS2493/2352).
   const say = vi.fn(async (_req: SynthRequest) => true);
   const send = vi.fn(async (_channelId: string, _content: Sendable) => {});
   const persistScores = vi.fn((_guildId: string, _points: Map<string, number>) => {});
@@ -62,14 +62,14 @@ const C = 'c1';
 const sentKeys = (send: ReturnType<typeof vi.fn>): string[] =>
   send.mock.calls.map((c) => String(c[1]).split(' ')[0]);
 
-describe('Reflexos', () => {
-  it('false-start antes do GO nao pontua; depois do GO o 1o ganha', async () => {
+describe('Reflexes', () => {
+  it('false-start before GO does not score; after GO the 1st wins', async () => {
     const { env, clock, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('reflexes')!.create());
     await flush();
 
-    // Antes do GO: uma mensagem e falsa partida (tooSoon), sem resolver a ronda.
+    // Before GO: a message is a false start (tooSoon), without resolving the round.
     mgr.handleMessage({
       guildId: G,
       channelId: C,
@@ -80,7 +80,7 @@ describe('Reflexos', () => {
     await flush();
     expect(sentKeys(send)).toContain('game.reflexes.tooSoon');
 
-    // Abre a janela (delay maximo < 6s) e ganha a ronda 1.
+    // Open the window (max delay < 6s) and win round 1.
     clock.advance(6_000);
     await flush();
     expect(sentKeys(send)).toContain('game.reflexes.go');
@@ -93,7 +93,7 @@ describe('Reflexos', () => {
     });
     await flush();
 
-    // Ganha as restantes 2 rondas da mesma forma.
+    // Win the remaining 2 rounds the same way.
     for (let r = 0; r < 2; r++) {
       clock.advance(6_000);
       await flush();
@@ -112,8 +112,8 @@ describe('Reflexos', () => {
   });
 });
 
-describe('Vozen Diz', () => {
-  it('obedecer numa ordem real pontua; cair numa ratoeira e apanhado (sem ponto)', async () => {
+describe('Vozen Says', () => {
+  it('obeying a real order scores; falling for a trap gets you caught (no point)', async () => {
     const { env, say, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('vozen-says')!.create());
@@ -121,7 +121,7 @@ describe('Vozen Diz', () => {
 
     let realObeyed = 0;
     for (let r = 0; r < 6; r++) {
-      // Ultimo announce indica real vs trap; a palavra e o ultimo token do ctx.say.
+      // Last announce indicates real vs trap; the word is the last token of ctx.say.
       const announce = [...send.mock.calls]
         .reverse()
         .find(
@@ -147,35 +147,35 @@ describe('Vozen Diz', () => {
         realObeyed++;
       } else {
         expect(newKeys).toContain('game.vozenSays.caught');
-        // Ratoeira nao avanca a ronda -> força o timeout para seguir.
+        // A trap does not advance the round -> force the timeout to continue.
         env.clock && (env.clock as FakeClock).advance(12_000);
         await flush();
       }
     }
-    // Terminou -> pontos == nº de ordens reais obedecidas.
+    // Ended -> points == number of real orders obeyed.
     expect(persistScores).toHaveBeenCalledTimes(1);
     expect(persistScores.mock.calls[0][1].get('u')).toBe(realObeyed);
   });
 });
 
-describe('Roleta', () => {
-  it('one-shot: lê um desafio, fala-o e termina de imediato', async () => {
+describe('Roulette', () => {
+  it('one-shot: reads a challenge, speaks it and ends immediately', async () => {
     const { env, say, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('roulette')!.create());
     await flush();
     expect(send.mock.calls.some((c) => String(c[1]).startsWith('game.roulette.header'))).toBe(true);
     expect(say).toHaveBeenCalledTimes(1);
-    expect(mgr.active(G)).toBe(false); // terminou logo no start
+    expect(mgr.active(G)).toBe(false); // ended right at start
   });
 
-  it('pickPrompts resolve a língua (base do locale) e cai em inglês se não houver', () => {
+  it('pickPrompts resolves the language (base of the locale) and falls back to English if absent', () => {
     for (const lang of ['en', 'pt', 'es', 'fr', 'de', 'it']) {
       expect(pickPrompts(lang)).toBe(ROULETTE_PROMPTS[lang]);
-      expect(pickPrompts(`${lang}-XX`)).toBe(ROULETTE_PROMPTS[lang]); // normaliza a base
+      expect(pickPrompts(`${lang}-XX`)).toBe(ROULETTE_PROMPTS[lang]); // normalizes the base
     }
-    expect(pickPrompts('zz')).toBe(ROULETTE_PROMPTS.en); // sem banco -> inglês
-    // Cada banco tem desafios (não vazio).
+    expect(pickPrompts('zz')).toBe(ROULETTE_PROMPTS.en); // no bank -> English
+    // Each bank has challenges (non-empty).
     for (const arr of Object.values(ROULETTE_PROMPTS)) expect(arr.length).toBeGreaterThan(0);
   });
 });

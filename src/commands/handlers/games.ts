@@ -1,4 +1,4 @@
-// src/commands/handlers/games.ts — handler de /game (play/stop/list/leaderboard/stats) extraído de index.ts (plano 015).
+// src/commands/handlers/games.ts — /game handler (play/stop/list/leaderboard/stats) extracted from index.ts (plan 015).
 import {
   ActionRowBuilder,
   ChatInputCommandInteraction,
@@ -18,22 +18,22 @@ import { t } from '../../i18n/index';
 import { localeForUser, reply } from '../helpers';
 
 /**
- * /game — minijogos de grupo. Subcomandos:
- *  - play <game>   : arranca um jogo (jogos de voz exigem o bot numa call);
- *  - stop          : para o jogo ativo (pontos da partida abortada nao contam);
- *  - list          : lista os jogos disponiveis (derivada de GAME_DEFS);
- *  - leaderboard   : top jogadores do servidor (persistido em game_score).
+ * /game — group mini-games. Subcommands:
+ *  - play <game>   : starts a game (voice games require the bot in a call);
+ *  - stop          : stops the active game (points from an aborted match don't count);
+ *  - list          : lists the available games (derived from GAME_DEFS);
+ *  - leaderboard   : top players of the server (persisted in game_score).
  *
- * O ARRANQUE/PARAGEM respondem EPHEMERAL (ack ao invocador — o jogo em si fala no
- * canal para todos). `list`/`leaderboard` sao informativos e partilhaveis, por isso
- * respondem PUBLICO. Toda a UI no locale do invocador (localeForUser). O gating de
- * "precisa de call" e "ja ha jogo" e feito aqui; o lock por-guild vive no GameManager.
+ * START/STOP reply EPHEMERAL (ack to the invoker — the game itself speaks in the
+ * channel for everyone). `list`/`leaderboard` are informational and shareable, so they
+ * reply PUBLIC. All UI in the invoker's locale (localeForUser). The "needs a call" and
+ * "there's already a game" gating is done here; the per-guild lock lives in the GameManager.
  */
 export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   if (!deps.games) {
-    // Sem gestor de jogos (nunca deve acontecer em producao — sempre injetado no
-    // bootstrap; guard defensivo p/ testes que nao o injetam).
+    // No games manager (should never happen in production — always injected at
+    // bootstrap; defensive guard for tests that don't inject it).
     await reply(i, t('error.generic', locale));
     return;
   }
@@ -42,8 +42,8 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
   if (sub === 'play') {
     let gameId = i.options.getString('game');
     if (!gameId) {
-      // Beginner-friendly (plano v4): /game play sem jogo mostra um SELECT com os jogos
-      // (nome localizado), como o /setup faz com o canal. Só depois seguimos o fluxo normal.
+      // Beginner-friendly (plan v4): /game play with no game shows a SELECT with the games
+      // (localized name), as /setup does with the channel. Only then do we follow the normal flow.
       const select = new StringSelectMenuBuilder()
         .setCustomId(`gamePick:${i.id}`)
         .setPlaceholder(t('game.pickPlaceholder', locale))
@@ -73,13 +73,13 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
         return;
       }
       if (!picked) return;
-      await picked.deferUpdate(); // a UI segue via i.editReply (mesma mensagem ephemeral)
+      await picked.deferUpdate(); // the UI continues via i.editReply (same ephemeral message)
       await i.editReply({ components: [] }).catch(() => {});
       gameId = picked.values[0];
     } else {
-      // Ack IMEDIATO: criar a thread é uma chamada REST que num gateway lento estoira
-      // os 3s do token da interação (10062 Unknown interaction) com o jogo JÁ criado.
-      // deferReply compra 15 min; TODAS as respostas deste ramo passam a editReply.
+      // IMMEDIATE ack: creating the thread is a REST call that on a slow gateway blows
+      // through the interaction token's 3s (10062 Unknown interaction) with the game ALREADY
+      // created. deferReply buys 15 min; ALL replies in this branch switch to editReply.
       await i.deferReply({ flags: MessageFlags.Ephemeral });
     }
     const def = gameById(gameId);
@@ -87,13 +87,13 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
       await i.editReply(t('game.unknownGame', locale));
       return;
     }
-    // Jogos de voz exigem o bot numa call (como o /tts): sem player, nada a anunciar.
+    // Voice games require the bot in a call (like /tts): no player, nothing to announce.
     if (def.needsVoice && !getPlayer(deps, i.guildId!)) {
       await i.editReply(t('game.start.needVoice', locale));
       return;
     }
-    // Jogos 💎 Premium (ex. xadrez): Plus do próprio OU Premium do servidor, mesmo
-    // padrão do /voice clone e /voice effect.
+    // 💎 Premium games (e.g. chess): the user's own Plus OR the server's Premium, same
+    // pattern as /voice clone and /voice effect.
     if (def.premium) {
       const now = Date.now();
       const premium =
@@ -103,26 +103,26 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
         return;
       }
     }
-    // Verifica o lock ANTES de criar a thread (evita uma thread órfã no caso comum de
-    // já haver jogo). Há uma janela minúscula até ao start real (que é o gate a sério);
-    // se a perdermos, apagamos a thread órfã abaixo.
+    // Check the lock BEFORE creating the thread (avoids an orphan thread in the common case
+    // of a game already existing). There's a tiny window until the real start (which is the
+    // real gate); if we lose it, we delete the orphan thread below.
     if (deps.games.active(i.guildId!)) {
       const ch = deps.games.channelOf(i.guildId!) ?? i.channelId;
       await i.editReply(t('game.start.alreadyActive', locale, { channel: ch }));
       return;
     }
-    // Servidores grandes afogam o canal com as mensagens do jogo — corremo-lo numa
-    // THREAD descartável criada a partir deste canal. Fallback (canal de voz/DM, sem
-    // permissões): joga no próprio canal, como antes.
+    // Large servers flood the channel with the game's messages — we run it in a disposable
+    // THREAD created from this channel. Fallback (voice/DM channel, no permissions): plays
+    // in the channel itself, as before.
     const gameName = t(def.nameKey, locale);
     const threadId = await createGameThread(i.channel, `🎮 ${gameName}`);
     const gameChannelId = threadId ?? i.channelId;
 
-    // Locale do jogo = o de QUEM inicia (localeForUser), não o da guild — assim um
-    // servidor sem /config language joga na língua de quem clicou (ex.: PT).
-    // A opção `language` só é usada pelo word-chain; se omitida, cai no locale de quem
-    // inicia (o resolveLang do jogo mapeia línguas não-suportadas para inglês). Os
-    // outros jogos ignoram opts (create() sem parâmetros continua válido).
+    // Game locale = that of WHOEVER starts it (localeForUser), not the guild's — so a
+    // server without /config language plays in the language of whoever clicked (e.g.: PT).
+    // The `language` option is only used by word-chain; if omitted, it falls back to the
+    // starter's locale (the game's resolveLang maps unsupported languages to English). The
+    // other games ignore opts (create() with no parameters remains valid).
     const chosenLang = i.options.getString('language') ?? undefined;
     const res = deps.games.start(
       i.guildId!,
@@ -130,11 +130,11 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
       def.create({ language: chosenLang ?? locale }),
       def.needsVoice,
       locale,
-      threadId ? i.channelId : undefined, // canal-pai só quando corre em thread
+      threadId ? i.channelId : undefined, // parent channel only when running in a thread
       i.user.id,
     );
     if (res === 'already-active') {
-      // Perdemos a race após o active() acima — limpa a thread que acabámos de criar.
+      // We lost the race after the active() above — clean up the thread we just created.
       if (threadId) void deleteChannelSafe(i.client, threadId);
       const ch = deps.games.channelOf(i.guildId!) ?? i.channelId;
       await i.editReply(t('game.start.alreadyActive', locale, { channel: ch }));
@@ -194,7 +194,7 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
   }
 
   if (sub === 'stats') {
-    // Estatisticas do PROPRIO (ephemeral): pontos, vitorias e posicao no ranking.
+    // The user's OWN stats (ephemeral): points, wins and ranking position.
     const score = getUserScore(deps.db, i.guildId!, i.user.id);
     const { rank, total } = getUserRank(deps.db, i.guildId!, i.user.id);
     if (score.points === 0 && score.wins === 0) {

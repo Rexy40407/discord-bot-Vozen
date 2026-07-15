@@ -1,12 +1,12 @@
 // tools/upload-app-emojis.mjs
 //
-// Faz upload de TODOS os tiles-emoji do bot (assets/<grupo>/*.png — chess, wordle, …)
-// como APPLICATION EMOJIS. App emojis funcionam em qualquer servidor sem Nitro nem
-// slots de guild. IDEMPOTENTE: lista os existentes e cria só os que faltam. Corre uma
-// vez (ou quando adicionares/trocares assets):
+// Uploads ALL of the bot's emoji tiles (assets/<group>/*.png — chess, wordle, …)
+// as APPLICATION EMOJIS. App emojis work in any server without Nitro or guild
+// slots. IDEMPOTENT: lists the existing ones and creates only the missing ones. Run
+// once (or whenever you add/swap assets):
 //   node tools/upload-app-emojis.mjs
 //
-// Precisa de DISCORD_TOKEN + CLIENT_ID no ambiente (o mesmo .env do bot).
+// Needs DISCORD_TOKEN + CLIENT_ID in the environment (the same .env as the bot).
 
 import { REST, Routes } from 'discord.js';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -16,7 +16,7 @@ import { loadConfig } from '../dist/config/index.js';
 
 const ASSETS = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets');
 
-/** Todos os PNGs em assets/<grupo>/*.png (um nível de subdiretórios). */
+/** All PNGs in assets/<group>/*.png (one level of subdirectories). */
 function collectPngs() {
   const out = [];
   for (const group of readdirSync(ASSETS)) {

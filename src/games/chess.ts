@@ -2,25 +2,25 @@ import { Chess } from 'chess.js';
 import type { Game, GameContext, GameDefinition, GameMessage } from './types';
 import { announceWinner } from './finish';
 
-const IDLE_MS = 300_000; // 5 min — o xadrez pensa-se mais devagar que o Galo (180s)
+const IDLE_MS = 300_000; // 5 min — chess is thought through more slowly than Tic-Tac-Toe (180s)
 
-/** Move solto (SAN "e4"/"Nf3"/"O-O") ou por-coordenadas ("e2e4", com promoção opcional "e7e8q"). */
+/** Loose move (SAN "e4"/"Nf3"/"O-O") or by-coordinates ("e2e4", with optional promotion "e7e8q"). */
 const RE_COORD = /^[a-h][1-8][a-h][1-8][qrbn]?$/i;
 const RE_SAN = /^(o-o-o|o-o|[kqrbn]?[a-h]?[1-8]?x?[a-h][1-8](=[qrbn])?)[+#]?$/i;
 const RE_RESIGN = /^(resign|resigns|i resign|desisto|desistir)$/i;
 
-/** Letra do tabuleiro: maiuscula = brancas, minuscula = pretas; ponto = casa vazia. */
+/** Board letter: uppercase = white, lowercase = black; dot = empty square. */
 function pieceLetter(p: { type: string; color: 'w' | 'b' } | null): string {
   if (!p) return '.';
   return p.color === 'w' ? p.type.toUpperCase() : p.type;
 }
 
 /**
- * Xadrez — 2 jogadores: os 2 PRIMEIROS a tentar uma jogada ficam brancas/pretas
- * (brancas comecam, como no Galo). Joga-se escrevendo a jogada em notação algébrica
- * ("e4", "Nf3", "O-O") ou por-coordenadas ("e2e4"); "resign"/"desisto" desiste.
- * Toda a legalidade (xeque, xeque-mate, empate, roque, en passant, promoção) é
- * validada pelo chess.js — não reinventamos regras de xadrez aqui. 💎 Premium.
+ * Chess — 2 players: the FIRST 2 to attempt a move take white/black (white starts, as in
+ * Tic-Tac-Toe). You play by typing the move in algebraic notation ("e4", "Nf3", "O-O") or
+ * by-coordinates ("e2e4"); "resign"/"desisto" resigns. All legality (check, checkmate, draw,
+ * castling, en passant, promotion) is validated by chess.js — we do not reinvent chess rules
+ * here. 💎 Premium.
  */
 class ChessGame implements Game {
   readonly id = 'chess';
@@ -47,7 +47,7 @@ class ChessGame implements Game {
     });
   }
 
-  /** Cor do assento de `uid`, ou null se ainda nao tem (espetador ou por atribuir). */
+  /** Seat color of `uid`, or null if it does not have one yet (spectator or unassigned). */
   private colorOf(uid: string): 'w' | 'b' | null {
     if (this.whiteId === uid) return 'w';
     if (this.blackId === uid) return 'b';
@@ -59,7 +59,7 @@ class ChessGame implements Game {
     const content = msg.content.trim();
     const isResign = RE_RESIGN.test(content);
     const looksLikeMove = isResign || RE_COORD.test(content) || RE_SAN.test(content);
-    if (!looksLikeMove) return; // conversa normal no canal -> ignora, nao e jogada
+    if (!looksLikeMove) return; // normal chat in the channel -> ignore, it is not a move
 
     // Resign concedes to the OPPONENT, so it only makes sense from a player who is already
     // seated in a game that has both seats filled. Crucially it must NOT itself seat anyone:
@@ -82,7 +82,7 @@ class ChessGame implements Game {
 
     this.names[msg.authorId] = msg.authorName;
 
-    // Atribuicao de assentos: 1o a tentar -> brancas; 2o DISTINTO -> pretas; resto = espetador.
+    // Seat assignment: 1st to try -> white; 2nd DISTINCT -> black; the rest = spectator.
     let color = this.colorOf(msg.authorId);
     if (!color) {
       if (!this.whiteId) {
@@ -92,7 +92,7 @@ class ChessGame implements Game {
         this.blackId = msg.authorId;
         color = 'b';
       } else {
-        return; // assentos cheios -> espetador, ignora
+        return; // seats full -> spectator, ignore
       }
     }
 
@@ -157,7 +157,7 @@ class ChessGame implements Game {
     return color === 'w' ? ctx.t('game.chess.white') : ctx.t('game.chess.black');
   }
 
-  /** Há emojis do tabuleiro carregados? (basta a casa vazia clara existir.) */
+  /** Are the board emojis loaded? (it is enough for the light empty square to exist.) */
   private hasEmojis(ctx: GameContext): boolean {
     return ctx.emoji('el') !== undefined;
   }
@@ -171,12 +171,12 @@ class ChessGame implements Game {
     return `${seats}\n${board}`;
   }
 
-  /** Tabuleiro em emojis: peça cburnett sobre casa clara/escura; letras dos ficheiros
-   *  em cima (tiles-emoji fa..fh — NÃO indicadores regionais, que se combinam em
-   *  bandeiras), números das filas à direita. */
+  /** Board in emojis: cburnett piece over a light/dark square; file letters on top
+   *  (tiles-emoji fa..fh — NOT regional indicators, which combine into flags),
+   *  rank numbers on the right. */
   private renderEmoji(ctx: GameContext): string {
     const b = this.chess.board();
-    // Etiquetas A–H como tiles-emoji próprios (alinham com as colunas e nunca viram bandeiras).
+    // A–H labels as their own tiles-emoji (they align with the columns and never turn into flags).
     const fileRow = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
       .map((f) => ctx.emoji(`f${f}`) ?? '')
       .join('');
@@ -184,17 +184,17 @@ class ChessGame implements Game {
     for (let r = 0; r < 8; r++) {
       let row = '';
       for (let f = 0; f < 8; f++) {
-        const sq = (r + f) % 2 === 0 ? 'l' : 'd'; // a8 (r0,f0) é casa CLARA
+        const sq = (r + f) % 2 === 0 ? 'l' : 'd'; // a8 (r0,f0) is a LIGHT square
         const p = b[r][f];
         const name = p ? `${p.color}${p.type}${sq}` : `e${sq}`;
         row += ctx.emoji(name) ?? '';
       }
-      lines.push(`${row} ${8 - r}`); // número da fila à direita (texto simples, não precisa alinhar)
+      lines.push(`${row} ${8 - r}`); // rank number on the right (plain text, no need to align)
     }
     return lines.join('\n');
   }
 
-  /** Fallback ASCII (sem emojis instalados): letras num code block, como antes. */
+  /** ASCII fallback (no emojis installed): letters in a code block, as before. */
   private renderAscii(): string {
     const board = this.chess.board();
     const files = 'abcdefgh';
@@ -209,9 +209,9 @@ class ChessGame implements Game {
   }
 
   /**
-   * Envia o tabuleiro + uma nota (intro/jogada/fim). Em emojis o tabuleiro tem ~1700
-   * chars; se a combinação passar o limite prático do Discord, divide em 2 mensagens.
-   * `noteFirst` = a nota vem antes do tabuleiro (intro, xeque-mate) ou depois (jogada).
+   * Sends the board + a note (intro/move/end). In emojis the board is ~1700 chars; if the
+   * combination exceeds Discord's practical limit, it splits into 2 messages. `noteFirst` =
+   * the note comes before the board (intro, checkmate) or after (move).
    */
   private async sendBoard(
     ctx: GameContext,

@@ -1,11 +1,11 @@
 // src/premium/claim.ts
 //
-// Lógica PURA do CLAIM: o comprador reclama uma compra Ko-fi pendente (que chegou sem Discord
-// ID, ver store/kofiPending.ts) introduzindo o CÓDIGO da transação do recibo — chave forte que
-// só ele tem. A identidade do Discord vem já validada por OAuth (o endpoint chama
-// statusApi.resolveIdentity ANTES disto), por isso aqui confiamos no `discordId`. Aplica o
-// grant, marca o pendente reclamado e memoriza email->Discord ID (renovações futuras
-// resolvem-se sozinhas). Sem IO de rede; testável isoladamente.
+// PURE logic of the CLAIM: the buyer claims a pending Ko-fi purchase (that arrived without a
+// Discord ID, see store/kofiPending.ts) by entering the transaction CODE from the receipt — a
+// strong key that only they have. The Discord identity comes already validated by OAuth (the
+// endpoint calls statusApi.resolveIdentity BEFORE this), so here we trust the `discordId`. Applies
+// the grant, marks the pending one claimed and memorizes email->Discord ID (future renewals
+// resolve themselves). No network IO; testable in isolation.
 
 import type Database from 'better-sqlite3';
 import { grantUserPremium, grantGuildPass, rememberKofiSupporter } from '../store/premium';
@@ -16,7 +16,7 @@ import {
   type PendingGrant,
 } from '../store/kofiPending';
 
-/** Uma compra aplicada no claim (para a resposta ao site). */
+/** A purchase applied in the claim (for the response to the site). */
 export interface ClaimedItem {
   plan: string; // 'plus' | 'premium'
   days: number;
@@ -29,7 +29,7 @@ export type ClaimOutcome =
   | { ok: false; reason: 'not_found' }
   | { ok: false; reason: 'use_receipt_code' };
 
-/** Aplica UM pendente ao Discord ID (Plus por-utilizador ou passe de Premium). source='kofi'. */
+/** Applies ONE pending grant to the Discord ID (per-user Plus or Premium pass). source='kofi'. */
 function applyPending(
   db: Database.Database,
   discordId: string,
@@ -44,13 +44,13 @@ function applyPending(
 }
 
 /**
- * Reclama uma compra Ko-fi pendente. O `input` deve ser o CÓDIGO da transação do recibo Ko-fi
- * (chave forte que só o comprador tem). Um `input` do tipo EMAIL (contém '@') é REJEITADO com
- * `use_receipt_code` sem tocar na BD — o email NÃO é aceite como prova de posse: não é segredo,
- * e para qualquer conta Discord logada que o soubesse era possível reclamar o Premium de outra
- * pessoa durante os 90 dias de retenção do pendente (ver "## Decision" no plano 021). A
- * identidade Discord vem já validada por OAuth. Aplica ao `discordId` TODAS as compras
- * pendentes do MESMO email (renovações órfãs), marca-as reclamadas e memoriza email->Discord ID
+ * Claims a pending Ko-fi purchase. The `input` must be the transaction CODE from the Ko-fi receipt
+ * (a strong key that only the buyer has). An `input` of the EMAIL type (contains '@') is REJECTED with
+ * `use_receipt_code` without touching the DB — the email is NOT accepted as proof of ownership: it is not a secret,
+ * and any logged-in Discord account that knew it could claim someone else's Premium
+ * during the pending grant's 90-day retention (see "## Decision" in plan 021). The
+ * Discord identity comes already validated by OAuth. Applies to the `discordId` ALL the pending
+ * purchases of the SAME email (orphan renewals), marks them claimed and memorizes email->Discord ID
  * (future renewals resolve automatically). The operation is transactional and single-use.
  */
 export function claimPendingGrant(
@@ -66,12 +66,12 @@ export function claimPendingGrant(
     let emailHashForRemember: string | null;
 
     if (trimmed.includes('@')) {
-      // Via EMAIL: plano 021 — já não é aceite como prova de posse (não é segredo). Devolve
-      // use_receipt_code SEM tocar na BD: a resposta não varia consoante o email pertença ou
-      // não a uma compra pendente, por isso não há oráculo nenhum a explorar aqui.
+      // Via EMAIL: plan 021 — no longer accepted as proof of ownership (not a secret). Returns
+      // use_receipt_code WITHOUT touching the DB: the response does not vary depending on whether the
+      // email belongs to a pending purchase or not, so there is no oracle to exploit here.
       return { ok: false, reason: 'use_receipt_code' };
     } else {
-      // Via CÓDIGO (tx id): acha o pendente e, por ele, todas as compras do mesmo email.
+      // Via CODE (tx id): find the pending grant and, through it, all purchases of the same email.
       const match = findUnclaimedPendingByTx(db, trimmed);
       if (!match) return { ok: false, reason: 'not_found' };
       targets = match.emailHash ? listUnclaimedPendingByEmailHash(db, match.emailHash) : [match];
@@ -80,8 +80,8 @@ export function claimPendingGrant(
 
     const items: ClaimedItem[] = [];
     for (const p of targets) {
-      // markPendingClaimed devolve false se já estava reclamado (corrida) — nesse caso não
-      // aplicamos, para nunca dar dias a dobrar.
+      // markPendingClaimed returns false if it was already claimed (race) — in that case we don't
+      // apply it, to never grant double days.
       if (!markPendingClaimed(db, p.transactionId, now)) continue;
       items.push(applyPending(db, discordId, p, now));
     }

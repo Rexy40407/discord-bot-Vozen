@@ -1,38 +1,38 @@
 // src/vote.ts
 //
-// Webhook top.gg OPCIONAL para registar votos do bot (P11.5).
+// OPTIONAL top.gg webhook to record bot votes (P11.5).
 //
-// Desenho (espelha src/health.ts):
-//  - `handleVoteWebhook({ authHeader, body, secret })` e uma funcao PURA (sem
-//    rede, sem abrir porta): valida o secret, faz parse do payload do top.gg e
-//    devolve { status, body }. Incrementa a metrica `votes` num upvote valido,
-//    a la AudioCache.get (que tambem toca no singleton de metricas dentro da
-//    unidade). Testavel sem rede.
-//  - `startVoteWebhookServer(config)` cria um http.Server que recolhe o corpo do
-//    POST e chama o handler — mas SO se `config.topggWebhookPort` estiver
-//    definido. Sem porta, devolve undefined e nao abre nada (default = sem
-//    servidor), exatamente como o health endpoint.
+// Design (mirrors src/health.ts):
+//  - `handleVoteWebhook({ authHeader, body, secret })` is a PURE function (no
+//    network, no port opened): validates the secret, parses the top.gg payload and
+//    returns { status, body }. Increments the `votes` metric on a valid upvote,
+//    a la AudioCache.get (which also touches the metrics singleton inside the
+//    unit). Testable without network.
+//  - `startVoteWebhookServer(config)` creates an http.Server that collects the POST
+//    body and calls the handler — but ONLY if `config.topggWebhookPort` is
+//    defined. Without a port, returns undefined and opens nothing (default = no
+//    server), exactly like the health endpoint.
 //
-// Seguranca:
-//  - Se `secret` estiver definido, o header Authorization TEM de bater certo
-//    (401 caso contrario). A comparacao e constant-time (crypto.timingSafeEqual
-//    sobre SHA-256 de ambos os lados) para nao vazar o secret via timing — ver
-//    authMatches(). top.gg permite webhooks sem auth, mas e inseguro — por isso
-//    recomendamos sempre definir TOPGG_WEBHOOK_SECRET (ver .env.example e o
-//    aviso de arranque em startVoteWebhookServer).
-//  - Sem `secret` configurado, o webhook por defeito NAO arranca (SEC-01) — sem
-//    auth, qualquer um que descubra a porta forja votos. Para arrancar mesmo assim
-//    (sem auth), e preciso o opt-in explicito TOPGG_WEBHOOK_ALLOW_INSECURE=true.
+// Security:
+//  - If `secret` is defined, the Authorization header MUST match (401 otherwise).
+//    The comparison is constant-time (crypto.timingSafeEqual over the SHA-256 of
+//    both sides) so as not to leak the secret via timing — see authMatches().
+//    top.gg allows webhooks without auth, but it's insecure — so we always
+//    recommend setting TOPGG_WEBHOOK_SECRET (see .env.example and the startup
+//    warning in startVoteWebhookServer).
+//  - Without a `secret` configured, the webhook by default does NOT start (SEC-01) —
+//    without auth, anyone who discovers the port forges votes. To start anyway
+//    (without auth), the explicit opt-in TOPGG_WEBHOOK_ALLOW_INSECURE=true is required.
 //
-// O payload do top.gg (POST JSON) tem, entre outros, estes campos:
-//   { bot: "<id>", user: "<id de quem votou>", type: "upvote" | "test", ... }
-// "test" e um ping do dashboard do top.gg (botao "Test webhook"): respondemos
-// 200 para o teste passar, mas NAO contamos como voto (so type === "upvote").
+// The top.gg payload (POST JSON) has, among others, these fields:
+//   { bot: "<id>", user: "<id of the voter>", type: "upvote" | "test", ... }
+// "test" is a ping from the top.gg dashboard ("Test webhook" button): we respond
+// 200 so the test passes, but we do NOT count it as a vote (only type === "upvote").
 //
-// NOTA — "ao vivo pendente": a listagem do bot no top.gg e o TOPGG_WEBHOOK_SECRET
-// pertencem ao dono do bot. Esta parte constroi o codigo + testes; ligar o
-// webhook ao vivo (criar a listagem, colar o secret, expor a porta) fica para o
-// deploy do utilizador.
+// NOTE — "live pending": the bot's top.gg listing and the TOPGG_WEBHOOK_SECRET
+// belong to the bot owner. This part builds the code + tests; wiring the webhook
+// live (creating the listing, pasting the secret, exposing the port) is left to the
+// user's deploy.
 
 import http from 'node:http';
 import type { Server } from 'node:http';
@@ -43,40 +43,40 @@ import type { AppConfig } from './config/index';
 import { hardenServerTimeouts } from './http/serverHardening';
 
 export interface VoteWebhookInput {
-  /** Valor do header Authorization do pedido (ou undefined se ausente). */
+  /** Value of the request's Authorization header (or undefined if absent). */
   authHeader: string | undefined;
-  /** Corpo cru do pedido (string JSON do top.gg). */
+  /** Raw request body (top.gg JSON string). */
   body: string;
-  /** Secret esperado. Se undefined/vazio, a auth NAO e verificada. */
+  /** Expected secret. If undefined/empty, auth is NOT verified. */
   secret: string | undefined;
   /**
-   * Recompensa: chamado com o id de quem votou em CADA upvote válido (mesma condição
-   * que a métrica `votes`). O chamador liga aqui o grant de perks (ver index.ts). Um
-   * throw aqui NÃO parte a resposta — o top.gg não re-entrega webhooks falhados, por
-   * isso respondemos 200 na mesma e o erro fica ao critério do próprio callback logar.
+   * Reward: called with the voter's id on EVERY valid upvote (same condition as the
+   * `votes` metric). The caller wires the perk grant here (see index.ts). A throw
+   * here does NOT break the response — top.gg doesn't re-deliver failed webhooks, so
+   * we respond 200 anyway and leave the error to the callback itself to log.
    */
   onUpvote?: (userId: string) => void;
 }
 
 export interface VoteData {
-  /** Id de quem votou (campo `user` do top.gg). */
+  /** Id of the voter (top.gg's `user` field). */
   user: string;
-  /** Tipo de evento: "upvote" (voto real) ou "test" (ping do dashboard). */
+  /** Event type: "upvote" (real vote) or "test" (dashboard ping). */
   type: string;
-  /** Id do bot votado (campo `bot` do top.gg), se presente. */
+  /** Id of the voted bot (top.gg's `bot` field), if present. */
   bot?: string;
 }
 
 /**
- * Compara o header de auth com o secret em tempo constante.
+ * Compares the auth header with the secret in constant time.
  *
- * `authHeader !== secret` curto-circuita no primeiro byte diferente, logo o
- * tempo de resposta revela quantos bytes batem certo — um canal lateral de
- * timing num caminho de autenticacao. Usamos `crypto.timingSafeEqual`.
+ * `authHeader !== secret` short-circuits at the first differing byte, so the
+ * response time reveals how many bytes match — a timing side-channel on an
+ * authentication path. We use `crypto.timingSafeEqual`.
  *
- * `timingSafeEqual` LANCA se os buffers tiverem comprimentos diferentes; por
- * isso hashamos ambos os lados para um SHA-256 de 32 bytes (comprimento fixo)
- * antes de comparar. Bonus: o digest tambem nao vaza o comprimento do secret.
+ * `timingSafeEqual` THROWS if the buffers have different lengths; so we hash
+ * both sides to a 32-byte SHA-256 (fixed length) before comparing. Bonus: the
+ * digest also doesn't leak the secret's length.
  */
 function authMatches(authHeader: string | undefined, secret: string): boolean {
   const a = createHash('sha256')
@@ -88,42 +88,42 @@ function authMatches(authHeader: string | undefined, secret: string): boolean {
 
 export interface VoteWebhookResult {
   status: number;
-  /** Corpo JSON da resposta. */
+  /** JSON body of the response. */
   body: string;
-  /** Dados do voto, presentes apenas num parse com sucesso (200). */
+  /** Vote data, present only on a successful parse (200). */
   vote?: VoteData;
 }
 
 /**
- * Handler PURO do webhook top.gg.
+ * PURE handler for the top.gg webhook.
  *
- * Ordem (auth ANTES de qualquer parse, como num gateway):
- *  1. Se `secret` definido e o authHeader nao bater certo (comparacao
- *     constant-time) => 401 (NAO conta voto).
- *  2. Parse do body JSON. Body invalido/malformado => 400 (sem crash).
- *  3. Sucesso => 200 + dados do voto. Se type === "upvote", incrementa `votes`.
- *     type === "test" => 200 mas NAO conta (e um ping de teste do dashboard).
+ * Order (auth BEFORE any parse, as in a gateway):
+ *  1. If `secret` is defined and the authHeader doesn't match (constant-time
+ *     comparison) => 401 (does NOT count a vote).
+ *  2. Parse the JSON body. Invalid/malformed body => 400 (no crash).
+ *  3. Success => 200 + vote data. If type === "upvote", increments `votes`.
+ *     type === "test" => 200 but does NOT count (it's a test ping from the dashboard).
  */
 export function handleVoteWebhook(input: VoteWebhookInput): VoteWebhookResult {
   const { authHeader, body, secret, onUpvote } = input;
 
-  // 1. Auth — so quando ha secret configurado (leitura literal do contrato).
-  //    Comparacao constant-time (timingSafeEqual) para nao vazar o secret via
-  //    timing — ver authMatches().
+  // 1. Auth — only when a secret is configured (literal reading of the contract).
+  //    Constant-time comparison (timingSafeEqual) so as not to leak the secret via
+  //    timing — see authMatches().
   if (secret !== undefined && secret !== '' && !authMatches(authHeader, secret)) {
     return { status: 401, body: JSON.stringify({ status: 'unauthorized' }) };
   }
 
-  // 2. Parse defensivo — input malformado NUNCA pode crashar.
+  // 2. Defensive parse — malformed input can NEVER crash.
   let parsed: unknown;
   try {
     parsed = JSON.parse(body);
   } catch {
     return { status: 400, body: JSON.stringify({ status: 'invalid_json' }) };
   }
-  // Exige um objeto JSON (nao null, nao array, nao primitivo). O payload do
-  // top.gg e sempre um objeto { user, type, ... }; um array/numero/string nao e
-  // acionavel => 400.
+  // Require a JSON object (not null, not array, not primitive). The top.gg payload
+  // is always an object { user, type, ... }; an array/number/string isn't
+  // actionable => 400.
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
     return { status: 400, body: JSON.stringify({ status: 'invalid_payload' }) };
   }
@@ -133,19 +133,19 @@ export function handleVoteWebhook(input: VoteWebhookInput): VoteWebhookResult {
   const user = typeof obj.user === 'string' ? obj.user : '';
   const bot = typeof obj.bot === 'string' ? obj.bot : undefined;
 
-  // Um upvote valido precisa de um `user` (quem votou). Sem ele, o payload nao e
-  // acionavel: aceitamos (200) mas nao contamos — evita inflar a metrica com
-  // pings vazios. type "test" tambem cai aqui (nao conta), e isso e o desejado.
+  // A valid upvote needs a `user` (the voter). Without it, the payload isn't
+  // actionable: we accept (200) but don't count — avoids inflating the metric with
+  // empty pings. type "test" also falls here (doesn't count), and that's the desired.
   const vote: VoteData = { user, type, ...(bot !== undefined ? { bot } : {}) };
 
   if (type === 'upvote' && user !== '') {
     metrics.inc('votes');
-    // Recompensa (perks Plus temporários): mesma condição que a métrica. Um throw do
-    // callback não pode partir o 200 — o voto contou e o top.gg não re-entrega.
+    // Reward (temporary Plus perks): same condition as the metric. A throw from the
+    // callback can't break the 200 — the vote counted and top.gg doesn't re-deliver.
     try {
       onUpvote?.(user);
     } catch {
-      /* o callback é responsável pelo próprio logging (ver index.ts) */
+      /* the callback is responsible for its own logging (see index.ts) */
     }
   }
 
@@ -153,16 +153,16 @@ export function handleVoteWebhook(input: VoteWebhookInput): VoteWebhookResult {
 }
 
 /**
- * Arranque OPCIONAL do servidor de webhook top.gg (espelha startHealthServer).
- *  - Se `config.topggWebhookPort` for undefined (default), NAO arranca nada e
- *    devolve undefined.
- *  - Caso contrario, cria um http.Server que aceita POST /webhook/topgg,
- *    recolhe o corpo, chama `handleVoteWebhook` (com o secret da config) e
- *    responde. Qualquer outra rota/metodo => 404. Devolve o handle do Server.
+ * OPTIONAL startup of the top.gg webhook server (mirrors startHealthServer).
+ *  - If `config.topggWebhookPort` is undefined (default), starts NOTHING and
+ *    returns undefined.
+ *  - Otherwise, creates an http.Server that accepts POST /webhook/topgg,
+ *    collects the body, calls `handleVoteWebhook` (with the secret from config) and
+ *    responds. Any other route/method => 404. Returns the Server handle.
  *
- * Porta DEDICADA (TOPGG_WEBHOOK_PORT), separada do HEALTH_PORT de proposito —
- * para nao misturar um endpoint de uptime publico com um endpoint de webhook
- * autenticado.
+ * DEDICATED port (TOPGG_WEBHOOK_PORT), separate from HEALTH_PORT on purpose —
+ * so as not to mix a public uptime endpoint with an authenticated webhook
+ * endpoint.
  */
 export function startVoteWebhookServer(
   config: Pick<AppConfig, 'topggWebhookPort' | 'topggWebhookSecret' | 'topggWebhookAllowInsecure'>,
@@ -174,8 +174,8 @@ export function startVoteWebhookServer(
   const secret = config.topggWebhookSecret;
   if (secret === undefined || secret === '') {
     if (!config.topggWebhookAllowInsecure) {
-      // SEC-01: sem secret, qualquer um que descubra a porta forja votos. Recusar
-      // arrancar é o default seguro; o opt-in explícito fica para quem sabe o risco.
+      // SEC-01: without a secret, anyone who discovers the port forges votes. Refusing
+      // to start is the safe default; the explicit opt-in is left to those who know the risk.
       log.error(
         `[vote] TOPGG_WEBHOOK_PORT definido (${port}) mas TOPGG_WEBHOOK_SECRET vazio — ` +
           'the webhook will not start. Set TOPGG_WEBHOOK_SECRET, or explicitly accept the ' +
@@ -197,8 +197,8 @@ export function startVoteWebhookServer(
       return;
     }
 
-    // Recolhe o corpo do POST com um cap defensivo: um corpo gigante nao deve
-    // esgotar memoria. O payload do top.gg e pequeno; 64KB e folgado.
+    // Collect the POST body with a defensive cap: a giant body shouldn't exhaust
+    // memory. The top.gg payload is small; 64KB is generous.
     const chunks: Buffer[] = [];
     let size = 0;
     const MAX = 64 * 1024;
@@ -241,10 +241,10 @@ export function startVoteWebhookServer(
     log.error(`[vote] top.gg webhook server error (port ${port})`, err);
   });
 
-  hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
+  hardenServerTimeouts(server); // short timeouts (anti-slowloris)
 
-  // Loopback-only (defesa em profundidade): a exposição pública faz-se via reverse
-  // proxy no mesmo host (Caddy), nunca com a porta crua na internet.
+  // Loopback-only (defense in depth): public exposure is done via a reverse proxy on
+  // the same host (Caddy), never with the raw port on the internet.
   server.listen(port, '127.0.0.1', () => {
     log.info(`[vote] top.gg webhook server listening on 127.0.0.1:${port} (POST /webhook/topgg).`);
   });

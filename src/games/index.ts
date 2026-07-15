@@ -19,9 +19,9 @@ import { headsOrTailsDef } from './headsOrTails';
 import { WORDCHAIN_LANGS } from './wordchain/core';
 
 /**
- * Registo de todos os minijogos do /game. Adicionar um jogo novo = criar o ficheiro
- * (com o seu GameDefinition) e acrescenta-lo aqui — o comando, o autocomplete e o
- * /game list derivam TUDO desta lista, por isso nada mais precisa de mudar.
+ * Registry of all /game minigames. Adding a new game = create the file (with its
+ * GameDefinition) and add it here — the command, the autocomplete and /game list
+ * derive EVERYTHING from this list, so nothing else needs to change.
  */
 export const GAME_DEFS: readonly GameDefinition[] = [
   guessLanguageDef,
@@ -42,7 +42,7 @@ export const GAME_DEFS: readonly GameDefinition[] = [
   headsOrTailsDef,
 ];
 
-/** Nome amigável (autónimo) de cada língua jogável do word-chain. */
+/** Friendly (autonym) name of each playable word-chain language. */
 const WORDCHAIN_LANG_NAMES: Record<string, string> = {
   pt: 'Português',
   en: 'English',
@@ -51,9 +51,9 @@ const WORDCHAIN_LANG_NAMES: Record<string, string> = {
 };
 
 /**
- * Choices do autocomplete da opção `language` do /game play (só o word-chain a usa).
- * Lista as línguas latinas suportadas; filtra pelo que o utilizador escreve (nome OU
- * código). PURA/testável.
+ * Choices for the autocomplete of the `language` option of /game play (only word-chain
+ * uses it). Lists the supported Latin languages; filters by what the user types (name OR
+ * code). PURE/testable.
  */
 export function filterWordChainLanguages(query: string): { name: string; value: string }[] {
   const q = query.trim().toLowerCase();
@@ -62,16 +62,16 @@ export function filterWordChainLanguages(query: string): { name: string; value: 
     .slice(0, 25);
 }
 
-/** Procura um jogo pelo id (o value do autocomplete). undefined se nao existir. */
+/** Looks up a game by id (the autocomplete value). undefined if it doesn't exist. */
 export function gameById(id: string): GameDefinition | undefined {
   return GAME_DEFS.find((g) => g.id === id);
 }
 
 /**
- * Choices do autocomplete da opcao `game` do /game play: nome do jogo NA LINGUA do
- * utilizador (o `locale` do cliente Discord, via t()), value = id. Filtra pelo que o
- * utilizador escreve (case-insensitive, pelo nome traduzido OU pelo id), limitado a
- * 25 (cap do Discord). PURA/testavel. `locale` deve ja vir na forma base ('pt', 'fr').
+ * Choices for the autocomplete of the `game` option of /game play: the game name IN THE
+ * user's LANGUAGE (the Discord client's `locale`, via t()), value = id. Filters by what
+ * the user types (case-insensitive, by the translated name OR by the id), limited to
+ * 25 (Discord's cap). PURE/testable. `locale` should already be in base form ('pt', 'fr').
  */
 export function filterGameChoices(
   query: string,

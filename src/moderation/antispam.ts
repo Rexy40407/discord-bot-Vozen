@@ -1,27 +1,26 @@
-// src/moderation/antispam.ts — deteção de spam para a leitura em voz (plano 017).
+// src/moderation/antispam.ts — spam detection for voice reading (plan 017).
 //
-// Duas heurísticas PURAS e conservadoras (opt-in por guild; OFF por defeito):
-//  1) isRepetitionSpam — repetição massiva de tokens DENTRO de uma mensagem
-//     (ex. "POKEBOLAS POKEBOLAS ×39"): muitos tokens + baixíssima diversidade.
-//  2) DuplicateTracker — a MESMA pessoa a repetir a MESMA mensagem grande em
-//     janela curta (a 1.ª lê-se; as seguintes, dentro da janela, não).
+// Two PURE and conservative heuristics (opt-in per guild; OFF by default):
+//  1) isRepetitionSpam — massive token repetition WITHIN a message
+//     (e.g. "POKEBOLAS POKEBOLAS ×39"): many tokens + very low diversity.
+//  2) DuplicateTracker — the SAME person repeating the SAME large message in a
+//     short window (the 1st is read; the following ones, within the window, are not).
 //
-// Limiares pinados como constantes exportadas — a superfície de afinação. São
-// deliberadamente conservadores para minimizar falsos positivos (letras de música,
-// contagens). Nada aqui faz I/O.
+// Thresholds pinned as exported constants — the tuning surface. They are deliberately
+// conservative to minimize false positives (song lyrics, counts). Nothing here does I/O.
 
-/** Nº mínimo de tokens para sequer considerar repetição (mensagens curtas nunca são spam). */
+/** Minimum number of tokens to even consider repetition (short messages are never spam). */
 export const REPETITION_MIN_TOKENS = 10;
-/** Diversidade (únicos/total) NO MÁXIMO isto => spam. 0.35: "abc abc abc" (0.33) apanha; frase normal (~0.9) não. */
+/** Diversity (unique/total) AT MOST this => spam. 0.35: "abc abc abc" (0.33) is caught; a normal sentence (~0.9) is not. */
 export const REPETITION_UNIQUE_RATIO_MAX = 0.35;
-/** Comprimento mínimo (chars normalizados) para uma mensagem contar como duplicado-spam. */
+/** Minimum length (normalized chars) for a message to count as duplicate-spam. */
 export const DUPLICATE_MIN_CHARS = 40;
-/** Janela do duplicado: repetições da MESMA mensagem dentro disto são suprimidas. */
+/** Duplicate window: repetitions of the SAME message within this are suppressed. */
 export const DUPLICATE_WINDOW_MS = 60 * 1000;
-/** Teto de entradas do tracker (anti-crescimento); evict da mais antiga ao exceder. */
+/** Cap on tracker entries (anti-growth); evicts the oldest when exceeded. */
 const MAX_ENTRIES = 10_000;
 
-/** Tokeniza para a heurística de repetição: minúsculas, corta em não-(letra|número), sem vazios. PURA. */
+/** Tokenizes for the repetition heuristic: lowercase, split on non-(letter|number), no empties. PURE. */
 function tokenize(text: string): string[] {
   return text
     .toLowerCase()
@@ -30,9 +29,9 @@ function tokenize(text: string): string[] {
 }
 
 /**
- * A mensagem é REPETIÇÃO-spam? True se tiver ≥ REPETITION_MIN_TOKENS tokens E a
- * diversidade (únicos/total) for ≤ REPETITION_UNIQUE_RATIO_MAX. Mensagens curtas
- * (< min tokens) são sempre falsas — não queremos apanhar "sim sim sim". PURA.
+ * Is the message REPETITION-spam? True if it has ≥ REPETITION_MIN_TOKENS tokens AND the
+ * diversity (unique/total) is ≤ REPETITION_UNIQUE_RATIO_MAX. Short messages (< min tokens)
+ * are always false — we do not want to catch "yes yes yes". PURE.
  */
 export function isRepetitionSpam(text: string): boolean {
   const tokens = tokenize(text);
@@ -41,7 +40,7 @@ export function isRepetitionSpam(text: string): boolean {
   return unique / tokens.length <= REPETITION_UNIQUE_RATIO_MAX;
 }
 
-/** Normaliza para comparar duplicados: minúsculas, espaços colapsados, trim. PURA. */
+/** Normalizes for comparing duplicates: lowercase, collapsed spaces, trim. PURE. */
 export function normalizeForDuplicate(text: string): string {
   return text.toLowerCase().replace(/\s+/g, ' ').trim();
 }
@@ -52,13 +51,13 @@ interface DupEntry {
 }
 
 /**
- * Deteta a MESMA pessoa a repetir a MESMA mensagem grande em janela curta, por
- * (guild, author). Estado em memória com cap + evict (padrão do rateLimiter). É uma
- * janela FIXA: uma repetição suprimida NÃO renova o timestamp — passada a janela, a
- * mensagem volta a ser lida uma vez. Relógio passado por chamada (como o rateLimiter).
+ * Detects the SAME person repeating the SAME large message in a short window, per
+ * (guild, author). In-memory state with cap + evict (rateLimiter pattern). It is a FIXED
+ * window: a suppressed repetition does NOT renew the timestamp — once the window passes, the
+ * message is read once again. Clock passed per call (like the rateLimiter).
  */
 export class DuplicateTracker {
-  // Map preserva ordem de inserção → a 1.ª chave é a mais antiga (evict simples).
+  // Map preserves insertion order → the 1st key is the oldest (simple evict).
   private readonly last = new Map<string, DupEntry>();
 
   private static keyOf(guildId: string, authorId: string): string {
@@ -66,10 +65,10 @@ export class DuplicateTracker {
   }
 
   /**
-   * `text` (o corpo já limpo) é duplicado-spam AGORA? False para mensagens curtas
-   * (< DUPLICATE_MIN_CHARS normalizados) — só o flood de mensagens GRANDES conta.
-   * True se for idêntica à última desta pessoa dentro de DUPLICATE_WINDOW_MS. A 1.ª
-   * ocorrência (ou depois da janela, ou texto novo) é REGISTADA e devolve false.
+   * Is `text` (the already-cleaned body) duplicate-spam NOW? False for short messages
+   * (< DUPLICATE_MIN_CHARS normalized) — only the flood of LARGE messages counts. True if it
+   * is identical to this person's last one within DUPLICATE_WINDOW_MS. The 1st occurrence
+   * (or after the window, or new text) is RECORDED and returns false.
    */
   isDuplicateSpam(guildId: string, authorId: string, text: string, nowMs: number): boolean {
     const norm = normalizeForDuplicate(text);
@@ -77,9 +76,9 @@ export class DuplicateTracker {
     const key = DuplicateTracker.keyOf(guildId, authorId);
     const prev = this.last.get(key);
     if (prev && prev.text === norm && nowMs - prev.ts < DUPLICATE_WINDOW_MS) {
-      return true; // duplicado dentro da janela — suprime, sem renovar (janela fixa)
+      return true; // duplicate within the window — suppress, without renewing (fixed window)
     }
-    this.last.delete(key); // reinsere no fim (MRU) para o evict acertar na mais antiga
+    this.last.delete(key); // re-inserts at the end (MRU) so the evict hits the oldest
     this.last.set(key, { text: norm, ts: nowMs });
     if (this.last.size > MAX_ENTRIES) {
       const oldest = this.last.keys().next().value as string | undefined;

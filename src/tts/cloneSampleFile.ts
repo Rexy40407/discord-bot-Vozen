@@ -1,16 +1,16 @@
 // src/tts/cloneSampleFile.ts
 //
-// Camada de FICHEIRO da encriptação de amostras de clone (a cripto pura vive em
-// ./cloneCrypto). Duas operações: cifrar a amostra em disco ao gravar, e materializar
-// uma cópia EM CLARO temporária para o sidecar Python (que lê o .wav por caminho e não
-// sabe decifrar). Sem chave, tudo é no-op/pass-through — retrocompatível.
+// FILE layer of clone-sample encryption (the pure crypto lives in
+// ./cloneCrypto). Two operations: encrypt the sample on disk when saving, and materialize
+// a temporary PLAINTEXT copy for the Python sidecar (which reads the .wav by path and
+// cannot decrypt). Without a key, everything is a no-op/pass-through — backward-compatible.
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
 import { encryptSample, decryptSample, isEncryptedSample } from './cloneCrypto';
 
-/** Cifra o ficheiro de amostra no lugar. No-op sem chave ou se já estiver cifrado. */
+/** Encrypts the sample file in place. No-op without a key or if already encrypted. */
 export function encryptSampleFileInPlace(path: string, key: Buffer | undefined): void {
   if (!key) return;
   const buf = readFileSync(path);
@@ -19,10 +19,10 @@ export function encryptSampleFileInPlace(path: string, key: Buffer | undefined):
 }
 
 /**
- * Devolve um caminho de ficheiro EM CLARO para o sidecar ler. Se a amostra estiver cifrada
- * (e houver chave), decifra para um temp e devolve `{ path: temp, temp: true }` — o chamador
- * apaga o temp com `cleanupMaterialized`. Senão (amostra em claro/legado, ou sem chave)
- * devolve o caminho original `{ path, temp: false }`.
+ * Returns a PLAINTEXT file path for the sidecar to read. If the sample is encrypted
+ * (and there is a key), decrypts it to a temp and returns `{ path: temp, temp: true }` — the caller
+ * deletes the temp with `cleanupMaterialized`. Otherwise (plaintext/legacy sample, or no key)
+ * returns the original path `{ path, temp: false }`.
  */
 export function materializeSampleForSidecar(
   path: string,
@@ -36,7 +36,7 @@ export function materializeSampleForSidecar(
   return { path: out, temp: true };
 }
 
-/** Apaga o temp em claro criado por materializeSampleForSidecar (best-effort). */
+/** Deletes the plaintext temp created by materializeSampleForSidecar (best-effort). */
 export function cleanupMaterialized(ref: { path: string; temp: boolean }): void {
   if (!ref.temp) return;
   try {

@@ -1,31 +1,31 @@
 // src/store/voiceCloneSweep.ts
 //
-// DATA-06: sweep de reconciliação para .wav ÓRFÃOS em voice-clones/. `eraseUser`
-// (dataLifecycle.ts) e `/voice clone delete` (voice.ts) apagam a linha `user_clone` e SÓ
-// DEPOIS tentam apagar o ficheiro do disco, em best-effort (`.catch(()=>{})`/try-catch
-// engolido). Se o processo morrer entre as duas operações, ou o `unlink` rebentar (ex.:
-// ficheiro bloqueado no Windows), a amostra biométrica fica ÓRFÃ — sem NENHUMA linha na
-// BD a referi-la — e nenhum `/privacy erase` futuro a encontra.
+// DATA-06: reconciliation sweep for ORPHAN .wav files in voice-clones/. `eraseUser`
+// (dataLifecycle.ts) and `/voice clone delete` (voice.ts) delete the `user_clone` row and
+// ONLY THEN try to delete the file from disk, best-effort (`.catch(()=>{})`/swallowed
+// try-catch). If the process dies between the two operations, or the `unlink` throws (e.g.:
+// file locked on Windows), the biometric sample becomes ORPHANED — with NO row in the DB
+// referencing it — and no future `/privacy erase` finds it.
 //
-// Este módulo corre no ClientReady (ver index.ts): lista voice-clones/*.wav e apaga os
-// que NÃO têm nenhum `sample_path` vivo em `user_clone` a apontar para eles.
+// This module runs on ClientReady (see index.ts): it lists voice-clones/*.wav and deletes
+// those that have NO live `sample_path` in `user_clone` pointing to them.
 //
-// MED-risco (plano 032, STOP condition): o match é feito contra os VALORES REAIS de
-// `sample_path` — NUNCA por heurística de nome de ficheiro. Um match errado apagaria uma
-// amostra biométrica ainda em uso. Por isso `findOrphanSamplePaths` é uma função PURA e
-// testável em isolamento (sem tocar no disco/BD), e é chamada só depois de normalizar AMBOS
-// os lados (ver `normalizePath`).
+// MED-risk (plan 032, STOP condition): the match is done against the REAL VALUES of
+// `sample_path` — NEVER by filename heuristic. A wrong match would delete a biometric
+// sample still in use. That is why `findOrphanSamplePaths` is a PURE function, testable in
+// isolation (without touching disk/DB), and is only called after normalizing BOTH sides
+// (see `normalizePath`).
 
 import { readdirSync, unlinkSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import type Database from 'better-sqlite3';
 
 /**
- * Normaliza um caminho para comparação: resolve (absolutiza contra o cwd atual, resolve
- * `..`/`.`) e, no Windows (sistema de ficheiros case-insensitive), baixa a caixa — para uma
- * diferença de maiúsculas/minúsculas nunca ser lida como "ficheiros diferentes" e gerar um
- * falso órfão. O processo que ESCREVE (voice.ts) e o que VARRE (este módulo) correm sempre
- * no MESMO SO, por isso esta normalização é suficiente (não há caminhos cross-OS a casar).
+ * Normalizes a path for comparison: resolves (absolutizes against the current cwd, resolves
+ * `..`/`.`) and, on Windows (case-insensitive filesystem), lowercases it — so a difference
+ * in casing is never read as "different files" and generates a false orphan. The process
+ * that WRITES (voice.ts) and the one that SWEEPS (this module) always run on the SAME OS, so
+ * this normalization is sufficient (there are no cross-OS paths to match).
  */
 function normalizePath(p: string): string {
   const resolved = path.resolve(p);
@@ -33,10 +33,10 @@ function normalizePath(p: string): string {
 }
 
 /**
- * Lógica PURA do diff (testável sem fs/BD): dados os caminhos ABSOLUTOS dos .wav
- * encontrados no disco e os `sample_path` REAIS e atuais da tabela `user_clone`, devolve
- * os caminhos ÓRFÃOS — os que não têm NENHUMA linha viva a apontar para eles, depois de
- * normalizar os dois lados. Nunca compara por nome de ficheiro/heurística.
+ * PURE diff logic (testable without fs/DB): given the ABSOLUTE paths of the .wav files found
+ * on disk and the REAL, current `sample_path` values from the `user_clone` table, returns
+ * the ORPHAN paths — those that have NO live row pointing to them, after normalizing both
+ * sides. Never compares by filename/heuristic.
  */
 export function findOrphanSamplePaths(filesOnDisk: string[], livePaths: string[]): string[] {
   const live = new Set(livePaths.map(normalizePath));
@@ -44,21 +44,21 @@ export function findOrphanSamplePaths(filesOnDisk: string[], livePaths: string[]
 }
 
 export interface SweepResult {
-  /** Nº de ficheiros .wav encontrados em voice-clones/. */
+  /** Number of .wav files found in voice-clones/. */
   scanned: number;
-  /** Caminhos dos órfãos efetivamente apagados. */
+  /** Paths of the orphans actually deleted. */
   removed: string[];
-  /** Órfãos identificados mas cujo unlink falhou (ex.: ficheiro bloqueado) — best-effort. */
+  /** Orphans identified but whose unlink failed (e.g.: locked file) — best-effort. */
   failed: { path: string; error: unknown }[];
 }
 
 /**
- * Varre `voiceClonesDir`, casa cada `.wav` contra os `sample_path` reais em `user_clone` e
- * apaga do disco os que ficaram sem correspondência. A leitura da BD NÃO é protegida por
- * try/catch aqui de propósito: uma falha na query (ex.: BD bloqueada) tem de abortar o
- * sweep inteiro (propaga para o chamador) — nunca cair silenciosamente para "sem linhas
- * vivas", o que apagaria TODAS as amostras. O chamador (ClientReady) é que decide o
- * best-effort do arranque. Diretório inexistente => no-op (bot ainda sem nenhuma gravação).
+ * Sweeps `voiceClonesDir`, matches each `.wav` against the real `sample_path` values in
+ * `user_clone` and deletes from disk those left without a match. The DB read is NOT wrapped
+ * in try/catch here on purpose: a query failure (e.g.: locked DB) must abort the whole sweep
+ * (propagates to the caller) — never silently fall back to "no live rows", which would
+ * delete ALL samples. The caller (ClientReady) is the one that decides the best-effort of
+ * startup. Non-existent directory => no-op (bot still has no recordings).
  */
 export function sweepOrphanClones(db: Database.Database, voiceClonesDir: string): SweepResult {
   if (!existsSync(voiceClonesDir)) return { scanned: 0, removed: [], failed: [] };
@@ -80,7 +80,7 @@ export function sweepOrphanClones(db: Database.Database, voiceClonesDir: string)
       unlinkSync(f);
       removed.push(f);
     } catch (err) {
-      // best-effort por ficheiro: um falhar (lock) não deve travar os restantes.
+      // best-effort per file: one failing (lock) must not block the rest.
       failed.push({ path: f, error: err });
     }
   }

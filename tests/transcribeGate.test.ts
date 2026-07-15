@@ -5,8 +5,8 @@ import {
   resolveTranscribeLang,
 } from '../src/commands/transcribeGate';
 
-// Gates PUROS do /transcribe (Fase 4). Decidem SEM IO se a transcrição pode arrancar e
-// quando deve auto-parar — o handler só traduz o veredito em resposta/ação.
+// PURE gates for /transcribe (Phase 4). They decide WITHOUT IO whether transcription can
+// start and when it should auto-stop — the handler just translates the verdict into a response/action.
 
 describe('evaluateTranscribeStart', () => {
   const ok = {
@@ -18,48 +18,48 @@ describe('evaluateTranscribeStart', () => {
     atCapacity: false,
   };
 
-  it('tudo verde -> ok', () => {
+  it('all green -> ok', () => {
     expect(evaluateTranscribeStart(ok)).toBe('ok');
   });
 
-  it('sem Manage-Guild -> noManage (authz primeiro)', () => {
+  it('no Manage-Guild -> noManage (authz first)', () => {
     expect(evaluateTranscribeStart({ ...ok, canManage: false })).toBe('noManage');
   });
 
-  it('sem Premium -> notPremium', () => {
+  it('no Premium -> notPremium', () => {
     expect(evaluateTranscribeStart({ ...ok, isPremium: false })).toBe('notPremium');
   });
 
-  it('sidecar não instalado -> unavailable', () => {
+  it('sidecar not installed -> unavailable', () => {
     expect(evaluateTranscribeStart({ ...ok, sidecarAvailable: false })).toBe('unavailable');
   });
 
-  it('bot fora da call -> notInVoice', () => {
+  it('bot not in the call -> notInVoice', () => {
     expect(evaluateTranscribeStart({ ...ok, botInVoice: false })).toBe('notInVoice');
   });
 
-  it('já a correr -> alreadyRunning', () => {
+  it('already running -> alreadyRunning', () => {
     expect(evaluateTranscribeStart({ ...ok, alreadyRunning: true })).toBe('alreadyRunning');
   });
 
-  it('authz vence entitlement: sem Manage E sem Premium -> noManage', () => {
+  it('authz beats entitlement: no Manage AND no Premium -> noManage', () => {
     expect(evaluateTranscribeStart({ ...ok, canManage: false, isPremium: false })).toBe('noManage');
   });
 
-  // Plano 029 (ABUSE-01): cap GLOBAL de sessões STT concorrentes (todas as guilds,
-  // processo inteiro) — sem isto, N guilds Premium a transcrever ao mesmo tempo
-  // multiplicam cópias do modelo Whisper em RAM e podem fazer OOM ao processo inteiro.
-  it('cap global atingido -> atCapacity', () => {
+  // Plan 029 (ABUSE-01): GLOBAL cap on concurrent STT sessions (all guilds, whole
+  // process) — without this, N Premium guilds transcribing at the same time multiply
+  // copies of the Whisper model in RAM and can OOM the whole process.
+  it('global cap reached -> atCapacity', () => {
     expect(evaluateTranscribeStart({ ...ok, atCapacity: true })).toBe('atCapacity');
   });
 
-  it('já a correr NESTA guild vence atCapacity: estado por-guild é mais específico que o global', () => {
+  it('already running IN THIS guild beats atCapacity: per-guild state is more specific than the global', () => {
     expect(evaluateTranscribeStart({ ...ok, alreadyRunning: true, atCapacity: true })).toBe(
       'alreadyRunning',
     );
   });
 
-  it('atCapacity só dispara depois de authz/entitlement/disponibilidade/voz passarem', () => {
+  it('atCapacity only fires after authz/entitlement/availability/voice pass', () => {
     expect(evaluateTranscribeStart({ ...ok, canManage: false, atCapacity: true })).toBe('noManage');
     expect(evaluateTranscribeStart({ ...ok, isPremium: false, atCapacity: true })).toBe(
       'notPremium',
@@ -76,33 +76,33 @@ describe('evaluateTranscribeStart', () => {
 describe('shouldAutoStop', () => {
   const consented = (id: string) => id === 'a' || id === 'b';
 
-  it('não arma antes de alguém consentir (evita insta-stop no arranque)', () => {
+  it('does not arm before anyone consents (avoids insta-stop at startup)', () => {
     expect(shouldAutoStop(['x', 'y'], consented, false)).toBe(false);
   });
 
-  it('depois de haver consentimento: pára quando não resta ninguém consentido na call', () => {
+  it('after there is consent: stops when no consented person remains in the call', () => {
     expect(shouldAutoStop(['x', 'y'], consented, true)).toBe(true);
   });
 
-  it('depois de haver consentimento: continua enquanto um consentido estiver na call', () => {
+  it('after there is consent: continues while a consented person is in the call', () => {
     expect(shouldAutoStop(['a', 'x'], consented, true)).toBe(false);
   });
 
-  it('call vazia de humanos -> pára (mesmo que ninguém tenha consentido ainda)', () => {
+  it('call empty of humans -> stops (even if nobody has consented yet)', () => {
     expect(shouldAutoStop([], consented, false)).toBe(true);
   });
 });
 
 describe('resolveTranscribeLang', () => {
-  it('a língua escolhida no comando ganha ao locale do servidor', () => {
+  it('the language chosen in the command wins over the server locale', () => {
     expect(resolveTranscribeLang('en', 'pt')).toBe('en');
   });
-  it('sem escolha (null/vazio) cai no locale do servidor', () => {
+  it('with no choice (null/empty) it falls back to the server locale', () => {
     expect(resolveTranscribeLang(null, 'pt')).toBe('pt');
     expect(resolveTranscribeLang('', 'pt')).toBe('pt');
     expect(resolveTranscribeLang('  ', 'pt')).toBe('pt');
   });
-  it('apara e normaliza para minúsculas (código de língua limpo)', () => {
+  it('trims and normalizes to lowercase (clean language code)', () => {
     expect(resolveTranscribeLang(' EN ', 'pt')).toBe('en');
   });
 });

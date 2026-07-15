@@ -1,10 +1,10 @@
 // src/tts/multiSegment.ts — P14.4b
 //
-// Decorator de TTSEngine que, para textos com MAIS DO QUE UMA lingua, sintetiza
-// cada segmento com a voz da sua lingua e concatena os WAVs. EXPERIMENTAL, so e
-// usado quando a flag MULTILINGUAL_SEGMENTS esta ON (ver src/index.ts). Com a
-// flag OFF, este modulo NEM sequer e instanciado — o motor base e usado tal e
-// qual, por isso o comportamento por defeito e byte-a-byte o de hoje.
+// TTSEngine decorator that, for texts with MORE THAN ONE language, synthesizes
+// each segment with its language's voice and concatenates the WAVs. EXPERIMENTAL, only
+// used when the MULTILINGUAL_SEGMENTS flag is ON (see src/index.ts). With the
+// flag OFF, this module is NOT even instantiated — the base engine is used as is,
+// so the default behavior is byte-for-byte today's.
 
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { rmDirSafe } from './cleanupDir';
@@ -18,18 +18,18 @@ import { concatWavs, silenceWav } from './wavConcat';
 import { pickVoice } from '../language/voiceMap';
 import { log } from '../logging/logger';
 
-/** Silencio entre segmentos (ms). Pequeno, anti-clique. */
+/** Silence between segments (ms). Small, anti-click. */
 const SEGMENT_SILENCE_MS = 60;
 
 export class MultiSegmentEngine implements TTSEngine {
   private readonly cache: AudioCache;
 
   /**
-   * @param base           motor real (Piper/Neural) que sintetiza UM segmento.
-   * @param availableModels modelos .onnx disponiveis, para pickVoice por-segmento.
-   * @param cache           cache raiz; o WAV COMBINADO e guardado num namespace
-   *                        SEPARADO ('multiseg') para NUNCA contaminar o caminho
-   *                        single-voice (flag OFF) que usa a mesma chave.
+   * @param base           real engine (Piper/Neural) that synthesizes ONE segment.
+   * @param availableModels available .onnx models, for per-segment pickVoice.
+   * @param cache           root cache; the COMBINED WAV is stored in a SEPARATE
+   *                        namespace ('multiseg') to NEVER contaminate the
+   *                        single-voice path (flag OFF) that uses the same key.
    */
   constructor(
     private readonly base: TTSEngine,
@@ -40,35 +40,35 @@ export class MultiSegmentEngine implements TTSEngine {
   }
 
   async synth(req: SynthRequest): Promise<string> {
-    // Gate single-voice: quando o pedido pede explicitamente UMA voz (voz
-    // deliberadamente escolhida — /voice preview, /joke, /laugh, ou o toggle de
-    // deteccao por-user desligado), NUNCA partimos por segmento. Delega no base com
-    // o req INTACTO (honra `model` e `leadSilenceMs`). Verificado ANTES do split.
+    // Single-voice gate: when the request explicitly asks for ONE voice (a
+    // deliberately chosen voice — /voice preview, /joke, /laugh, or the per-user
+    // detection toggle turned off), we NEVER split by segment. Delegate to base with
+    // the req INTACT (honors `model` and `leadSilenceMs`). Checked BEFORE the split.
     if (req.singleVoice) {
       return this.base.synth(req);
     }
 
-    // Segmentos EXPLICITOS (texto, voz ja resolvidos por prepareSpeech) tomam
-    // precedencia sobre a deteccao por-script: e a sintese MISTURADA (base + girias
-    // EN). Verificado ANTES do detectSegments para nao re-partir por script.
+    // EXPLICIT segments (text, voice already resolved by prepareSpeech) take
+    // precedence over per-script detection: it is the MIXED synthesis (base + EN
+    // slang). Checked BEFORE detectSegments to avoid re-splitting by script.
     if (req.segments && req.segments.length > 0) {
       return this.synthExplicitSegments(req);
     }
 
     const segments = detectSegments(req.text);
 
-    // 0 ou 1 segmento (o caso COMUM: texto monolingue) -> nada a combinar.
-    // Delega no motor base com o req INTACTO — respeita o req.model, que ja vem
-    // resolvido por resolveSynth (a lingua da mensagem decide; a voz preferida
-    // [user > guild > .env] e honrada quando bate a lingua). NAO re-escolhemos a
-    // voz aqui: para texto monolingue o req.model ja e a voz certa para essa
-    // lingua. So partimos por segmento quando ha MESMO >1 lingua.
+    // 0 or 1 segment (the COMMON case: monolingual text) -> nothing to combine.
+    // Delegate to the base engine with the req INTACT — respects req.model, which
+    // comes already resolved by resolveSynth (the message's language decides; the
+    // preferred voice [user > guild > .env] is honored when the language matches). We do
+    // NOT re-pick the voice here: for monolingual text req.model is already the right
+    // voice for that language. We only split by segment when there really is >1 language.
     if (segments.length <= 1) {
       return this.base.synth(req);
     }
 
-    // Chave da cache do resultado COMBINADO (namespace 'multiseg'). Inclui o
-    // req.model (voz-base/fallback) porque afeta a escolha por-segmento.
+    // Cache key of the COMBINED result (namespace 'multiseg'). Includes
+    // req.model (base/fallback voice) because it affects the per-segment choice.
     const key = cacheKey(req);
     const cached = this.cache.get(key);
     if (cached) return cached;
@@ -77,11 +77,11 @@ export class MultiSegmentEngine implements TTSEngine {
       const wavs: Buffer[] = [];
       for (const seg of segments) {
         const model = pickVoice(seg.lang, this.availableModels, req.model);
-        // Cada segmento passa pelo motor base (cache single-voice do base
-        // reutilizada — sintese legitima de um substring). Herda o `engine` E o
-        // `gcloudBudget` da mensagem: o PerUserEngineRouter usa o motor certo do
-        // utilizador e o GCloudEngine (chokepoint) precisa do orçamento — sem ele,
-        // uma mensagem multilíngue de um user Premium cairia em gTTS (fail-safe).
+        // Each segment goes through the base engine (base's single-voice cache
+        // reused — legitimate synthesis of a substring). Inherits the `engine` AND the
+        // `gcloudBudget` of the message: the PerUserEngineRouter uses the user's right
+        // engine and the GCloudEngine (chokepoint) needs the budget — without it,
+        // a multilingual message from a Premium user would fall into gTTS (fail-safe).
         const path = await this.base.synth({
           text: seg.text,
           model,
@@ -95,9 +95,9 @@ export class MultiSegmentEngine implements TTSEngine {
       const combined = this.withLead(req, concatWavs(wavs, { silenceMs: SEGMENT_SILENCE_MS }));
       return this.persist(key, combined);
     } catch (err) {
-      // Politica de erro: se QUALQUER segmento (ou a concatenacao) falha, NAO
-      // crashamos e NAO deixamos cair conteudo — caimos no caminho single-voice
-      // de TODO o texto com a voz-base (req.model). O player recebe sempre um WAV.
+      // Error policy: if ANY segment (or the concatenation) fails, we do NOT
+      // crash and do NOT drop content — we fall into the single-voice path
+      // for ALL the text with the base voice (req.model). The player always gets a WAV.
       log.warn(
         '[multiSegment] per-segment path failed; falling back to a single voice:',
         (err as Error).message,
@@ -107,15 +107,15 @@ export class MultiSegmentEngine implements TTSEngine {
   }
 
   /**
-   * Caminho de segmentos EXPLICITOS: as partes (texto, voz) ja vêm resolvidas em
-   * `req.segments` (sintese MISTURADA — base numa lingua + girias EN em voz inglesa).
-   * NAO re-deteta nem re-parte: sintetiza cada parte com o SEU model e concatena.
+   * EXPLICIT segments path: the parts (text, voice) come already resolved in
+   * `req.segments` (MIXED synthesis — base in one language + EN slang in an English voice).
+   * Does NOT re-detect nor re-split: synthesizes each part with its OWN model and concatenates.
    */
   private async synthExplicitSegments(req: SynthRequest): Promise<string> {
     const segs = req.segments!;
 
-    // Um so segmento -> delega no base com o {text,model} desse segmento (sem
-    // combinar nem cachear no namespace 'multiseg'; a cache single-voice do base chega).
+    // A single segment -> delegate to base with that segment's {text,model} (without
+    // combining or caching in the 'multiseg' namespace; base's single-voice cache is enough).
     if (segs.length === 1) {
       const seg = segs[0];
       return this.base.synth({
@@ -127,16 +127,16 @@ export class MultiSegmentEngine implements TTSEngine {
       });
     }
 
-    // Chave da cache do resultado COMBINADO. Inclui os PROPRIOS segmentos (texto+voz)
-    // para NUNCA colidir com o caminho por-script (chave = cacheKey(req)) nem com uma
-    // mensagem literal igual ao texto juntado. Separadores de unidade (U+241F entre
-    // texto e voz, U+2426 entre segmentos) que nao aparecem em texto normal.
+    // Cache key of the COMBINED result. Includes the segments THEMSELVES (text+voice)
+    // to NEVER collide with the per-script path (key = cacheKey(req)) nor with a
+    // literal message equal to the joined text. Unit separators (U+241F between
+    // text and voice, U+2426 between segments) that do not appear in normal text.
     const SEP_FIELD = '␟';
     const SEP_SEG = '␦';
     const payload = segs.map((s) => `${s.text}${SEP_FIELD}${s.model}`).join(SEP_SEG);
-    // leadSilenceMs entra na chave: com/sem silêncio de arranque não podem colidir. O
-    // MOTOR também (append-only p/ 'piper'): dois users com motores diferentes e o mesmo
-    // texto misturado NÃO se cruzam neste namespace combinado.
+    // leadSilenceMs is part of the key: with/without lead silence cannot collide. The
+    // ENGINE too (append-only for 'piper'): two users with different engines and the same
+    // mixed text do NOT cross in this combined namespace.
     const engineKey = req.engine === 'piper' ? ' piper' : '';
     const key = createHash('sha1')
       .update(`${payload} ${req.speed} lead${req.leadSilenceMs ?? 0}${engineKey}`, 'utf8')
@@ -159,8 +159,8 @@ export class MultiSegmentEngine implements TTSEngine {
       const combined = this.withLead(req, concatWavs(wavs, { silenceMs: SEGMENT_SILENCE_MS }));
       return this.persist(key, combined);
     } catch (err) {
-      // Mesma resiliencia do caminho por-script: se qualquer parte (ou a
-      // concatenacao) falha, cai no single-voice de TODO o texto com a voz-base.
+      // Same resilience as the per-script path: if any part (or the
+      // concatenation) fails, falls into the single-voice of ALL the text with the base voice.
       log.warn(
         '[multiSegment] explicit-segment path failed; falling back to a single voice:',
         (err as Error).message,
@@ -176,11 +176,11 @@ export class MultiSegmentEngine implements TTSEngine {
   }
 
   /**
-   * Escreve o WAV combinado num ficheiro temporario e mete-o na cache 'multiseg'
-   * (que copia para o seu diretorio e devolve o caminho definitivo). Mesmo padrao
-   * do PiperEngine (temp -> cache.put -> cleanup).
+   * Writes the combined WAV to a temporary file and puts it in the 'multiseg' cache
+   * (which copies it to its directory and returns the definitive path). Same pattern
+   * as PiperEngine (temp -> cache.put -> cleanup).
    */
-  /** Prepend `req.leadSilenceMs` de silêncio ao WAV combinado (no-op se 0/ausente). */
+  /** Prepend `req.leadSilenceMs` of silence to the combined WAV (no-op if 0/absent). */
   private withLead(req: SynthRequest, wav: Buffer): Buffer {
     if (req.leadSilenceMs && req.leadSilenceMs > 0) {
       return concatWavs([silenceWav(req.leadSilenceMs), wav], { silenceMs: 0 });

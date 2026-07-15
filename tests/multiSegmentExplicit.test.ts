@@ -1,4 +1,4 @@
-// tests/multiSegmentExplicit.test.ts — caminho de segmentos EXPLICITOS (req.segments)
+// tests/multiSegmentExplicit.test.ts — EXPLICIT segments path (req.segments)
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -30,7 +30,7 @@ function makeWav(data: Buffer): Buffer {
 
 const AVAILABLE = ['en_US-amy-medium', 'pt_PT-tugao-medium'];
 
-describe('MultiSegmentEngine — segmentos EXPLICITOS (req.segments)', () => {
+describe('MultiSegmentEngine — EXPLICIT segments (req.segments)', () => {
   let dir: string;
   let cache: AudioCache;
 
@@ -57,7 +57,7 @@ describe('MultiSegmentEngine — segmentos EXPLICITOS (req.segments)', () => {
     return { engine, calls };
   }
 
-  it('req.segments length 2 -> base.synth uma vez por segmento com o {text,model} certo + concatena', async () => {
+  it('req.segments length 2 -> base.synth once per segment with the right {text,model} + concatenates', async () => {
     const { engine: base, calls } = makeBase();
     const eng = new MultiSegmentEngine(base, AVAILABLE, cache);
     const req: SynthRequest = {
@@ -84,14 +84,14 @@ describe('MultiSegmentEngine — segmentos EXPLICITOS (req.segments)', () => {
     expect(buf.toString('ascii', 0, 4)).toBe('RIFF');
     expect(buf.toString('ascii', 8, 12)).toBe('WAVE');
     const dataSize = buf.readUInt32LE(40);
-    expect(dataSize).toBeGreaterThan(8); // 4 + silencio + 4
+    expect(dataSize).toBeGreaterThan(8); // 4 + silence + 4
   });
 
-  it('PROPAGA engine + gcloudBudget para CADA sub-pedido (senão o Google HD cai em gTTS)', async () => {
-    // Regressão (review Fase 4): o motor gcloud é gated no chokepoint pelo req.gcloudBudget.
-    // Se o caminho por-segmento não o herdasse, uma mensagem multilíngue de um user Premium
-    // chegava ao GCloudEngine SEM orçamento -> fail-safe -> gTTS (Google HD só funcionava nos
-    // comandos-novidade, não no chat normal). Cada segmento TEM de levar engine + gcloudBudget.
+  it('PROPAGATES engine + gcloudBudget to EACH sub-request (otherwise Google HD falls back to gTTS)', async () => {
+    // Regression (Phase 4 review): the gcloud engine is gated at the chokepoint by req.gcloudBudget.
+    // If the per-segment path did not inherit it, a multilingual message from a Premium user
+    // would reach GCloudEngine WITHOUT a budget -> fail-safe -> gTTS (Google HD only worked in
+    // the novelty commands, not in normal chat). Each segment MUST carry engine + gcloudBudget.
     const { engine: base, calls } = makeBase();
     const eng = new MultiSegmentEngine(base, AVAILABLE, cache);
     const budget = { scope: 'user', key: 'u1' } as const;
@@ -115,7 +115,7 @@ describe('MultiSegmentEngine — segmentos EXPLICITOS (req.segments)', () => {
     }
   });
 
-  it('req.segments length 1 -> UMA chamada ao base com o {text,model} do segmento', async () => {
+  it('req.segments length 1 -> ONE call to base with the segment {text,model}', async () => {
     const { engine: base, calls } = makeBase();
     const eng = new MultiSegmentEngine(base, AVAILABLE, cache);
     const req: SynthRequest = {
@@ -131,15 +131,15 @@ describe('MultiSegmentEngine — segmentos EXPLICITOS (req.segments)', () => {
     expect(calls[0]).toMatchObject({ text: 'ola mundo', model: 'pt_PT-tugao-medium', speed: 1.2 });
   });
 
-  it('a chave de cache dos segmentos explicitos NAO colide com um req simples do mesmo `text`', async () => {
-    // T e MULTI-SCRIPT (EN + RU) para que o req SIMPLES tambem tome o caminho
-    // combinado (script-based) e produza a sua propria chave 'multiseg'. Se as
-    // duas chaves colidissem, o 2.o pedido devolveria o WAV do 1.o.
+  it('the cache key of explicit segments does NOT collide with a simple req of the same `text`', async () => {
+    // T is MULTI-SCRIPT (EN + RU) so that the SIMPLE req also takes the
+    // combined (script-based) path and produces its own 'multiseg' key. If the
+    // two keys collided, the 2nd request would return the WAV of the 1st.
     const en = 'good morning to all the members of this server i hope you are doing well';
     const ru = 'привет всем участникам этого замечательного сервера сегодня прекрасный день друзья';
     const T = `${en}. ${ru}`;
 
-    // 1.o motor: caminho por-segmento EXPLICITO.
+    // 1st engine: EXPLICIT per-segment path.
     const base1 = makeBase();
     const eng1 = new MultiSegmentEngine(base1.engine, AVAILABLE, cache);
     const explicitReq: SynthRequest = {
@@ -153,13 +153,13 @@ describe('MultiSegmentEngine — segmentos EXPLICITOS (req.segments)', () => {
     };
     const explicitPath = await eng1.synth(explicitReq);
 
-    // 2.o motor: caminho por-SCRIPT (sem segments), MESMO `text`.
+    // 2nd engine: per-SCRIPT path (no segments), SAME `text`.
     const base2 = makeBase();
     const eng2 = new MultiSegmentEngine(base2.engine, AVAILABLE, cache);
     const plainReq: SynthRequest = { text: T, model: 'pt_PT-tugao-medium', speed: 1 };
     const plainPath = await eng2.synth(plainReq);
 
-    // Chaves de cache distintas -> caminhos de ficheiro distintos (sem colisao).
+    // Distinct cache keys -> distinct file paths (no collision).
     expect(explicitPath).not.toBe(plainPath);
   });
 });

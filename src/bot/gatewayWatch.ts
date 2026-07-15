@@ -1,36 +1,36 @@
 // src/bot/gatewayWatch.ts
 //
-// Observabilidade + recuperação do GATEWAY do Discord.
+// Observability + recovery of the Discord GATEWAY.
 //
-// Causa raiz do "Falha ao carregar opções" recorrente: o bot ficava "online" mas
-// PARAVA de receber interações (gateway zombie) — event-loop idle (0% CPU), nenhuma
-// interação a chegar ao handler, e ZERO no log porque o discord.js não regista
-// problemas de shard sem que se ouçam estes eventos. Aqui:
-//   1. ligamos os listeners de shard (disconnect/reconnecting/resume/ready/error) —
-//      o CÓDIGO de fecho da desconexão diz PORQUÊ (ex.: 4014 = intents proibidos);
-//   2. um heartbeat periódico (estado do WS) — "silêncio" deixa de ser ambíguo;
-//   3. um watchdog: se o gateway estiver NÃO-Ready de forma sustentada, saímos com
-//      código != 0 para o supervisor (start-prod.mjs) reiniciar de FRESCO — a forma
-//      mais fiável de recuperar de uma sessão zombie.
+// Root cause of the recurring "Failed to load options": the bot stayed "online" but
+// STOPPED receiving interactions (zombie gateway) — idle event-loop (0% CPU), no
+// interaction reaching the handler, and NOTHING in the log because discord.js does not
+// log shard problems unless these events are listened to. Here:
+//   1. we bind the shard listeners (disconnect/reconnecting/resume/ready/error) —
+//      the disconnect close CODE tells WHY (e.g. 4014 = disallowed intents);
+//   2. a periodic heartbeat (WS status) — "silence" is no longer ambiguous;
+//   3. a watchdog: if the gateway is NOT-Ready in a sustained way, we exit with
+//      a code != 0 so the supervisor (start-prod.mjs) restarts FRESH — the most
+//      reliable way to recover from a zombie session.
 //
-// A decisão do watchdog vive numa função PURA (evaluateGateway) para ser testável
-// sem timers nem um Client real.
+// The watchdog decision lives in a PURE function (evaluateGateway) to be testable
+// without timers or a real Client.
 
 import { type Client, Events, Status } from 'discord.js';
 
 export interface GatewayDecision {
   healthy: boolean;
-  /** Instante (ms) em que ficou não-saudável, ou null se saudável. */
+  /** Instant (ms) when it became unhealthy, or null if healthy. */
   unhealthySince: number | null;
-  /** Há quanto tempo (ms) está não-saudável (0 se saudável). */
+  /** How long (ms) it has been unhealthy (0 if healthy). */
   downMs: number;
-  /** true => está em baixo há mais do que o limite: reiniciar. */
+  /** true => it has been down for longer than the limit: restart. */
   shouldRestart: boolean;
 }
 
 /**
- * Decisão pura do watchdog. `statusReady` = o WS está Ready. Devolve o novo
- * `unhealthySince` (a re-injetar na próxima chamada) e se se deve reiniciar.
+ * Pure watchdog decision. `statusReady` = the WS is Ready. Returns the new
+ * `unhealthySince` (to re-inject on the next call) and whether to restart.
  */
 export function evaluateGateway(
   statusReady: boolean,
@@ -54,15 +54,15 @@ export interface GatewayWatchDeps {
   reportError: (e: unknown, ctx: string) => void;
   exit: () => void;
   now?: () => number;
-  /** Cadência do watchdog (default 60s). */
+  /** Watchdog cadence (default 60s). */
   checkMs?: number;
-  /** Tempo NÃO-Ready até reiniciar (default 120s). */
+  /** Time NOT-Ready before restarting (default 120s). */
   maxDownMs?: number;
-  /** A cada quantas verificações saudáveis se regista um heartbeat (default 5 => ~5min). */
+  /** Every how many healthy checks a heartbeat is logged (default 5 => ~5min). */
   healthyLogEvery?: number;
 }
 
-/** Liga os listeners de shard + o heartbeat/watchdog. Devolve um stop() (para testes). */
+/** Binds the shard listeners + the heartbeat/watchdog. Returns a stop() (for tests). */
 export function bindGatewayWatch(deps: GatewayWatchDeps): { stop: () => void } {
   const {
     client,
@@ -77,9 +77,9 @@ export function bindGatewayWatch(deps: GatewayWatchDeps): { stop: () => void } {
     healthyLogEvery = 5,
   } = deps;
 
-  // ── Listeners de shard: tornam o gateway VISÍVEL no log ──────────────────────
+  // ── Shard listeners: make the gateway VISIBLE in the log ──────────────────────
   client.on(Events.ShardDisconnect, (event, id) => {
-    // event.code é o código de fecho do WebSocket — a pista mais importante.
+    // event.code is the WebSocket close code — the most important clue.
     logWarn(
       `[gateway] shard ${id} desligou (código ${event?.code ?? '?'}) — o discord.js vai reconectar.`,
     );
@@ -95,7 +95,7 @@ export function bindGatewayWatch(deps: GatewayWatchDeps): { stop: () => void } {
   });
   client.on(Events.Warn, (m) => logWarn(`[gateway] aviso: ${m}`));
 
-  // ── Heartbeat + watchdog ─────────────────────────────────────────────────────
+  // ── Heartbeat + watchdog ──────────────────────────────────────────────────────
   let unhealthySince: number | null = null;
   let healthyTicks = 0;
   const timer = setInterval(() => {
@@ -103,7 +103,7 @@ export function bindGatewayWatch(deps: GatewayWatchDeps): { stop: () => void } {
     const decision = evaluateGateway(ready, unhealthySince, now(), maxDownMs);
     unhealthySince = decision.unhealthySince;
     if (decision.healthy) {
-      // Regista o heartbeat saudável só de vez em quando (não encher o log).
+      // Log the healthy heartbeat only occasionally (to avoid filling the log).
       if (healthyTicks % healthyLogEvery === 0) {
         logInfo(
           `[gateway] saudável: Ready, ping ${Math.round(client.ws.ping)}ms, ${client.guilds.cache.size} servidor(es).`,

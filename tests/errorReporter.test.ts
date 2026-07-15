@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createErrorReporter, formatErrorMessage } from '../src/errorReporter';
 
-// Params tipados (url, opts) p/ o typecheck: sem eles .mock.calls fica tuplo vazio.
-// O mock é passado com cast `as unknown as typeof fetch`, por isso a forma do opts
-// pode ser a que o teste lê (method+body).
+// Typed params (url, opts) for the typecheck: without them .mock.calls is an empty tuple.
+// The mock is passed with the cast `as unknown as typeof fetch`, so the shape of opts
+// can be the one the test reads (method+body).
 function okFetch() {
   return vi.fn(
     async (_url: string, _opts: { method: string; body: string }) =>
@@ -12,49 +12,49 @@ function okFetch() {
 }
 
 describe('formatErrorMessage', () => {
-  it('inclui o contexto e o stack num code block', () => {
+  it('includes the context and the stack in a code block', () => {
     const msg = formatErrorMessage(new Error('boom'), 'gateway');
     expect(msg).toContain('gateway');
     expect(msg).toContain('boom');
     expect(msg).toContain('```');
   });
 
-  it('trunca conteúdos gigantes para caber no limite do Discord', () => {
+  it('truncates huge contents to fit within the Discord limit', () => {
     const big = new Error('x'.repeat(5000));
     const msg = formatErrorMessage(big, 'ctx');
     expect(msg.length).toBeLessThanOrEqual(1900);
   });
 
-  it('SEC-03: redige um token com forma de token do Discord', () => {
-    // Token SINTÉTICO (nunca um real): 3 blocos base64url com os comprimentos típicos.
+  it('SEC-03: redacts a token shaped like a Discord token', () => {
+    // SYNTHETIC token (never a real one): 3 base64url blocks with the typical lengths.
     const fake = `${'A'.repeat(24)}.${'B'.repeat(6)}.${'C'.repeat(27)}`;
     const msg = formatErrorMessage(new Error(`401 ao usar ${fake}`), 'ctx');
     expect(msg).not.toContain(fake);
     expect(msg).toContain('[token-redigido]');
   });
 
-  it('SEC-03: redige credenciais Bearer', () => {
+  it('SEC-03: redacts Bearer credentials', () => {
     const msg = formatErrorMessage(new Error('Authorization: Bearer abc.def-123'), 'ctx');
     expect(msg).not.toContain('abc.def-123');
     expect(msg).toContain('Bearer [redigido]');
   });
 
-  it('SEC-03: corpo limitado a 1500 chars antes do invólucro', () => {
+  it('SEC-03: body limited to 1500 chars before the wrapper', () => {
     const msg = formatErrorMessage(new Error('x'.repeat(5000)), 'ctx');
-    // corpo = 1500; invólucro (cabeçalho + code fences) é pequeno e fixo
+    // body = 1500; wrapper (header + code fences) is small and fixed
     expect(msg.length).toBeLessThanOrEqual(1500 + 100);
   });
 
-  // Plano 032 (SECRET-03): alarga o scrubber para além do token Discord + Bearer. Valores
-  // SINTÉTICOS abaixo (nunca reais) — só têm a FORMA de uma chave/header real.
-  it('SECRET-03: redige uma chave da OpenAI (sk-...)', () => {
+  // Plan 032 (SECRET-03): extends the scrubber beyond the Discord token + Bearer. SYNTHETIC
+  // values below (never real) — they only have the SHAPE of a real key/header.
+  it('SECRET-03: redacts an OpenAI key (sk-...)', () => {
     const fake = `sk-${'F'.repeat(40)}`;
     const msg = formatErrorMessage(new Error(`401 ao chamar a OpenAI com ${fake}`), 'ctx');
     expect(msg).not.toContain(fake);
     expect(msg).toContain('[chave-redigida]');
   });
 
-  it('SECRET-03: redige o valor do header x-goog-api-key', () => {
+  it('SECRET-03: redacts the value of the x-goog-api-key header', () => {
     const fake = `AIzaSyFAKE${'X'.repeat(20)}`;
     const msg = formatErrorMessage(
       new Error(`Google TTS 403: header x-goog-api-key: ${fake} rejeitado`),
@@ -64,7 +64,7 @@ describe('formatErrorMessage', () => {
     expect(msg).toContain('[chave-redigida]');
   });
 
-  it('SECRET-03: redige o valor da query key= (API REST da Google)', () => {
+  it('SECRET-03: redacts the value of the key= query param (Google REST API)', () => {
     const fake = `AIzaSyQUERYFAKE${'Y'.repeat(15)}`;
     const msg = formatErrorMessage(
       new Error(`GET https://texttospeech.googleapis.com/v1/text:synthesize?key=${fake} falhou`),
@@ -74,14 +74,14 @@ describe('formatErrorMessage', () => {
     expect(msg).toContain('[chave-redigida]');
   });
 
-  it('SECRET-03: redige um header authorization genérico (não-Bearer, ex. Basic)', () => {
-    const fake = 'ZmFrZTp1c2Vy'; // placeholder base64, nunca um segredo real
+  it('SECRET-03: redacts a generic authorization header (non-Bearer, e.g. Basic)', () => {
+    const fake = 'ZmFrZTp1c2Vy'; // base64 placeholder, never a real secret
     const msg = formatErrorMessage(new Error(`403: Authorization: Basic ${fake}`), 'ctx');
     expect(msg).not.toContain(fake);
     expect(msg).toContain('[redigido]');
   });
 
-  it('SECRET-03: continua a redigir Bearer normalmente (o padrão genérico não regride isto)', () => {
+  it('SECRET-03: still redacts Bearer normally (the generic pattern does not regress this)', () => {
     const msg = formatErrorMessage(new Error('Authorization: Bearer abc.def-123'), 'ctx');
     expect(msg).not.toContain('abc.def-123');
     expect(msg).toContain('Bearer [redigido]');
@@ -89,14 +89,14 @@ describe('formatErrorMessage', () => {
 });
 
 describe('createErrorReporter', () => {
-  it('sem url -> no-op (não faz fetch)', async () => {
+  it('no url -> no-op (does not fetch)', async () => {
     const fetchImpl = okFetch();
     const r = createErrorReporter(undefined, fetchImpl as unknown as typeof fetch);
     expect(await r.report(new Error('e'), 'ctx')).toBe(false);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('com url -> envia POST ao webhook com content', async () => {
+  it('with url -> sends POST to the webhook with content', async () => {
     const fetchImpl = okFetch();
     const r = createErrorReporter(
       'https://discord.com/api/webhooks/x',
@@ -109,17 +109,17 @@ describe('createErrorReporter', () => {
     expect(JSON.parse(opts.body).content).toContain('boom');
   });
 
-  it('DEDUP: o mesmo erro só é enviado UMA vez', async () => {
+  it('DEDUP: the same error is only sent ONCE', async () => {
     const fetchImpl = okFetch();
     const r = createErrorReporter('https://wh', fetchImpl as unknown as typeof fetch);
     const err = new Error('repetido');
     await r.report(err, 'ctx');
     await r.report(err, 'ctx');
     await r.report(err, 'ctx');
-    expect(fetchImpl).toHaveBeenCalledTimes(1); // 2ª e 3ª suprimidas
+    expect(fetchImpl).toHaveBeenCalledTimes(1); // 2nd and 3rd suppressed
   });
 
-  it('erros DIFERENTES são ambos enviados', async () => {
+  it('DIFFERENT errors are both sent', async () => {
     const fetchImpl = okFetch();
     const r = createErrorReporter('https://wh', fetchImpl as unknown as typeof fetch);
     await r.report(new Error('um'), 'ctx');
@@ -127,7 +127,7 @@ describe('createErrorReporter', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
-  it('falha de rede -> false, nunca lança', async () => {
+  it('network failure -> false, never throws', async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error('down');
     });
@@ -135,10 +135,10 @@ describe('createErrorReporter', () => {
     expect(await r.report(new Error('e'), 'ctx')).toBe(false);
   });
 
-  // Bug-hunt 2026-07: o hash era marcado "seen" ANTES do envio ter sucesso, por isso
-  // uma falha transitória perdia esse erro para sempre na janela de dedup. Agora, se o
-  // envio falhar, a MESMA ocorrência pode ser re-tentada; a dedup só cola após sucesso.
-  it('envio falhado NÃO deduplica: a próxima ocorrência re-tenta e ao ter sucesso passa a deduplicar', async () => {
+  // Bug-hunt 2026-07: the hash was marked "seen" BEFORE the send succeeded, so a
+  // transient failure lost that error forever within the dedup window. Now, if the
+  // send fails, the SAME occurrence can be retried; dedup only sticks after success.
+  it('failed send does NOT dedup: the next occurrence retries and once it succeeds starts deduping', async () => {
     let ok = false;
     const fetchImpl = vi.fn(async () => {
       if (!ok) throw new Error('down');
@@ -146,22 +146,22 @@ describe('createErrorReporter', () => {
     });
     const r = createErrorReporter('https://wh', fetchImpl as unknown as typeof fetch);
     const err = new Error('flaky');
-    // 1ª: rede em baixo -> false, e NÃO fica preso como "seen".
+    // 1st: network down -> false, and does NOT get stuck as "seen".
     expect(await r.report(err, 'ctx')).toBe(false);
-    // 2ª: rede recupera -> re-tenta e envia (prova de que não foi deduplicado).
+    // 2nd: network recovers -> retries and sends (proof it was not deduped).
     ok = true;
     expect(await r.report(err, 'ctx')).toBe(true);
-    // 3ª: agora sim deduplica (já foi enviado com sucesso).
+    // 3rd: now it does dedup (it was already sent successfully).
     expect(await r.report(err, 'ctx')).toBe(false);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
-  it('dedup distingue rejeições NÃO-Error diferentes (objetos simples)', async () => {
+  it('dedup distinguishes different NON-Error rejections (plain objects)', async () => {
     const fetchImpl = okFetch();
     const r = createErrorReporter('https://wh', fetchImpl as unknown as typeof fetch);
     await r.report({ code: 'A', detail: 'um' }, 'ctx');
     await r.report({ code: 'B', detail: 'dois' }, 'ctx');
-    // Antes: ambos hasheavam "[object Object]" e o 2.º era suprimido. Agora: 2 envios.
+    // Before: both hashed "[object Object]" and the 2nd was suppressed. Now: 2 sends.
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

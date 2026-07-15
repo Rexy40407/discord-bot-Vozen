@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { PermissionFlagsBits, PermissionsBitField } from 'discord.js';
 
-// Mock minimo de @discordjs/voice — o /invite nao liga a voz, mas o modulo de
-// comandos importa-o no topo, por isso o import precisa de resolver.
+// Minimal mock of @discordjs/voice — /invite doesn't touch voice, but the commands
+// module imports it at the top, so the import needs to resolve.
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
   getVoiceConnection: () => undefined,
@@ -13,10 +13,10 @@ import type { BotDeps } from '../src/bot/deps';
 
 const GUILD = 'g-invite-test';
 
-// O valor "verdadeiro" das permissoes, recomputado AQUI a partir dos 5 bits
-// nomeados (NAO importado da implementacao, NAO um literal solto). Se a
-// implementacao deixar cair um bit, este valor diverge e o teste (c) falha —
-// e exatamente esse o guard que o contrato pede.
+// The "true" permissions value, recomputed HERE from the 5 named bits
+// (NOT imported from the implementation, NOT a loose literal). If the
+// implementation drops a bit, this value diverges and test (c) fails —
+// that is exactly the guard the contract asks for.
 const EXPECTED_PERMISSIONS = new PermissionsBitField([
   PermissionFlagsBits.Connect,
   PermissionFlagsBits.Speak,
@@ -24,7 +24,7 @@ const EXPECTED_PERMISSIONS = new PermissionsBitField([
   PermissionFlagsBits.SendMessages,
   PermissionFlagsBits.ReadMessageHistory,
   PermissionFlagsBits.EmbedLinks,
-  // Threads dos jogos (/game): criar/escrever/apagar a thread descartável por partida.
+  // Game threads (/game): create/write/delete the disposable per-match thread.
   PermissionFlagsBits.CreatePublicThreads,
   PermissionFlagsBits.SendMessagesInThreads,
   PermissionFlagsBits.ManageThreads,
@@ -55,7 +55,7 @@ function makeInviteInteraction(): FakeInteraction {
   };
 }
 
-// deps com um clientId presente (caminho feliz)
+// deps with a clientId present (happy path)
 function makeDeps(clientId: string | undefined): BotDeps {
   return {
     client: { user: { id: 'bot-1' } },
@@ -67,60 +67,60 @@ function makeDeps(clientId: string | undefined): BotDeps {
 
 const CLIENT_ID = '123456789012345678';
 
-describe('/invite — gera o link de convite OAuth2', () => {
-  it('(a) o reply contem o CLIENT_ID esperado', async () => {
+describe('/invite — generates the OAuth2 invite link', () => {
+  it('(a) the reply contains the expected CLIENT_ID', async () => {
     const i = makeInviteInteraction();
     await handleInteraction(i as any, makeDeps(CLIENT_ID));
     const text = i.replies.join('\n');
     expect(text).toContain(`client_id=${CLIENT_ID}`);
   });
 
-  it('(b) contem os scopes bot e applications.commands', async () => {
+  it('(b) contains the bot and applications.commands scopes', async () => {
     const i = makeInviteInteraction();
     await handleInteraction(i as any, makeDeps(CLIENT_ID));
     const text = i.replies.join('\n');
-    // O scope viaja como "bot applications.commands"; o espaco pode ficar
-    // codificado (+/%20) consoante a construcao do URL, por isso afirmamos cada
-    // token de forma independente em vez de um literal com espaco cru.
+    // The scope travels as "bot applications.commands"; the space may be
+    // encoded (+/%20) depending on how the URL is built, so we assert each
+    // token independently instead of a literal with a raw space.
     expect(text).toMatch(/scope=/);
     expect(text).toContain('bot');
     expect(text).toContain('applications.commands');
   });
 
-  it('(c) permissions corresponde ao inteiro derivado dos bits do INVITE_PERMISSIONS', async () => {
+  it('(c) permissions matches the integer derived from the INVITE_PERMISSIONS bits', async () => {
     const i = makeInviteInteraction();
     await handleInteraction(i as any, makeDeps(CLIENT_ID));
     const text = i.replies.join('\n');
     expect(text).toContain(`permissions=${EXPECTED_PERMISSIONS}`);
   });
 
-  it('e o URL e o endpoint oauth2/authorize do Discord', async () => {
+  it('and the URL is the Discord oauth2/authorize endpoint', async () => {
     const i = makeInviteInteraction();
     await handleInteraction(i as any, makeDeps(CLIENT_ID));
     const text = i.replies.join('\n');
     expect(text).toContain('https://discord.com/oauth2/authorize');
-    // mensagem de marca em PT
+    // brand message
     expect(text).toMatch(/Vozen/);
   });
 
-  it('(d) CLIENT_ID ausente → mensagem clara, sem link partido', async () => {
+  it('(d) missing CLIENT_ID → clear message, no broken link', async () => {
     const i = makeInviteInteraction();
     await handleInteraction(i as any, makeDeps(undefined));
     const text = i.replies.join('\n');
     expect(i.replies.length).toBeGreaterThan(0);
-    // mensagem clara (nao um link partido)
+    // clear message (not a broken link)
     expect(text).not.toContain('discord.com/oauth2');
     expect(text).not.toContain('client_id=');
-    // explica que falta configuracao
+    // explains that configuration is missing
     expect(text).toMatch(/nao.*configurad|configurad.*nao|indisponivel|CLIENT_ID/i);
   });
 });
 
-describe('/invite — definicao do comando', () => {
-  it('esta registado em commandDefs como comando top-level (NAO admin-only)', () => {
+describe('/invite — command definition', () => {
+  it('is registered in commandDefs as a top-level command (NOT admin-only)', () => {
     const def = commandDefs.find((c) => c.name === 'invite');
     expect(def).toBeDefined();
-    // top-level, qualquer utilizador: sem restricao de permissoes por defeito
+    // top-level, any user: no permission restriction by default
     expect(def?.default_member_permissions ?? undefined).toBeUndefined();
   });
 });

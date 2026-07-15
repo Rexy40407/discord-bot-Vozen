@@ -1,8 +1,8 @@
 import type Database from 'better-sqlite3';
 
-// "Tagarelas do servidor": conta quantas mensagens de cada pessoa o Vozen LEU (auto-read)
-// por-(guild,user) e um STREAK de dias seguidos com pelo menos uma mensagem lida. Alimenta
-// o /topspeakers. O streak baseia-se no dia LOCAL do servidor (chave 'YYYY-MM-DD').
+// "Server chatterboxes": counts how many messages from each person Vozen has READ (auto-read)
+// per-(guild,user) and a STREAK of consecutive days with at least one message read. Feeds
+// /topspeakers. The streak is based on the server's LOCAL day (key 'YYYY-MM-DD').
 
 export interface TalkRow {
   userId: string;
@@ -19,7 +19,7 @@ interface DbRow {
   last_date: string;
 }
 
-/** Chave de dia LOCAL 'YYYY-MM-DD' de uma Date. PURA. */
+/** LOCAL day key 'YYYY-MM-DD' from a Date. PURE. */
 export function dateKey(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -27,24 +27,24 @@ export function dateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Chave do dia `n` dias ANTES de `d` (DST-safe: usa componentes, não subtração de ms). PURA. */
+/** Key of the day `n` days BEFORE `d` (DST-safe: uses components, not ms subtraction). PURE. */
 export function dayKeyMinus(d: Date, n: number): string {
   return dateKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - n));
 }
 
-/** Chave do dia ANTERIOR a `d` (DST-safe). PURA. */
+/** Key of the day BEFORE `d` (DST-safe). PURE. */
 export function prevDateKey(d: Date): string {
   return dayKeyMinus(d, 1);
 }
 
 /**
- * Streak VIVO no dia de referência `now` (regras estilo Duolingo). O `streak` guardado só
- * é atualizado quando a pessoa fala (`bumpTalk`), por isso entre mensagens fica ESTÁTICO —
- * esta função corrige-o para o valor REAL de hoje:
- *  - falou hoje, ontem OU anteontem (1 dia falhado, dentro do "freeze") => streak intacto;
- *  - 3+ dias sem falar (2 dias SEGUIDOS falhados) => 0 (perdido para sempre).
- * Simétrico do `bumpTalk`: este continua o streak para gaps <= 2 e reinicia para gaps >= 3.
- * PURA.
+ * LIVE streak on the reference day `now` (Duolingo-style rules). The stored `streak` is only
+ * updated when the person speaks (`bumpTalk`), so between messages it stays STATIC —
+ * this function corrects it to today's REAL value:
+ *  - spoke today, yesterday OR the day before (1 missed day, within the "freeze") => streak intact;
+ *  - 3+ days without speaking (2 CONSECUTIVE missed days) => 0 (lost forever).
+ * Symmetric with `bumpTalk`: this one continues the streak for gaps <= 2 and resets for gaps >= 3.
+ * PURE.
  */
 export function effectiveStreak(lastDate: string, storedStreak: number, now: Date): number {
   const today = dateKey(now);
@@ -53,19 +53,19 @@ export function effectiveStreak(lastDate: string, storedStreak: number, now: Dat
   return lastDate === today || lastDate === y1 || lastDate === y2 ? storedStreak : 0;
 }
 
-/** Resultado de `bumpTalk`: se esta foi a PRIMEIRA mensagem do dia (para o aviso de
- * streak 🔥) e o streak ATUAL de dias seguidos. */
+/** Result of `bumpTalk`: whether this was the FIRST message of the day (for the streak 🔥
+ * notice) and the CURRENT streak of consecutive days. */
 export interface TalkBump {
   firstOfDay: boolean;
   streak: number;
 }
 
 /**
- * Regista UMA mensagem lida de `userId` no dia `now`: +1 na contagem e atualiza o streak
- * — mantém-se se já falou hoje, +1 se falou ontem, reinicia a 1 caso contrário. Atualiza
- * também o melhor streak. UPSERT (cria a linha na primeira mensagem). `now` injetável.
- * Devolve `{ firstOfDay, streak }` — o chamador usa-o para o aviso de streak (só na 1.ª
- * mensagem de cada dia).
+ * Records ONE read message from `userId` on day `now`: +1 to the count and updates the streak
+ * — stays the same if already spoke today, +1 if spoke yesterday, resets to 1 otherwise. Also
+ * updates the best streak. UPSERT (creates the row on the first message). `now` injectable.
+ * Returns `{ firstOfDay, streak }` — the caller uses it for the streak notice (only on the 1st
+ * message of each day).
  */
 export function bumpTalk(
   db: Database.Database,
@@ -74,8 +74,8 @@ export function bumpTalk(
   now: Date,
 ): TalkBump {
   const today = dateKey(now);
-  const y1 = dayKeyMinus(now, 1); // ontem
-  const y2 = dayKeyMinus(now, 2); // anteontem (== 1 dia falhado -> freeze)
+  const y1 = dayKeyMinus(now, 1); // yesterday
+  const y2 = dayKeyMinus(now, 2); // day before yesterday (== 1 missed day -> freeze)
   const row = db
     .prepare(
       'SELECT spoken_count, streak, best_streak, last_date FROM talk_stats WHERE guild_id = ? AND user_id = ?',
@@ -90,16 +90,16 @@ export function bumpTalk(
     return { firstOfDay: true, streak: 1 };
   }
 
-  // firstOfDay = ainda não tinha falado HOJE (a última mensagem é de outro dia).
+  // firstOfDay = had not yet spoken TODAY (the last message is from another day).
   const firstOfDay = row.last_date !== today;
-  // Regras Duolingo: falhar 1 dia NÃO parte o streak (freeze — o dia falhado não conta,
-  // mas o de hoje soma +1); falhar 2 dias SEGUIDOS (gap >= 3) perde tudo -> recomeça a 1.
+  // Duolingo rules: missing 1 day does NOT break the streak (freeze — the missed day doesn't
+  // count, but today adds +1); missing 2 CONSECUTIVE days (gap >= 3) loses everything -> restarts at 1.
   let streak: number;
   if (row.last_date === today)
-    streak = row.streak; // já contou hoje
+    streak = row.streak; // already counted today
   else if (row.last_date === y1 || row.last_date === y2)
-    streak = row.streak + 1; // dia seguido OU 1 dia falhado (freeze) -> continua
-  else streak = 1; // 2+ dias seguidos falhados (ou datas do futuro) -> perde
+    streak = row.streak + 1; // consecutive day OR 1 missed day (freeze) -> continues
+  else streak = 1; // 2+ consecutive missed days (or future dates) -> loses
   const best = Math.max(row.best_streak, streak);
 
   db.prepare(
@@ -111,11 +111,11 @@ export function bumpTalk(
 }
 
 /**
- * Top `limit` do leaderboard de STREAKS desta guild: ranqueado por DIAS de streak VIVO
- * (`effectiveStreak` em `now`) desc, desempate por contagem de mensagens desc. Um streak
- * MORTO (3+ dias sem falar) conta como 0 e afunda — o leaderboard mostra o standing ATUAL,
- * não valores obsoletos. Busca todas as linhas da guild e ordena em JS (o streak vivo
- * depende de `now`, não dá para ordenar em SQL). `now` injetável para testes.
+ * Top `limit` of this guild's STREAK leaderboard: ranked by DAYS of LIVE streak
+ * (`effectiveStreak` at `now`) desc, tie-broken by message count desc. A DEAD streak
+ * (3+ days without speaking) counts as 0 and sinks — the leaderboard shows the CURRENT
+ * standing, not stale values. Fetches all rows of the guild and sorts in JS (the live streak
+ * depends on `now`, can't be sorted in SQL). `now` injectable for tests.
  */
 export function getTopSpeakers(
   db: Database.Database,

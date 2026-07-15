@@ -66,7 +66,7 @@ const msg = (authorId: string, content: string) => ({
   authorName: authorId.toUpperCase(),
   content,
 });
-// A última chave enviada e os seus params (o translate mock devolve "key {json}").
+// The last key sent and its params (the translate mock returns "key {json}").
 function lastSend(send: ReturnType<typeof vi.fn>): {
   key: string;
   params: Record<string, unknown>;
@@ -78,22 +78,22 @@ function lastSend(send: ReturnType<typeof vi.fn>): {
   try {
     params = sp === -1 ? {} : JSON.parse(raw.slice(sp + 1));
   } catch {
-    /* sem params */
+    /* no params */
   }
   return { key, params };
 }
 const sentKeys = (send: ReturnType<typeof vi.fn>): string[] =>
   send.mock.calls.map((c) => String(c[1]).split(' ')[0]);
 
-// Índice: 1.ª letra -> uma palavra PT real e curta (>=5 letras, para passar qualquer mínimo).
+// Index: first letter -> a real, short PT word (>=5 letters, to pass any minimum).
 let wordByLetter: Map<string, string[]>;
 beforeAll(() => {
   const file = join(__dirname, '..', 'assets', 'wordlists', 'pt.txt');
-  // Split em /\r?\n/ (NAO so '\n'): num checkout CRLF (Windows, core.autocrlf=true) o
-  // '\n' deixaria um '\r' final na palavra (ex.: "gabar\r"). Essa palavra e usada como
-  // conteudo da mensagem E na asserção say({ text: word }); o jogo fala a forma
-  // normalizada (sem '\r'), pelo que a asserção nunca casaria e o say nao seria detetado
-  // — a raiz do teste flaky (0 chamadas ao say). Em LF fica byte-a-byte identico.
+  // Split on /\r?\n/ (NOT just '\n'): in a CRLF checkout (Windows, core.autocrlf=true)
+  // '\n' would leave a trailing '\r' on the word (e.g. "gabar\r"). That word is used as
+  // the message content AND in the say({ text: word }) assertion; the game speaks the
+  // normalized form (without '\r'), so the assertion would never match and say would not
+  // be detected — the root cause of the flaky test (0 calls to say). On LF it is byte-for-byte identical.
   const words = readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean);
   wordByLetter = new Map();
   for (const w of words) {
@@ -103,7 +103,7 @@ beforeAll(() => {
     wordByLetter.set(w[0], arr);
   }
 });
-/** Uma palavra PT real começada por `letter` e ainda não usada em `used`. */
+/** A real PT word starting with `letter` and not yet used in `used`. */
 function pickWord(letter: string, used: Set<string>): string {
   const arr = wordByLetter.get(letter.toLowerCase()) ?? [];
   const w = arr.find((x) => !used.has(x));
@@ -111,13 +111,13 @@ function pickWord(letter: string, used: Set<string>): string {
   return w;
 }
 
-describe('word-chain — integração (manager + clock falso, wordlist PT real)', () => {
-  it('lobby: <2 jogadores -> cancela', async () => {
+describe('word-chain — integration (manager + fake clock, real PT wordlist)', () => {
+  it('lobby: <2 players -> cancels', async () => {
     const { env, clock, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('word-chain')!.create({ language: 'pt' }), false, 'pt');
     await flush();
-    mgr.handleMessage(msg('u1', 'eu')); // só 1 jogador
+    mgr.handleMessage(msg('u1', 'eu')); // only 1 player
     await flush();
     clock.advance(20000);
     await flush();
@@ -125,7 +125,7 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('welcome falado na voz PT + palavra aceite é lida em voz alta', async () => {
+  it('welcome spoken in the PT voice + accepted word is read aloud', async () => {
     const { env, clock, send, say } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('word-chain')!.create({ language: 'pt' }), false, 'pt');
@@ -133,30 +133,30 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     mgr.handleMessage(msg('u1', 'entro'));
     mgr.handleMessage(msg('u2', 'eu tambem'));
     await flush();
-    clock.advance(20000); // fim do lobby -> começa
+    clock.advance(20000); // end of lobby -> starts
     await flush();
 
-    // Boas-vindas faladas na voz PT (o player.say recebe um SynthRequest completo).
+    // Welcome spoken in the PT voice (player.say receives a full SynthRequest).
     expect(say).toHaveBeenCalledWith(
       expect.objectContaining({ text: expect.stringContaining('Bem-vindos'), model: PT_VOICE }),
     );
     expect(sentKeys(send)).toContain('game.wordChain.begin');
 
-    // Turno anunciado: extrair a letra exigida e jogar uma palavra PT válida.
+    // Turn announced: extract the required letter and play a valid PT word.
     const turn = lastSend(send);
     expect(turn.key).toBe('game.wordChain.turn');
     const letter = String(turn.params.letter);
     const word = pickWord(letter, new Set());
     say.mockClear();
-    mgr.handleMessage(msg('u1', word)); // u1 é o 1.º da ordem
+    mgr.handleMessage(msg('u1', word)); // u1 is first in order
     await flush();
 
-    // A palavra aceite foi LIDA em voz alta na voz PT + mensagem de aceitação.
+    // The accepted word was READ aloud in the PT voice + acceptance message.
     expect(say).toHaveBeenCalledWith(expect.objectContaining({ text: word, model: PT_VOICE }));
     expect(sentKeys(send)).toContain('game.wordChain.accepted');
   });
 
-  it('mensagem de espectador (não é a sua vez) é ignorada', async () => {
+  it('spectator message (not their turn) is ignored', async () => {
     const { env, clock, send } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('word-chain')!.create({ language: 'pt' }), false, 'pt');
@@ -167,13 +167,13 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     clock.advance(20000);
     await flush();
     const before = send.mock.calls.length;
-    // u2 fala fora da vez (a vez é do u1) -> nada acontece.
+    // u2 speaks out of turn (it's u1's turn) -> nothing happens.
     mgr.handleMessage(msg('u2', 'palavra'));
     await flush();
     expect(send.mock.calls.length).toBe(before);
   });
 
-  it('reentrancia: dois palpites validos seguidos do MESMO jogador nao pontuam/avancam a dobrar', async () => {
+  it('reentrancy: two valid guesses in a row from the SAME player do not score/advance twice', async () => {
     const { env, clock, send, say } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('word-chain')!.create({ language: 'pt' }), false, 'pt');
@@ -181,7 +181,7 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     mgr.handleMessage(msg('u1', 'entro'));
     mgr.handleMessage(msg('u2', 'eu tambem'));
     await flush();
-    clock.advance(20000); // fim do lobby -> turno do u1
+    clock.advance(20000); // end of lobby -> u1's turn
     await flush();
 
     const turn1 = lastSend(send);
@@ -221,7 +221,7 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     expect(turn2.params.name).toBe('U2');
   });
 
-  it('2 vidas: timeouts eliminam e declaram vencedor (pontos persistidos)', async () => {
+  it('2 lives: timeouts eliminate and declare a winner (scores persisted)', async () => {
     const { env, clock, send, persistScores } = harness();
     const mgr = new GameManager(env);
     mgr.start(G, C, gameById('word-chain')!.create({ language: 'pt' }), false, 'pt');
@@ -231,8 +231,8 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     await flush();
     clock.advance(20000);
     await flush();
-    // Ninguém joga: 3 timeouts (turnMs fixo em 15s sem palavras aceites).
-    // u1 timeout (1 vida) -> u2 timeout (1 vida) -> u1 timeout (0 -> eliminado) -> u2 vence.
+    // Nobody plays: 3 timeouts (turnMs fixed at 15s with no accepted words).
+    // u1 timeout (1 life) -> u2 timeout (1 life) -> u1 timeout (0 -> eliminated) -> u2 wins.
     for (let k = 0; k < 3; k++) {
       clock.advance(15000);
       await flush();
@@ -240,8 +240,8 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     expect(sentKeys(send)).toContain('game.wordChain.eliminated');
     expect(sentKeys(send)).toContain('game.wordChain.winner');
     expect(mgr.active(G)).toBe(false);
-    expect(persistScores).toHaveBeenCalledTimes(1); // fim NORMAL -> persiste
+    expect(persistScores).toHaveBeenCalledTimes(1); // NORMAL end -> persists
     const points = persistScores.mock.calls[0][1] as Map<string, number>;
-    expect(points.get('u2') ?? 0).toBeGreaterThan(0); // vencedor pontuou
+    expect(points.get('u2') ?? 0).toBeGreaterThan(0); // winner scored
   });
 });

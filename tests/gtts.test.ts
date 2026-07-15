@@ -15,7 +15,7 @@ import { createEngine } from '../src/tts/factory';
 import { AudioCache } from '../src/tts/cache';
 import type { AppConfig } from '../src/config/index';
 
-/** Erro etiquetado como no gtts.ts (retryable = transitório). */
+/** Error tagged as in gtts.ts (retryable = transient). */
 function tagged(msg: string, retryable: boolean): Error {
   const e = new Error(msg) as Error & { retryable: boolean };
   e.retryable = retryable;
@@ -23,104 +23,104 @@ function tagged(msg: string, retryable: boolean): Error {
 }
 const noSleep = async () => {};
 
-describe('gttsLangOfModel — id de modelo Piper -> código tl do gTTS', () => {
-  it('usa o prefixo antes do "_" (ISO-639-1)', () => {
-    expect(gttsLangOfModel('pt_BR-cadu-medium')).toBe('pt'); // pt = Brasil no Google
+describe('gttsLangOfModel — Piper model id -> gTTS tl code', () => {
+  it('uses the prefix before the "_" (ISO-639-1)', () => {
+    expect(gttsLangOfModel('pt_BR-cadu-medium')).toBe('pt'); // pt = Brazil in Google
     expect(gttsLangOfModel('en_US-amy-medium')).toBe('en');
     expect(gttsLangOfModel('es_ES-davefx-medium')).toBe('es');
     expect(gttsLangOfModel('fr_FR-siwis-medium')).toBe('fr');
     expect(gttsLangOfModel('ru_RU-denis-medium')).toBe('ru');
-    // Voz sintetica SO-gTTS do japones (sem modelo Piper): tem de mapear tl=ja.
+    // gTTS-only synthetic Japanese voice (no Piper model): must map to tl=ja.
     expect(gttsLangOfModel('ja_JP-google-medium')).toBe('ja');
   });
 
-  it('override do chinês (zh -> zh-CN) e fallback para inglês', () => {
+  it('Chinese override (zh -> zh-CN) and fallback to English', () => {
     expect(gttsLangOfModel('zh_CN-chaowen-medium')).toBe('zh-CN');
     expect(gttsLangOfModel('semunderscore')).toBe('en');
     expect(gttsLangOfModel('')).toBe('en');
   });
 });
 
-describe('chunkText — parte por palavra respeitando o limite', () => {
-  it('texto curto -> 1 pedaço', () => {
+describe('chunkText — splits by word respecting the limit', () => {
+  it('short text -> 1 chunk', () => {
     expect(chunkText('ola amigos hello guys', 200)).toEqual(['ola amigos hello guys']);
   });
 
-  it('texto vazio/só-espaços -> []', () => {
+  it('empty/whitespace-only text -> []', () => {
     expect(chunkText('', 200)).toEqual([]);
     expect(chunkText('   ', 200)).toEqual([]);
   });
 
-  it('parte em fronteira de palavra e cada pedaço <= max', () => {
+  it('splits at a word boundary and each chunk <= max', () => {
     const words = Array.from({ length: 60 }, (_, i) => `palavra${i}`).join(' ');
     const chunks = chunkText(words, 40);
     expect(chunks.length).toBeGreaterThan(1);
     for (const c of chunks) expect(c.length).toBeLessThanOrEqual(40);
-    // Reconstrução por espaços preserva todas as palavras (nenhuma perdida/cortada).
+    // Reconstruction by spaces preserves every word (none lost/cut).
     expect(chunks.join(' ').split(/\s+/)).toEqual(words.split(' '));
   });
 
-  it('palavra maior que max é cortada à força', () => {
+  it('a word larger than max is force-cut', () => {
     const giant = 'x'.repeat(90);
     const chunks = chunkText(giant, 40);
     expect(chunks).toEqual(['x'.repeat(40), 'x'.repeat(40), 'x'.repeat(10)]);
   });
 
-  it('palavra gigante com surrogates: corta por CODE POINT (encodeURIComponent nunca lança)', () => {
-    // O 'a' inicial DESALINHA as fronteiras (cada emoji = 2 unidades UTF-16), por isso
-    // um slice por unidade UTF-16 deixaria um surrogate solitário -> encodeURIComponent
-    // lançava URIError (o bug). Cortar por code point (Array.from) evita-o.
+  it('giant word with surrogates: cuts by CODE POINT (encodeURIComponent never throws)', () => {
+    // The leading 'a' MISALIGNS the boundaries (each emoji = 2 UTF-16 units), so a slice
+    // by UTF-16 unit would leave a lone surrogate -> encodeURIComponent would throw
+    // URIError (the bug). Cutting by code point (Array.from) avoids it.
     const giant = 'a' + '😀'.repeat(250);
     const chunks = chunkText(giant, 200);
     expect(chunks.length).toBeGreaterThan(1);
     for (const c of chunks) {
-      expect(() => encodeURIComponent(c)).not.toThrow(); // cada pedaço é texto válido
+      expect(() => encodeURIComponent(c)).not.toThrow(); // each chunk is valid text
     }
-    expect(chunks.join('')).toBe(giant); // reconstrói a palavra inteira
+    expect(chunks.join('')).toBe(giant); // reconstructs the whole word
   });
 });
 
-// Bug (relatado pelo Diogo, confirmado empíricamente em 22 línguas): o Google
-// translate_tts SOLETRA palavras todo-maiúsculas ("VOLTEI" -> "V O L T E I"). Baixamos
-// runs de 2+ maiúsculas para minúsculas antes de enviar à Google, para as LER.
-describe('deCapsForGoogle — evita que a Google soletre TODO-MAIÚSCULAS', () => {
-  it('baixa palavra todo-maiúsculas para minúsculas', () => {
+// Bug (reported by Diogo, confirmed empirically in 22 languages): Google translate_tts
+// SPELLS OUT all-caps words ("VOLTEI" -> "V O L T E I"). We lower runs of 2+ uppercase
+// letters to lowercase before sending to Google, so they get READ.
+describe('deCapsForGoogle — prevents Google from spelling out ALL-CAPS', () => {
+  it('lowers an all-caps word to lowercase', () => {
     expect(deCapsForGoogle('VOLTEI')).toBe('voltei');
     expect(deCapsForGoogle('olá VOLTEI aqui')).toBe('olá voltei aqui');
     expect(deCapsForGoogle('NASA')).toBe('nasa');
     expect(deCapsForGoogle('OK')).toBe('ok');
   });
 
-  it('NÃO toca em minúsculas, Title-Case, nem numa única maiúscula', () => {
+  it('does NOT touch lowercase, Title-Case, or a single uppercase letter', () => {
     expect(deCapsForGoogle('voltei')).toBe('voltei');
-    expect(deCapsForGoogle('Voltei')).toBe('Voltei'); // só o "V" — 1 maiúscula
-    expect(deCapsForGoogle('I am a Robot')).toBe('I am a Robot'); // "I" fica
-    expect(deCapsForGoogle('iPhone')).toBe('iPhone'); // sem run de 2+
+    expect(deCapsForGoogle('Voltei')).toBe('Voltei'); // only the "V" — 1 uppercase
+    expect(deCapsForGoogle('I am a Robot')).toBe('I am a Robot'); // "I" stays
+    expect(deCapsForGoogle('iPhone')).toBe('iPhone'); // no run of 2+
   });
 
-  it('lida com acentos e dígitos', () => {
-    expect(deCapsForGoogle('ÁGUA')).toBe('água'); // maiúsculas acentuadas
-    expect(deCapsForGoogle('COVID19')).toBe('covid19'); // run de letras + dígitos
-    expect(deCapsForGoogle('GRITO!!!')).toBe('grito!!!'); // pontuação intacta
+  it('handles accents and digits', () => {
+    expect(deCapsForGoogle('ÁGUA')).toBe('água'); // accented uppercase
+    expect(deCapsForGoogle('COVID19')).toBe('covid19'); // run of letters + digits
+    expect(deCapsForGoogle('GRITO!!!')).toBe('grito!!!'); // punctuation intact
   });
 
-  it('vazio -> vazio', () => {
+  it('empty -> empty', () => {
     expect(deCapsForGoogle('')).toBe('');
   });
 });
 
-describe('GTTSEngine.synth — envia o texto SEM todo-maiúsculas à Google', () => {
+describe('GTTSEngine.synth — sends the text WITHOUT all-caps to Google', () => {
   let dir: string;
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it('o q= do pedido usa a versão minúscula de uma palavra caps', async () => {
+  it('the request q= uses the lowercase version of a caps word', async () => {
     dir = mkdtempSync(join(tmpdir(), 'gtts-caps-'));
     let capturedUrl = '';
     const fetchImpl = vi.fn(async (url: string | URL) => {
       capturedUrl = String(url);
-      throw tagged('stop-after-capture', false); // não-retryable: pára após capturar
+      throw tagged('stop-after-capture', false); // non-retryable: stops after capturing
     });
     const engine = new GTTSEngine(new AudioCache(dir), {
       fetchImpl: fetchImpl as unknown as typeof fetch,
@@ -129,27 +129,27 @@ describe('GTTSEngine.synth — envia o texto SEM todo-maiúsculas à Google', ()
     await engine
       .synth({ text: 'olá VOLTEI', model: 'es_ES-davefx-medium', speed: 1 })
       .catch(() => {});
-    // O parâmetro q (já descodificado por URLSearchParams) tem a palavra em minúsculas.
+    // The q parameter (already decoded by URLSearchParams) has the word in lowercase.
     const q = new URL(capturedUrl).searchParams.get('q');
     expect(q).toBe('olá voltei');
   });
 });
 
-describe('isRetryableStatus — 429/5xx transitório; 403/4xx falha dura', () => {
-  it('429 e 5xx -> retryable', () => {
+describe('isRetryableStatus — 429/5xx transient; 403/4xx hard failure', () => {
+  it('429 and 5xx -> retryable', () => {
     expect(isRetryableStatus(429)).toBe(true);
     expect(isRetryableStatus(500)).toBe(true);
     expect(isRetryableStatus(503)).toBe(true);
   });
-  it('403 e outros 4xx -> NÃO retryable', () => {
+  it('403 and other 4xx -> NOT retryable', () => {
     expect(isRetryableStatus(403)).toBe(false);
     expect(isRetryableStatus(404)).toBe(false);
     expect(isRetryableStatus(400)).toBe(false);
   });
 });
 
-describe('retryAsync — repete só erros transitórios, com limite', () => {
-  it('erro transitório 1x depois sucesso -> devolve o resultado (repetiu)', async () => {
+describe('retryAsync — retries only transient errors, with a limit', () => {
+  it('transient error 1x then success -> returns the result (retried)', async () => {
     let n = 0;
     const fn = vi.fn(async () => {
       n++;
@@ -161,15 +161,15 @@ describe('retryAsync — repete só erros transitórios, com limite', () => {
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
-  it('erro NÃO-retryable (ex.: timeout/403) -> falha JÁ, sem repetir', async () => {
+  it('NON-retryable error (e.g. timeout/403) -> fails IMMEDIATELY, no retry', async () => {
     const fn = vi.fn(async () => {
       throw tagged('timeout', false);
     });
     await expect(retryAsync(fn, { retries: 2, sleep: noSleep })).rejects.toThrow('timeout');
-    expect(fn).toHaveBeenCalledTimes(1); // sem retries
+    expect(fn).toHaveBeenCalledTimes(1); // no retries
   });
 
-  it('erro transitório persistente -> esgota as tentativas e propaga o último', async () => {
+  it('persistent transient error -> exhausts the attempts and propagates the last one', async () => {
     const fn = vi.fn(async () => {
       throw tagged('429', true);
     });
@@ -178,13 +178,13 @@ describe('retryAsync — repete só erros transitórios, com limite', () => {
   });
 });
 
-describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', () => {
+describe('GTTSEngine.fetchChunk — retry on fetch (via injected fetchImpl)', () => {
   let dir: string;
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it('um 503 momentâneo é recuperado na 2ª tentativa (mesma voz Google)', async () => {
+  it('a momentary 503 is recovered on the 2nd attempt (same Google voice)', async () => {
     dir = mkdtempSync(join(tmpdir(), 'gtts-retry-'));
     let calls = 0;
     const fetchImpl = vi.fn(async () => {
@@ -201,13 +201,13 @@ describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', ()
       fetchImpl: fetchImpl as unknown as typeof fetch,
       sleepImpl: noSleep,
     });
-    // synth chama fetchChunk; com 1 pedaço curto, o ffmpeg converte os bytes. Aqui só
-    // exercitamos que NÃO rebenta no 503 e que o fetch foi chamado 2x (recuperou).
+    // synth calls fetchChunk; with 1 short chunk, ffmpeg converts the bytes. Here we only
+    // exercise that it does NOT blow up on the 503 and that fetch was called 2x (recovered).
     await engine.synth({ text: 'ola', model: 'pt_BR-cadu-medium', speed: 1 }).catch(() => {});
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
-  it('um 403 (bloqueio) NÃO é repetido — falha dura', async () => {
+  it('a 403 (block) is NOT retried — hard failure', async () => {
     dir = mkdtempSync(join(tmpdir(), 'gtts-403-'));
     const fetchImpl = vi.fn(
       async () => ({ ok: false, status: 403, statusText: 'Forbidden' }) as Response,
@@ -219,12 +219,12 @@ describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', ()
     await expect(
       engine.synth({ text: 'ola', model: 'pt_BR-cadu-medium', speed: 1 }),
     ).rejects.toThrow(/403/);
-    expect(fetchImpl).toHaveBeenCalledTimes(1); // sem retry
+    expect(fetchImpl).toHaveBeenCalledTimes(1); // no retry
   });
 
-  it('multi-pedaço: busca UM fetch por pedaço (fan-out), síntese resolve/falha na mesma', async () => {
+  it('multi-chunk: does ONE fetch per chunk (fan-out), synthesis resolves/fails all the same', async () => {
     dir = mkdtempSync(join(tmpdir(), 'gtts-multi-'));
-    // 3 "palavras" de ~150 chars -> 3 pedaços (cap 200, palavra não parte).
+    // 3 "words" of ~150 chars -> 3 chunks (cap 200, the word does not split).
     const text = `${'a'.repeat(150)} ${'b'.repeat(150)} ${'c'.repeat(150)}`;
     expect(chunkText(deCapsForGoogle(text), 200).length).toBe(3);
     const fetchImpl = vi.fn(
@@ -239,12 +239,12 @@ describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', ()
       fetchImpl: fetchImpl as unknown as typeof fetch,
       sleepImpl: noSleep,
     });
-    // ffmpeg dos bytes falsos pode falhar — só nos importa o nº de fetches (1 por pedaço).
+    // ffmpeg on the fake bytes may fail — we only care about the number of fetches (1 per chunk).
     await engine.synth({ text, model: 'pt_BR-cadu-medium', speed: 1 }).catch(() => {});
     expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 
-  it('multi-pedaço: um pedaço com 403 rejeita a síntese inteira (como no serial)', async () => {
+  it('multi-chunk: a chunk with 403 rejects the whole synthesis (as in serial)', async () => {
     dir = mkdtempSync(join(tmpdir(), 'gtts-multi403-'));
     const text = `${'a'.repeat(150)} ${'b'.repeat(150)} ${'c'.repeat(150)}`;
     let n = 0;
@@ -267,10 +267,10 @@ describe('GTTSEngine.fetchChunk — retry no fetch (via fetchImpl injetado)', ()
   });
 });
 
-describe('mapWithConcurrency — ordem preservada, cap respeitado, rejeição propaga', () => {
-  it('preserva a ORDEM do input mesmo com conclusões fora de ordem', async () => {
+describe('mapWithConcurrency — order preserved, cap respected, rejection propagates', () => {
+  it('preserves the input ORDER even with out-of-order completions', async () => {
     const items = [0, 1, 2, 3, 4, 5];
-    // item i resolve depois de (items.length - i) ticks: os últimos resolvem primeiro.
+    // item i resolves after (items.length - i) ticks: the last ones resolve first.
     const out = await mapWithConcurrency(items, 3, async (n) => {
       await new Promise((r) => setTimeout(r, (items.length - n) * 2));
       return n * 10;
@@ -278,7 +278,7 @@ describe('mapWithConcurrency — ordem preservada, cap respeitado, rejeição pr
     expect(out).toEqual([0, 10, 20, 30, 40, 50]);
   });
 
-  it('nunca corre mais do que `limit` em voo', async () => {
+  it('never runs more than `limit` in flight', async () => {
     let inFlight = 0;
     let maxInFlight = 0;
     const out = await mapWithConcurrency([1, 2, 3, 4, 5, 6, 7, 8], 3, async (n) => {
@@ -290,10 +290,10 @@ describe('mapWithConcurrency — ordem preservada, cap respeitado, rejeição pr
     });
     expect(out).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(maxInFlight).toBeLessThanOrEqual(3);
-    expect(maxInFlight).toBeGreaterThanOrEqual(2); // paralelizou mesmo
+    expect(maxInFlight).toBeGreaterThanOrEqual(2); // actually parallelized
   });
 
-  it('uma rejeição rejeita a chamada inteira', async () => {
+  it('a single rejection rejects the whole call', async () => {
     await expect(
       mapWithConcurrency([1, 2, 3, 4, 5], 2, async (n) => {
         if (n === 2) throw tagged('pedaço 2 rebentou', false);
@@ -303,12 +303,12 @@ describe('mapWithConcurrency — ordem preservada, cap respeitado, rejeição pr
   });
 });
 
-describe('createEngine — TTS_ENGINE=gtts seleciona o GTTSEngine', () => {
+describe('createEngine — TTS_ENGINE=gtts selects the GTTSEngine', () => {
   let dir: string;
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
-  it('devolve um GTTSEngine (sem API key, sem Piper path)', () => {
+  it('returns a GTTSEngine (no API key, no Piper path)', () => {
     dir = mkdtempSync(join(tmpdir(), 'gttscache-'));
     const cache = new AudioCache(dir);
     const cfg = { ttsEngine: 'gtts', openaiApiKey: undefined } as unknown as AppConfig;

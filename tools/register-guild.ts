@@ -1,14 +1,14 @@
 /**
- * tools/register-guild.ts — regista os comandos por-SERVIDOR (instantâneo), em vez de
- * globalmente (que leva até ~1h a propagar). Útil para TESTAR comandos novos já.
+ * tools/register-guild.ts — registers the commands per-SERVER (instant), instead of
+ * globally (which takes up to ~1h to propagate). Useful for TESTING new commands now.
  *
- * ATENÇÃO: comandos de servidor NÃO substituem os globais — o Discord mostra os DOIS
- * conjuntos no picker (comandos DUPLICADOS). Por isso isto é uma ferramenta temporária
- * de teste: assim que os globais propagarem, corre `--clear` para remover os de
- * servidor e voltar a ter cada comando UMA vez.
+ * WARNING: server commands do NOT replace the global ones — Discord shows BOTH
+ * sets in the picker (DUPLICATED commands). So this is a temporary testing tool:
+ * as soon as the global ones propagate, run `--clear` to remove the per-server
+ * ones and get each command ONCE again.
  *
- *   npx tsx tools/register-guild.ts           # regista por-servidor (aparece já, DUPLICA)
- *   npx tsx tools/register-guild.ts --clear   # limpa os por-servidor (fica só o global)
+ *   npx tsx tools/register-guild.ts           # registers per-server (appears now, DUPLICATES)
+ *   npx tsx tools/register-guild.ts --clear   # clears the per-server ones (only global remains)
  */
 import { REST, Routes } from 'discord.js';
 import { commandDefs } from '../src/commands/index';

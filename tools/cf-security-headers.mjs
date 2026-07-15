@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 // tools/cf-security-headers.mjs
 //
-// Configura os CABEÇALHOS DE SEGURANÇA do vozen.org na Cloudflare via API (Rota A do
-// docs/SECURITY-HEADERS-SETUP.md). Idempotente: podes correr as vezes que quiseres.
+// Configures the SECURITY HEADERS for vozen.org on Cloudflare via API (Route A of
+// docs/SECURITY-HEADERS-SETUP.md). Idempotent: you can run it as many times as you want.
 //
-// PRÉ-REQUISITOS (feitos pelo dono do domínio, uma vez):
-//   1. Adicionar vozen.org à Cloudflare + mudar os nameservers no registrar (zona 'active').
-//   2. Criar um API token SCOPED à zona vozen.org com as permissões:
+// PREREQUISITES (done by the domain owner, once):
+//   1. Add vozen.org to Cloudflare + change the nameservers at the registrar (zone 'active').
+//   2. Create an API token SCOPED to the vozen.org zone with the permissions:
 //        Zone > DNS > Edit · Zone > Zone Settings > Edit · Zone > Transform Rules > Edit
 //
-// USO:
-//   CF_API_TOKEN=xxxxx node tools/cf-security-headers.mjs             # configura + verifica
-//   CF_API_TOKEN=xxxxx node tools/cf-security-headers.mjs --verify-only  # só verifica
+// USAGE:
+//   CF_API_TOKEN=xxxxx node tools/cf-security-headers.mjs             # configures + verifies
+//   CF_API_TOKEN=xxxxx node tools/cf-security-headers.mjs --verify-only  # verifies only
 //
-// O token NUNCA é impresso, logado nem gravado. Passa-o só por ambiente.
+// The token is NEVER printed, logged, or saved. Pass it only via the environment.
 
 const TOKEN = process.env.CF_API_TOKEN;
 if (!TOKEN) {
@@ -25,7 +25,7 @@ const ZONE_NAME = 'vozen.org';
 const API = 'https://api.cloudflare.com/client/v4';
 const VERIFY_ONLY = process.argv.includes('--verify-only');
 
-// Valores VERIFICADOS contra os recursos reais do site (ver SECURITY-HEADERS-SETUP.md).
+// Values VERIFIED against the site's real resources (see SECURITY-HEADERS-SETUP.md).
 const SECURITY_HEADERS = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   'Content-Security-Policy':
@@ -60,7 +60,7 @@ async function cf(path, opts = {}) {
 }
 
 async function main() {
-  // 1. Resolver a zona.
+  // 1. Resolve the zone.
   const zones = await cf(`/zones?name=${ZONE_NAME}`);
   if (!zones.length) {
     throw new Error(
@@ -77,7 +77,7 @@ async function main() {
   }
 
   if (!VERIFY_ONLY) {
-    // 2. Garantir que os registos do apex/www estão PROXIED (senão o tráfego não passa pela CF).
+    // 2. Ensure the apex/www records are PROXIED (otherwise traffic does not pass through CF).
     const recs = await cf(`/zones/${zoneId}/dns_records?per_page=100`);
     for (const r of recs) {
       const proxiable = r.type === 'A' || r.type === 'AAAA' || r.type === 'CNAME';
@@ -91,7 +91,7 @@ async function main() {
       }
     }
 
-    // 3. HTTPS: modo Full + Always Use HTTPS.
+    // 3. HTTPS: Full mode + Always Use HTTPS.
     await cf(`/zones/${zoneId}/settings/ssl`, {
       method: 'PATCH',
       body: JSON.stringify({ value: 'full' }),
@@ -102,7 +102,7 @@ async function main() {
     });
     console.log('SSL=full · always_use_https=on');
 
-    // 4. Transform Rule: injetar os 6 cabeçalhos na resposta (phase http_response_headers_transform).
+    // 4. Transform Rule: inject the 6 headers into the response (phase http_response_headers_transform).
     const headers = {};
     for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
       headers[name] = { operation: 'set', value };
@@ -124,7 +124,7 @@ async function main() {
     console.log(`Transform Rule aplicada (${Object.keys(SECURITY_HEADERS).length} cabeçalhos).`);
   }
 
-  // 5. Verificar o que sai mesmo em https://vozen.org/.
+  // 5. Verify what is actually served at https://vozen.org/.
   try {
     const res = await fetch(`https://${ZONE_NAME}/`, { method: 'HEAD', redirect: 'manual' });
     console.log(`\nVerificação de https://${ZONE_NAME}/ (HTTP ${res.status}):`);

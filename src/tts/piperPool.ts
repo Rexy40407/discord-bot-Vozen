@@ -1,27 +1,27 @@
 // src/tts/piperPool.ts
 //
-// Pool de processos piper.exe PERSISTENTES (spec T2.1) para eliminar o overhead de
-// spawn+carregamento-de-modelo (~372ms medidos) por sintese. Cada sintese de hoje
-// arranca um piper.exe fresco; aqui mantemos processos LONGOS reutilizados.
+// Pool of PERSISTENT piper.exe processes (spec T2.1) to eliminate the overhead of
+// spawn+model-load (~372ms measured) per synthesis. Each synthesis today spawns a
+// fresh piper.exe; here we keep LONG-LIVED processes reused.
 //
-// PROTOCOLO (validado empiricamente contra o piper.exe real):
-//  - `piper.exe --model M --json-input` fica vivo a ler UM objeto JSON por LINHA no
+// PROTOCOL (validated empirically against the real piper.exe):
+//  - `piper.exe --model M --json-input` stays alive reading ONE JSON object per LINE on
 //    stdin: {"text":"...","output_file":"ABS\\PATH.wav"}.
-//  - Por cada utterance concluida, o piper imprime o `output_file` terminado no
-//    STDOUT, uma linha por pedido, em ordem FIFO ESTRITA. Essa linha E o sinal de
-//    conclusao — lemos o stdout linha-a-linha; a N-esima linha = N-esimo pedido.
-//  - O modelo carrega UMA vez ao arranque (~0.4s); utterances seguintes sao so
-//    inferencia (~0.1-0.3s). E esse o ganho.
-//  - Os params por-linha (length_scale/noise) sao IGNORADOS por este build — a
-//    qualidade tem de vir de flags CLI no spawn. Por isso um processo quente tem
-//    params FIXOS -> a chave do pool inclui model + length_scale.
+//  - For each completed utterance, piper prints the finished `output_file` on STDOUT,
+//    one line per request, in STRICT FIFO order. That line IS the completion signal —
+//    we read stdout line by line; the Nth line = Nth request.
+//  - The model loads ONCE at startup (~0.4s); subsequent utterances are just inference
+//    (~0.1-0.3s). That is the gain.
+//  - The per-line params (length_scale/noise) are IGNORED by this build — quality has to
+//    come from CLI flags at spawn. So a hot process has FIXED params -> the pool key
+//    includes model + length_scale.
 import { log } from '../logging/logger';
 
 /**
- * Interface MINIMA de um processo-filho, suficiente para (a) injetar um fake nos
- * testes e (b) aceitar um `child_process.ChildProcess` real (via cast no wrapper de
- * spawn). So expomos o que o protocolo precisa: escrever/fechar o stdin, ler o
- * stdout linha-a-linha, ouvir exit/error e matar o processo.
+ * MINIMAL interface of a child process, enough to (a) inject a fake in tests and (b)
+ * accept a real `child_process.ChildProcess` (via cast in the spawn wrapper). We only
+ * expose what the protocol needs: write/close stdin, read stdout line by line, listen
+ * for exit/error, and kill the process.
  */
 export interface ChildLike {
   stdin: { write(s: string): void; end(): void };
@@ -30,7 +30,7 @@ export interface ChildLike {
   kill(signal?: string): void;
 }
 
-/** Uma utterance em curso: o path esperado, os callbacks e o timer de timeout. */
+/** An in-flight utterance: the expected path, the callbacks, and the timeout timer. */
 interface Pending {
   outPath: string;
   resolve: () => void;
@@ -39,14 +39,14 @@ interface Pending {
 }
 
 /**
- * Envolve UM processo-filho piper para um par (model, args) FIXO. O construtor
- * recebe um child ja spawnado (injetavel nos testes) + um callback `onExit(self)`
- * que o pool usa para remover este processo do mapa quando morre.
+ * Wraps ONE piper child process for a FIXED (model, args) pair. The constructor
+ * receives an already-spawned child (injectable in tests) + an `onExit(self)` callback
+ * that the pool uses to remove this process from the map when it dies.
  */
 export class PiperProcess {
   private readonly child: ChildLike;
   private readonly onExit: (self: PiperProcess) => void;
-  // Fila FIFO das utterances em curso — o piper resolve por ordem de entrada.
+  // FIFO queue of in-flight utterances — piper resolves them in entry order.
   private readonly queue: Pending[] = [];
   private buffer = '';
   private _dead = false;
@@ -56,22 +56,22 @@ export class PiperProcess {
     this.child = child;
     this.onExit = onExit;
 
-    // Lê o stdout como stream: acumula chunks, parte em '\n'; cada linha completa =
-    // um output_file terminado -> resolve a cabeca da FIFO (ordem estrita do piper).
+    // Read stdout as a stream: accumulate chunks, split on '\n'; each complete line =
+    // a finished output_file -> resolve the head of the FIFO (piper's strict order).
     this.child.stdout.on('data', (chunk: Buffer | string) => {
       this.buffer += typeof chunk === 'string' ? chunk : chunk.toString('utf8');
       let nl: number;
       while ((nl = this.buffer.indexOf('\n')) >= 0) {
-        const line = this.buffer.slice(0, nl).trim(); // trim mata o \r do Windows
+        const line = this.buffer.slice(0, nl).trim(); // trim kills the Windows \r
         this.buffer = this.buffer.slice(nl + 1);
-        if (line.length === 0) continue; // ignora linhas vazias/tail
+        if (line.length === 0) continue; // ignore empty/tail lines
         this.onLine(line);
       }
     });
 
     this.child.on('exit', () => this.die(new Error('Piper process exited')));
     this.child.on('error', (err) =>
-      this.die(new Error(`Erro no processo piper: ${(err as Error)?.message ?? err}`)),
+      this.die(new Error(`Piper process error: ${(err as Error)?.message ?? err}`)),
     );
   }
 
@@ -80,10 +80,10 @@ export class PiperProcess {
   }
 
   /**
-   * Sintetiza `text` para `outPath`. Escreve uma linha JSON no stdin e devolve uma
-   * promise que resolve quando o piper imprimir o path concluido no stdout (FIFO).
-   * Timeout por-utterance: se `timeoutMs` passar sem conclusao, o processo e tratado
-   * como encravado -> mata-se, marca-se dead e rejeitam-se as restantes.
+   * Synthesizes `text` to `outPath`. Writes a JSON line to stdin and returns a promise
+   * that resolves when piper prints the completed path on stdout (FIFO). Per-utterance
+   * timeout: if `timeoutMs` passes without completion, the process is treated as stuck
+   * -> it is killed, marked dead, and the rest are rejected.
    */
   synth(text: string, outPath: string, timeoutMs: number): Promise<void> {
     if (this._dead) {
@@ -91,7 +91,7 @@ export class PiperProcess {
     }
     return new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
-        // Timeout = processo encravado. Mata + rejeita esta e todas as restantes.
+        // Timeout = stuck process. Kill + reject this one and all the rest.
         log.warn(`[piperPool] utterance timeout (${timeoutMs}ms); terminating process`);
         this.kill();
         this.die(new Error(`Piper pool timeout (${timeoutMs}ms)`));
@@ -99,36 +99,36 @@ export class PiperProcess {
 
       this.queue.push({ outPath, resolve, reject, timer });
 
-      // JSON.stringify trata aspas/newlines/backslashes com seguranca.
+      // JSON.stringify handles quotes/newlines/backslashes safely.
       const line = JSON.stringify({ text, output_file: outPath }) + '\n';
       try {
         this.child.stdin.write(line);
       } catch (err) {
-        // Escrita sincrona pode lancar se o stream ja estiver destruido.
-        this.die(new Error(`Falha ao escrever no stdin do piper: ${(err as Error).message}`));
+        // A synchronous write can throw if the stream is already destroyed.
+        this.die(new Error(`Failed to write to piper stdin: ${(err as Error).message}`));
       }
     });
   }
 
-  /** Mata o processo-filho (best-effort). Nao dispara onExit sozinho. */
+  /** Kills the child process (best-effort). Does not trigger onExit on its own. */
   kill(): void {
     try {
       this.child.kill();
     } catch {
-      // best-effort — o processo pode ja ter morrido.
+      // best-effort — the process may have already died.
     }
   }
 
-  /** Resolve a cabeca da FIFO para uma linha de stdout (path concluido). */
+  /** Resolves the head of the FIFO for a stdout line (completed path). */
   private onLine(line: string): void {
     const head = this.queue.shift();
     if (!head) {
-      // Linha de stdout sem utterance pendente — diagnostico do piper, ignorar.
+      // stdout line with no pending utterance — piper diagnostic, ignore.
       return;
     }
     clearTimeout(head.timer);
-    // Sanity-check opcional: o piper e estritamente sequencial, resolvemos SEMPRE a
-    // cabeca; so avisamos se o basename impresso nao bater certo com o esperado.
+    // Optional sanity-check: piper is strictly sequential, we ALWAYS resolve the head;
+    // we only warn if the printed basename does not match the expected one.
     if (basename(line) !== basename(head.outPath)) {
       log.warn(`[piperPool] stdout path ('${line}') != expected path ('${head.outPath}')`);
     }
@@ -136,9 +136,9 @@ export class PiperProcess {
   }
 
   /**
-   * Marca o processo morto, rejeita TODAS as utterances pendentes (limpando os seus
-   * timers) e notifica o pool via onExit — UMA so vez (guard). Chamado em
-   * exit/error/timeout/falha-de-stdin.
+   * Marks the process dead, rejects ALL pending utterances (clearing their timers), and
+   * notifies the pool via onExit — ONLY once (guard). Called on
+   * exit/error/timeout/stdin-failure.
    */
   private die(err: Error): void {
     this._dead = true;
@@ -153,32 +153,31 @@ export class PiperProcess {
   }
 }
 
-/** basename cross-platform (o piper imprime paths Windows com '\\'). */
+/** cross-platform basename (piper prints Windows paths with '\\'). */
 function basename(p: string): string {
   const norm = p.replace(/\\/g, '/');
   const idx = norm.lastIndexOf('/');
   return idx >= 0 ? norm.slice(idx + 1) : norm;
 }
 
-/** Uma entrada do pool: o processo + o seu timer de idle. */
+/** A pool entry: the process + its idle timer. */
 interface PoolEntry {
   proc: PiperProcess;
   idleTimer: ReturnType<typeof setTimeout> | null;
 }
 
 /**
- * Pool de processos piper quentes, keyed por `key` (= `model|lengthScale`). Guarda
- * no maximo `maxWarm` processos; ao registar uma key NOVA que excede o limite,
- * evicta o processo LEAST-RECENTLY-USED (a ordem de insercao do Map da-nos o LRU).
- * Cada processo tem um timer de idle: apos `idleMs` sem trabalho, fecha-se para
- * libertar RAM.
+ * Pool of hot piper processes, keyed by `key` (= `model|lengthScale`). Keeps at most
+ * `maxWarm` processes; when registering a NEW key that exceeds the limit, it evicts the
+ * LEAST-RECENTLY-USED process (the Map's insertion order gives us the LRU). Each process
+ * has an idle timer: after `idleMs` without work, it closes to free RAM.
  */
 export class PiperPool {
   private readonly maxWarm: number;
   private readonly idleMs: number;
   private readonly spawn: (args: string[]) => ChildLike;
-  // Map preserva ordem de insercao -> a primeira key e a LRU. Ao aceder, movemos a
-  // key para o fim (delete+set) para a marcar most-recently-used.
+  // Map preserves insertion order -> the first key is the LRU. On access, we move the
+  // key to the end (delete+set) to mark it most-recently-used.
   private readonly map = new Map<string, PoolEntry>();
 
   constructor(opts: { maxWarm: number; idleMs: number; spawn: (args: string[]) => ChildLike }) {
@@ -188,9 +187,9 @@ export class PiperPool {
   }
 
   /**
-   * Sintetiza via um processo quente para `key`. Se nao existir (ou estiver morto),
-   * spawna um novo (evictando a LRU se necessario). Marca `key` como
-   * most-recently-used, reinicia o timer de idle e delega no processo.
+   * Synthesizes via a hot process for `key`. If none exists (or it is dead), spawns a
+   * new one (evicting the LRU if necessary). Marks `key` as most-recently-used, resets
+   * the idle timer, and delegates to the process.
    */
   synth(
     key: string,
@@ -201,17 +200,17 @@ export class PiperPool {
   ): Promise<void> {
     let entry = this.map.get(key);
     if (!entry || entry.proc.dead) {
-      if (entry) this.remove(key, entry); // limpa a entrada morta
+      if (entry) this.remove(key, entry); // clean up the dead entry
       entry = this.register(key, args);
     }
-    // Marca most-recently-used: reinsere no fim da ordem do Map.
+    // Mark most-recently-used: reinsert at the end of the Map's order.
     this.map.delete(key);
     this.map.set(key, entry);
     this.resetIdle(key, entry);
     return entry.proc.synth(text, outPath, timeoutMs);
   }
 
-  /** Mata e limpa todos os processos (chamar no shutdown central). */
+  /** Kills and cleans up all processes (call on central shutdown). */
   shutdown(): void {
     for (const [key, entry] of this.map) {
       if (entry.idleTimer) clearTimeout(entry.idleTimer);
@@ -220,10 +219,10 @@ export class PiperPool {
     }
   }
 
-  /** Spawna e regista um novo processo para `key`, evictando a LRU se cheio. */
+  /** Spawns and registers a new process for `key`, evicting the LRU if full. */
   private register(key: string, args: string[]): PoolEntry {
     if (this.map.size >= this.maxWarm) {
-      // Evicta a LRU (primeira key na ordem de insercao) ANTES de inserir a nova.
+      // Evict the LRU (first key in insertion order) BEFORE inserting the new one.
       const lruKey = this.map.keys().next().value as string | undefined;
       if (lruKey !== undefined) {
         const lru = this.map.get(lruKey)!;
@@ -232,8 +231,8 @@ export class PiperPool {
     }
     const child = this.spawn(args);
     const entry: PoolEntry = { proc: undefined as unknown as PiperProcess, idleTimer: null };
-    // onExit remove a entrada SO se ainda for este processo (guard de identidade:
-    // a key pode ja ter sido re-spawnada para outro processo).
+    // onExit removes the entry ONLY if it is still this process (identity guard:
+    // the key may already have been re-spawned to another process).
     entry.proc = new PiperProcess(child, (self) => {
       const cur = this.map.get(key);
       if (cur && cur.proc === self) this.remove(key, cur);
@@ -242,25 +241,25 @@ export class PiperPool {
     return entry;
   }
 
-  /** Reinicia o timer de idle de uma entrada: apos idleMs sem trabalho, fecha-a. */
+  /** Resets an entry's idle timer: after idleMs without work, closes it. */
   private resetIdle(key: string, entry: PoolEntry): void {
     if (entry.idleTimer) clearTimeout(entry.idleTimer);
     entry.idleTimer = setTimeout(() => {
       const cur = this.map.get(key);
       if (cur === entry) this.remove(key, entry);
     }, this.idleMs);
-    // Nao segura o event loop (processo pode encerrar mesmo com pools quentes).
+    // Does not hold the event loop (the process can exit even with hot pools).
     if (typeof entry.idleTimer.unref === 'function') entry.idleTimer.unref();
   }
 
-  /** Mata o processo, limpa o timer de idle e remove a entrada do mapa. */
+  /** Kills the process, clears the idle timer, and removes the entry from the map. */
   private remove(key: string, entry: PoolEntry): void {
     if (entry.idleTimer) {
       clearTimeout(entry.idleTimer);
       entry.idleTimer = null;
     }
     entry.proc.kill();
-    // So apaga se a entrada no mapa ainda for esta (evita apagar um substituto vivo).
+    // Only delete if the entry in the map is still this one (avoids deleting a live replacement).
     if (this.map.get(key) === entry) this.map.delete(key);
   }
 }

@@ -3,28 +3,28 @@ import { t, SUPPORTED_LOCALES, DEFAULT_LOCALE, LOCALE_DISPLAY_NAMES } from '../s
 import { locales } from '../src/i18n/locales/index';
 
 describe('i18n — t(key, locale, params)', () => {
-  it('DEFAULT_LOCALE e "en" e "en" e um locale suportado', () => {
+  it('DEFAULT_LOCALE is "en" and "en" is a supported locale', () => {
     expect(DEFAULT_LOCALE).toBe('en');
     expect(SUPPORTED_LOCALES).toContain('en');
     expect(SUPPORTED_LOCALES).toContain('pt');
   });
 
-  it('devolve a string EN por defeito (locale="en")', () => {
-    // help.title existe no catalogo com um valor EN conhecido.
+  it('returns the EN string by default (locale="en")', () => {
+    // help.title exists in the catalog with a known EN value.
     expect(t('help.title', 'en')).toContain('Vozen');
   });
 
-  it('devolve a string PT quando locale="pt"', () => {
-    // help.groupStarted tem traducoes distintas EN vs PT.
+  it('returns the PT string when locale="pt"', () => {
+    // help.groupStarted has distinct translations EN vs PT.
     const en = t('help.groupStarted', 'en');
     const pt = t('help.groupStarted', 'pt');
     expect(en).toBe('Getting started');
     expect(pt).toBe('Primeiros passos');
   });
 
-  it('game.wordle.guess tem VERBO explícito (não se lê como derrota, mesmo com nick "Perdeste")', () => {
-    // Regressão do bug reportado: com o nick "Perdeste", "**Perdeste** — faltam 4" lia-se
-    // como resultado. O copy TEM de ter um verbo (tentou/guessed) entre o nome e o resto.
+  it('game.wordle.guess has an explicit VERB (does not read as a loss, even with nick "Perdeste")', () => {
+    // Regression of the reported bug: with the nick "Perdeste", "**Perdeste** — faltam 4" read
+    // as a result. The copy MUST have a verb (tentou/guessed) between the name and the rest.
     for (const [loc, verb] of [
       ['pt', 'tentou'],
       ['en', 'guessed'],
@@ -33,43 +33,43 @@ describe('i18n — t(key, locale, params)', () => {
       expect(s).toContain(verb);
       expect(s).toContain('Perdeste');
       expect(s).toContain('4');
-      // O nome nunca fica colado a "faltam/left" sem o verbo pelo meio.
+      // The name is never stuck to "faltam/left" without the verb in between.
       expect(s).not.toMatch(/Perdeste\*?\*? — (faltam|4)/);
     }
   });
 
-  it('faz fallback para EN quando a chave falta no locale pedido', () => {
-    // help.title so tem EN (pt parcial); pedir em pt devolve o valor EN.
+  it('falls back to EN when the key is missing in the requested locale', () => {
+    // help.title only has EN (pt partial); requesting in pt returns the EN value.
     expect(t('help.title', 'pt')).toBe(t('help.title', 'en'));
   });
 
-  it('chave inexistente devolve a propria key (nunca crasha)', () => {
+  it('a nonexistent key returns the key itself (never crashes)', () => {
     expect(t('nao.existe.esta.chave', 'en')).toBe('nao.existe.esta.chave');
     expect(t('nao.existe.esta.chave', 'pt')).toBe('nao.existe.esta.chave');
   });
 
-  it('interpola parametros {param}', () => {
-    // help.recommend usa {command}. Confirmamos que o placeholder e substituido.
+  it('interpolates {param} parameters', () => {
+    // help.recommend uses {command}. We confirm that the placeholder is substituted.
     const out = t('help.footer', 'en', { command: '/setup' });
     expect(out).toContain('/setup');
     expect(out).not.toContain('{command}');
   });
 
-  it('locale nao suportado cai no fallback EN', () => {
+  it('an unsupported locale falls back to EN', () => {
     expect(t('help.groupStarted', 'xx')).toBe('Getting started');
   });
 
-  // Fase B: 'es' JA tem traducao (locales/es.ts) -> t() serve o espanhol, nao o EN.
-  it('locale traduzido (es) serve a traducao, nao o fallback EN', () => {
+  // Phase B: 'es' ALREADY has a translation (locales/es.ts) -> t() serves Spanish, not EN.
+  it('a translated locale (es) serves the translation, not the EN fallback', () => {
     expect(t('help.groupStarted', 'es')).not.toBe('Getting started');
     expect(t('help.title', 'es')).not.toBe('');
   });
 
-  // Prova a arquitetura da FASE B: quando existe um ficheiro locales/<code>.ts com a
-  // chave, t() serve essa traducao (branch 1 da cadeia). Em Fase A o registry esta
-  // vazio, por isso NENHUM outro teste exercita este ramo — sem isto, um bug em
-  // `locales[locale]?.[key]` so aparecia em Fase B. Registamos/limpamos in-line.
-  it('usa a traducao do registry por-locale quando presente (branch 1)', () => {
+  // Proves the PHASE B architecture: when there is a locales/<code>.ts file with the
+  // key, t() serves that translation (branch 1 of the chain). In Phase A the registry is
+  // empty, so NO other test exercises this branch — without this, a bug in
+  // `locales[locale]?.[key]` would only appear in Phase B. We register/clean up in-line.
+  it('uses the per-locale registry translation when present (branch 1)', () => {
     locales['zz'] = { 'help.groupStarted': 'REG-WIN' };
     try {
       expect(t('help.groupStarted', 'zz')).toBe('REG-WIN');
@@ -78,9 +78,9 @@ describe('i18n — t(key, locale, params)', () => {
     }
   });
 
-  it('o registry por-locale tem precedencia sobre o valor inline do catalogo (pt)', () => {
-    // 'help.groupStarted' tem `pt` inline ("Primeiros passos"); um override no
-    // registry para pt deve GANHAR a esse inline (branch 1 > branch 2).
+  it('the per-locale registry takes precedence over the catalog inline value (pt)', () => {
+    // 'help.groupStarted' has `pt` inline ("Primeiros passos"); an override in the
+    // registry for pt should WIN over that inline (branch 1 > branch 2).
     locales['pt'] = { 'help.groupStarted': 'OVERRIDE-PT' };
     try {
       expect(t('help.groupStarted', 'pt')).toBe('OVERRIDE-PT');
@@ -90,7 +90,7 @@ describe('i18n — t(key, locale, params)', () => {
   });
 });
 
-describe('i18n — SUPPORTED_LOCALES + endonimos (35 linguas de voz)', () => {
+describe('i18n — SUPPORTED_LOCALES + endonyms (35 voice languages)', () => {
   const EXPECTED = [
     'en',
     'pt',
@@ -129,20 +129,20 @@ describe('i18n — SUPPORTED_LOCALES + endonimos (35 linguas de voz)', () => {
     'ja',
   ];
 
-  it('SUPPORTED_LOCALES tem exatamente as 35 linguas de voz', () => {
+  it('SUPPORTED_LOCALES has exactly the 35 voice languages', () => {
     expect([...SUPPORTED_LOCALES]).toEqual(EXPECTED);
     expect(SUPPORTED_LOCALES.length).toBe(35);
   });
 
-  it('LOCALE_DISPLAY_NAMES tem um endonimo (nome na propria lingua) para CADA locale', () => {
+  it('LOCALE_DISPLAY_NAMES has an endonym (name in its own language) for EACH locale', () => {
     for (const code of EXPECTED) {
       const name = (LOCALE_DISPLAY_NAMES as Record<string, string>)[code];
-      expect(name, `falta endonimo para ${code}`).toBeTruthy();
+      expect(name, `missing endonym for ${code}`).toBeTruthy();
       expect(typeof name).toBe('string');
     }
   });
 
-  it('endonimos-chave estao na PROPRIA lingua (autonimo, nao em ingles)', () => {
+  it('key endonyms are in their OWN language (endonym, not in English)', () => {
     const N = LOCALE_DISPLAY_NAMES as Record<string, string>;
     expect(N.en).toBe('English');
     expect(N.pt).toBe('Português');

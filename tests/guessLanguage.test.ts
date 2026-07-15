@@ -41,45 +41,45 @@ class FakeClock implements Clock {
 const G = 'g1';
 const C = 'c1';
 
-// ── funcoes puras ────────────────────────────────────────────────────────────
-describe('guessLanguage — funcoes puras', () => {
-  it('guessableLanguages: so linguas com voz E frase, sem duplicar a base', () => {
+// ── pure functions ───────────────────────────────────────────────────────────
+describe('guessLanguage — pure functions', () => {
+  it('guessableLanguages: only languages with voice AND phrase, without duplicating the base', () => {
     const models = [
       'en_US-amy-medium',
-      'en_GB-alan-medium', // 2a voz inglesa -> mesma base 'en', ignorada
+      'en_GB-alan-medium', // 2nd English voice -> same base 'en', ignored
       'de_DE-thorsten-medium',
-      'xx_YY-foo-medium', // sem frase -> excluida
+      'xx_YY-foo-medium', // no phrase -> excluded
     ];
     const cands = guessableLanguages(models);
     expect(cands.map((c) => c.base)).toEqual(['en', 'de']);
-    // A 1a voz de cada base e a escolhida.
+    // The 1st voice of each base is the chosen one.
     expect(cands[0].model).toBe('en_US-amy-medium');
-    // Cada candidata traz VARIAS frases (>=3) — a variedade e o antidoto de decorar
-    // "frase X = lingua Y" (uma e escolhida ao acaso em cada ronda).
+    // Each candidate carries SEVERAL phrases (>=3) — variety is the antidote to memorizing
+    // "phrase X = language Y" (one is picked at random each round).
     expect(cands[0].phrases.length).toBeGreaterThanOrEqual(3);
     for (const p of cands[0].phrases) expect(p.length).toBeGreaterThan(0);
   });
 
-  it('acceptableAnswers: aceita codigo, autonimo, nome no locale e nome em ingles', () => {
+  it('acceptableAnswers: accepts code, endonym, name in the locale and name in English', () => {
     const set = acceptableAnswers('de', 'pt');
-    expect(set.has('de')).toBe(true); // codigo
-    expect(set.has('alemao')).toBe(true); // nome em PT (sem acento, normalizado)
-    expect(set.has('german')).toBe(true); // nome em ingles
-    expect(set.has('deutsch')).toBe(true); // autonimo
+    expect(set.has('de')).toBe(true); // code
+    expect(set.has('alemao')).toBe(true); // name in PT (unaccented, normalized)
+    expect(set.has('german')).toBe(true); // name in English
+    expect(set.has('deutsch')).toBe(true); // endonym
   });
 
-  it('acceptableAnswers aceita o nome em VÁRIAS línguas (bug: "espanhol" era recusado)', () => {
-    // Mesmo com o jogo em inglês, um jogador PT deve acertar com "espanhol".
+  it('acceptableAnswers accepts the name in SEVERAL languages (bug: "espanhol" was rejected)', () => {
+    // Even with the game in English, a PT player should get it right with "espanhol".
     const set = acceptableAnswers('es', 'en');
     expect(set.has('espanhol')).toBe(true); // PT
     expect(set.has('spanish')).toBe(true); // EN
-    expect(set.has('espanol')).toBe(true); // ES (autónimo, sem acento)
+    expect(set.has('espanol')).toBe(true); // ES (endonym, unaccented)
     expect(set.has('espagnol')).toBe(true); // FR
-    expect(set.has('es')).toBe(true); // código
+    expect(set.has('es')).toBe(true); // code
   });
 });
 
-// ── fluxo completo via o manager real ────────────────────────────────────────
+// ── full flow via the real manager ───────────────────────────────────────────
 function makeEnv(overrides: Partial<GameEnv> = {}): {
   env: GameEnv;
   clock: FakeClock;
@@ -112,15 +112,15 @@ function makeEnv(overrides: Partial<GameEnv> = {}): {
   return { env, clock, say, send };
 }
 
-describe('guessLanguage — partida completa', () => {
-  it('anuncia rondas, aceita a resposta certa e persiste os pontos no fim', async () => {
+describe('guessLanguage — full match', () => {
+  it('announces rounds, accepts the correct answer and persists the points at the end', async () => {
     const { env, say } = makeEnv();
     const mgr = new GameManager(env);
     mgr.start(G, C, guessLanguageDef.create());
     await flush();
 
-    // 6 linguas -> 5 rondas (min(ROUNDS,langs)). Responde certo a cada ronda lendo a
-    // lingua REALMENTE falada (o model do ultimo ctx.say) e enviando o nome em ingles.
+    // 6 languages -> 5 rounds (min(ROUNDS,langs)). Answer correctly each round by reading the
+    // language ACTUALLY spoken (the model of the last ctx.say) and sending the name in English.
     for (let r = 0; r < 5; r++) {
       const lastSay = say.mock.calls[say.mock.calls.length - 1][0] as { model: string };
       const base = baseCodeOf(lastSay.model);
@@ -134,20 +134,20 @@ describe('guessLanguage — partida completa', () => {
       await flush();
     }
 
-    // Partida terminou -> persistScores chamado com u1 a somar 5 pontos.
+    // Match ended -> persistScores called with u1 totaling 5 points.
     expect(env.persistScores).toHaveBeenCalledTimes(1);
     const [, points] = (env.persistScores as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(points.get('u1')).toBe(5);
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('resposta errada nao pontua; o timeout avanca a ronda', async () => {
+  it('a wrong answer does not score; the timeout advances the round', async () => {
     const { env, clock } = makeEnv();
     const mgr = new GameManager(env);
     mgr.start(G, C, guessLanguageDef.create());
     await flush();
 
-    // Palpite errado -> ignorado (sem award).
+    // Wrong guess -> ignored (no award).
     mgr.handleMessage({
       guildId: G,
       channelId: C,
@@ -157,14 +157,14 @@ describe('guessLanguage — partida completa', () => {
     });
     await flush();
 
-    // Esgota as 5 rondas por TIMEOUT (25s cada). Ninguem pontuou -> nao persiste.
+    // Exhaust the 5 rounds by TIMEOUT (25s each). Nobody scored -> does not persist.
     for (let r = 0; r < 5; r++) clock.advance(25_000);
     await flush();
     expect(env.persistScores).not.toHaveBeenCalled();
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('sem linguas jogaveis -> avisa e termina sem crashar', async () => {
+  it('no playable languages -> warns and ends without crashing', async () => {
     const { env, send } = makeEnv({ availableModels: ['xx_YY-foo-medium'] });
     const mgr = new GameManager(env);
     mgr.start(G, C, guessLanguageDef.create());
@@ -173,7 +173,7 @@ describe('guessLanguage — partida completa', () => {
     expect(mgr.active(G)).toBe(false);
   });
 
-  it('so o primeiro a acertar ganha o ponto da ronda (2a resposta certa ignorada)', async () => {
+  it('only the first to answer correctly wins the round point (2nd correct answer ignored)', async () => {
     const { env, say, clock } = makeEnv();
     const mgr = new GameManager(env);
     mgr.start(G, C, guessLanguageDef.create());
@@ -182,7 +182,7 @@ describe('guessLanguage — partida completa', () => {
       (say.mock.calls[say.mock.calls.length - 1][0] as { model: string }).model,
     );
     const answer = localizedLanguageName(base, 'en');
-    // Dois acertos na MESMA ronda: so o 'first' conta.
+    // Two correct answers in the SAME round: only 'first' counts.
     mgr.handleMessage({
       guildId: G,
       channelId: C,
@@ -198,7 +198,7 @@ describe('guessLanguage — partida completa', () => {
       content: answer,
     });
     await flush();
-    // Deixa as rondas restantes expirarem por timeout para a partida terminar e persistir.
+    // Let the remaining rounds expire by timeout so the match ends and persists.
     for (let r = 0; r < 5; r++) clock.advance(25_000);
     await flush();
     expect(env.persistScores).toHaveBeenCalledTimes(1);

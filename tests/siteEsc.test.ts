@@ -2,31 +2,31 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-// TEST-05: a função `esc()` do painel do site escapa HTML antes de o injetar no DOM — é a
-// barreira anti-XSS de dados que vêm da API (nomes, e-mails, estado premium). Não a
-// extraímos para um módulo (o site carrega por <script> simples, não módulos — mexer nisso
-// arriscava o load). Em vez disso, LEMOS a fonte real, isolamos a expressão do `esc` e
-// avaliamo-la num sandbox — testa o código que corre em produção sem alterar o site. Se o
-// prettier reformatar o `esc`, este teste falha alto (é de propósito).
+// TEST-05: the site panel's `esc()` function escapes HTML before injecting it into the DOM — it
+// is the anti-XSS barrier for data coming from the API (names, emails, premium state). We do not
+// extract it into a module (the site loads via a plain <script>, not modules — touching that
+// risked the load). Instead, we READ the real source, isolate the `esc` expression and evaluate
+// it in a sandbox — testing the code that runs in production without altering the site. If
+// prettier reformats `esc`, this test fails loudly (on purpose).
 
-// cwd = raiz do repo quando o vitest corre (evita import.meta, banido no output CommonJS
-// do tsconfig.test.json). O bundle muda de nome a cada cache-bust (main-vN.js) — encontramo-lo.
+// cwd = repo root when vitest runs (avoids import.meta, banned in the CommonJS output
+// of tsconfig.test.json). The bundle changes name on each cache-bust (main-vN.js) — we find it.
 const JS_DIR = join(process.cwd(), 'site', 'js');
 const MAIN_JS = readdirSync(JS_DIR).find((f) => /^main-v\d+\.js$/.test(f));
 if (!MAIN_JS) throw new Error('não encontrei site/js/main-v*.js (bundle principal do site)');
 const SRC = readFileSync(join(JS_DIR, MAIN_JS), 'utf8');
 
 function extractEsc(): (s: unknown) => string {
-  // Captura `(s) => String(s).replace( ... \n    );` — do `(s) =>` até ao `);` que fecha o replace.
+  // Captures `(s) => String(s).replace( ... \n    );` — from `(s) =>` to the `);` that closes the replace.
   const m = SRC.match(/const esc =\s*(\(s\)\s*=>[\s\S]*?\n\s*\)\s*);/);
   if (!m) throw new Error(`não encontrei a expressão do esc em ${MAIN_JS} (mudou o formato?)`);
   return eval('(' + m[1] + ')') as (s: unknown) => string;
 }
 
-describe('site esc() — escaping anti-XSS do painel (fonte real)', () => {
+describe('site esc() — anti-XSS escaping of the panel (real source)', () => {
   const esc = extractEsc();
 
-  it('escapa os 5 caracteres perigosos', () => {
+  it('escapes the 5 dangerous characters', () => {
     expect(esc('&')).toBe('&amp;');
     expect(esc('<')).toBe('&lt;');
     expect(esc('>')).toBe('&gt;');
@@ -34,20 +34,20 @@ describe('site esc() — escaping anti-XSS do painel (fonte real)', () => {
     expect(esc("'")).toBe('&#39;');
   });
 
-  it('neutraliza um payload de <script>', () => {
+  it('neutralizes a <script> payload', () => {
     expect(esc('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
   });
 
-  it('neutraliza um break-out de atributo', () => {
+  it('neutralizes an attribute break-out', () => {
     expect(esc('" onmouseover="alert(1)')).toBe('&quot; onmouseover=&quot;alert(1)');
   });
 
-  it('deixa texto benigno intacto', () => {
+  it('leaves benign text intact', () => {
     expect(esc('Diogo #1234')).toBe('Diogo #1234');
     expect(esc('café ☕ 中文')).toBe('café ☕ 中文');
   });
 
-  it('coage não-strings via String() sem rebentar', () => {
+  it('coerces non-strings via String() without blowing up', () => {
     expect(esc(42)).toBe('42');
     expect(esc(null)).toBe('null');
     expect(esc(undefined)).toBe('undefined');

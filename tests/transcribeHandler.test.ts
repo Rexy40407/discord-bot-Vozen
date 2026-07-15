@@ -1,21 +1,21 @@
 // tests/transcribeHandler.test.ts
 //
-// Caracteriza o CICLO DE VIDA da sessão /transcribe (plano 019): fecha a corrida do
-// arranque (dois `start` quase simultâneos), a inversão do selfMute (silenciava o TTS
-// da guild toda), e o teardown EXTERNO (stopTranscriptionForGuild) chamado pelo funil
-// removePlayer quando o bot sai da call — sem ele, o sidecar Whisper, o listener de
-// speaking e o intervalo de auto-stop ficavam órfãos (guild presa até reiniciar).
+// Characterizes the LIFECYCLE of the /transcribe session (plan 019): closes the startup
+// race (two nearly simultaneous `start` calls), the selfMute inversion (which muted the
+// whole guild's TTS), and the EXTERNAL teardown (stopTranscriptionForGuild) called by the
+// removePlayer funnel when the bot leaves the call — without it, the Whisper sidecar, the
+// speaking listener and the auto-stop interval were left orphaned (guild stuck until restart).
 //
-// Plano 029 (ABUSE-01/DISCORD-02) acrescenta: o cap GLOBAL de sessões STT concorrentes
-// (`globalSttSemaphore`, mockado aqui por uma versão FAKE mas com a mesma forma —
-// `available`/`tryAcquire` — controlável via `h.sttSemaphore.reset(cap)`) e o teardown de
-// erro quando o `channel.send` do anúncio falha DEPOIS de des-ensurdecer.
+// Plan 029 (ABUSE-01/DISCORD-02) adds: the GLOBAL cap on concurrent STT sessions
+// (`globalSttSemaphore`, mocked here by a FAKE version but with the same shape —
+// `available`/`tryAcquire` — controllable via `h.sttSemaphore.reset(cap)`) and the error
+// teardown when the announcement's `channel.send` fails AFTER un-deafening.
 //
-// Mocka @discordjs/voice (getVoiceConnection controlável + EndBehaviorType, usado só
-// como valor em transcriptionSession.ts/recorder.ts), o sidecar Whisper (resolveWhisperCmd
-// sempre disponível) e o WhisperTranscriber (spies prewarm/transcribe/dispose) — a
-// CAPTURA real de áudio nunca corre nestes testes (não simulamos fala), só o
-// arranque/paragem da sessão.
+// Mocks @discordjs/voice (controllable getVoiceConnection + EndBehaviorType, used only
+// as a value in transcriptionSession.ts/recorder.ts), the Whisper sidecar (resolveWhisperCmd
+// always available) and the WhisperTranscriber (prewarm/transcribe/dispose spies) — the
+// real audio CAPTURE never runs in these tests (we don't simulate speech), only the
+// startup/stop of the session.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { initDb } from '../src/store/db';
@@ -24,9 +24,9 @@ import { t, DEFAULT_LOCALE } from '../src/i18n/index';
 import type { BotDeps } from '../src/bot/deps';
 
 const h = vi.hoisted(() => {
-  // Fake do Semaphore GLOBAL de STT: mesma forma que src/tts/semaphore.ts (available,
-  // tryAcquire síncrono devolvendo um release IDEMPOTENTE), mas com `reset(cap)` para os
-  // testes controlarem a capacidade sem depender de estado deixado por testes anteriores.
+  // Fake of the GLOBAL STT Semaphore: same shape as src/tts/semaphore.ts (available,
+  // synchronous tryAcquire returning an IDEMPOTENT release), but with `reset(cap)` so the
+  // tests can control the capacity without depending on state left by previous tests.
   const sttSemaphore = {
     permits: 5,
     get available(): number {
@@ -58,7 +58,7 @@ const h = vi.hoisted(() => {
   };
 });
 
-// Só o que transcribe.ts/transcriptionSession.ts/recorder.ts tocam em runtime.
+// Only what transcribe.ts/transcriptionSession.ts/recorder.ts touch at runtime.
 vi.mock('@discordjs/voice', () => ({
   getVoiceConnection: (...args: unknown[]) => h.getVoiceConnection(...args),
   EndBehaviorType: { AfterSilence: 'afterSilence' },
@@ -120,8 +120,8 @@ function makeChannel() {
   return channel;
 }
 
-/** Canal cujo `send` (o anúncio de arranque) FALHA sempre — simula SendMessages perdido,
- * rate-limit ou falha de rede (plano 029, parte B/DISCORD-02). */
+/** Channel whose `send` (the startup announcement) ALWAYS fails — simulates lost SendMessages,
+ * rate-limit or network failure (plan 029, part B/DISCORD-02). */
 function makeFailingChannel(error: Error = new Error('SendMessages perdido')) {
   const channel: {
     isTextBased: () => boolean;
@@ -177,9 +177,9 @@ beforeEach(() => {
   h.resolveWhisperCmd.mockReset();
   h.resolveWhisperCmd.mockReturnValue({ exe: 'py', args: ['whisper_sidecar.py'] });
   h.transcriberInstances.length = 0;
-  // Reset GENEROSO por omissão: a maioria dos testes não testa o cap em si e nem sempre
-  // liberta a sessão que arrancou — sem isto, permits ficariam presos entre testes.
-  // Os testes do cap (abaixo) chamam h.sttSemaphore.reset(1) explicitamente.
+  // GENEROUS reset by default: most tests don't test the cap itself and don't always
+  // release the session they started — without this, permits would stay stuck between tests.
+  // The cap tests (below) call h.sttSemaphore.reset(1) explicitly.
   h.sttSemaphore.reset(5);
   db = initDb(':memory:');
 });
@@ -194,10 +194,10 @@ function makeDeps(guildId: string): BotDeps {
   return { db } as unknown as BotDeps;
 }
 
-// ── testes ─────────────────────────────────────────────────────────────────────────
+// ── tests ─────────────────────────────────────────────────────────────────────────
 
-describe('/transcribe — ciclo de vida da sessão (plano 019)', () => {
-  it('start: des-ensurdece e NÃO fica self-muted (bug: silenciava o TTS da guild toda)', async () => {
+describe('/transcribe — session lifecycle (plan 019)', () => {
+  it('start: un-deafens and does NOT stay self-muted (bug: it muted the whole guild TTS)', async () => {
     const guildId = 'g-selfmute';
     const conn = makeConnection();
     h.getVoiceConnection.mockReturnValue(conn);
@@ -215,7 +215,7 @@ describe('/transcribe — ciclo de vida da sessão (plano 019)', () => {
     expect(i.replies).toContain(t('stt.started', DEFAULT_LOCALE));
   });
 
-  it('stop: reensurdece, remove o listener de speaking e faz dispose() do transcriber (invariante de privacidade)', async () => {
+  it('stop: re-deafens, removes the speaking listener and calls dispose() on the transcriber (privacy invariant)', async () => {
     const guildId = 'g-stop';
     const conn = makeConnection();
     h.getVoiceConnection.mockReturnValue(conn);
@@ -236,7 +236,7 @@ describe('/transcribe — ciclo de vida da sessão (plano 019)', () => {
     expect(transcriber.dispose).toHaveBeenCalledOnce();
   });
 
-  it('stopTranscriptionForGuild (funil removePlayer): mesma limpeza, NÃO faz rejoin (ligação já morreu) e liberta a guild', async () => {
+  it('stopTranscriptionForGuild (removePlayer funnel): same cleanup, does NOT rejoin (connection already dead) and frees the guild', async () => {
     const guildId = 'g-external-teardown';
     const conn = makeConnection();
     h.getVoiceConnection.mockReturnValue(conn);
@@ -249,19 +249,19 @@ describe('/transcribe — ciclo de vida da sessão (plano 019)', () => {
 
     stopTranscriptionForGuild(guildId);
 
-    // voice-left: a ligação já não existe — não deve tentar reensurdecer nela.
+    // voice-left: the connection no longer exists — it must not try to re-deafen on it.
     expect(conn.rejoin).not.toHaveBeenCalled();
     expect(conn.receiver.speaking.off).toHaveBeenCalledWith('start', expect.any(Function));
     expect(transcriber.dispose).toHaveBeenCalledOnce();
 
-    // a guild ficou livre: um novo start NÃO vê "already running".
+    // the guild is now free: a new start does NOT see "already running".
     const i2 = makeInteraction({ guildId, sub: 'start', channel });
     await handleTranscribe(i2 as any, deps);
     expect(i2.replies).not.toContain(t('stt.alreadyRunning', DEFAULT_LOCALE));
     expect(i2.replies).toContain(t('stt.started', DEFAULT_LOCALE));
   });
 
-  it('duas chamadas start em paralelo para a mesma guild só registam UM listener speaking.on (corrida do arranque)', async () => {
+  it('two parallel start calls for the same guild only register ONE speaking.on listener (startup race)', async () => {
     const guildId = 'g-race';
     const conn = makeConnection();
     h.getVoiceConnection.mockReturnValue(conn);
@@ -277,7 +277,7 @@ describe('/transcribe — ciclo de vida da sessão (plano 019)', () => {
     expect(starts).toHaveLength(1);
   });
 
-  it('auto-stop: call sem humanos ao fim de 15s aciona a limpeza (mesmo sem ninguém carregar em stop)', async () => {
+  it('auto-stop: a call with no humans after 15s triggers cleanup (even without anyone pressing stop)', async () => {
     vi.useFakeTimers();
     const guildId = 'g-autostop';
     const conn = makeConnection();
@@ -297,9 +297,9 @@ describe('/transcribe — ciclo de vida da sessão (plano 019)', () => {
   });
 });
 
-describe('/transcribe start — cap global de concorrência STT (plano 029, ABUSE-01)', () => {
-  it('cap atingido -> atCapacity para uma guild NOVA; a guild original não é afetada', async () => {
-    h.sttSemaphore.reset(1); // só 1 sessão STT concorrente permitida no processo inteiro
+describe('/transcribe start — global STT concurrency cap (plan 029, ABUSE-01)', () => {
+  it('cap reached -> atCapacity for a NEW guild; the original guild is unaffected', async () => {
+    h.sttSemaphore.reset(1); // only 1 concurrent STT session allowed in the whole process
     const connA = makeConnection();
     const connB = makeConnection();
     const deps = makeDeps('g-cap-a');
@@ -310,18 +310,18 @@ describe('/transcribe start — cap global de concorrência STT (plano 029, ABUS
     await handleTranscribe(iA as any, deps);
     expect(iA.replies).toContain(t('stt.started', DEFAULT_LOCALE));
 
-    // 2.ª guild, com o permit global esgotado pela 1.ª: tem de ser recusada, mesmo com
-    // Premium+Manage-Guild+sidecar+voz todos verdes.
+    // 2nd guild, with the global permit exhausted by the 1st: it must be refused, even with
+    // Premium+Manage-Guild+sidecar+voice all green.
     h.getVoiceConnection.mockReturnValueOnce(connB);
     const iB = makeInteraction({ guildId: 'g-cap-b', sub: 'start', channel: makeChannel() });
     await handleTranscribe(iB as any, deps);
 
     expect(iB.replies).toContain(t('stt.atCapacity', DEFAULT_LOCALE));
-    expect(connB.rejoin).not.toHaveBeenCalled(); // nunca chegou a des-ensurdecer
+    expect(connB.rejoin).not.toHaveBeenCalled(); // never got to un-deafen
     expect(connB.receiver.speaking.on).not.toHaveBeenCalled();
   });
 
-  it('parar a sessão liberta o permit -> a próxima guild já consegue arrancar', async () => {
+  it('stopping the session releases the permit -> the next guild can now start', async () => {
     h.sttSemaphore.reset(1);
     const connA = makeConnection();
     const connB = makeConnection();
@@ -334,8 +334,8 @@ describe('/transcribe start — cap global de concorrência STT (plano 029, ABUS
       deps,
     );
 
-    // pára a 1.ª sessão -> liberta o permit global (stop() não chama getVoiceConnection —
-    // usa a ligação guardada na sessão ativa).
+    // stops the 1st session -> releases the global permit (stop() doesn't call getVoiceConnection —
+    // it uses the connection stored in the active session).
     await handleTranscribe(
       makeInteraction({ guildId: 'g-cap-c', sub: 'stop', channel: makeChannel() }) as any,
       deps,
@@ -350,8 +350,8 @@ describe('/transcribe start — cap global de concorrência STT (plano 029, ABUS
   });
 });
 
-describe('/transcribe start — teardown de erro no anúncio (plano 029, DISCORD-02)', () => {
-  it('channel.send do anúncio falha DEPOIS de des-ensurdecer -> reensurdece, remove listener, dispose e liberta o permit', async () => {
+describe('/transcribe start — error teardown on announcement (plan 029, DISCORD-02)', () => {
+  it("announcement's channel.send fails AFTER un-deafening -> re-deafens, removes listener, dispose and releases the permit", async () => {
     h.sttSemaphore.reset(1);
     const guildId = 'g-announce-fail';
     const conn = makeConnection();
@@ -362,7 +362,7 @@ describe('/transcribe start — teardown de erro no anúncio (plano 029, DISCORD
 
     await handleTranscribe(i as any, deps);
 
-    // invariante do plano 029: se des-ensurdeceu, TEM de voltar a ensurdecer.
+    // plan 029 invariant: if it un-deafened, it MUST deafen again.
     expect(conn.rejoin).toHaveBeenCalledWith({
       channelId: 'VC',
       selfDeaf: false,
@@ -373,24 +373,24 @@ describe('/transcribe start — teardown de erro no anúncio (plano 029, DISCORD
       selfDeaf: true,
       selfMute: false,
     });
-    // o listener de speaking foi removido (não fica preso a ouvir sem sessão registada).
+    // the speaking listener was removed (it doesn't stay stuck listening with no registered session).
     expect(conn.receiver.speaking.off).toHaveBeenCalledWith('start', expect.any(Function));
-    // o transcriber (já arrancado/prewarm) foi descartado.
+    // the transcriber (already started/prewarmed) was discarded.
     const transcriber = h.transcriberInstances.at(-1)!;
     expect(transcriber.dispose).toHaveBeenCalledOnce();
-    // a resposta ao utilizador reflete a falha, não "started".
+    // the reply to the user reflects the failure, not "started".
     expect(i.replies).toContain(t('stt.startFailed', DEFAULT_LOCALE));
     expect(i.replies).not.toContain(t('stt.started', DEFAULT_LOCALE));
 
-    // o permit global foi libertado: uma NOVA tentativa (mesma guild, canal que já não
-    // falha) consegue arrancar em vez de ficar presa em atCapacity.
+    // the global permit was released: a NEW attempt (same guild, channel that no longer
+    // fails) can start instead of getting stuck in atCapacity.
     const okChannel = makeChannel();
     const retry = makeInteraction({ guildId, sub: 'start', channel: okChannel });
     await handleTranscribe(retry as any, deps);
     expect(retry.replies).toContain(t('stt.started', DEFAULT_LOCALE));
   });
 
-  it('sem sessão registada em activeSessions: stopTranscriptionForGuild fica no-op (não há dupla-libertação do permit)', async () => {
+  it('with no session registered in activeSessions: stopTranscriptionForGuild stays a no-op (no double-release of the permit)', async () => {
     h.sttSemaphore.reset(1);
     const guildId = 'g-announce-fail-2';
     const conn = makeConnection();
@@ -400,9 +400,9 @@ describe('/transcribe start — teardown de erro no anúncio (plano 029, DISCORD
 
     await handleTranscribe(makeInteraction({ guildId, sub: 'start', channel }) as any, deps);
 
-    // a sessão nunca chegou a activeSessions -> stopTranscriptionForGuild é no-op (idempotente,
-    // não deve rebentar nem sobre-libertar o permit).
+    // the session never reached activeSessions -> stopTranscriptionForGuild is a no-op (idempotent,
+    // must not blow up nor over-release the permit).
     expect(() => stopTranscriptionForGuild(guildId)).not.toThrow();
-    expect(h.sttSemaphore.available).toBe(1); // continua libertado, não foi a negativo
+    expect(h.sttSemaphore.available).toBe(1); // still released, didn't go negative
   });
 });

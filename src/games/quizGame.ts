@@ -2,54 +2,54 @@ import type { Game, GameContext, GameMessage, SayOpts } from './types';
 import { bump, sendStandings, type Tally } from './finish';
 
 /**
- * Uma ronda de um jogo-quiz de voz: o que FALAR/ENVIAR e como reconhecer a resposta
- * certa. Todos os textos ja vem LOCALIZADOS (o jogo chama ctx.t antes de os por aqui).
+ * A round of a voice quiz game: what to SPEAK/SEND and how to recognize the correct
+ * answer. All texts already come LOCALIZED (the game calls ctx.t before putting them here).
  */
 export interface QuizRound {
-  /** Fala em voz alta (opcional): o "enigma" da ronda. */
+  /** Spoken aloud (optional): the round's "riddle". */
   speak?: { text: string; opts?: SayOpts };
-  /** Mensagem a enviar ao canal ao abrir a ronda (ex. "Ronda 2/5 — ouve…"). */
+  /** Message to send to the channel when the round opens (e.g. "Round 2/5 — listen…"). */
   announce?: string;
-  /** A resposta `raw` (crua) esta certa? */
+  /** Is the `raw` answer correct? */
   accept: (raw: string) => boolean;
-  /** Mensagem de canal quando alguem acerta (recebe o nome de quem acertou). */
+  /** Channel message when someone gets it right (receives the name of who got it). */
   onCorrect: (userName: string) => string;
-  /** Mensagem de canal quando a ronda expira sem resposta. */
+  /** Channel message when the round expires without an answer. */
   onTimeout: () => string;
 }
 
 /**
- * Base PARTILHADA dos jogos "voz -> primeiro a acertar" (Adivinha a Lingua,
- * Velocidade, Ditado, Matematica, …). Trata de TODA a maquinaria comum:
- *  - loop de N rondas com intro opcional;
- *  - fala/anuncia cada ronda e arma o timeout;
- *  - aceita o PRIMEIRO palpite certo (award 1 ponto), ignora os seguintes na ronda;
- *  - o timeout captura o numero da ronda para nao disparar numa ronda ja avancada
- *    (evita o timer-fantasma sem cancelar o timer — mesmo padrao do guessLanguage);
- *  - placar local + resumo final partilhado (game.finish.*).
+ * SHARED base for the "voice -> first to answer" games (Guess the Language,
+ * Speed, Dictation, Math, …). Handles ALL the common machinery:
+ *  - loop of N rounds with an optional intro;
+ *  - speaks/announces each round and arms the timeout;
+ *  - accepts the FIRST correct guess (award 1 point), ignores the following ones in the round;
+ *  - the timeout captures the round number so it does not fire on an already-advanced round
+ *    (avoids the ghost timer without cancelling the timer — same pattern as guessLanguage);
+ *  - local scoreboard + shared final summary (game.finish.*).
  *
- * Cada jogo concreto so implementa o CONTEUDO: prepare (nº de rondas + prep unica),
- * makeRound (a ronda i) e emptyMessage (sem conteudo). Assim um jogo novo fica em
- * ~40 linhas em vez de repetir esta maquinaria.
+ * Each concrete game only implements the CONTENT: prepare (number of rounds + one-time prep),
+ * makeRound (round i) and emptyMessage (no content). This way a new game fits in
+ * ~40 lines instead of repeating this machinery.
  */
 export abstract class QuizGame implements Game {
   abstract readonly id: string;
-  /** Tempo-limite de cada ronda (ms). Sobreponivel por jogo. */
+  /** Time limit of each round (ms). Overridable per game. */
   protected roundMs = 25_000;
 
   private idx = 0;
   private total = 0;
-  private answered = true; // true entre rondas — nao aceita palpites fora de ronda
+  private answered = true; // true between rounds — does not accept guesses outside a round
   private cur: QuizRound | null = null;
   private readonly tally: Tally = new Map();
 
-  /** Prep unica; devolve o nº de rondas. <=0 => sem conteudo (envia emptyMessage). */
+  /** One-time prep; returns the number of rounds. <=0 => no content (sends emptyMessage). */
   protected abstract prepare(ctx: GameContext): number;
-  /** Constroi a ronda `index` (0-based). Chamado uma vez por ronda. */
+  /** Builds round `index` (0-based). Called once per round. */
   protected abstract makeRound(ctx: GameContext, index: number): QuizRound;
-  /** Mensagem quando nao ha conteudo para jogar (prepare devolveu 0). */
+  /** Message when there is no content to play (prepare returned 0). */
   protected abstract emptyMessage(ctx: GameContext): string;
-  /** Texto de intro (ja localizado). null => sem intro. */
+  /** Intro text (already localized). null => no intro. */
   protected intro(_ctx: GameContext, _rounds: number): string | null {
     return null;
   }
@@ -99,7 +99,7 @@ export abstract class QuizGame implements Game {
   }
 
   private async finish(ctx: GameContext): Promise<void> {
-    await sendStandings(ctx, this.tally); // placar + anúncio do vencedor em voz
+    await sendStandings(ctx, this.tally); // scoreboard + winner announcement in voice
     ctx.end();
   }
 }

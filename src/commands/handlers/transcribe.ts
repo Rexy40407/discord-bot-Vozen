@@ -1,11 +1,11 @@
-// src/commands/handlers/transcribe.ts — handler de /transcribe (STT, Fase 4).
+// src/commands/handlers/transcribe.ts — /transcribe handler (STT, Phase 4).
 //
-// /transcribe start|stop|revoke. START (Manage-Guild + Premium): des-ensurdece o bot
-// (selfDeaf:false — SEM isto não ouve nada), arranca uma TranscriptionSession e posta um
-// ANÚNCIO com um botão de consentimento inline (só o próprio carrega, grava stt_consent).
-// Consent-first: quem não consentiu nunca é transcrito; quem consente é lembrado para sempre
-// nesse servidor. STOP restaura selfDeaf:true e anuncia. Auto-stop quando não resta ninguém
-// consentido na call (ou a call esvazia). Sem sidecar Whisper => "indisponível" (inerte).
+// /transcribe start|stop|revoke. START (Manage-Guild + Premium): un-deafens the bot
+// (selfDeaf:false — WITHOUT this it hears nothing), starts a TranscriptionSession and posts an
+// ANNOUNCEMENT with an inline consent button (only the person themselves clicks it, records stt_consent).
+// Consent-first: whoever did not consent is never transcribed; whoever consents is remembered forever
+// on that server. STOP restores selfDeaf:true and announces. Auto-stops when no consented person
+// remains in the call (or the call empties). Without the Whisper sidecar => "unavailable" (inert).
 import {
   ChatInputCommandInteraction,
   PermissionFlagsBits,
@@ -34,26 +34,26 @@ interface ActiveSession {
   session: TranscriptionSession;
   transcriber: WhisperTranscriber;
   connection: VoiceConnection;
-  /** Canal de voz onde o bot está (para restaurar o selfDeaf ao parar). */
+  /** Voice channel where the bot is (to restore selfDeaf on stop). */
   voiceChannelId: string;
   onSpeaking: (userId: string) => void;
   announceMsg: Message;
   collector: { stop: (reason?: string) => void };
   autoStopTimer: ReturnType<typeof setInterval> | null;
   everConsented: boolean;
-  /** Liberta o permit do cap GLOBAL de STT (plano 029) — idempotente, chamar uma ou mais vezes. */
+  /** Releases the permit of the GLOBAL STT cap (plan 029) — idempotent, callable one or more times. */
   releaseSttSlot: () => void;
 }
 
-// Uma sessão de transcrição por servidor.
+// One transcription session per server.
 const activeSessions = new Map<string, ActiveSession>();
-// Guildas com um /transcribe start EM CURSO (reservadas antes do 1.º await, libertadas
-// no finally). Sem isto, dois `start` quase simultâneos liam `activeSessions` ANTES de
-// `activeSessions.set` correr (só acontece depois do await no anúncio) e ambos passavam
-// no gate — duplicava o listener de speaking (transcrição em duplicado + sessão órfã).
+// Guilds with a /transcribe start IN PROGRESS (reserved before the 1st await, released
+// in the finally). Without this, two nearly simultaneous `start`s read `activeSessions` BEFORE
+// `activeSessions.set` runs (which only happens after the await on the announcement) and both passed
+// the gate — duplicating the speaking listener (duplicate transcription + orphan session).
 const startingGuilds = new Set<string>();
 
-/** Ids dos HUMANOS (não-bots) no canal de voz onde o bot está. */
+/** Ids of the HUMANS (non-bots) in the voice channel where the bot is. */
 function humanIdsInVoice(i: ChatInputCommandInteraction, channelId: string): string[] {
   const ch = i.guild?.channels.cache.get(channelId);
   if (!ch || !ch.isVoiceBased()) return [];
@@ -97,8 +97,8 @@ export async function handleTranscribe(
     sidecarAvailable: cmd !== null,
     botInVoice: connection !== null,
     alreadyRunning: activeSessions.has(guildId) || startingGuilds.has(guildId),
-    // Peek SEM reservar (síncrono, sem IO — evaluateTranscribeStart tem de ficar puro).
-    // A reserva a sério (tryAcquire) só acontece depois de o gate dizer 'ok', mais abaixo.
+    // Peek WITHOUT reserving (synchronous, no IO — evaluateTranscribeStart must stay pure).
+    // The real reservation (tryAcquire) only happens after the gate says 'ok', further below.
     atCapacity: globalSttSemaphore.available <= 0,
   });
   if (verdict !== 'ok') {
@@ -113,36 +113,36 @@ export async function handleTranscribe(
     await reply(i, t(key, locale));
     return;
   }
-  // Reserva o permit GLOBAL (cap de concorrência STT, plano 029/ABUSE-01) e a guild — AMBOS
-  // SEM qualquer await pelo meio, tal como o peek acima. `tryAcquire` é síncrono e nunca
-  // deveria falhar logo a seguir ao peek (Node é single-threaded, não há await entre os
-  // dois); o `if` é só rede de segurança caso isto alguma vez deixe de ser verdade.
+  // Reserve the GLOBAL permit (STT concurrency cap, plan 029/ABUSE-01) and the guild — BOTH
+  // WITHOUT any await in between, just like the peek above. `tryAcquire` is synchronous and should
+  // never fail right after the peek (Node is single-threaded, there is no await between the
+  // two); the `if` is just a safety net in case this ever stops being true.
   const releaseSttSlot = globalSttSemaphore.tryAcquire();
   if (!releaseSttSlot) {
     await reply(i, t('stt.atCapacity', locale));
     return;
   }
-  // Reserva a guild JÁ (antes de qualquer await) — dois /transcribe start quase
-  // simultâneos passavam ambos no gate acima e duplicavam listeners (mesmo padrão do
-  // guard activeCloneRecordings no clone). O finally cobre TODO early-return abaixo
-  // (noChannel, notInVoice) e o caminho feliz — assim que activeSessions.set correr,
-  // é essa entrada que passa a bastar como "already running".
+  // Reserve the guild NOW (before any await) — two nearly simultaneous /transcribe start
+  // both passed the gate above and duplicated listeners (same pattern as the
+  // activeCloneRecordings guard in clone). The finally covers EVERY early-return below
+  // (noChannel, notInVoice) and the happy path — as soon as activeSessions.set runs,
+  // that entry becomes enough to count as "already running".
   startingGuilds.add(guildId);
 
-  // A partir daqui verdict==='ok' garante cmd e connection não-nulos.
+  // From here on verdict==='ok' guarantees cmd and connection are non-null.
   const conn = connection as VoiceConnection;
-  // Estado do rollback de erro (plano 029, parte B/DISCORD-02): cada variável documenta
-  // até onde a sessão chegou, para o catch só desfazer o que foi mesmo feito.
+  // Error-rollback state (plan 029, part B/DISCORD-02): each variable documents
+  // how far the session got, so the catch only undoes what was actually done.
   let voiceChannelId: string | null = null;
   let transcriber: WhisperTranscriber | null = null;
   let onSpeaking: ((uid: string) => void) | null = null;
   let undeafened = false;
-  // true assim que activeSessions.set() corre — dali em diante stopTranscriptionForGuild
-  // passa a ser o ÚNICO dono do teardown (evita o catch abaixo limpar em duplicado).
+  // true as soon as activeSessions.set() runs — from then on stopTranscriptionForGuild
+  // becomes the SOLE owner of teardown (prevents the catch below from cleaning up twice).
   let handedOff = false;
   try {
-    // Defere JÁ (ephemeral): a partir daqui há IO que pode ser lento/falhar (o anúncio no
-    // canal) — sem isto, os 3s da interação estouravam antes de conseguirmos responder.
+    // Defer NOW (ephemeral): from here on there is IO that may be slow/fail (the announcement in
+    // the channel) — without this, the interaction's 3s would blow past before we could respond.
     await i.deferReply({ flags: MessageFlags.Ephemeral });
 
     const channel = i.channel;
@@ -158,21 +158,21 @@ export async function handleTranscribe(
     }
     voiceChannelId = vcid;
 
-    // FORÇA a língua da transcrição: a escolhida em `language:` ganha; senão o locale do
-    // servidor (2 letras, ex. 'pt'). A auto-deteção do Whisper em fala real curta transcreve
-    // mal (PT sai como checo/sueco); o sidecar cai na auto-deteção se a língua for inválida.
+    // FORCE the transcription language: the one chosen in `language:` wins; otherwise the server's
+    // locale (2 letters, e.g. 'pt'). Whisper's auto-detection on short real speech transcribes
+    // badly (PT comes out as Czech/Swedish); the sidecar falls back to auto-detection if the language is invalid.
     const lang = resolveTranscribeLang(i.options.getString('language'), locale);
     if (cmd) cmd.args.push('--lang', lang);
     const tr = new WhisperTranscriber(cmd);
     transcriber = tr;
     tr.prewarm();
 
-    // Des-ensurdece o bot SÓ agora (senão o receiver não recebe áudio). selfMute fica
-    // FALSE como em todos os outros join/rejoin — um bot self-muted não transmite áudio,
-    // o que silenciava o TTS da guild inteira durante a transcrição.
+    // Un-deafen the bot ONLY now (otherwise the receiver receives no audio). selfMute stays
+    // FALSE as in every other join/rejoin — a self-muted bot does not transmit audio,
+    // which would silence the entire guild's TTS during transcription.
     conn.rejoin({ channelId: voiceChannelId, selfDeaf: false, selfMute: false });
-    // Invariante do plano 029: a partir daqui, SE algo falhar, o catch TEM de voltar a
-    // ensurdecer — senão o bot fica a ouvir sem sessão registada (DISCORD-02).
+    // Plan 029 invariant: from here on, IF something fails, the catch MUST deafen
+    // again — otherwise the bot stays listening with no registered session (DISCORD-02).
     undeafened = true;
 
     const session = new TranscriptionSession({
@@ -194,7 +194,7 @@ export async function handleTranscribe(
     onSpeaking = speakingHandler;
     conn.receiver.speaking.on('start', speakingHandler);
 
-    // Anúncio no canal COM o botão de consentimento inline (transparência + 1-clique na call).
+    // Announcement in the channel WITH the inline consent button (transparency + 1-click in the call).
     const consentRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId('sttconsent')
@@ -202,8 +202,8 @@ export async function handleTranscribe(
         .setStyle(ButtonStyle.Success)
         .setEmoji('✅'),
     );
-    // PODE LANÇAR (SendMessages perdido, rate-limit, falha de rede) — é exatamente o caso
-    // que o catch abaixo trata (DISCORD-02: bot fica des-ensurdecido e a ouvir sem sessão).
+    // MAY THROW (SendMessages lost, rate-limit, network failure) — this is exactly the case
+    // the catch below handles (DISCORD-02: bot stays un-deafened and listening with no session).
     const announceMsg = await channel.send({
       content: t('stt.announceStart', locale),
       components: [consentRow],
@@ -233,8 +233,8 @@ export async function handleTranscribe(
       void btn.reply({ content: t('stt.consentThanks', locale), flags: MessageFlags.Ephemeral });
     });
 
-    // Auto-stop: verifica periodicamente se ainda faz sentido continuar (call vazia, ou
-    // ninguém consentido resta depois de já ter havido consentimento).
+    // Auto-stop: periodically checks whether it still makes sense to continue (empty call, or
+    // no consented person remains after there has already been consent).
     active.autoStopTimer = setInterval(() => {
       const humans = humanIdsInVoice(i, voiceChannelId!);
       if (
@@ -247,51 +247,51 @@ export async function handleTranscribe(
 
     await i.editReply(t('stt.started', locale));
   } catch (err) {
-    // Teardown de erro (plano 029, parte B/DISCORD-02). Se `handedOff` é false, a sessão
-    // NUNCA chegou a `activeSessions` — nem /transcribe stop nem o funil de voice-left
-    // (stopTranscriptionForGuild) sabem que ela existe, por isso o cleanup TEM de correr
-    // aqui. Invariante garantida: se o bot alguma vez des-ensurdeceu, este catch volta
-    // SEMPRE a ensurdecer, mesmo quando o `channel.send` do anúncio falha. O release do
-    // permit global fica no `finally` abaixo (cobre também os early-return sem throw).
+    // Error teardown (plan 029, part B/DISCORD-02). If `handedOff` is false, the session
+    // NEVER reached `activeSessions` — neither /transcribe stop nor the voice-left funnel
+    // (stopTranscriptionForGuild) knows it exists, so the cleanup MUST run
+    // here. Guaranteed invariant: if the bot ever un-deafened, this catch ALWAYS
+    // deafens again, even when the announcement's `channel.send` fails. The release of the
+    // global permit is in the `finally` below (also covers the early-returns without throw).
     log.warn(`[stt] failed to start session (guild ${guildId}):`, err);
     if (!handedOff) {
       if (onSpeaking) {
         try {
           conn.receiver.speaking.off('start', onSpeaking);
         } catch {
-          // ligação pode ter morrido entretanto — inofensivo
+          // connection may have died in the meantime — harmless
         }
       }
       if (undeafened && voiceChannelId) {
         try {
           conn.rejoin({ channelId: voiceChannelId, selfDeaf: true, selfMute: false });
         } catch {
-          // ligação pode ter morrido entretanto — inofensivo
+          // connection may have died in the meantime — harmless
         }
       }
       transcriber?.dispose();
-      // Só reportamos "falhou, desfiz tudo" quando ISSO é verdade. Se `handedOff` já era
-      // true aqui, a sessão está registada e viva (o único que pode ter lançado depois
-      // disso é o `editReply(stt.started)` final) — mentir "nada está a ser gravado"
-      // contradiria a própria invariante de confiança do plano 029/DISCORD-02.
+      // We only report "failed, undid everything" when THAT is true. If `handedOff` was already
+      // true here, the session is registered and alive (the only thing that could have thrown after
+      // that is the final `editReply(stt.started)`) — lying "nothing is being recorded"
+      // would contradict the very trust invariant of plan 029/DISCORD-02.
       await i.editReply(t('stt.startFailed', locale)).catch(() => {});
     }
   } finally {
-    // Liberta o permit global SE a sessão nunca chegou a `activeSessions` — cobre TANTO
-    // os early-return acima (noChannel, notInVoice, sem throw) COMO o catch (channel.send
-    // falhou). `releaseSttSlot` é idempotente (Semaphore.makeRelease), por isso mesmo que
-    // o catch viesse a chamar-lo também não haveria dupla-libertação (stop 029: nunca
-    // deixar o contador ir a negativo/bloquear STT).
+    // Release the global permit IF the session never reached `activeSessions` — covers BOTH
+    // the early-returns above (noChannel, notInVoice, no throw) AND the catch (channel.send
+    // failed). `releaseSttSlot` is idempotent (Semaphore.makeRelease), so even if
+    // the catch also called it there would be no double-release (029 stop: never
+    // let the counter go negative/block STT).
     if (!handedOff) releaseSttSlot();
     startingGuilds.delete(guildId);
   }
 }
 
 /**
- * Teardown externo: chamado pelo FUNIL de saída de voz (removePlayer) quando o bot
- * sai da call (kick, /leave, saída-por-sozinho) a meio de uma transcrição. Melhor-
- * -esforço e idempotente (no-op se não havia sessão) — NÃO tenta `rejoin` (a ligação
- * já morreu nesse ponto) nem anuncia no canal, ao contrário de stopSession.
+ * External teardown: called by the voice-exit FUNNEL (removePlayer) when the bot
+ * leaves the call (kick, /leave, left-because-alone) mid-transcription. Best-
+ * -effort and idempotent (no-op if there was no session) — does NOT attempt `rejoin` (the connection
+ * has already died at that point) nor announce in the channel, unlike stopSession.
  */
 export function stopTranscriptionForGuild(guildId: string): void {
   const a = activeSessions.get(guildId);
@@ -301,19 +301,19 @@ export function stopTranscriptionForGuild(guildId: string): void {
   try {
     a.connection.receiver.speaking.off('start', a.onSpeaking);
   } catch {
-    // ligação pode já ter morrido
+    // connection may have already died
   }
   a.collector.stop('voice-left');
   if (a.autoStopTimer) clearInterval(a.autoStopTimer);
   a.transcriber.dispose();
-  // Liberta o permit do cap GLOBAL de STT (plano 029) — este é o FUNIL onde TODA sessão
-  // registada em `activeSessions` acaba por passar (stop() chama-o também, ver abaixo).
-  // Idempotente: mesmo que algo o chamasse duas vezes, não sobre-liberta.
+  // Releases the permit of the GLOBAL STT cap (plan 029) — this is the FUNNEL where EVERY session
+  // registered in `activeSessions` eventually passes (stop() calls it too, see below).
+  // Idempotent: even if something called it twice, it does not over-release.
   a.releaseSttSlot();
   a.announceMsg.edit({ components: [] }).catch(() => {});
 }
 
-/** Pára a sessão do servidor: restaura selfDeaf, limpa listeners/timers, anuncia. */
+/** Stops the server's session: restores selfDeaf, clears listeners/timers, announces. */
 async function stopSession(
   guildId: string,
   locale: string,
@@ -322,12 +322,12 @@ async function stopSession(
   const a = activeSessions.get(guildId);
   if (!a) return false;
   stopTranscriptionForGuild(guildId);
-  // Volta a ensurdecer o bot (deixa de ouvir) — só aqui, porque só aqui a ligação
-  // ainda existe (o teardown por saída-de-voz acima NUNCA deve tentar rejoin nela).
+  // Deafen the bot again (stops listening) — only here, because only here the connection
+  // still exists (the voice-exit teardown above must NEVER attempt a rejoin on it).
   try {
     a.connection.rejoin({ channelId: a.voiceChannelId, selfDeaf: true, selfMute: false });
   } catch {
-    // a ligação pode já ter caído
+    // the connection may have already dropped
   }
   const ch = a.announceMsg.channel;
   if (ch && ch.isTextBased() && 'send' in ch) {

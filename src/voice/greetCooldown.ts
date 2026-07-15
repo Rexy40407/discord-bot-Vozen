@@ -1,25 +1,26 @@
-// src/voice/greetCooldown.ts — cooldown da saudação de entrada na call (plano 017).
+// src/voice/greetCooldown.ts — cooldown for the call-join greeting (plan 017).
 //
-// PROBLEMA: sem cooldown, quem spama ENTRAR/SAIR do canal do bot faz o Vozen dizer
-// "Olá {nome}" (ou os parabéns) sem parar — chato e ruidoso. SOLUÇÃO: por (guild,
-// user), só saúda uma vez a cada GREET_COOLDOWN_MS. É uma JANELA FIXA: um pedido
-// suprimido NÃO estende a janela (senão um spammer contínuo nunca mais era saudado),
-// por isso o timestamp só é renovado quando a saudação REALMENTE sai.
+// PROBLEM: without a cooldown, anyone who spams JOIN/LEAVE of the bot's channel makes
+// Vozen say "Hello {name}" (or the birthday wish) non-stop — annoying and noisy.
+// SOLUTION: per (guild, user), greet only once every GREET_COOLDOWN_MS. It's a FIXED
+// WINDOW: a suppressed request does NOT extend the window (otherwise a continuous
+// spammer would never be greeted again), so the timestamp is only renewed when the
+// greeting ACTUALLY goes out.
 //
-// Estado em memória (não persiste; reset no restart é aceitável). Cap + evict da
-// entrada mais antiga (anti-crescimento), mesmo padrão do langMemory.
+// In-memory state (does not persist; a reset on restart is acceptable). Cap + evict of
+// the oldest entry (anti-growth), same pattern as langMemory.
 
-/** Janela do cooldown: 5 minutos. Constante — não é configurável (decisão do Diogo). */
+/** Cooldown window: 5 minutes. Constant — not configurable (Diogo's decision). */
 export const GREET_COOLDOWN_MS = 5 * 60 * 1000;
-/** Teto de entradas (anti-crescimento); evict da mais antiga ao exceder. */
+/** Entry ceiling (anti-growth); evict the oldest one when exceeded. */
 const MAX_ENTRIES = 10_000;
 
 /**
- * Cooldown por (guild, user) da saudação de entrada. Relógio injetável para testes.
- * Uma instância partilhada vive no BotDeps (como o lastSpeaker).
+ * Per (guild, user) cooldown for the join greeting. Injectable clock for tests.
+ * A shared instance lives in BotDeps (like lastSpeaker).
  */
 export class GreetCooldown {
-  // Map preserva ordem de inserção → a 1.ª chave é a mais antiga (evict simples).
+  // Map preserves insertion order → the 1st key is the oldest (simple evict).
   private readonly last = new Map<string, number>();
 
   constructor(private readonly now: () => number = () => Date.now()) {}
@@ -29,18 +30,18 @@ export class GreetCooldown {
   }
 
   /**
-   * A saudação a (guild, user) deve sair AGORA? True se nunca saudado ou se já
-   * passaram ≥ GREET_COOLDOWN_MS desde a última saudação — e nesse caso REGISTA o
-   * instante (consome a janela). False dentro da janela, SEM renovar o timestamp
-   * (janela fixa: spam de entrar/sair não a estende). Chamar só quando há mesmo uma
-   * saudação a dizer (senão gastava a janela à toa).
+   * Should the greeting to (guild, user) go out NOW? True if never greeted or if
+   * ≥ GREET_COOLDOWN_MS have already passed since the last greeting — and in that case
+   * it RECORDS the instant (consumes the window). False within the window, WITHOUT
+   * renewing the timestamp (fixed window: join/leave spam doesn't extend it). Call it
+   * only when there really is a greeting to say (otherwise it would waste the window).
    */
   shouldGreet(guildId: string, userId: string): boolean {
     const key = GreetCooldown.keyOf(guildId, userId);
     const nowMs = this.now();
     const prev = this.last.get(key);
     if (prev !== undefined && nowMs - prev < GREET_COOLDOWN_MS) return false;
-    this.last.delete(key); // reinsere no fim (MRU) para o evict acertar na mais antiga
+    this.last.delete(key); // reinsert at the end (MRU) so the evict hits the oldest
     this.last.set(key, nowMs);
     if (this.last.size > MAX_ENTRIES) {
       const oldest = this.last.keys().next().value as string | undefined;

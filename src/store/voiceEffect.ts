@@ -1,11 +1,11 @@
 import type Database from 'better-sqlite3';
 import { isVoiceEffect, type VoiceEffect } from '../tts/effects';
-// Tabela CACHEADA (lida a cada mensagem): todo o setter TEM de chamar invalidate.
+// CACHED table (read on every message): every setter MUST call invalidate.
 import { cached, invalidate } from './cache';
 
-// Efeito de voz por-(guild,user): o filtro aplicado às mensagens lidas dessa pessoa
-// (robot/echo/deep...). Ausente/'none' => voz limpa. Valor inválido lê-se como 'none'.
-// O GATE de premium é validado no comando /voice effect (ao GUARDAR), não aqui.
+// Per-(guild,user) voice effect: the filter applied to that person's read messages
+// (robot/echo/deep...). Absent/'none' => clean voice. An invalid value reads as 'none'.
+// The premium GATE is validated in the /voice effect command (when SAVING), not here.
 
 const keyOf = (guildId: string, userId: string): string => `${guildId}:${userId}`;
 

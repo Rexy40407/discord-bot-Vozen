@@ -1,25 +1,25 @@
-// src/botLists.ts — Vaga 3
+// src/botLists.ts — Wave 3
 //
-// Auto-post da contagem de servidores para o top.gg. As listas de bots ordenam por
-// popularidade e usam o server_count para descoberta; publicá-lo periodicamente ajuda
-// o Vozen a subir e a aparecer. OPT-IN: só arranca se TOPGG_TOKEN estiver definido.
+// Auto-post of the server count to top.gg. Bot lists rank by popularity and use
+// server_count for discovery; publishing it periodically helps Vozen climb and get
+// noticed. OPT-IN: only starts if TOPGG_TOKEN is defined.
 //
-// Endpoint (oficial): POST https://top.gg/api/bots/{botId}/stats
+// Endpoint (official): POST https://top.gg/api/bots/{botId}/stats
 //   headers: { Authorization: <token>, Content-Type: application/json }
 //   body:    { "server_count": <N> }
 
 import { log } from './logging/logger';
 
 const TOPGG_STATS_URL = (botId: string): string => `https://top.gg/api/bots/${botId}/stats`;
-/** Intervalo entre publicações (30 min) — as listas não precisam de mais frequência. */
+/** Interval between publications (30 min) — the lists don't need more frequency. */
 export const BOTLIST_POST_INTERVAL_MS = 30 * 60 * 1000;
 const POST_TIMEOUT_MS = 10000;
 
 /**
- * Publica a contagem de servidores no top.gg. PURA em relação ao ambiente (recebe o
- * token/id/contagem e um `fetchImpl` injetável para testar). Devolve true em sucesso
- * (HTTP 2xx), false caso contrário — NUNCA lança (uma falha de rede não deve derrubar
- * o bot nem o intervalo). Timeout defensivo.
+ * Publishes the server count to top.gg. PURE relative to the environment (receives the
+ * token/id/count and an injectable `fetchImpl` for testing). Returns true on success
+ * (HTTP 2xx), false otherwise — NEVER throws (a network failure shouldn't take down the
+ * bot or the interval). Defensive timeout.
  */
 export async function postTopggStats(
   botId: string,
@@ -51,23 +51,23 @@ export async function postTopggStats(
 }
 
 export interface BotListDeps {
-  /** Application id do bot (= id no top.gg). */
+  /** Application id of the bot (= id on top.gg). */
   botId: string;
-  /** Token da API do top.gg (opt-in). Ausente/vazio => o updater não arranca. */
+  /** top.gg API token (opt-in). Absent/empty => the updater doesn't start. */
   token?: string;
-  /** Devolve a contagem ATUAL de servidores (ex.: () => client.guilds.cache.size). */
+  /** Returns the CURRENT server count (e.g. () => client.guilds.cache.size). */
   serverCount: () => number;
-  // Injetáveis para teste (timers + fetch); defaults = globais reais.
+  // Injectable for testing (timers + fetch); defaults = real globals.
   setIntervalImpl?: (fn: () => void, ms: number) => ReturnType<typeof setInterval>;
   clearIntervalImpl?: (h: ReturnType<typeof setInterval>) => void;
   fetchImpl?: typeof fetch;
 }
 
 /**
- * Arranca o updater periódico. OPT-IN: sem `token`, devolve um stop() no-op e não faz
- * nada (default). Com token, publica UMA vez já e depois a cada BOTLIST_POST_INTERVAL_MS.
- * Devolve um stop() que cancela o intervalo (usado no shutdown/testes). O timer é
- * `unref`'d para nunca segurar o processo aberto.
+ * Starts the periodic updater. OPT-IN: without `token`, returns a no-op stop() and does
+ * nothing (default). With a token, publishes ONCE right away and then every
+ * BOTLIST_POST_INTERVAL_MS. Returns a stop() that cancels the interval (used in
+ * shutdown/tests). The timer is `unref`'d to never hold the process open.
  */
 export function startBotListUpdater(deps: BotListDeps): () => void {
   if (!deps.token) return () => {};
@@ -77,7 +77,7 @@ export function startBotListUpdater(deps: BotListDeps): () => void {
   const post = (): void => {
     void postTopggStats(deps.botId, token, deps.serverCount(), deps.fetchImpl ?? fetch);
   };
-  post(); // primeira publicação imediata
+  post(); // first publication immediately
   const handle = setIv(post, BOTLIST_POST_INTERVAL_MS);
   (handle as unknown as { unref?: () => void }).unref?.();
   log.info('[botlist] automatic server-count publishing to top.gg is active.');

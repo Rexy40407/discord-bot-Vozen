@@ -1,4 +1,4 @@
-// src/commands/handlers/fun.ts — handlers divertidos: /laugh, /joke, /rizz, micro-fun (/8ball,/fortune,/fact,/wyr) e /birthday extraídos de index.ts (plano 015).
+// src/commands/handlers/fun.ts — fun handlers: /laugh, /joke, /rizz, micro-fun (/8ball,/fortune,/fact,/wyr) and /birthday extracted from index.ts (plan 015).
 import { join } from 'node:path';
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import type { BotDeps } from '../../bot/deps';
@@ -25,15 +25,15 @@ import { t } from '../../i18n/index';
 import { localeForUser, localePrefixOf, reply } from '../helpers';
 
 /**
- * /laugh — o Vozen ri na voz ATUALMENTE selecionada pelo utilizador. Por-utilizador
- * (como /tts), sem gate de admin, mas exige um player ativo (user numa call). A voz
- * e RESOLVIDA por precedencia (voz do user > default da guild > .env) e o riso e
- * escolhido pela LINGUA dessa voz (nao por deteccao) — por isso construimos o
- * SynthRequest DIRETAMENTE, sem passar por resolveSynth/detectLang (mesma logica do
- * /voice preview: a lingua e conhecida, nao detetada).
+ * /laugh — Vozen laughs in the voice CURRENTLY selected by the user. Per-user
+ * (like /tts), no admin gate, but requires an active player (user in a call). The voice
+ * is RESOLVED by precedence (user voice > guild default > .env) and the laughter is
+ * chosen by the LANGUAGE of that voice (not by detection) — so we build the
+ * SynthRequest DIRECTLY, without going through resolveSynth/detectLang (same logic as
+ * /voice preview: the language is known, not detected).
  */
 export async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
-  // A sintese pode demorar; defer imediato para nao perder o token (3s).
+  // Synthesis can take a while; defer immediately so we don't lose the token (3s).
   await i.deferReply({ flags: MessageFlags.Ephemeral });
   const locale = localeForUser(deps, i);
   const player = getPlayer(deps, i.guildId!);
@@ -43,9 +43,9 @@ export async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps)
   }
   const cfg = getGuildConfig(deps.db, i.guildId!);
 
-  // rate-limit por-utilizador (MESMO limiter do /tts): sem isto o /laugh enfileirava
-  // sem limite -> vetor de spam da fila de voz. Corre APOS o deferReply para o
-  // editReply funcionar.
+  // per-user rate-limit (SAME limiter as /tts): without this /laugh would queue
+  // without limit -> voice-queue spam vector. Runs AFTER deferReply so the
+  // editReply works.
   const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
   if (!rl.allow(i.user.id, Date.now())) {
     await i.editReply(t('tts.tooFast', locale));
@@ -53,39 +53,39 @@ export async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps)
   }
 
   const stored = getUserVoice(deps.db, i.guildId!, i.user.id);
-  // Precedencia da voz: voz guardada do user > default_voice da guild > .env > amy.
+  // Voice precedence: user's saved voice > guild default_voice > .env > amy.
   const model = stored?.model || cfg.defaultVoice || deps.config.defaultVoice || 'en_US-amy-medium';
   const speed = stored?.speed ?? deps.config.defaultSpeed;
-  // singleVoice: a voz e DELIBERADAMENTE escolhida (a voz atual do user); a deteccao
-  // nunca deve sobrepor-se nem partir o riso por lingua.
+  // singleVoice: the voice is DELIBERATELY chosen (the user's current voice); detection
+  // must never override it or break the laughter by language.
   const req: SynthRequest = {
     text: laughterFor(localePrefixOf(model)),
     model,
     speed,
     singleVoice: true,
-    // ri no MESMO motor que o user escolheu; o resolver aplica o gate gcloud (->google
-    // sem Premium) e anexa o orçamento (Fase 3) — devolve engine + gcloudBudget.
+    // laughs in the SAME engine the user chose; the resolver applies the gcloud gate (->google
+    // without Premium) and attaches the budget (Phase 3) — returns engine + gcloudBudget.
     ...resolveUserEngine(deps.db, i.guildId!, i.user.id, stored?.engine, Date.now()),
   };
-  // say() devolve false quando a fila esta no cap: nesse caso reutilizamos tts.busy.
+  // say() returns false when the queue is at cap: in that case we reuse tts.busy.
   const queued = await player.say(req);
   await i.editReply(queued ? t('laugh.playing', locale) : t('tts.busy', locale));
 }
 
 /**
- * Pausa (ms) entre a piada e o riso no /joke. O riso e uma fala SEPARADA que leva
- * este valor em `leadSilenceMs` (silencio PREPENDido), criando um intervalo real —
- * o Vozen fala a piada, espera ~1s, e SO DEPOIS ri.
+ * Pause (ms) between the joke and the laughter in /joke. The laughter is a SEPARATE
+ * utterance that carries this value in `leadSilenceMs` (PREPENDED silence), creating a real
+ * gap — Vozen speaks the joke, waits ~1s, and ONLY THEN laughs.
  */
 const JOKE_LAUGH_PAUSE_MS = 1000;
 
 /**
- * /joke — conta uma piada curta na LINGUA escolhida (`idioma`, autocomplete). A voz
- * e escolhida pela LINGUA (primeiro modelo de deps.availableModels cujo nome comeca
- * pelo prefixo da lingua; se nenhum, cai no default da guild/.env). Se `risos` for
- * true, acrescenta o riso dessa lingua no fim. Como a lingua e CONHECIDA (escolhida,
- * nao detetada), construimos o SynthRequest diretamente — sem resolveSynth/detectLang
- * (mesma logica do /voice preview e do /laugh).
+ * /joke — tells a short joke in the chosen LANGUAGE (`language`, autocomplete). The voice
+ * is chosen by LANGUAGE (first model in deps.availableModels whose name starts
+ * with the language prefix; if none, falls back to the guild/.env default). If `laughter` is
+ * true, appends the laughter of that language at the end. Since the language is KNOWN (chosen,
+ * not detected), we build the SynthRequest directly — without resolveSynth/detectLang
+ * (same logic as /voice preview and /laugh).
  */
 export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   await i.deferReply({ flags: MessageFlags.Ephemeral });
@@ -103,13 +103,13 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
   }
   const risos = i.options.getBoolean('laughter', true);
 
-  // Voz para a lingua escolhida: 1.º modelo instalado com o prefixo; se nao houver
-  // (a lingua nao tem modelo instalado), cai no default da guild / .env / amy.
+  // Voice for the chosen language: 1st installed model with the prefix; if none
+  // (the language has no installed model), falls back to the guild / .env / amy default.
   const cfg = getGuildConfig(deps.db, i.guildId!);
 
-  // rate-limit por-utilizador (MESMO limiter do /tts): sem isto o /joke enfileirava
-  // sem limite -> vetor de spam da fila de voz. Corre APOS o deferReply para o
-  // editReply funcionar.
+  // per-user rate-limit (SAME limiter as /tts): without this /joke would queue
+  // without limit -> voice-queue spam vector. Runs AFTER deferReply so the
+  // editReply works.
   const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
   if (!rl.allow(i.user.id, Date.now())) {
     await i.editReply(t('tts.tooFast', locale));
@@ -122,11 +122,11 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
     deps.config.defaultVoice ||
     'en_US-amy-medium';
 
-  // O MODELO (voz) do /joke é escolhido pela LÍNGUA, mas o MOTOR (google/piper) deve
-  // seguir a escolha do utilizador — tal como /laugh e /voice preview. Sem isto, um
-  // user de Piper ouvia as piadas no Google (inconsistente com tudo o resto).
+  // The MODEL (voice) for /joke is chosen by LANGUAGE, but the ENGINE (google/piper) should
+  // follow the user's choice — just like /laugh and /voice preview. Without this, a
+  // Piper user would hear the jokes on Google (inconsistent with everything else).
   const stored = getUserVoice(deps.db, i.guildId!, i.user.id);
-  // Resolver partilhado: gcloud->google sem Premium (gate) + orçamento (Fase 3).
+  // Shared resolver: gcloud->google without Premium (gate) + budget (Phase 3).
   const resolvedEngine = resolveUserEngine(
     deps.db,
     i.guildId!,
@@ -135,14 +135,14 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
     Date.now(),
   );
 
-  // pickJoke e PURO/seeded; em runtime usamos Date.now() como seed (variedade sem
-  // sacrificar a testabilidade determinista da funcao).
+  // pickJoke is PURE/seeded; at runtime we use Date.now() as the seed (variety without
+  // sacrificing the function's deterministic testability).
   const joke = pickJoke(langKey, Date.now());
   const speed = deps.config.defaultSpeed;
 
-  // Enfileira SEMPRE a piada sozinha primeiro. O reply baseia-se NESTA fala: se a
-  // fila estiver cheia (say false), respondemos busy e nao enfileiramos o riso.
-  // singleVoice: a lingua da piada e CONHECIDA (escolhida), a deteccao nao manda.
+  // ALWAYS queue the joke alone first. The reply is based on THIS utterance: if the
+  // queue is full (say false), we respond busy and don't queue the laughter.
+  // singleVoice: the joke's language is KNOWN (chosen), detection doesn't decide.
   const queued = await player.say({
     text: joke,
     model,
@@ -151,11 +151,11 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
     ...resolvedEngine,
   });
 
-  // Se `risos` E a piada entrou na fila, enfileira o RISO como fala SEPARADA com uma
-  // pausa real de 2s A FRENTE (leadSilenceMs). Assim o Vozen fala a piada, PAUSA ~2s,
-  // e SO DEPOIS ri (em vez de rir colado ao fim da piada, como antes). O riso e
-  // best-effort: se a fila enche entretanto, simplesmente nao ri (o reply ja reflete
-  // a piada). Duas fila-items: um /skip durante a piada nao apanha o riso — aceitavel.
+  // If `laughter` AND the joke entered the queue, queue the LAUGHTER as a SEPARATE utterance with a
+  // real 2s pause IN FRONT (leadSilenceMs). This way Vozen speaks the joke, PAUSES ~2s,
+  // and ONLY THEN laughs (instead of laughing glued to the end of the joke, as before). The laughter is
+  // best-effort: if the queue fills up meanwhile, it simply doesn't laugh (the reply already reflects
+  // the joke). Two queue-items: a /skip during the joke won't catch the laughter — acceptable.
   if (queued && risos) {
     await player.say({
       text: laughterFor(lang.prefix),
@@ -163,35 +163,35 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
       speed,
       ...resolvedEngine,
       leadSilenceMs: JOKE_LAUGH_PAUSE_MS,
-      // singleVoice: sem isto, um edge-case multi-script perderia o leadSilenceMs
-      // (o caminho por-segmento chama base.synth sem ele). A lingua e conhecida.
+      // singleVoice: without this, a multi-script edge-case would lose the leadSilenceMs
+      // (the per-segment path calls base.synth without it). The language is known.
       singleVoice: true,
     });
   }
 
-  // Confirmacao inclui a piada escrita (o user ve o que esta a ser lido).
+  // Confirmation includes the written joke (the user sees what is being read).
   await i.editReply(queued ? t('joke.playing', locale, { joke }) : t('tts.busy', locale));
 }
 
-// Efeito sonoro do /rizz: um WAV pronto em assets/sfx/ (raiz do repo). Em runtime este
-// modulo vive em dist/commands/handlers/, por isso subimos 3 niveis ate a raiz (mesmo
-// padrao das wordlists em games/wordchain/dict.ts). O silencio de pausa esta EMBUTIDO no
-// ficheiro (o assetPath salta os motores, onde vive o leadSilenceMs). Trocavel: basta
-// substituir o ficheiro por outro WAV.
+// /rizz sound effect: a ready WAV in assets/sfx/ (repo root). At runtime this
+// module lives in dist/commands/handlers/, so we go up 3 levels to the root (same
+// pattern as the wordlists in games/wordchain/dict.ts). The pause silence is EMBEDDED in the
+// file (assetPath skips the engines, where leadSilenceMs lives). Swappable: just
+// replace the file with another WAV.
 const RIZZ_SFX_PATH = join(__dirname, '..', '..', '..', 'assets', 'sfx', 'rizz.wav');
 
 /**
- * /rizz — manda uma pick-up line (frase de engate) na LINGUA escolhida (`language`,
- * autocomplete — o MESMO do /joke), falada na voz dessa lingua. Se `sound` for true,
- * toca a seguir o efeito sonoro "rizz" como fala SEPARADA que o player reproduz DIRETO
- * (assetPath, sem motor/cache/efeitos). Mesma logica de voz/motor do /joke.
+ * /rizz — sends a pick-up line in the chosen LANGUAGE (`language`,
+ * autocomplete — the SAME as /joke), spoken in that language's voice. If `sound` is true,
+ * plays the "rizz" sound effect afterward as a SEPARATE utterance that the player plays DIRECTLY
+ * (assetPath, no engine/cache/effects). Same voice/engine logic as /joke.
  */
 export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   await i.deferReply({ flags: MessageFlags.Ephemeral });
   const locale = localeForUser(deps, i);
 
-  // 💎 GATE: /rizz é Premium (Plus do próprio OU Premium do servidor). Mesmo padrão do
-  // /voice clone, /voice effect e dos jogos Premium. Checado cedo — nem gera a frase.
+  // 💎 GATE: /rizz is Premium (user's own Plus OR the server's Premium). Same pattern as
+  // /voice clone, /voice effect and the Premium games. Checked early — doesn't even generate the line.
   const now = Date.now();
   const premium =
     isUserPremium(deps.db, i.user.id, now) || isGuildPremium(deps.db, i.guildId!, now);
@@ -214,7 +214,7 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
   const sound = i.options.getBoolean('sound', true);
   const cfg = getGuildConfig(deps.db, i.guildId!);
 
-  // rate-limit por-utilizador (MESMO limiter do /tts e /joke): APOS o deferReply.
+  // per-user rate-limit (SAME limiter as /tts and /joke): AFTER deferReply.
   const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
   if (!rl.allow(i.user.id, Date.now())) {
     await i.editReply(t('tts.tooFast', locale));
@@ -227,7 +227,7 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
     deps.config.defaultVoice ||
     'en_US-amy-medium';
   const stored = getUserVoice(deps.db, i.guildId!, i.user.id);
-  // segue o motor do user (como /joke e /laugh), com o gate gcloud + orçamento (Fase 3).
+  // follows the user's engine (like /joke and /laugh), with the gcloud gate + budget (Phase 3).
   const resolvedEngine = resolveUserEngine(
     deps.db,
     i.guildId!,
@@ -239,7 +239,7 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
   const line = pickLine(langKey, Date.now());
   const speed = deps.config.defaultSpeed;
 
-  // Enfileira SEMPRE a frase sozinha primeiro; o reply baseia-se NESTA fala.
+  // ALWAYS queue the line alone first; the reply is based on THIS utterance.
   const queued = await player.say({
     text: line,
     model,
@@ -248,9 +248,9 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
     ...resolvedEngine,
   });
 
-  // Efeito sonoro "rizz" a seguir (fala SEPARADA, tocada direto via assetPath — sem motor
-  // nem cache). Best-effort: se a fila encher entretanto, simplesmente nao toca o efeito
-  // (o reply ja reflete a frase). `text: ''` -> sem ganho de enfase.
+  // "rizz" sound effect afterward (SEPARATE utterance, played directly via assetPath — no engine
+  // or cache). Best-effort: if the queue fills up meanwhile, it simply doesn't play the effect
+  // (the reply already reflects the line). `text: ''` -> no emphasis gain.
   if (queued && sound) {
     await player.say({ text: '', model, speed, singleVoice: true, assetPath: RIZZ_SFX_PATH });
   }
@@ -258,28 +258,28 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
   await i.editReply(queued ? t('rizz.playing', locale, { line }) : t('tts.busy', locale));
 }
 
-// Diretório dos clips do soundboard (raiz do repo /assets/sfx). Em runtime este modulo
-// vive em dist/commands/handlers/, por isso subimos 3 niveis (mesmo padrao do RIZZ_SFX_PATH).
+// Directory of the soundboard clips (repo root /assets/sfx). At runtime this module
+// lives in dist/commands/handlers/, so we go up 3 levels (same pattern as RIZZ_SFX_PATH).
 const SFX_DIR = join(__dirname, '..', '..', '..', 'assets', 'sfx');
 
 /**
- * /sound [name] — toca um clip curto do soundboard na call (biblioteca CURADA, sem
- * upload). Sem `name`, responde com a LISTA de sons (descoberta). O clip e tocado DIRETO
- * via assetPath (sem motor/cache/efeitos) — a mesma canalizacao do efeito do /rizz. Exige
- * um player ativo (bot numa call) e tem rate-limit por-utilizador (anti-spam sonoro).
+ * /sound [name] — plays a short soundboard clip in the call (CURATED library, no
+ * upload). Without `name`, responds with the LIST of sounds (discovery). The clip is played DIRECTLY
+ * via assetPath (no engine/cache/effects) — the same pipeline as the /rizz effect. Requires
+ * an active player (bot in a call) and has a per-user rate-limit (anti sound-spam).
  */
 export async function handleSound(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   await i.deferReply({ flags: MessageFlags.Ephemeral });
   const locale = localeForUser(deps, i);
 
-  // Kill-switch por-servidor: um admin pode desligar o /sound com /config soundboard.
+  // Per-server kill-switch: an admin can turn off /sound with /config soundboard.
   const cfg = getGuildConfig(deps.db, i.guildId!);
   if (!cfg.soundboard) {
     await i.editReply(t('sound.disabled', locale));
     return;
   }
 
-  // Sem argumento -> lista os sons disponiveis (nao precisa de estar numa call).
+  // No argument -> lists the available sounds (doesn't need to be in a call).
   const key = i.options.getString('name');
   if (!key) {
     const list = SOUNDS.map((s) => `${s.emoji ?? '🔊'} \`${s.key}\``).join(' · ');
@@ -287,7 +287,7 @@ export async function handleSound(i: ChatInputCommandInteraction, deps: BotDeps)
     return;
   }
 
-  // `name` vem de choices, mas via API pode chegar uma key invalida -> mensagem clara.
+  // `name` comes from choices, but via the API an invalid key can arrive -> clear message.
   const clip = soundByKey(key);
   if (!clip) {
     await i.editReply(t('sound.unknown', locale));
@@ -300,16 +300,16 @@ export async function handleSound(i: ChatInputCommandInteraction, deps: BotDeps)
     return;
   }
 
-  // rate-limit por-utilizador (MESMO limiter do /tts): sem isto um user podia encher a
-  // fila de voz com clips e afogar o TTS de toda a gente. APOS o deferReply.
+  // per-user rate-limit (SAME limiter as /tts): without this a user could fill the
+  // voice queue with clips and drown out everyone's TTS. AFTER deferReply.
   const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
   if (!rl.allow(i.user.id, Date.now())) {
     await i.editReply(t('tts.tooFast', locale));
     return;
   }
 
-  // Clip fixo tocado DIRETO (assetPath salta motor/cache/efeitos). model/speed sao
-  // placeholders exigidos pelo tipo SynthRequest — ignorados quando ha assetPath.
+  // Fixed clip played DIRECTLY (assetPath skips engine/cache/effects). model/speed are
+  // placeholders required by the SynthRequest type — ignored when there is an assetPath.
   const model = cfg.defaultVoice || deps.config.defaultVoice || 'en_US-amy-medium';
   const queued = await player.say({
     text: '',
@@ -326,11 +326,11 @@ export async function handleSound(i: ChatInputCommandInteraction, deps: BotDeps)
 type MicroFunKind = '8ball' | 'fortune' | 'fact' | 'wyr';
 
 /**
- * Micro-comandos divertidos (/8ball, /fortune, /fact, /wyr): escolhem uma frase do banco
- * na LÍNGUA DA UI do utilizador (EN/PT) e respondem PUBLICAMENTE em texto; se o Vozen
- * estiver na call, também a FALA (voz da língua da frase, motor do utilizador). Ao
- * contrário do /joke, funcionam FORA de uma call (texto na mesma). A fala é best-effort e
- * rate-limited (mesmo limiter do /tts): rate-limit -> texto na mesma, sem falar.
+ * Fun micro-commands (/8ball, /fortune, /fact, /wyr): pick a phrase from the bank
+ * in the user's UI LANGUAGE (EN/PT) and respond PUBLICLY in text; if Vozen
+ * is in the call, it also SPEAKS it (voice of the phrase's language, user's engine). Unlike
+ * /joke, they work OUTSIDE a call (text anyway). The speech is best-effort and
+ * rate-limited (same limiter as /tts): rate-limit -> text anyway, without speaking.
  */
 export async function handleMicroFun(
   i: ChatInputCommandInteraction,
@@ -365,7 +365,7 @@ export async function handleMicroFun(
       break;
   }
 
-  // Fala (best-effort): só se o Vozen estiver na call E o utilizador não estiver rate-limited.
+  // Speech (best-effort): only if Vozen is in the call AND the user is not rate-limited.
   const player = getPlayer(deps, i.guildId!);
   if (player) {
     const cfg = getGuildConfig(deps.db, i.guildId!);
@@ -385,7 +385,7 @@ export async function handleMicroFun(
         stored?.engine,
         Date.now(),
       );
-      // singleVoice: a língua da frase é CONHECIDA (o banco), a deteção não manda.
+      // singleVoice: the phrase's language is KNOWN (the bank), detection doesn't decide.
       void player.say({
         text: spoken,
         model,
@@ -400,9 +400,9 @@ export async function handleMicroFun(
 }
 
 /**
- * /birthday set|clear|show — regista o dia de anos (mês+dia, sem ano) por-(guild,user).
- * No dia, quando a pessoa entra na call do Vozen, ele diz "Parabéns" (greetOnJoin). Valida
- * a combinação dia/mês (recusa 31/02 etc.). Respostas ephemeral no locale do próprio.
+ * /birthday set|clear|show — records the birthday (month+day, no year) per-(guild,user).
+ * On the day, when the person joins Vozen's call, it says "Happy Birthday" (greetOnJoin). Validates
+ * the day/month combination (rejects 31/02 etc.). Ephemeral responses in the user's own locale.
  */
 export async function handleBirthday(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);

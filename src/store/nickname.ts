@@ -1,10 +1,10 @@
 import type Database from 'better-sqlite3';
-// Tabela CACHEADA (lida a cada mensagem): todo o setter TEM de chamar invalidate.
+// CACHED table (read on every message): every setter MUST call invalidate.
 import { cached, invalidate } from './cache';
 
-// Apelido FONÉTICO por-(guild,user) para o anúncio do xsaid: nomes cheios de emojis/
-// símbolos ("🔥xX_Pro_Xx🔥") são ilegíveis em voz alta; o utilizador define aqui como
-// quer ser CHAMADO. Vazio/ausente => cai no displayName (sanitizado).
+// PHONETIC nickname per-(guild,user) for the xsaid announcement: names full of emojis/
+// symbols ("🔥xX_Pro_Xx🔥") are unreadable out loud; the user sets here how they want to
+// be CALLED. Empty/absent => falls back to displayName (sanitized).
 
 const keyOf = (guildId: string, userId: string): string => `${guildId}:${userId}`;
 

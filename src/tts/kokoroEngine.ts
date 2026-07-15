@@ -1,13 +1,13 @@
 // src/tts/kokoroEngine.ts
 //
-// Motor TTS KOKORO (kokoro-onnx, ONNX/CPU) via um sidecar Python persistente
-// (tools/kokoro_server.py). É um motor-FOLHA: quando falha (sidecar em baixo,
-// timeout, língua não mapeada) LANÇA — de propósito, para o RouterEngine que o
-// envolve cair no gTTS. NÃO faz fallback interno (ao contrário do CloneEngine, que
-// embrulha a voz normal). Gestão de processo espelhada do cloneEngine, mas SÉRIE
-// (o sidecar lê o stdin uma linha de cada vez), sem serialização de GPU.
+// KOKORO TTS engine (kokoro-onnx, ONNX/CPU) via a persistent Python sidecar
+// (tools/kokoro_server.py). It is a LEAF engine: when it fails (sidecar down, timeout,
+// unmapped language) it THROWS — on purpose, so the RouterEngine that wraps it falls
+// back to gTTS. It does NOT do an internal fallback (unlike CloneEngine, which wraps the
+// normal voice). Process management mirrored from cloneEngine, but SERIAL (the sidecar
+// reads stdin one line at a time), without GPU serialization.
 //
-// Cache própria (namespace 'kokoro'): a mesma frase/voz é reutilizada; a LRU limpa.
+// Own cache (namespace 'kokoro'): the same phrase/voice is reused; the LRU cleans it.
 
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
@@ -20,17 +20,17 @@ import { parseCommand } from './cloneEngine';
 import { langKeyOfModel } from '../language/spokenPhrases';
 import { log } from '../logging/logger';
 
-/** Tempo máximo por síntese (a inferência é ~1s; teto generoso mas finito). */
+/** Maximum time per synthesis (inference is ~1s; generous but finite ceiling). */
 const SYNTH_TIMEOUT_MS = 30_000;
-/** Tempo máximo à espera do {ready} do warmup (load do modelo ~1s em CPU). */
+/** Maximum time waiting for the warmup {ready} (model load ~1s on CPU). */
 const READY_TIMEOUT_MS = 30_000;
 
 /**
- * Mapa língua -> (código de lang do Kokoro, voz). As CHAVES são o que
- * `langKeyOfModel` devolve (o prefixo antes do '_': en, pt, es, ...). Só as
- * línguas VALIDADAS no spike da Fase 0 entram aqui; o Mandarim ('zh') precisa de
- * `misaki[zh]` (o backend espeak não o faz) e fica de fora por agora. Uma língua
- * ausente daqui => synth LANÇA => o router cai no gTTS.
+ * Map language -> (Kokoro lang code, voice). The KEYS are what `langKeyOfModel`
+ * returns (the prefix before the '_': en, pt, es, ...). Only the languages VALIDATED in
+ * the Phase 0 spike go here; Mandarin ('zh') needs `misaki[zh]` (the espeak backend does
+ * not do it) and is left out for now. A language absent from here => synth THROWS => the
+ * router falls back to gTTS.
  */
 export const KOKORO_VOICES: Record<string, { lang: string; voice: string }> = {
   en: { lang: 'en-us', voice: 'af_heart' },
@@ -43,16 +43,17 @@ export const KOKORO_VOICES: Record<string, { lang: string; voice: string }> = {
 };
 
 /**
- * Resolve o comando do sidecar: usa KOKORO_CMD se dado, senão AUTO-DETETA o venv +
- * o server + o modelo + as vozes em tools/. Devolve null se algo faltar (=> o motor
- * fica inerte; em createPerUserEngine o caminho 'kokoro' passa a ser o próprio gTTS).
+ * Resolves the sidecar command: uses KOKORO_CMD if given, otherwise AUTO-DETECTS the
+ * venv + the server + the model + the voices in tools/. Returns null if something is
+ * missing (=> the engine stays inert; in createPerUserEngine the 'kokoro' path becomes
+ * gTTS itself).
  */
 export function resolveKokoroCmd(
   explicit: string | undefined,
 ): { exe: string; args: string[] } | null {
   if (explicit && explicit.trim()) return parseCommand(explicit.trim());
-  // O python do venv fica em Scripts/python.exe (Windows) ou bin/python (Linux/macOS) —
-  // tenta os dois para o sidecar auto-detetar em qualquer plataforma (o VPS e Linux).
+  // The venv python is at Scripts/python.exe (Windows) or bin/python (Linux/macOS) —
+  // tries both so the sidecar auto-detects on any platform (the VPS is Linux).
   const venvPy = [
     join(process.cwd(), 'tools', 'kokoro-venv', 'Scripts', 'python.exe'),
     join(process.cwd(), 'tools', 'kokoro-venv', 'bin', 'python'),
@@ -87,18 +88,18 @@ export class KokoroEngine implements TTSEngine {
   constructor(
     private readonly cache: AudioCache,
     private readonly cmd: { exe: string; args: string[] } | null,
-    // Injeção do spawn para testes (default: child_process.spawn real).
+    // Spawn injection for tests (default: real child_process.spawn).
     private readonly spawnImpl: typeof spawn = spawn,
-    // Deadline do warmup injetável para testes.
+    // Injectable warmup deadline for tests.
     private readonly readyTimeoutMs: number = READY_TIMEOUT_MS,
   ) {}
 
-  /** Há sidecar Kokoro instalado nesta instância? */
+  /** Is there a Kokoro sidecar installed in this instance? */
   get available(): boolean {
     return this.cmd !== null;
   }
 
-  /** Arranca o sidecar e carrega o modelo já (evita pagar o cold-load na 1.ª msg). */
+  /** Starts the sidecar and loads the model now (avoids paying the cold-load on the 1st msg). */
   prewarm(): void {
     if (this.cmd) this.ensureChild();
   }
@@ -114,8 +115,8 @@ export class KokoroEngine implements TTSEngine {
 
     let tmp: string | null = null;
     try {
-      // lowerAllCapsRuns: sem isto, um "grito" em MAIÚSCULAS podia sair SOLETRADO no
-      // G2P do Kokoro (ver deCaps.ts). A chave de cache usa o req ORIGINAL (acima).
+      // lowerAllCapsRuns: without this, an ALL-CAPS "shout" could come out SPELLED in
+      // Kokoro's G2P (see deCaps.ts). The cache key uses the ORIGINAL req (above).
       tmp = await this.enqueue(lowerAllCapsRuns(req.text), m.lang, m.voice, req.speed);
       return this.cache.put(key, tmp);
     } finally {
@@ -145,14 +146,14 @@ export class KokoroEngine implements TTSEngine {
       for (const j of this.queue.splice(0)) j.reject(err);
       return;
     }
-    if (!this.ready) return; // à espera do warmup; onLine chama pump() quando ready
+    if (!this.ready) return; // waiting for warmup; onLine calls pump() when ready
     const job = this.queue.shift()!;
     this.active = job;
     job.timer = setTimeout(() => {
       if (this.active !== job) return;
       this.active = null;
       job.reject(new Error(`kokoro: timeout ${SYNTH_TIMEOUT_MS}ms`));
-      this.restart(); // um pedido preso mata o sidecar -> reinicia limpo
+      this.restart(); // a stuck request kills the sidecar -> restarts clean
     }, SYNTH_TIMEOUT_MS);
     try {
       this.child!.stdin!.write(job.line);
@@ -176,19 +177,19 @@ export class KokoroEngine implements TTSEngine {
       child.stdout!.on('data', (c: Buffer) => this.onData(c));
       child.stderr!.on('data', (c: Buffer) => log.info(`[kokoro-py] ${c.toString().trim()}`));
       child.on('exit', (code) => {
-        if (this.child !== child) return; // evento de um child JÁ substituído — ignora
+        if (this.child !== child) return; // event from an ALREADY-replaced child — ignore
         log.warn(`[kokoro] sidecar exited (code ${code})`);
         this.teardown();
       });
       child.on('error', (err) => {
-        if (this.child !== child) return; // evento de um child JÁ substituído — ignora
+        if (this.child !== child) return; // event from an ALREADY-replaced child — ignore
         log.warn('[kokoro] sidecar failure:', err);
         this.teardown();
       });
       child.stdin!.write(JSON.stringify({ warmup: true }) + '\n');
       this.warmupTimer = setTimeout(() => {
         this.warmupTimer = null;
-        if (this.ready) return; // corrida benigna: ficou pronto entretanto
+        if (this.ready) return; // benign race: it became ready in the meantime
         log.warn(`[kokoro] sidecar was not ready after ${this.readyTimeoutMs}ms; restarting`);
         this.restart();
       }, this.readyTimeoutMs);
@@ -217,7 +218,7 @@ export class KokoroEngine implements TTSEngine {
     try {
       msg = JSON.parse(line);
     } catch {
-      return; // linha não-protocolo (log solto) — ignora
+      return; // non-protocol line (stray log) — ignore
     }
     if (msg.ready) {
       if (this.warmupTimer) {
@@ -244,12 +245,12 @@ export class KokoroEngine implements TTSEngine {
       clearTimeout(this.warmupTimer);
       this.warmupTimer = null;
     }
-    const err = new Error('kokoro: sidecar morreu');
+    const err = new Error('kokoro: sidecar died');
     this.ready = false;
     this.starting = false;
     this.child = null;
-    // Descarta bytes parciais do processo morto: senão colam-se à 1.ª linha do
-    // sidecar respawnado e partem o JSON.parse (pior caso: corrompem o `ready`).
+    // Discard partial bytes from the dead process: otherwise they stick to the 1st line
+    // of the respawned sidecar and break the JSON.parse (worst case: corrupt the `ready`).
     this.buffer = '';
     if (this.active) {
       if (this.active.timer) clearTimeout(this.active.timer);
@@ -263,7 +264,7 @@ export class KokoroEngine implements TTSEngine {
     try {
       this.child?.kill('SIGKILL');
     } catch {
-      // já morto
+      // already dead
     }
     this.teardown();
   }

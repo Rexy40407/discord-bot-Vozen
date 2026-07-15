@@ -1,21 +1,21 @@
 /**
- * messageHandler.test.ts — ramos ainda NÃO cobertos pelos testes existentes
- * (messageHandlerRole.test.ts cobre role-gating; messageHandlerOptout.test.ts
- *  cobre opt-out e o caminho feliz básico com autoread).
+ * messageHandler.test.ts — branches NOT yet covered by the existing tests
+ * (messageHandlerRole.test.ts covers role-gating; messageHandlerOptout.test.ts
+ *  covers opt-out and the basic happy path with autoread).
  *
- * Cobre:
- *  1. bot → ignorado
- *  2. !guild / !guildId → ignorado
- *  3. conteúdo vazio → ignorado
- *  4. cfg.enabled === false → ignorado
- *  5. sem trigger (não canal autoread, não menção, não reply) → ignorado
- *  6. reply ao bot → ativado
- *  7. menção ao bot → ativado (sem autoread)
- *  8. sem player ativo → não fala
- *  9. rate-limited (ratePerMin = 0) → não fala
- * 10. texto vazio após cleanText (só emoji) → não fala
- * 11. blocklist hit → não fala
- * 12. caminho feliz (autoread + tudo ok) → player.say chamado com texto correto
+ * Covers:
+ *  1. bot → ignored
+ *  2. !guild / !guildId → ignored
+ *  3. empty content → ignored
+ *  4. cfg.enabled === false → ignored
+ *  5. no trigger (not an autoread channel, no mention, no reply) → ignored
+ *  6. reply to the bot → activated
+ *  7. mention of the bot → activated (without autoread)
+ *  8. no active player → does not speak
+ *  9. rate-limited (ratePerMin = 0) → does not speak
+ * 10. empty text after cleanText (emoji only) → does not speak
+ * 11. blocklist hit → does not speak
+ * 12. happy path (autoread + all ok) → player.say called with the correct text
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -49,15 +49,15 @@ function makeDeps(db: Database.Database, say: ReturnType<typeof vi.fn>): BotDeps
     db,
     players,
     limiters: new Map(),
-    // xsaid: mapa do último locutor (partilhado entre chamadas do mesmo deps) — sem ele
-    // não há supressão de consecutivos.
+    // xsaid: map of the last speaker (shared across calls of the same deps) — without it
+    // there is no suppression of consecutive messages.
     lastSpeaker: new Map<string, string>(),
     availableModels: ['en_US-amy-medium'],
     config: { defaultVoice: 'en_US-amy-medium', defaultSpeed: 1.0 },
   } as unknown as BotDeps;
 }
 
-/** deps sem nenhum player registado */
+/** deps with no player registered */
 function makeDepsNoPlayer(db: Database.Database): BotDeps {
   return {
     client: {
@@ -73,8 +73,8 @@ function makeDepsNoPlayer(db: Database.Database): BotDeps {
 }
 
 /**
- * Mensagem base: autor humano, no canal CHAN, com conteúdo "ola mundo".
- * opts permitem sobrescrever qualquer campo.
+ * Base message: human author, in channel CHAN, with content "ola mundo".
+ * opts allow overriding any field.
  */
 function makeMessage(
   opts: {
@@ -96,13 +96,13 @@ function makeMessage(
 
   return {
     author: { bot: opts.bot ?? false, id: opts.authorId ?? USER, username: opts.displayName },
-    // attachments: Collection real tem .some(); um array serve para o mock.
+    // attachments: a real Collection has .some(); an array works for the mock.
     attachments: opts.attachments,
     guild:
       opts.guild !== undefined
         ? opts.guild
         : {
-            // members.me.voice.channelId = canal de voz onde o bot está (text-in-voice).
+            // members.me.voice.channelId = voice channel the bot is in (text-in-voice).
             members: {
               cache: { get: () => undefined },
               me: { voice: { channelId: opts.botVoiceChannelId ?? null } },
@@ -112,32 +112,32 @@ function makeMessage(
     guildId: opts.guildId !== undefined ? opts.guildId : GUILD,
     channelId: opts.channelId ?? CHAN,
     content: opts.content !== undefined ? opts.content : 'ola mundo',
-    // sem role gating nos testes desta suite (ttsRoleId = null por defeito).
-    // displayName (nick no servidor) alimenta o xsaid; omitido -> sem nome -> sem anúncio.
+    // no role gating in this suite's tests (ttsRoleId = null by default).
+    // displayName (server nick) feeds xsaid; omitted -> no name -> no announcement.
     member: { displayName: opts.displayName, roles: { cache: { has: () => true } } },
     mentions: {
       has: () => mention,
       repliedUser: replyToBot ? { id: BOT_ID } : null,
     },
     reference: replyToBot ? { messageId: 'msg-ref-1' } : null,
-    // react: usado pelo feedback de rate-limit (🐢). Sempre presente no mock (o código
-    // real chama-o best-effort com optional-chaining); os testes que não o usam ignoram-no.
+    // react: used by the rate-limit feedback (🐢). Always present in the mock (the real
+    // code calls it best-effort with optional-chaining); tests that don't use it ignore it.
     react: vi.fn().mockResolvedValue(undefined),
   };
 }
 
 // ---------------------------------------------------------------------------
-// Testes
+// Tests
 // ---------------------------------------------------------------------------
 
-describe('handleMessage — ramos não cobertos pelos testes existentes', () => {
+describe('handleMessage — branches not covered by the existing tests', () => {
   let db: Database.Database;
   let say: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     db = initDb(':memory:');
     say = vi.fn().mockResolvedValue(undefined);
-    // Configuração base: autoread ativo no canal CHAN, bot ligado
+    // Base configuration: autoread active on channel CHAN, bot enabled
     setGuildConfig(db, GUILD, {
       autoread: true,
       ttsChannelId: CHAN,
@@ -149,30 +149,30 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     db.close();
   });
 
-  // ── cache dos stores (plano 010) ──────────────────────────────────────────
-  it('cache write-through: a 2.ª mensagem NÃO re-consulta guild_config', async () => {
+  // ── store cache (plan 010) ────────────────────────────────────────────────
+  it('cache write-through: the 2nd message does NOT re-query guild_config', async () => {
     const deps = makeDeps(db, say);
-    // 1.ª mensagem: popula a cache de guild_config (e outras tabelas do hot-path).
+    // 1st message: populates the guild_config cache (and other hot-path tables).
     await handleMessage(makeMessage({ content: 'primeira' }), deps);
-    // Espia o db a partir daqui: na 2.ª mensagem o guild_config vem da cache.
+    // Spy on the db from here: on the 2nd message guild_config comes from the cache.
     const spy = vi.spyOn(db, 'prepare');
     await handleMessage(makeMessage({ content: 'segunda' }), deps);
     const guildConfigSelects = spy.mock.calls.filter((c) =>
       String(c[0]).includes('FROM guild_config'),
     );
-    expect(guildConfigSelects).toHaveLength(0); // servido da cache, sem SQL
-    expect(say).toHaveBeenCalledTimes(2); // ambas foram lidas
+    expect(guildConfigSelects).toHaveLength(0); // served from cache, no SQL
+    expect(say).toHaveBeenCalledTimes(2); // both were read
     spy.mockRestore();
   });
 
-  // ── 1. Autor é bot ────────────────────────────────────────────────────────
-  it('mensagem de bot → ignorada por defeito (read_bots OFF)', async () => {
+  // ── 1. Author is a bot ────────────────────────────────────────────────────
+  it('bot message → ignored by default (read_bots OFF)', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ bot: true }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('read_bots ON → mensagem de outro bot é lida', async () => {
+  it('read_bots ON → message from another bot is read', async () => {
     setGuildConfig(db, GUILD, { readBots: true });
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ bot: true, content: 'sou um bot' }), deps);
@@ -180,18 +180,18 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('sou um bot');
   });
 
-  it('read_bots ON → o PRÓPRIO Vozen continua a NÃO ser lido (anti-loop)', async () => {
+  it('read_bots ON → Vozen ITSELF is still NOT read (anti-loop)', async () => {
     setGuildConfig(db, GUILD, { readBots: true });
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ bot: true, authorId: BOT_ID, content: 'eco' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── text-in-voice: ler o chat de texto dentro do canal de voz do bot ──────
-  it('text-in-voice ON → mensagem no canal de voz do bot é lida (mesmo não sendo o canal TTS)', async () => {
+  // ── text-in-voice: read the text chat inside the bot's voice channel ──────
+  it("text-in-voice ON → message in the bot's voice channel is read (even if not the TTS channel)", async () => {
     setGuildConfig(db, GUILD, { textInVoice: true });
     const deps = makeDeps(db, say);
-    // Mensagem num canal (o chat-em-voz 'vc-9') != canal TTS (CHAN); o bot está em 'vc-9'.
+    // Message in a channel (the in-voice chat 'vc-9') != TTS channel (CHAN); the bot is in 'vc-9'.
     await handleMessage(
       makeMessage({ content: 'olá do chat de voz', channelId: 'vc-9', botVoiceChannelId: 'vc-9' }),
       deps,
@@ -200,7 +200,7 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('olá do chat de voz');
   });
 
-  it('text-in-voice OFF → mensagem no canal de voz do bot é ignorada', async () => {
+  it("text-in-voice OFF → message in the bot's voice channel is ignored", async () => {
     const deps = makeDeps(db, say);
     await handleMessage(
       makeMessage({ content: 'olá', channelId: 'vc-9', botVoiceChannelId: 'vc-9' }),
@@ -209,10 +209,10 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('text-in-voice ON mas mensagem NOUTRO canal de voz → ignorada', async () => {
+  it('text-in-voice ON but message in ANOTHER voice channel → ignored', async () => {
     setGuildConfig(db, GUILD, { textInVoice: true });
     const deps = makeDeps(db, say);
-    // Bot em 'vc-9' mas a mensagem veio de 'vc-outro'.
+    // Bot in 'vc-9' but the message came from 'vc-outro'.
     await handleMessage(
       makeMessage({ content: 'olá', channelId: 'vc-outro', botVoiceChannelId: 'vc-9' }),
       deps,
@@ -220,81 +220,81 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 2. Sem guild ──────────────────────────────────────────────────────────
-  it('message.guild é null → ignorada', async () => {
+  // ── 2. No guild ───────────────────────────────────────────────────────────
+  it('message.guild is null → ignored', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ guild: null }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('message.guildId é null → ignorada', async () => {
+  it('message.guildId is null → ignored', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ guildId: null }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 3. Conteúdo vazio ─────────────────────────────────────────────────────
-  it('content vazio ("") → ignorada', async () => {
+  // ── 3. Empty content ──────────────────────────────────────────────────────
+  it('empty content ("") → ignored', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: '' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 4. Kill-switch da guild ───────────────────────────────────────────────
-  it('cfg.enabled === false → ignorada (kill-switch)', async () => {
+  // ── 4. Guild kill-switch ──────────────────────────────────────────────────
+  it('cfg.enabled === false → ignored (kill-switch)', async () => {
     setGuildConfig(db, GUILD, { enabled: false });
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage(), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 5. Sem trigger (canal errado, sem menção, sem reply) ─────────────────
-  it('canal diferente do autoread e sem menção/reply → ignorada', async () => {
+  // ── 5. No trigger (wrong channel, no mention, no reply) ───────────────────
+  it('channel different from autoread and no mention/reply → ignored', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ channelId: 'outro-canal' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 6. Reply ao bot como trigger ─────────────────────────────────────────
-  it('reply ao bot no canal errado → ativado (reply é trigger explícito)', async () => {
+  // ── 6. Reply to the bot as a trigger ─────────────────────────────────────
+  it('reply to the bot in the wrong channel → activated (reply is an explicit trigger)', async () => {
     const deps = makeDeps(db, say);
-    // Canal diferente do autoread, mas é reply ao bot → deve falar
+    // Channel different from autoread, but it's a reply to the bot → should speak
     await handleMessage(makeMessage({ channelId: 'outro-canal', replyToBot: true }), deps);
     expect(say).toHaveBeenCalledTimes(1);
   });
 
-  // ── 7. Menção ao bot como trigger (sem autoread) ──────────────────────────
-  it('menção ao bot fora do canal autoread → ativado', async () => {
+  // ── 7. Mention of the bot as a trigger (without autoread) ─────────────────
+  it('mention of the bot outside the autoread channel → activated', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ channelId: 'outro-canal', mention: true }), deps);
     expect(say).toHaveBeenCalledTimes(1);
   });
 
-  // ── 8. Sem player ativo na guild ──────────────────────────────────────────
-  it('sem player ativo → não tenta falar', async () => {
+  // ── 8. No active player in the guild ──────────────────────────────────────
+  it('no active player → does not try to speak', async () => {
     const deps = makeDepsNoPlayer(db);
     await handleMessage(makeMessage(), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
   // ── 9. Rate-limited ───────────────────────────────────────────────────────
-  it('rate-limited (ratePerMin = 0) → não fala, MAS o drop é visível (🐢 + métrica)', async () => {
+  it('rate-limited (ratePerMin = 0) → does not speak, BUT the drop is visible (🐢 + metric)', async () => {
     metrics.reset();
     setGuildConfig(db, GUILD, { ratePerMin: 0 });
     const deps = makeDeps(db, say);
     const msg = makeMessage();
     await handleMessage(msg, deps);
     expect(say).not.toHaveBeenCalled();
-    // O drop deixou de ser silencioso: reage com 🐢 e conta a métrica.
+    // The drop is no longer silent: reacts with 🐢 and counts the metric.
     expect(msg.react).toHaveBeenCalledWith('🐢');
     expect(metrics.snapshot().messagesRateLimited).toBe(1);
   });
 
-  // ── 9c. ABUSE-02: feedback de rate-limit throttled por (guild,user) ───────
-  // Author DEDICADO ('user-fb-1') para não colidir com o cooldown já consumido pelo
-  // teste 9 (a instância de RateLimitFeedbackCooldown é module-singleton em
-  // messageHandler.ts, partilhada por todas as chamadas de handleMessage do processo).
-  it('flood rate-limited: só a 1.ª mensagem dropada reage com 🐢, as seguintes ficam silenciosas', async () => {
+  // ── 9c. ABUSE-02: rate-limit feedback throttled per (guild,user) ─────────
+  // DEDICATED author ('user-fb-1') so as not to collide with the cooldown already consumed by
+  // test 9 (the RateLimitFeedbackCooldown instance is a module-singleton in
+  // messageHandler.ts, shared by all handleMessage calls in the process).
+  it('flood rate-limited: only the 1st dropped message reacts with 🐢, the rest stay silent', async () => {
     metrics.reset();
     setGuildConfig(db, GUILD, { ratePerMin: 0 });
     const deps = makeDeps(db, say);
@@ -307,67 +307,67 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     await handleMessage(msg3, deps);
 
     expect(say).not.toHaveBeenCalled();
-    // A métrica conta TODOS os drops — não é afetada pelo throttle do feedback visível.
+    // The metric counts ALL drops — it is not affected by the visible-feedback throttle.
     expect(metrics.snapshot().messagesRateLimited).toBe(3);
-    // Só a 1.ª mensagem reage; a 2.ª e a 3.ª (mesma janela) ficam silenciosas.
+    // Only the 1st message reacts; the 2nd and 3rd (same window) stay silent.
     expect(msg1.react).toHaveBeenCalledWith('🐢');
     expect(msg2.react).not.toHaveBeenCalled();
     expect(msg3.react).not.toHaveBeenCalled();
   });
 
-  // ── 9b. Ordem dos filtros: mensagem NÃO-legível não consome token ─────────
-  // BUG (Fable): o rate-limit corria ANTES do cleanText/guard-de-legível, por isso um
-  // emoji/link (que nunca ia ser falado) queimava o orçamento e silenciava a mensagem
-  // legível seguinte. Com 1 token: emoji-só + "ola" -> "ola" DEVE ser falado.
-  it('mensagem só-emoji não gasta token do rate-limit (a legível seguinte fala)', async () => {
+  // ── 9b. Filter order: a NON-readable message does not consume a token ─────
+  // BUG (Fable): the rate-limit ran BEFORE cleanText/readable-guard, so an
+  // emoji/link (which would never be spoken) burned the budget and silenced the next
+  // readable message. With 1 token: emoji-only + "ola" -> "ola" MUST be spoken.
+  it('emoji-only message does not spend a rate-limit token (the next readable one speaks)', async () => {
     setGuildConfig(db, GUILD, { ratePerMin: 1 });
     const deps = makeDeps(db, say);
-    await handleMessage(makeMessage({ content: '🎉' }), deps); // não-legível: não deve gastar token
-    await handleMessage(makeMessage({ content: 'ola' }), deps); // legível: usa o token
+    await handleMessage(makeMessage({ content: '🎉' }), deps); // non-readable: should not spend a token
+    await handleMessage(makeMessage({ content: 'ola' }), deps); // readable: uses the token
     expect(say).toHaveBeenCalledTimes(1);
   });
 
-  // ── 10. Texto vazio após cleanText ────────────────────────────────────────
-  it('conteúdo só com emoji (vazio após cleanText) → não fala', async () => {
+  // ── 10. Empty text after cleanText ────────────────────────────────────────
+  it('content with only emoji (empty after cleanText) → does not speak', async () => {
     const deps = makeDeps(db, say);
-    // 🎉 é Extended_Pictographic → cleanText remove-o e fica ''
+    // 🎉 is Extended_Pictographic → cleanText removes it and it becomes ''
     await handleMessage(makeMessage({ content: '🎉' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 10b. Emoji com componentes zero-width / bandeiras → não fala ──────────
-  // Antes do fix, ❤️ (U+2764 U+FE0F) e as bandeiras deixavam resíduo zero-width
-  // truthy que passava o guard `if (!cleaned)` → Piper sintetizava clipe vazio.
-  it('conteúdo só com ❤️ (VS16) → não fala', async () => {
+  // ── 10b. Emoji with zero-width components / flags → does not speak ────────
+  // Before the fix, ❤️ (U+2764 U+FE0F) and flags left a truthy zero-width residue
+  // that passed the `if (!cleaned)` guard → Piper synthesized an empty clip.
+  it('content with only ❤️ (VS16) → does not speak', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: '❤️' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('conteúdo só com bandeira 🇦🇩 → não fala', async () => {
+  it('content with only a flag 🇦🇩 → does not speak', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: '🇦🇩' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 10c. Só pontuação → não fala (guard exige letra/número) ───────────────
-  // Isola a mudança do guard: cleanText('!!!') = '!!!' (truthy), logo o antigo
-  // guard `if (!cleaned)` deixava passar. O novo guard exige \p{L}\p{N}.
-  it('conteúdo só com pontuação ("!!!") → não fala', async () => {
+  // ── 10c. Punctuation only → does not speak (guard requires a letter/number) ─
+  // Isolates the guard change: cleanText('!!!') = '!!!' (truthy), so the old
+  // guard `if (!cleaned)` let it through. The new guard requires \p{L}\p{N}.
+  it('content with only punctuation ("!!!") → does not speak', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: '!!!' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 10d. Texto com dígitos ("$100") → fala (contém \p{N}) ─────────────────
-  it('conteúdo com dígitos ("$100") → fala (passa o guard)', async () => {
+  // ── 10d. Text with digits ("$100") → speaks (contains \p{N}) ──────────────
+  it('content with digits ("$100") → speaks (passes the guard)', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: '$100' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
   });
 
-  // ── 11. Blocklist hit → redação (lê o resto sem a palavra) ────────────────
-  it('palavra da blocklist é REDIGIDA → fala o resto sem essa palavra', async () => {
+  // ── 11. Blocklist hit → redaction (reads the rest without the word) ───────
+  it('blocklist word is REDACTED → speaks the rest without that word', async () => {
     addBlockword(db, GUILD, 'spam');
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'isto é spam aqui' }), deps);
@@ -375,19 +375,19 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('isto é aqui');
   });
 
-  it('mensagem que é SÓ a palavra bloqueada → não fala (nada legível resta)', async () => {
+  it('message that is ONLY the blocked word → does not speak (nothing readable remains)', async () => {
     addBlockword(db, GUILD, 'spam');
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'spam' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  // ── 12. Caminho feliz ─────────────────────────────────────────────────────
-  it('caminho feliz (autoread + tudo ok) → player.say chamado com texto limpo', async () => {
+  // ── 12. Happy path ────────────────────────────────────────────────────────
+  it('happy path (autoread + all ok) → player.say called with the cleaned text', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá mundo' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
-    // O SynthRequest deve conter o texto limpo (sem emojis, etc.)
+    // The SynthRequest should contain the cleaned text (without emojis, etc.)
     const req = say.mock.calls[0][0];
     expect(req).toMatchObject({
       text: 'olá mundo',
@@ -396,8 +396,8 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     });
   });
 
-  // ── GIF anexado (sem texto) → "a gif" ─────────────────────────────────────
-  it('anexo .gif sem texto → player.say com "a gif"', async () => {
+  // ── GIF attached (no text) → "a gif" ──────────────────────────────────────
+  it('.gif attachment without text → player.say with "a gif"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(
       makeMessage({ content: '', attachments: [{ contentType: 'image/gif', name: 'cat.gif' }] }),
@@ -407,7 +407,7 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('a gif');
   });
 
-  it('anexo detetado por .gif no nome (contentType null) → "a gif"', async () => {
+  it('attachment detected by .gif in the name (contentType null) → "a gif"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(
       makeMessage({ content: '', attachments: [{ contentType: null, name: 'boom.GIF' }] }),
@@ -417,7 +417,7 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('a gif');
   });
 
-  it('texto + anexo .gif → texto seguido de "a gif"', async () => {
+  it('text + .gif attachment → text followed by "a gif"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(
       makeMessage({ content: 'olha', attachments: [{ contentType: 'image/gif', name: 'x.gif' }] }),
@@ -427,7 +427,7 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('olha a gif');
   });
 
-  it('anexo png sem texto → anuncia "an image" (por tipo)', async () => {
+  it('png attachment without text → announces "an image" (by type)', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(
       makeMessage({ content: '', attachments: [{ contentType: 'image/png', name: 'foto.png' }] }),
@@ -437,7 +437,7 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('an image');
   });
 
-  it('vários anexos sem texto → "multiple files"', async () => {
+  it('multiple attachments without text → "multiple files"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(
       makeMessage({
@@ -453,36 +453,36 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('multiple files');
   });
 
-  it('link no texto → corpo + "a link"', async () => {
+  it('link in the text → body + "a link"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olha https://exemplo.com' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].text).toBe('olha a link');
   });
 
-  it('mensagem só com um link → "a link" (corpo vazio)', async () => {
+  it('message with only a link → "a link" (empty body)', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'https://exemplo.com' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].text).toBe('a link');
   });
 
-  // ── xsaid (LIGADO por defeito): "{nome} said {mensagem}" ──────────────────
-  it('xsaid ON (default) + nome → "{nome} said {corpo}"', async () => {
+  // ── xsaid (ON by default): "{name} said {message}" ────────────────────────
+  it('xsaid ON (default) + name → "{name} said {body}"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá mundo', displayName: 'Alex' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].text).toBe('Alex said olá mundo');
   });
 
-  it('xsaid ON + corpo é SÓ palavra bloqueada → não anuncia "{nome} said" vazio', async () => {
+  it('xsaid ON + body is ONLY a blocked word → does not announce an empty "{name} said"', async () => {
     addBlockword(db, GUILD, 'spam');
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'spam', displayName: 'Alex' }), deps);
     expect(say).not.toHaveBeenCalled();
   });
 
-  it('xsaid ON + corpo com palavra bloqueada → anuncia só o resto', async () => {
+  it('xsaid ON + body with a blocked word → announces only the rest', async () => {
     addBlockword(db, GUILD, 'spam');
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá spam mundo', displayName: 'Alex' }), deps);
@@ -490,7 +490,7 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('Alex said olá mundo');
   });
 
-  it('xsaid ON + media → "{nome} said {corpo} {media}"', async () => {
+  it('xsaid ON + media → "{name} said {body} {media}"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(
       makeMessage({
@@ -504,7 +504,7 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('Alex said olha a gif');
   });
 
-  it('xsaid ON + só um gif (sem corpo) → "{nome} said a gif"', async () => {
+  it('xsaid ON + only a gif (no body) → "{name} said a gif"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(
       makeMessage({
@@ -518,7 +518,7 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('Alex said a gif');
   });
 
-  it('xsaid OFF → sem prefixo de nome (lê só a mensagem)', async () => {
+  it('xsaid OFF → no name prefix (reads only the message)', async () => {
     setGuildConfig(db, GUILD, { xsaid: false });
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá mundo', displayName: 'Alex' }), deps);
@@ -526,8 +526,8 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('olá mundo');
   });
 
-  // ── motor por-utilizador: req.engine segue a escolha do autor ─────────────
-  it('user com motor Piper → a mensagem sai com req.engine="piper"', async () => {
+  // ── per-user engine: req.engine follows the author's choice ──────────────
+  it('user with Piper engine → the message goes out with req.engine="piper"', async () => {
     setUserVoice(db, GUILD, USER, 'en_US-amy-medium', 1, 'piper');
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá' }), deps);
@@ -535,13 +535,13 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].engine).toBe('piper');
   });
 
-  it('user sem voz definida → req.engine indefinido (default Google no router)', async () => {
+  it('user without a defined voice → req.engine undefined (default Google in the router)', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá' }), deps);
     expect(say.mock.calls[0][0].engine).toBeUndefined();
   });
 
-  it('spoiler → conteúdo NÃO é lido, anuncia "spoiler" (xsaid OFF)', async () => {
+  it('spoiler → content is NOT read, announces "spoiler" (xsaid OFF)', async () => {
     setGuildConfig(db, GUILD, { xsaid: false });
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olha ||o segredo|| aqui' }), deps);
@@ -549,41 +549,41 @@ describe('handleMessage — ramos não cobertos pelos testes existentes', () => 
     expect(say.mock.calls[0][0].text).toBe('olha aqui spoiler');
   });
 
-  // ── xsaid: não repetir o nome em mensagens seguidas do mesmo autor ────────
-  it('mesmo autor 2x seguidas → só a 1.ª leva "{nome} said"', async () => {
+  // ── xsaid: do not repeat the name on consecutive messages from the same author ─
+  it('same author twice in a row → only the 1st gets "{name} said"', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'primeira', displayName: 'Alex' }), deps);
     await handleMessage(makeMessage({ content: 'segunda', displayName: 'Alex' }), deps);
     expect(say).toHaveBeenCalledTimes(2);
     expect(say.mock.calls[0][0].text).toBe('Alex said primeira');
-    expect(say.mock.calls[1][0].text).toBe('segunda'); // sem prefixo
+    expect(say.mock.calls[1][0].text).toBe('segunda'); // no prefix
   });
 
-  it('autores alternados (A, B, A) → todos anunciam', async () => {
+  it('alternating authors (A, B, A) → all announce', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'um', displayName: 'Alex', authorId: 'A' }), deps);
     await handleMessage(makeMessage({ content: 'dois', displayName: 'Bea', authorId: 'B' }), deps);
     await handleMessage(makeMessage({ content: 'tres', displayName: 'Alex', authorId: 'A' }), deps);
     expect(say.mock.calls[0][0].text).toBe('Alex said um');
     expect(say.mock.calls[1][0].text).toBe('Bea said dois');
-    expect(say.mock.calls[2][0].text).toBe('Alex said tres'); // A voltou depois de B
+    expect(say.mock.calls[2][0].text).toBe('Alex said tres'); // A returned after B
   });
 
-  // ── xsaid: nome sanitizado + apelido (/voice nickname) ────────────────────
-  it('nome com emojis/símbolos é sanitizado no anúncio', async () => {
+  // ── xsaid: sanitized name + nickname (/voice nickname) ────────────────────
+  it('name with emojis/symbols is sanitized in the announcement', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá', displayName: '🔥xX_Alex_Xx🔥' }), deps);
     expect(say.mock.calls[0][0].text).toBe('xX Alex Xx said olá');
   });
 
-  it('apelido (/voice nickname) tem prioridade sobre o displayName', async () => {
+  it('nickname (/voice nickname) takes priority over the displayName', async () => {
     setNickname(db, GUILD, USER, 'Zé');
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá', displayName: 'ComplicatedName123' }), deps);
     expect(say.mock.calls[0][0].text).toBe('Zé said olá');
   });
 
-  it('nome 100% emojis (sem apelido) → sem prefixo (nada legível)', async () => {
+  it('name that is 100% emojis (no nickname) → no prefix (nothing readable)', async () => {
     const deps = makeDeps(db, say);
     await handleMessage(makeMessage({ content: 'olá', displayName: '🔥💯✨' }), deps);
     expect(say.mock.calls[0][0].text).toBe('olá');

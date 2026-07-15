@@ -3,21 +3,21 @@ import { bump, sendStandings, type Tally } from './finish';
 import { makeRng } from './util';
 
 const ROUNDS = 5;
-const GUESS_WINDOW_MS = 8_000; // tempo para escrever heads/tails depois do anúncio
+const GUESS_WINDOW_MS = 8_000; // time to type heads/tails after the announcement
 
-// Palavras aceites como palpite (minúsculas). Multilingue à séria seria via i18n,
-// mas os sinónimos base cobrem os servidores reais sem complicar o parsing.
+// Words accepted as a guess (lowercase). Proper multilingual support would be via i18n,
+// but the base synonyms cover the real servers without complicating the parsing.
 const HEADS_WORDS = new Set(['heads', 'head', 'h', 'cara', 'cabeça', 'cabeca']);
 const TAILS_WORDS = new Set(['tails', 'tail', 't', 'coroa', 'cruz']);
 
 type Side = 'heads' | 'tails';
 
 /**
- * "Heads or Tails" — o Vozen anuncia a ronda, cada jogador escreve `heads` ou `tails`
- * (1 palpite por ronda; o primeiro conta), e ao fim da janela o Vozen atira a moeda e
- * DIZ o resultado em voz alta. Quem acertou ganha 1 ponto. 5 rondas, placar no fim.
- * Segue o padrão do Reflexos: `my` captura o nº da ronda para os timers não agirem
- * numa ronda já avançada.
+ * "Heads or Tails" — Vozen announces the round, each player types `heads` or `tails`
+ * (1 guess per round; the first counts), and at the end of the window Vozen flips the
+ * coin and SAYS the result out loud. Whoever got it right earns 1 point. 5 rounds,
+ * standings at the end. Follows the Reflexes pattern: `my` captures the round number
+ * so the timers do not act on an already-advanced round.
  */
 class HeadsOrTailsGame implements Game {
   readonly id = 'headsOrTails';
@@ -69,7 +69,7 @@ class HeadsOrTailsGame implements Game {
         ? ctx.t('game.headsOrTails.winners', { side: flipName, users: winners.join(', ') })
         : ctx.t('game.headsOrTails.noWinners', { side: flipName });
     void ctx.send(`🪙 ${line}`);
-    // Pausa curta entre rondas para a fala não atropelar o anúncio seguinte.
+    // Short pause between rounds so the speech does not run over the next announcement.
     ctx.after(2_500, () => this.nextRound(ctx));
   }
 
@@ -77,8 +77,8 @@ class HeadsOrTailsGame implements Game {
     if (!this.open) return;
     const w = msg.content.trim().toLowerCase();
     const side: Side | null = HEADS_WORDS.has(w) ? 'heads' : TAILS_WORDS.has(w) ? 'tails' : null;
-    if (!side) return; // conversa normal no canal — ignora
-    if (this.guesses.has(msg.authorId)) return; // 1 palpite por ronda (o primeiro conta)
+    if (!side) return; // normal channel chatter — ignore
+    if (this.guesses.has(msg.authorId)) return; // 1 guess per round (the first counts)
     this.guesses.set(msg.authorId, { side, name: msg.authorName });
   }
 

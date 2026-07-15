@@ -6,9 +6,9 @@ import { isUserPremium } from '../src/store/premium';
 import { startKofiWebhook } from '../src/premium/kofiWebhook';
 import { claimVoteReward } from '../src/store/voteReward';
 
-// A recompensa por voto passa a viajar no MESMO servidor HTTP do Ko-fi/painel (o que já
-// está público via Caddy em api.vozen.org), na rota POST /webhook/topgg — para não exigir
-// uma porta dedicada + rota de Caddy nova. Estes testes exercitam essa rota fim-a-fim.
+// The vote reward now travels on the SAME HTTP server as Ko-fi/the panel (which is already
+// public via Caddy at api.vozen.org), on the POST /webhook/topgg route — to avoid requiring
+// a dedicated port + a new Caddy route. These tests exercise that route end-to-end.
 const SECRET = 'topgg-s3cr3t';
 const UPVOTE = JSON.stringify({ bot: 'b1', user: 'u-9', type: 'upvote' });
 
@@ -18,7 +18,7 @@ function urlOf(s: Server, path: string): string {
   return `http://127.0.0.1:${addr.port}${path}`;
 }
 
-describe('webhook top.gg na API pública (rota POST /webhook/topgg)', () => {
+describe('top.gg webhook on the public API (POST /webhook/topgg route)', () => {
   let db: Database.Database;
   let server: Server | null = null;
 
@@ -39,7 +39,7 @@ describe('webhook top.gg na API pública (rota POST /webhook/topgg)', () => {
   }): Promise<Server> {
     server = startKofiWebhook({
       db,
-      token: 'tok', // Ko-fi ligado em paralelo — a rota top.gg não pode ser engolida por ele
+      token: 'tok', // Ko-fi wired in parallel — the top.gg route must not be swallowed by it
       port: 0,
       now: () => 1_000_000,
       logInfo: () => {},
@@ -61,21 +61,21 @@ describe('webhook top.gg na API pública (rota POST /webhook/topgg)', () => {
     return res.status;
   }
 
-  it('upvote com secret certo -> 200 e chama onUpvote com o id do votante', async () => {
+  it('upvote with the right secret -> 200 and calls onUpvote with the voter id', async () => {
     const rewarded: string[] = [];
     const s = await start({ secret: SECRET, onUpvote: (id) => rewarded.push(id) });
     expect(await post(s, UPVOTE, SECRET)).toBe(200);
     expect(rewarded).toEqual(['u-9']);
   });
 
-  it('secret errado -> 401 e NÃO chama onUpvote', async () => {
+  it('wrong secret -> 401 and does NOT call onUpvote', async () => {
     const rewarded: string[] = [];
     const s = await start({ secret: SECRET, onUpvote: (id) => rewarded.push(id) });
     expect(await post(s, UPVOTE, 'errado')).toBe(401);
     expect(rewarded).toEqual([]);
   });
 
-  it('wiring real: onUpvote=claimVoteReward concede 24h de Plus ao votante', async () => {
+  it('real wiring: onUpvote=claimVoteReward grants 24h of Plus to the voter', async () => {
     const s = await start({
       secret: SECRET,
       onUpvote: (id) => {
@@ -86,10 +86,10 @@ describe('webhook top.gg na API pública (rota POST /webhook/topgg)', () => {
     expect(isUserPremium(db, 'u-9', 1_000_000 + 1000)).toBe(true);
   });
 
-  it('sem topggWebhookSecret configurado -> a rota NÃO é endpoint de voto (não recompensa)', async () => {
+  it('without topggWebhookSecret configured -> the route is NOT a vote endpoint (no reward)', async () => {
     const rewarded: string[] = [];
-    const s = await start({ onUpvote: (id) => rewarded.push(id) }); // sem secret
-    await post(s, UPVOTE, SECRET); // status é indiferente; o que importa é não recompensar
+    const s = await start({ onUpvote: (id) => rewarded.push(id) }); // no secret
+    await post(s, UPVOTE, SECRET); // status is irrelevant; what matters is not rewarding
     expect(rewarded).toEqual([]);
   });
 });

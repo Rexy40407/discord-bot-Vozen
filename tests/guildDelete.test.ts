@@ -18,7 +18,7 @@ function fakeDeps() {
 }
 
 describe('handleGuildDelete', () => {
-  it('liberta o limiter e destroi/remove o player da guild', () => {
+  it('releases the limiter and destroys/removes the guild player', () => {
     const deps = fakeDeps();
     const player = fakePlayer();
     deps.players.set('G', player);
@@ -31,7 +31,7 @@ describe('handleGuildDelete', () => {
     expect(player.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it('nao mexe em outras guilds', () => {
+  it('does not touch other guilds', () => {
     const deps = fakeDeps();
     const other = fakePlayer();
     deps.players.set('OTHER', other);
@@ -45,21 +45,21 @@ describe('handleGuildDelete', () => {
     expect(other.destroy).not.toHaveBeenCalled();
   });
 
-  it('nao crasha se a guild nao existir (limiter e player ausentes)', () => {
+  it('does not crash if the guild does not exist (limiter and player absent)', () => {
     const deps = fakeDeps();
     expect(() => handleGuildDelete(deps, 'NOPE')).not.toThrow();
     expect(deps.limiters.has('NOPE')).toBe(false);
     expect(deps.players.has('NOPE')).toBe(false);
   });
 
-  it('plano 010: evicta a cache dos stores da guild (o get seguinte re-consulta)', () => {
+  it('plan 010: evicts the guild stores cache (the next get re-queries)', () => {
     const db = initDb(':memory:');
     try {
       setGuildConfig(db, 'G', { maxChars: 123 });
-      getGuildConfig(db, 'G'); // popula a cache
-      handleGuildDelete({ ...fakeDeps(), db }, 'G'); // deve evictar a entrada de 'G'
+      getGuildConfig(db, 'G'); // populates the cache
+      handleGuildDelete({ ...fakeDeps(), db }, 'G'); // should evict the 'G' entry
       const spy = vi.spyOn(db, 'prepare');
-      getGuildConfig(db, 'G'); // cache evictada -> re-lê da DB
+      getGuildConfig(db, 'G'); // cache evicted -> re-reads from the DB
       const selects = spy.mock.calls.filter((c) => String(c[0]).includes('FROM guild_config'));
       expect(selects.length).toBeGreaterThanOrEqual(1);
       spy.mockRestore();
@@ -68,7 +68,7 @@ describe('handleGuildDelete', () => {
     }
   });
 
-  it('nao crasha se player.destroy() lancar; limiter ainda e removido', () => {
+  it('does not crash if player.destroy() throws; limiter is still removed', () => {
     const deps = fakeDeps();
     const bad = {
       destroy: vi.fn(() => {

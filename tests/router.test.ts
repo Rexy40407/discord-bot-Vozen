@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { RouterEngine, type EngineRoute } from '../src/tts/router';
 import type { SynthRequest, TTSEngine } from '../src/tts/engine';
 
-// Motor falso: devolve um caminho identificável, ou lança se `fail`.
+// Fake engine: returns an identifiable path, or throws if `fail`.
 function fakeEngine(name: string, fail = false): TTSEngine {
   return {
     synth: vi.fn(async (_req: SynthRequest) => {
@@ -14,12 +14,12 @@ function fakeEngine(name: string, fail = false): TTSEngine {
 
 const req = (model: string): SynthRequest => ({ text: 'olá', model, speed: 1 });
 
-describe('RouterEngine — construção', () => {
-  it('exige pelo menos um motor', () => {
+describe('RouterEngine — construction', () => {
+  it('requires at least one engine', () => {
     expect(() => new RouterEngine([])).toThrow(/at least one engine/);
   });
 
-  it('exige que o último motor seja apanha-tudo (langs=null)', () => {
+  it('requires the last engine to be catch-all (langs=null)', () => {
     const routes: EngineRoute[] = [
       { engine: fakeEngine('kokoro'), langs: new Set(['pt']), label: 'kokoro' },
     ];
@@ -27,8 +27,8 @@ describe('RouterEngine — construção', () => {
   });
 });
 
-describe('RouterEngine — roteamento por língua', () => {
-  it('usa o motor específico da língua quando existe', async () => {
+describe('RouterEngine — routing by language', () => {
+  it('uses the language-specific engine when it exists', async () => {
     const kokoro = fakeEngine('kokoro');
     const piper = fakeEngine('piper');
     const r = new RouterEngine([
@@ -40,23 +40,23 @@ describe('RouterEngine — roteamento por língua', () => {
     expect(piper.synth).not.toHaveBeenCalled();
   });
 
-  it('cai no apanha-tudo quando a língua não é suportada em cima', async () => {
+  it('falls back to the catch-all when the language is not supported above', async () => {
     const kokoro = fakeEngine('kokoro');
     const piper = fakeEngine('piper');
     const r = new RouterEngine([
       { engine: kokoro, langs: new Set(['pt', 'en']), label: 'kokoro' },
       { engine: piper, langs: null, label: 'piper' },
     ]);
-    // 'de' (alemão) não está no Kokoro -> vai direto ao Piper.
+    // 'de' (German) is not in Kokoro -> goes straight to Piper.
     expect(await r.synth(req('de_DE-thorsten-medium'))).toBe('/wav/piper.wav');
     expect(kokoro.synth).not.toHaveBeenCalled();
     expect(piper.synth).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('RouterEngine — fallback por FALHA', () => {
-  it('gTTS falha -> serve o Piper (mesma língua)', async () => {
-    const gtts = fakeEngine('gtts', true); // falha (ex.: HTTP 429 da Google)
+describe('RouterEngine — fallback on FAILURE', () => {
+  it('gTTS fails -> serves Piper (same language)', async () => {
+    const gtts = fakeEngine('gtts', true); // fails (e.g. Google HTTP 429)
     const piper = fakeEngine('piper');
     const r = new RouterEngine([
       { engine: gtts, langs: null, label: 'gtts' },
@@ -67,7 +67,7 @@ describe('RouterEngine — fallback por FALHA', () => {
     expect(piper.synth).toHaveBeenCalledTimes(1);
   });
 
-  it('atravessa vários motores em falha até um funcionar', async () => {
+  it('traverses several failing engines until one works', async () => {
     const kokoro = fakeEngine('kokoro', true);
     const gtts = fakeEngine('gtts', true);
     const piper = fakeEngine('piper');
@@ -79,7 +79,7 @@ describe('RouterEngine — fallback por FALHA', () => {
     expect(await r.synth(req('pt_BR-cadu-medium'))).toBe('/wav/piper.wav');
   });
 
-  it('todos falham -> propaga o último erro', async () => {
+  it('all fail -> propagates the last error', async () => {
     const gtts = fakeEngine('gtts', true);
     const piper = fakeEngine('piper', true);
     const r = new RouterEngine([

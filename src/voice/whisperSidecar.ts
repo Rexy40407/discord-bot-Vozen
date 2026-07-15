@@ -1,31 +1,32 @@
 // src/voice/whisperSidecar.ts
 //
-// Resolução do comando do SIDECAR de STT (Whisper local, Fase 4). Espelha o
-// resolveKokoroCmd: auto-deteta o venv Python + o script do sidecar em tools/. Se algo
-// faltar devolve null (=> o STT fica INERTE; o comando de transcrição responde "indisponível"
-// em vez de crashar). O sidecar (tools/whisper_sidecar.py) é um processo PERSISTENTE que
-// carrega o modelo faster-whisper UMA vez e transcreve N pedidos (padrão clone/kokoro).
+// Command resolution for the STT SIDECAR (local Whisper, Phase 4). Mirrors
+// resolveKokoroCmd: auto-detects the Python venv + the sidecar script in tools/. If
+// anything is missing it returns null (=> STT stays INERT; the transcription command
+// replies "unavailable" instead of crashing). The sidecar (tools/whisper_sidecar.py) is a
+// PERSISTENT process that loads the faster-whisper model ONCE and transcribes N requests
+// (clone/kokoro pattern).
 //
-// Spike (docs/SPIKE-STT.md): faster-whisper `base` int8 no VPS = ~2.2s por ~13.6s de fala,
-// muito abaixo do limiar de 5s. `base` é o default (melhor precisão; latência sobra).
+// Spike (docs/SPIKE-STT.md): faster-whisper `base` int8 on the VPS = ~2.2s per ~13.6s of
+// speech, well below the 5s threshold. `base` is the default (best accuracy; latency to spare).
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-/** Modelo por defeito do Whisper (ver spike). Trocável por WHISPER_MODEL na env. */
+/** Default Whisper model (see spike). Overridable via WHISPER_MODEL in the env. */
 export const DEFAULT_WHISPER_MODEL = 'base';
 
 export interface ResolveWhisperDeps {
-  /** Injetável nos testes; em produção é fs.existsSync. */
+  /** Injectable in tests; in production it's fs.existsSync. */
   exists?: (p: string) => boolean;
-  /** Raiz do projeto; default process.cwd(). */
+  /** Project root; defaults to process.cwd(). */
   cwd?: string;
 }
 
 /**
- * Resolve o comando do sidecar Whisper. `model` = tamanho do modelo (tiny/base/small…).
- * Devolve `{ exe, args }` (exe = python do venv; args = [script, model]) ou null se o venv
- * ou o script não existirem nesta instância. PURO (só faz existsSync).
+ * Resolves the Whisper sidecar command. `model` = model size (tiny/base/small…).
+ * Returns `{ exe, args }` (exe = venv python; args = [script, model]) or null if the venv
+ * or the script don't exist on this instance. PURE (only does existsSync).
  */
 export function resolveWhisperCmd(
   model: string = DEFAULT_WHISPER_MODEL,
@@ -33,7 +34,7 @@ export function resolveWhisperCmd(
 ): { exe: string; args: string[] } | null {
   const exists = deps.exists ?? existsSync;
   const cwd = deps.cwd ?? process.cwd();
-  // O python do venv: Scripts/python.exe (Windows) ou bin/python (Linux/VPS) — tenta os dois.
+  // The venv python: Scripts/python.exe (Windows) or bin/python (Linux/VPS) — tries both.
   const venvPy = [
     join(cwd, 'tools', 'whisper-venv', 'Scripts', 'python.exe'),
     join(cwd, 'tools', 'whisper-venv', 'bin', 'python'),

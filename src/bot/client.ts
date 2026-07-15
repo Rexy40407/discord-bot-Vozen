@@ -41,11 +41,11 @@ export function createClient(): Client {
 }
 
 /**
- * Saudação de voz: o Vozen diz "Olá {nome}" quando um HUMANO entra no canal de voz onde
- * ele está. LIGADA por defeito (guild_config.greet_on_join); língua em greet_locale
- * (default inglês). Best-effort e defensiva: nunca crasha o gateway. Ignora bots (incl.
- * o próprio), respeita o kill-switch (enabled) e exige um player ativo. O nome é
- * resolvido e SANITIZADO como no xsaid (honra o /voice nickname).
+ * Voice greeting: Vozen says "Hello {name}" when a HUMAN joins the voice channel it's
+ * in. ON by default (guild_config.greet_on_join); language in greet_locale (default
+ * English). Best-effort and defensive: never crashes the gateway. Ignores bots (incl.
+ * itself), respects the kill-switch (enabled) and requires an active player. The name is
+ * resolved and SANITIZED as in xsaid (honors the /voice nickname).
  */
 function greetOnJoin(deps: BotDeps, oldState: VoiceState, newState: VoiceState): void {
   try {
@@ -58,18 +58,18 @@ function greetOnJoin(deps: BotDeps, oldState: VoiceState, newState: VoiceState):
     const botChannelId = newState.guild.members.me?.voice?.channelId ?? null;
     if (!isJoinIntoChannel(oldState.channelId, newState.channelId, botChannelId)) return;
     const cfg = getGuildConfig(deps.db, guildId);
-    if (!cfg.enabled) return; // kill-switch do servidor
-    // Dia de anos? Se a pessoa faz anos hoje, o Vozen diz "Parabéns {nome}" em vez do "Olá".
+    if (!cfg.enabled) return; // server kill-switch
+    // Birthday? If the person's birthday is today, Vozen says "Happy birthday {name}" instead of "Hello".
     const bd = getBirthday(deps.db, guildId, member.id);
     const isBirthday = bd !== null && isBirthdayToday(bd, new Date());
-    // Os PARABÉNS são opt-in individual e intencional (a própria pessoa registou a data),
-    // por isso disparam mesmo com a saudação normal desligada. Já a saudação "Olá" só sai
-    // se `greetOnJoin` estiver ON. Sem parabéns E sem saudação -> nada a dizer.
+    // BIRTHDAY wishes are individual and intentional opt-in (the person registered the
+    // date themselves), so they fire even with the normal greeting off. The "Hello"
+    // greeting only fires if `greetOnJoin` is ON. No birthday AND no greeting -> nothing to say.
     if (!isBirthday && !cfg.greetOnJoin) return;
-    // Cooldown de 5 min por (guild, user): quem spama entrar/sair só é saudado uma vez
-    // por janela — cobre a saudação normal E os parabéns. Só consulta aqui (depois de
-    // sabermos que HÁ algo a dizer) para não gastar a janela à toa. Sem o mapa (testes
-    // antigos) não há cooldown (comportamento antigo: saúda sempre).
+    // 5-min cooldown per (guild, user): whoever spams join/leave is greeted only once
+    // per window — covers the normal greeting AND the birthday wishes. Only consulted
+    // here (after we know there IS something to say) so as not to waste the window. Without
+    // the map (old tests) there's no cooldown (old behavior: always greets).
     if (deps.greetCooldown && !deps.greetCooldown.shouldGreet(guildId, member.id)) return;
     const rawName =
       getNickname(deps.db, guildId, member.id) ?? member.displayName ?? member.user.username ?? '';
@@ -92,8 +92,8 @@ export function bindEvents(deps: BotDeps): void {
 
   client.once(Events.ClientReady, (c) => {
     log.info(`[client] online as ${c.user.tag}`);
-    // P9.3 — presenca como auto-marketing subtil (marca + CTA). Defensivo: nunca
-    // deixar uma falha na presenca crashar o arranque do bot.
+    // P9.3 — presence as subtle self-marketing (brand + CTA). Defensive: never let a
+    // presence failure crash the bot startup.
     try {
       c.user.setPresence(buildPresence(deps.config));
     } catch (err) {
@@ -106,7 +106,7 @@ export function bindEvents(deps: BotDeps): void {
       void handleAutocomplete(interaction, deps);
       return;
     }
-    // Context-menu de mensagem (botão direito -> Apps -> Speak).
+    // Message context-menu (right-click -> Apps -> Speak).
     if (interaction.isMessageContextMenuCommand()) {
       void handleMessageContextMenu(interaction, deps);
       return;
@@ -119,25 +119,25 @@ export function bindEvents(deps: BotDeps): void {
     void handleMessage(message, deps);
   });
 
-  // VoiceStateUpdate — alguém entrou/saiu/mudou de canal de voz. Serve para a regra
-  // "o bot só sai quando fica sozinho na call" (AloneWatcher re-avalia a guild).
-  // ALTA-FREQUÊNCIA (dispara em cada mute/deafen do servidor inteiro), por isso o
-  // bail cedo: só agir onde o bot TEM player (está numa call desta guild).
+  // VoiceStateUpdate — someone joined/left/switched voice channel. Serves the rule
+  // "the bot only leaves when it's alone in the call" (AloneWatcher re-evaluates the guild).
+  // HIGH-FREQUENCY (fires on every mute/deafen across the whole server), hence the early
+  // bail: only act where the bot HAS a player (is in a call in this guild).
   client.on(Events.VoiceStateUpdate, (oldState: VoiceState, newState: VoiceState) => {
     const guildId = newState.guild?.id ?? oldState.guild?.id;
     if (!guildId || !deps.players.has(guildId)) return;
     deps.aloneWatcher?.evaluate(guildId);
-    // Saudação: alguém ENTROU no canal do bot -> "Olá {nome}" (se ligado).
+    // Greeting: someone JOINED the bot's channel -> "Hello {name}" (if enabled).
     greetOnJoin(deps, oldState, newState);
   });
 
-  // guildCreate — o Vozen entrou num servidor novo. Enviamos UMA vez um welcome
-  // embed (beginner onboarding) a um canal adequado. O evento ja e 1x por entrada,
-  // por isso nao precisa de dedup. Toda a decisao testavel esta em welcome.ts
-  // (pickWelcomeChannel/buildWelcomeEmbed); aqui so ligamos as pecas: null -> nao
-  // envia; try/catch para NUNCA crashar (guild nova = locale default 'en').
+  // guildCreate — Vozen joined a new server. We send a welcome embed ONCE (beginner
+  // onboarding) to a suitable channel. The event is already 1x per join, so it doesn't
+  // need dedup. All the testable decision lives in welcome.ts
+  // (pickWelcomeChannel/buildWelcomeEmbed); here we just wire the pieces: null -> don't
+  // send; try/catch to NEVER crash (new guild = default locale 'en').
   client.on(Events.GuildCreate, (guild: Guild) => {
-    // Re-convite: cancela qualquer purga agendada (o bot voltou dentro do grace period).
+    // Re-invite: cancel any scheduled purge (the bot came back within the grace period).
     try {
       if (deps.db) unmarkGuildDeparted(deps.db, guild.id);
     } catch (err) {
@@ -150,8 +150,8 @@ export function bindEvents(deps: BotDeps): void {
         );
         if (!channel) return;
         const embed = buildWelcomeEmbed(DEFAULT_LOCALE);
-        // O canal escolhido e sempre um GuildText enviavel (pickWelcomeChannel ja
-        // validou ViewChannel+SendMessages); usamos a instancia real da cache.
+        // The chosen channel is always a sendable GuildText (pickWelcomeChannel already
+        // validated ViewChannel+SendMessages); we use the real instance from the cache.
         const sendable = guild.channels.cache.get(channel.id);
         if (sendable && 'send' in sendable && typeof sendable.send === 'function') {
           await sendable.send({ embeds: [embed] });
@@ -162,21 +162,21 @@ export function bindEvents(deps: BotDeps): void {
     })();
   });
 
-  // guildDelete — o Vozen saiu (kick/leave) ou perdeu acesso a uma guild. Libertar
-  // os recursos retidos por guildId (limiter + player) para nao vazar memoria em
-  // uptime longo. Toda a logica testavel esta em handleGuildDelete (deps.ts).
-  // IMPORTANTE: o Discord dispara isto TAMBEM em OUTAGES transitorios da guild
-  // (guild.available === false). Nesse caso NAO destruimos a sessao — a ligacao de
-  // voz sobrevive ao blip e a sua propria reconexao (VoiceConnectionStatus.Disconnected
-  // -> handleDisconnect) trata do resto. Se destruissemos, o bot saia silenciosamente
-  // da call e SO voltava quando alguem mandasse mensagem/`/join` (nada re-join automatico
-  // em GuildAvailable). So libertamos recursos numa remocao REAL (available !== false).
+  // guildDelete — Vozen left (kick/leave) or lost access to a guild. Release the
+  // resources held by guildId (limiter + player) so as not to leak memory over long
+  // uptime. All the testable logic lives in handleGuildDelete (deps.ts).
+  // IMPORTANT: Discord ALSO fires this on transient guild OUTAGES
+  // (guild.available === false). In that case we DON'T destroy the session — the voice
+  // connection survives the blip and its own reconnection (VoiceConnectionStatus.Disconnected
+  // -> handleDisconnect) handles the rest. If we destroyed it, the bot would silently leave
+  // the call and ONLY come back when someone sent a message/`/join` (no automatic re-join on
+  // GuildAvailable). We only release resources on a REAL removal (available !== false).
   client.on(Events.GuildDelete, (guild: Guild) => {
     if (guild.available === false) return;
     handleGuildDelete(deps, guild.id);
-    // Conformidade §5(b): marca a saída REAL (o guard acima já exclui outages). Um job
-    // diário purga os dados 30 dias depois se o bot não for re-convidado. try/catch:
-    // nunca crashar o gateway por causa da retenção.
+    // Compliance §5(b): mark the REAL departure (the guard above already excludes outages).
+    // A daily job purges the data 30 days later if the bot isn't re-invited. try/catch:
+    // never crash the gateway because of retention.
     try {
       if (deps.db) markGuildDeparted(deps.db, guild.id, Date.now());
     } catch (err) {
@@ -184,9 +184,9 @@ export function bindEvents(deps: BotDeps): void {
     }
   });
 
-  // Vaga 3 — reporter de erros para um webhook do Discord (OPT-IN via ERROR_WEBHOOK_URL).
-  // Envia os erros INESPERADOS (gateway/rejeições/exceções) para o operador ver problemas
-  // em produção sem ler logs. No-op sem url; dedup por hash; nunca lança.
+  // Wave 3 — error reporter to a Discord webhook (OPT-IN via ERROR_WEBHOOK_URL).
+  // Sends the UNEXPECTED errors (gateway/rejections/exceptions) so the operator can see
+  // production problems without reading logs. No-op without url; dedup by hash; never throws.
   const errorReporter = createErrorReporter(deps.config.errorWebhookUrl);
 
   client.on(Events.Error, (err) => {
@@ -194,11 +194,11 @@ export function bindEvents(deps: BotDeps): void {
     void errorReporter.report(err, 'gateway');
   });
 
-  // Observabilidade + recuperação do GATEWAY (fix do "Falha ao carregar opções"
-  // recorrente: o bot ficava online mas sem RECEBER interações — gateway zombie,
-  // invisível no log). Liga os listeners de shard e um watchdog que reinicia limpo
-  // se o gateway ficar em baixo. process.exit(1) => o supervisor (start-prod.mjs)
-  // reinicia com sessão nova.
+  // GATEWAY observability + recovery (fix for the recurring "Failed to load options":
+  // the bot stayed online but stopped RECEIVING interactions — zombie gateway, invisible
+  // in the log). Wires the shard listeners and a watchdog that restarts cleanly if the
+  // gateway goes down. process.exit(1) => the supervisor (start-prod.mjs) restarts with a
+  // fresh session.
   bindGatewayWatch({
     client,
     logInfo: (m) => log.info(m),
@@ -217,10 +217,10 @@ export function bindEvents(deps: BotDeps): void {
       '[process] uncaughtException; reporting and exiting for a clean supervisor restart',
       err,
     );
-    // Guia do Node: após uma exceção não-apanhada o processo fica em estado indefinido.
-    // Saímos com código != 0 para o supervisor (start-prod.mjs) reiniciar de fresco, em
-    // vez de ficarmos "vivos mas partidos" — o que o health endpoint reportaria como OK
-    // enquanto o bot está wedged. Janela curta para o webhook de erro escoar antes de sair.
+    // Node guidance: after an uncaught exception the process is in an undefined state.
+    // We exit with code != 0 so the supervisor (start-prod.mjs) restarts fresh, instead
+    // of staying "alive but broken" — which the health endpoint would report as OK while
+    // the bot is wedged. Short window for the error webhook to drain before exiting.
     const exit = (): void => process.exit(1);
     const t = setTimeout(exit, 2000);
     t.unref();

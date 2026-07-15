@@ -1,16 +1,16 @@
 // src/health.ts
 //
-// Health endpoint HTTP OPCIONAL para uptime monitors (ex.: UptimeRobot).
+// OPTIONAL HTTP health endpoint for uptime monitors (e.g. UptimeRobot).
 //
-// Desenho:
-//  - `healthResponse(path)` e uma funcao PURA (sem efeitos, sem abrir porta):
-//    devolve { status, body } para um dado caminho de pedido. Testavel sem rede.
-//  - `startHealthServer(config)` cria um http.Server que usa o handler e faz
-//    listen(port) — mas SO se `config.healthPort` estiver definido. Sem porta,
-//    devolve undefined e nao abre nada (default = sem servidor).
+// Design:
+//  - `healthResponse(path)` is a PURE function (no effects, no port opened):
+//    returns { status, body } for a given request path. Testable without network.
+//  - `startHealthServer(config)` creates an http.Server that uses the handler and
+//    listen(port) — but ONLY if `config.healthPort` is defined. Without a port,
+//    returns undefined and opens nothing (default = no server).
 //
-// O corpo e MINIMO de proposito: apenas {"status":"ok"}. Nao expomos tokens,
-// IDs, contagem de guilds nem qualquer dado sensivel num endpoint sem auth.
+// The body is MINIMAL on purpose: just {"status":"ok"}. We don't expose tokens,
+// IDs, guild count or any sensitive data on an unauthenticated endpoint.
 
 import http from 'node:http';
 import type { Server } from 'node:http';
@@ -24,11 +24,11 @@ export interface HealthResult {
 }
 
 /**
- * Handler puro. GET a /health => 200 {"status":"ok"}; qualquer outro path => 404.
+ * Pure handler. GET to /health => 200 {"status":"ok"}; any other path => 404.
  *
- * Aceita o caminho cru do pedido (req.url). Faz match so pelo path, ignorando a
- * query string (ex.: alguns monitores acrescentam `?probe=...`), comparando
- * apenas a parte antes do primeiro '?'.
+ * Accepts the raw request path (req.url). Matches on the path only, ignoring the
+ * query string (e.g. some monitors append `?probe=...`), comparing only the part
+ * before the first '?'.
  */
 export function healthResponse(reqPath: string | undefined): HealthResult {
   const path = (reqPath ?? '').split('?')[0];
@@ -39,21 +39,21 @@ export function healthResponse(reqPath: string | undefined): HealthResult {
 }
 
 /**
- * Arranque OPCIONAL do servidor de health.
- *  - Se `config.healthPort` for undefined (default), NAO arranca nada e devolve
+ * OPTIONAL startup of the health server.
+ *  - If `config.healthPort` is undefined (default), starts NOTHING and returns
  *    undefined.
- *  - Caso contrario, cria um http.Server que responde via `healthResponse` e faz
- *    listen na porta. Devolve o handle do Server (para o chamador/tests poderem
- *    fechar ou ler o endereco efemero quando listen(0)).
+ *  - Otherwise, creates an http.Server that responds via `healthResponse` and
+ *    listens on the port. Returns the Server handle (so the caller/tests can close
+ *    it or read the ephemeral address when listen(0)).
  */
 export function startHealthServer(config: Pick<AppConfig, 'healthPort'>): Server | undefined {
   const port = config.healthPort;
   if (port === undefined) return undefined;
 
   const server = http.createServer((req, res) => {
-    // Um cliente que corte a ligação a meio do pedido emite 'error' no stream do
-    // req; sem listener, o Node relança-o como exceção não-apanhada. Espelha o
-    // servidor de webhook (vote.ts) que já tem este guard.
+    // A client that cuts the connection mid-request emits 'error' on the req
+    // stream; without a listener, Node rethrows it as an uncaught exception. Mirrors
+    // the webhook server (vote.ts) which already has this guard.
     req.on('error', (err) => {
       log.warn('[health] request stream error (ignored)', err);
     });
@@ -66,9 +66,9 @@ export function startHealthServer(config: Pick<AppConfig, 'healthPort'>): Server
     log.error(`[health] server error (port ${port})`, err);
   });
 
-  hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
+  hardenServerTimeouts(server); // short timeouts (anti-slowloris)
 
-  // Loopback-only (defesa em profundidade): o health é para monitorização local/proxy.
+  // Loopback-only (defense in depth): health is for local/proxy monitoring.
   server.listen(port, '127.0.0.1', () => {
     log.info(`[health] server listening on 127.0.0.1:${port} (GET /health).`);
   });

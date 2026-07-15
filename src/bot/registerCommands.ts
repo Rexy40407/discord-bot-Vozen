@@ -6,7 +6,7 @@ import { commandDefs, ownerCommandDefs } from '../commands/index';
 import { loadConfig } from '../config/index';
 import { log } from '../logging/logger';
 
-/** Fingerprint estável do conjunto de comandos (para detetar mudanças entre boots). */
+/** Stable fingerprint of the command set (to detect changes between boots). */
 export function commandsFingerprint(defs: unknown): string {
   return createHash('sha1').update(JSON.stringify(defs)).digest('hex');
 }
@@ -18,8 +18,8 @@ interface RegisterState {
 }
 
 /**
- * true se o registo pode ser SALTADO: o estado gravado bate certo com o fingerprint
- * atual (mesma app, mesmos comandos). Qualquer erro de leitura => false (regista).
+ * true if registration can be SKIPPED: the saved state matches the current
+ * fingerprint (same app, same commands). Any read error => false (register).
  */
 export function shouldSkipRegister(
   stateFile: string,
@@ -34,7 +34,7 @@ export function shouldSkipRegister(
   }
 }
 
-/** Grava o estado do registo (best-effort: falhar aqui só custa um re-PUT no próximo boot). */
+/** Saves the registration state (best-effort: failing here only costs a re-PUT on the next boot). */
 export function saveRegisterState(stateFile: string, clientId: string, fingerprint: string): void {
   try {
     mkdirSync(dirname(stateFile), { recursive: true });
@@ -55,14 +55,14 @@ export function saveRegisterState(stateFile: string, clientId: string, fingerpri
 }
 
 /**
- * Sincroniza os slash commands globais. Com `stateFile`, o PUT global só acontece
- * quando o conjunto de comandos MUDOU desde o último registo (fingerprint):
- *  - o PUT global é fortemente rate-limited e tem quota diária — reinícios
- *    frequentes (dev) queimavam-na à toa;
- *  - re-registar bumpa a versão dos comandos e invalida a cache do cliente
- *    Discord, o que coincide com falhas transitórias de autocomplete
- *    ("Falha ao carregar opções") logo após um restart.
- * FORCE_REGISTER=1 ignora o estado e regista sempre. Devolve true se registou.
+ * Syncs the global slash commands. With `stateFile`, the global PUT only happens
+ * when the command set has CHANGED since the last registration (fingerprint):
+ *  - the global PUT is heavily rate-limited and has a daily quota — frequent
+ *    restarts (dev) burned through it needlessly;
+ *  - re-registering bumps the command version and invalidates the Discord
+ *    client cache, which coincides with transient autocomplete failures
+ *    ("Failed to load options") right after a restart.
+ * FORCE_REGISTER=1 ignores the state and always registers. Returns true if it registered.
  */
 export async function registerCommands(
   token: string,
@@ -86,9 +86,10 @@ export async function registerCommands(
 }
 
 /**
- * Regista os comandos OWNER-ONLY como comandos de GUILD na `guildId` de controlo — NÃO
- * globais. Assim o público nem os vê no picker (1.ª camada de defesa; a 2.ª é o gate por
- * dono no handler). PUT de guild não sofre o rate-limit do global e propaga na hora.
+ * Registers the OWNER-ONLY commands as GUILD commands in the control `guildId` — NOT
+ * global. This way the public doesn't even see them in the picker (1st layer of defense;
+ * the 2nd is the owner gate in the handler). A guild PUT isn't subject to the global
+ * rate-limit and propagates instantly.
  */
 export async function registerOwnerCommands(
   token: string,
@@ -102,7 +103,7 @@ export async function registerOwnerCommands(
   );
 }
 
-// arranque quando corrido via `npm run register`
+// startup when run via `npm run register`
 if (process.argv[1] && process.argv[1].endsWith('registerCommands.ts')) {
   const cfg = loadConfig();
   const stateFile = join(dirname(cfg.dbPath), 'commands-state.json');
