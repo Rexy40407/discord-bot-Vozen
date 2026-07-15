@@ -111,36 +111,24 @@ violações ativas. Plano completo em `docs/PLAN-DISCORD-COMPLIANCE.md`. Deltas 
 - **Portal (pendente do Diogo):** preencher Privacy/ToS URL; confirmar elegibilidade de
   Premium Apps no separador Monetization (COMPL·1) — desbloqueia a decisão de monetização.
 
-## 4. DISCORD-03 — recomendação sobre a intent privilegiada `GuildMembers` (plano 032)
+## 4. DISCORD-03 — intents privilegiadas: só `MessageContent` (verificado 2026-07-15)
 
-`src/bot/client.ts:35` pede `GatewayIntentBits.GuildMembers` (privilegiada — sujeita a
-revisão manual no gate de verificação dos ~75 servidores, junto com Message Content).
-Auditoria (2026-07-14): não há NENHUM handler `GuildMember*` no código nem qualquer
-`members.fetch()` em massa. O ÚNICO consumidor é a resolução de nome para TTS —
-`cleanText.resolveUser` em `messageHandler.ts:241-244` e `handlers/core.ts:132` — que
-lê `message.guild.members.cache.get(id)?.displayName`, com fallback em cascata para
-`users.cache.get(id)?.username` e depois para o literal `'alguem'`. Ou seja: **já degrada
-bem sem a intent** — nunca rebenta, só passa a dizer o username (ou "alguem") em vez do
-nickname do servidor quando o membro mencionado não está em cache.
+`src/bot/client.ts:31-34` pede exatamente quatro intents: `Guilds`, `GuildVoiceStates`,
+`GuildMessages` e `MessageContent`. **NÃO** pede `GuildMembers` (a lista fecha na linha 35).
+Logo, a única intent **privilegiada** que a app usa é `MessageContent` — e é ela (e só ela)
+que tem de aparecer coerente com a funcionalidade declarada na revisão de verificação: o bot
+lê mensagens em voz alta, por isso precisa do conteúdo das mensagens (justificação simples e
+verdadeira). As outras três não são privilegiadas.
 
-**Trade-off:**
-- **Manter a intent:** nomes falados mais corretos (nickname do servidor) mesmo para
-  membros que a cache ainda não viu interagir; custo = mais um item a justificar na
-  revisão de verificação (a intent tem de aparecer coerente com a funcionalidade
-  declarada — "ler o nome de quem é mencionado numa mensagem lida em voz alta" é uma
-  justificação simples e verdadeira).
-- **Largar a intent:** footprint de privilégios menor, história de verificação mais
-  limpa (menos uma intent privilegiada para o revisor escrutinar); custo = nomes
-  mencionados de gente fora da cache passam a sair como username (ou "alguem"), nunca
-  o nickname do servidor — uma pequena perda de qualidade percebida no TTS, não uma
-  quebra funcional.
+Resolução de nome para o TTS: `cleanText.resolveUser` (`messageHandler.ts:241-244`,
+`handlers/core.ts:132`) lê `message.guild.members.cache.get(id)?.displayName`. A cache é
+populada **oportunisticamente** pelos eventos das intents que a app TEM (mensagens, estados
+de voz, interações) — **sem** a intent privilegiada `GuildMembers` e **sem** `members.fetch()`
+em massa. Cai em cascata para `users.cache.get(id)?.username` e depois para o literal
+`'alguem'`: já degrada bem, nunca rebenta, só diz o username quando o membro mencionado não
+está em cache. Auditoria (2026-07-15): zero handlers `GuildMember*`, zero `members.fetch()`.
 
-**Recomendação: MANTER por agora.** O custo real de a ter é só administrativo (mais uma
-linha a justificar no formulário de verificação), o benefício (nickname certo em vez de
-username) é visível a cada leitura de mensagem com menção, e não há nenhum uso indevido
-no código a limpar primeiro. Reavaliar no momento da verificação real (~75 servidores):
-se o formulário/revisor tornar esta intent especificamente onerosa de justificar, larga-la
-é uma mudança pequena e isolada (`client.ts` + um teste a confirmar que a menção cai no
-fallback de username/"alguem"), documentada aqui como decisão explícita a essa altura.
-**Sem mudança de código nesta entrada** (plano 032, item E — decisão do maintainer, não
-uma correção de código).
+**Gate de verificação (antes dos ~100 servidores):** há **uma** intent privilegiada a
+justificar — `MessageContent`. Não existe `GuildMembers` a escrutinar nem qualquer uso
+indevido a limpar. **Sem mudança de código nesta entrada** (a postura de intents já é
+mínima; esta entrada corrige uma descrição desatualizada que analisava uma intent inexistente).

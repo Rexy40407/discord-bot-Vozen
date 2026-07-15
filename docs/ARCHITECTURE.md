@@ -241,8 +241,10 @@ usa **sempre** a voz preferida, `singleVoice`, sem olhar para a língua do texto
    acentos usa a língua **da voz** (`accentLangOfModel`), não a do texto.
 
 Consequência (design): a voz que a pessoa escolhe é a que fala — nunca troca de locutor
-a meio. `pickVoiceForLang` mantém-se para o motor multi-segmento **experimental**
-(`MULTILINGUAL_SEGMENTS`, opt-in por env), não para o caminho normal. A **velocidade** vem
+a meio. `pickVoiceForLang` mantém-se para o `MultiSegmentEngine`, que **está ligado por
+defeito** (`MULTILINGUAL_SEGMENTS` só desliga com o valor exato `false`) mas hoje é
+**inerte**: `prepareSpeech` marca `singleVoice`, por isso o motor delega sempre na voz-base
+sem detetar língua nem partir por segmento. A **velocidade** vem
 da voz guardada do utilizador, senão é **sempre** `defaultSpeed` (`DEFAULT_SPEED`); o
 `default_voice` da guild define apenas o modelo, nunca a velocidade.
 

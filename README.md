@@ -12,15 +12,15 @@
 
 **Ready to go live? See [GO-LIVE.md](GO-LIVE.md).**
 
-**Neural (not robotic) voice that doesn't drop out of the channel — and whose quality is never locked behind a paywall.** Vozen is a Text-to-Speech bot for Discord that reads text out loud in voice channels with a **neural** voice (Piper): the `/tts` command, auto-reading of a configured channel, and reading mentions/replies to the bot. It detects the language of each message and picks the voice on its own, and every user can pin their own voice.
+**Neural (not robotic) voice that doesn't drop out of the channel — and whose quality is never locked behind a paywall.** Vozen is a Text-to-Speech bot for Discord that reads text out loud in voice channels with a **neural** voice (Piper): the `/tts` command, auto-reading of a configured channel, and reading mentions/replies to the bot. Every user picks their own voice — from the PT, EN and other European languages Vozen ships — and it reads all of their messages.
 
-Most TTS bots force you to choose: either free-but-robotic, or natural-but-behind-a-paywall — and the market leader "disconnects for hours." Vozen has everything the leader has (auto-read, one-command `/setup`, automatic language detection) — plus the **two** advantages the leader doesn't combine for Western languages (PT/EN/European):
+Most TTS bots force you to choose: either free-but-robotic, or natural-but-behind-a-paywall — and the market leader "disconnects for hours." Vozen has everything the leader has (auto-read, one-command `/setup`, per-user voices across many languages) — plus the **two** advantages the leader doesn't combine for Western languages (PT/EN/European):
 
 - **Genuinely natural neural voice, free** — Piper, not the robotic gTTS/eSpeak voice of the free tier.
 - **Quality NEVER behind a paywall** — no paid premium voices, no "vote to unlock." The leader hides the good voices behind ~€5/month; here the best voice is the default.
 - **Doesn't drop out of the voice channel** — automatic voice reconnection (kills the leader's "disconnects for hours").
 
-These two (free neural voice + reliability) are what set Vozen apart. The rest is **parity** — the leader does it too, but Vozen doesn't fall behind: prefix-free auto-read (reads a configured channel plus mentions/replies, set up in one step with `/setup`) and automatic per-message language detection in PT, EN and European languages.
+These two (free neural voice + reliability) are what set Vozen apart. The rest is **parity** — the leader does it too, but Vozen doesn't fall behind: prefix-free auto-read (reads a configured channel plus mentions/replies, set up in one step with `/setup`) and a broad voice catalog covering PT, EN and European languages, each user pinning the voice that reads their messages.
 
 Alongside that: moderation (blocklist, rate-limit, char limit, per-channel gating), a FIFO queue with `/skip`, auto-leave on inactivity and an audio cache.
 
