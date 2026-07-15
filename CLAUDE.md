@@ -43,6 +43,16 @@ Guidance for AI coding agents working on Vozen (Discord TTS bot).
   as Windows-1252 and rewrites it corrupted (mojibake: `€`→`â‚¬`, emojis/acentos
   broken). Use the Edit/Write tools instead. `tools/minify-site.mjs` has a
   mojibake guard that fails `npm run build:site` if this slips through.
+- **Site RGPD/GDPR: sem terceiros sem consentimento.** O site (`site/`) é
+  auto-suficiente por design — fontes servidas de `assets/fonts/` (self-hosted),
+  zero cookies, zero analytics/trackers, e a CSP das páginas só permite `'self'`
+  (+ `cdn.discordapp.com` para avatares e `api.vozen.org` para a API). Adicionar
+  Google Fonts, analytics, píxeis, iframes ou qualquer recurso de terceiro que
+  transmita o IP do visitante **exige consentimento prévio** (banner/CMP) — não o
+  adiciones sem esse gate, e mantém a CSP apertada. A política em
+  `site/privacy.html` (Art. 13 do RGPD) reflete a instância oficial (gTTS→Google,
+  STT Premium, clone NÃO oferecido no host) — se mudares o que o site recolhe,
+  atualiza-a.
 
 ## Environment
 
