@@ -13,8 +13,10 @@ import {
   MessageFlags,
 } from 'discord.js';
 import { unlink } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
 import type { BotDeps } from '../../bot/deps';
 import { eraseUser } from '../../store/dataLifecycle';
+import { purgeCloneDerivedAudio } from '../../tts/cache';
 import { isUserPremium, isGuildPremium } from '../../store/premium';
 import { t } from '../../i18n/index';
 import { localeForUser } from '../helpers';
@@ -75,6 +77,12 @@ async function handleErase(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   // Apaga os .wav de clone do disco (best-effort — a linha na BD já desapareceu).
   for (const p of removedSamplePaths) {
     await unlink(p).catch(() => {});
+  }
+  // Se a pessoa tinha voz clonada, purga também o ÁUDIO clonado gerado (audio-cache/
+  // clone/ e /fx/) — senão sobreviveria à erasure biométrica até ser evictado por LRU.
+  // As chaves são hashes, por isso limpa-se o namespace inteiro (regenerável).
+  if (removedSamplePaths.length > 0) {
+    purgeCloneDerivedAudio(join(dirname(deps.config.dbPath), 'audio-cache'));
   }
   await btn.update({ content: t('privacy.eraseDone', locale), components: [] }).catch(() => {});
 }

@@ -32,7 +32,8 @@ import {
 import { recordUserSample, pcmToWavFile } from '../../voice/recorder';
 import { encryptSampleFileInPlace } from '../../tts/cloneSampleFile';
 import { join, dirname } from 'node:path';
-import { unlinkSync, rmSync } from 'node:fs';
+import { unlinkSync } from 'node:fs';
+import { purgeCloneDerivedAudio } from '../../tts/cache';
 import { log } from '../../logging/logger';
 import { t } from '../../i18n/index';
 import { localeFor, localeForUser, reply } from '../helpers';
@@ -100,18 +101,12 @@ async function handleVoiceClone(
       return;
     }
     // "Sem rasto": além da amostra e do registo, purga a cache de ÁUDIO clonado gerado
-    // (audio-cache/clone/) — as chaves são hashes irreversíveis, não dá para apagar só as
-    // desta voz, por isso limpamos o namespace inteiro. É regenerável (re-sintetiza quando
-    // preciso) e o clone é a única feature que grava a voz real de alguém — direito ao
+    // (audio-cache/clone/ E audio-cache/fx/ — o EffectEngine envolve o CloneEngine, por
+    // isso áudio clone+efeito fica no namespace 'fx'). As chaves são hashes irreversíveis,
+    // não dá para apagar só as desta voz, por isso limpamos os namespaces inteiros. É
+    // regenerável e o clone é a única feature que grava a voz real de alguém — direito ao
     // apagamento (RGPD) exige não deixar áudio derivado para trás.
-    try {
-      rmSync(join(dirname(deps.config.dbPath), 'audio-cache', 'clone'), {
-        recursive: true,
-        force: true,
-      });
-    } catch {
-      // cache inexistente/bloqueada — regenerável, não é fatal
-    }
+    purgeCloneDerivedAudio(join(dirname(deps.config.dbPath), 'audio-cache'));
     const parts: string[] = [];
     if (ownPath) parts.push(t('clone.deleted', locale));
     if (revoked.length) parts.push(t('clone.revoked', locale, { count: revoked.length }));
