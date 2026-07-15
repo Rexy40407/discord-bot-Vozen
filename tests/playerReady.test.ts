@@ -93,7 +93,7 @@ describe('GuildVoicePlayer — espera Ready antes de play() (P13.1)', () => {
     ctrl.readyBehavior = 'resolve';
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await player.say({ text: 'ola', model: 'm', speed: 1 });
 
@@ -124,7 +124,7 @@ describe('GuildVoicePlayer — espera Ready antes de play() (P13.1)', () => {
     process.on('unhandledRejection', onUnhandled);
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await Promise.all([
       player.say({ text: 'primeiro', model: 'm', speed: 1 }),
@@ -166,7 +166,7 @@ describe('GuildVoicePlayer — espera Ready antes de play() (P13.1)', () => {
     process.on('unhandledRejection', onUnhandled);
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 60_000, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 60_000, () => {});
 
     await player.say({ text: 'so-um', model: 'm', speed: 1 });
 

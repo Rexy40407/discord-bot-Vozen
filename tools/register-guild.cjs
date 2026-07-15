@@ -30,15 +30,15 @@ async function main() {
   for (const gid of guildIds) {
     await rest.put(Routes.applicationGuildCommands(cfg.clientId, gid), { body: commandDefs });
     console.log(
-      `[register-guild] ${commandDefs.length} comandos registados no guild ${gid} (instantâneo).`,
+      `[register-guild] ${commandDefs.length} commands registered in guild ${gid} (immediate).`,
     );
   }
   console.log(
-    '[register-guild] feito. As opções novas (incl. o motor Kokoro) já aparecem — faz Ctrl+R no Discord.',
+    '[register-guild] done. New options, including Kokoro, are available after Ctrl+R in Discord.',
   );
 }
 
 main().catch((err) => {
-  console.error('[register-guild] falhou:', err?.message || err);
+  console.error('[register-guild] failed:', err?.message || err);
   process.exit(1);
 });

@@ -119,7 +119,7 @@ export class ProsodyEngine implements TTSEngine {
       writeFileSync(outPath, out);
       return this.cache.put(key, outPath);
     } catch (err) {
-      log.warn('[prosody] entoação de pergunta falhou, a servir voz limpa:', err);
+      log.warn('[prosody] question intonation failed; using clean voice:', err);
       return base;
     } finally {
       // applyEffect NÃO limpa o seu dir em sucesso (é o chamador que copia e limpa); o

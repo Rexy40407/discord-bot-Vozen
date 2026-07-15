@@ -197,4 +197,4 @@ for (const lang of LANGS) {
   writeFileSync(join(OUT, `${lang}.txt`), sorted.join('\n') + '\n', 'utf8');
   console.log(`  ${lang}: ${sorted.length} palavras -> assets/wordlists/${lang}.txt`);
 }
-console.log('feito.');
+console.log('done.');

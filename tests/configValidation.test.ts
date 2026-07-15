@@ -44,7 +44,7 @@ describe('validateConfigEnv', () => {
     expect(findings).toHaveLength(1);
     expect(findings[0].level).toBe('warn');
     expect(findings[0].message).toMatch(/TOPGG_WEBHOOK_PORT/);
-    expect(findings[0].message).toMatch(/redundante/i);
+    expect(findings[0].message).toMatch(/duplicates/i);
   });
 
   it('TOPGG_WEBHOOK_PORT sozinho (sem secret) -> sem aviso de redundancia', () => {

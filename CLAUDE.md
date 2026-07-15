@@ -29,30 +29,25 @@ Guidance for AI coding agents working on Vozen (Discord TTS bot).
     (≤ other channels) wherever Discord monetization is available to the app.
   - Suspected unauthorized data access → notify Discord and affected users
     immediately (see docs/INCIDENT-RESPONSE.md once it exists).
-  - Growth gate: BEFORE ~75 servers, the app must pass verification + Message
-    Content intent review.
+  - Growth gate: before the app reaches 100 guilds, complete verification and
+    obtain approval for every privileged intent the production bot still needs.
 - NEVER run `npm audit fix --force`. It would downgrade discord.js to v13 and
   @discordjs/opus across a major. Transitive CVEs are handled by the
   `overrides` block in `package.json` — read the `//overrides` comment there
   before touching any dependency version.
-- Code comments in this repo are written in Portuguese. Write new comments in
-  Portuguese too.
+- Source code, developer documentation, comments, logs, and test descriptions are
+  written in English. User-facing locale catalogs intentionally remain multilingual.
 - Never read or commit `.env`. Use `.env.example` as the reference.
 - NEVER edit file _content_ with PowerShell `Get-Content`/`Set-Content` (or
   `-replace` pipelines) on this repo. Windows PowerShell 5.1 reads UTF-8-without-BOM
   as Windows-1252 and rewrites it corrupted (mojibake: `€`→`â‚¬`, emojis/acentos
   broken). Use the Edit/Write tools instead. `tools/minify-site.mjs` has a
   mojibake guard that fails `npm run build:site` if this slips through.
-- **Site RGPD/GDPR: sem terceiros sem consentimento.** O site (`site/`) é
-  auto-suficiente por design — fontes servidas de `assets/fonts/` (self-hosted),
-  zero cookies, zero analytics/trackers, e a CSP das páginas só permite `'self'`
-  (+ `cdn.discordapp.com` para avatares e `api.vozen.org` para a API). Adicionar
-  Google Fonts, analytics, píxeis, iframes ou qualquer recurso de terceiro que
-  transmita o IP do visitante **exige consentimento prévio** (banner/CMP) — não o
-  adiciones sem esse gate, e mantém a CSP apertada. A política em
-  `site/privacy.html` (Art. 13 do RGPD) reflete a instância oficial (gTTS→Google,
-  STT Premium, clone NÃO oferecido no host) — se mudares o que o site recolhe,
-  atualiza-a.
+- **Website GDPR rule: no unnecessary third parties without prior consent.** The
+  site is self-contained: fonts are self-hosted, there are no analytics or tracking
+  cookies, and CSP is restricted to the minimum runtime origins. Adding analytics,
+  pixels, embeds, or other resources that disclose a visitor's IP requires an
+  appropriate consent gate and matching privacy/CSP updates.
 
 ## Environment
 
@@ -77,7 +72,8 @@ Guidance for AI coding agents working on Vozen (Discord TTS bot).
 - Optional Kokoro TTS sidecar (`kokoro-onnx`, ONNX/CPU, no PyTorch): installed by
   `tools/setup-kokoro.ps1` into `tools/kokoro-venv/` (gitignored) + model/voices.
   Auto-detected. It is an **opt-in** per-user engine (`/voice set engine:Kokoro`);
-  gTTS stays the default for everyone and without the sidecar Kokoro serves gTTS.
+  without the sidecar, Kokoro uses the configured default engine. Piper is the safe
+  local default. The unsupported gTTS modes require explicit operator configuration.
 - Optional STT sidecar (faster-whisper, no PyTorch/cmake): installed by
   `tools/setup-whisper.{sh,ps1}` into `tools/whisper-venv/` (gitignored). The bot
   auto-detects it (`resolveWhisperCmd`: `Scripts/python.exe` on Windows OR
@@ -93,7 +89,7 @@ Guidance for AI coding agents working on Vozen (Discord TTS bot).
 - TypeScript, `module: NodeNext`, `strict: true` (see `tsconfig.json`).
 - Tests: vitest, flat files in `tests/` named after the module under test
   (e.g. `tests/playerFifo.test.ts` covers `src/voice/player.ts`).
-- Commits: short conventional-ish one-liners in Portuguese (see `git log`).
+- Commits: short conventional-style English summaries.
 
 ## Testing — TDD is mandatory
 

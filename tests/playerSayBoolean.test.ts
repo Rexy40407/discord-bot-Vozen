@@ -60,7 +60,7 @@ describe('GuildVoicePlayer.say() — devolve boolean (P18.1)', () => {
     const engine: TTSEngine = { synth: async (r: SynthRequest) => r.text };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await expect(player.say(req('ola'))).resolves.toBe(true);
 
@@ -76,7 +76,7 @@ describe('GuildVoicePlayer.say() — devolve boolean (P18.1)', () => {
     const conn = makeConnection() as any;
     // queueCap = 1: com um worker in-flight, cabem (1 in-flight + 1 na fila) = 2 a
     // true; o 3o say() ja nao cabe -> false.
-    const player = new GuildVoicePlayer(conn, engine, 1, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 1, () => {});
 
     // 1o: dequeued imediatamente para o worker (in-flight) -> true.
     await expect(player.say(req('a'))).resolves.toBe(true);
@@ -92,7 +92,7 @@ describe('GuildVoicePlayer.say() — devolve boolean (P18.1)', () => {
     const engine: TTSEngine = { synth: async (r: SynthRequest) => r.text };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
     player.destroy();
 
     await expect(player.say(req('ola'))).resolves.toBe(false);

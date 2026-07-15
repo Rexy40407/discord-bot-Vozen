@@ -139,7 +139,7 @@ export class CloneEngine implements TTSEngine {
       tmp = await this.enqueue(lowerAllCapsRuns(req.text), ref.path, lang);
       return this.cache.put(key, tmp); // copia para a cache (chave estável)
     } catch (err) {
-      log.warn('[clone] síntese clonada falhou, a servir voz normal:', err);
+      log.warn('[clone] cloned synthesis failed; using the normal voice:', err);
       return this.inner.synth(req); // NUNCA silêncio
     } finally {
       if (tmp) {
@@ -166,7 +166,7 @@ export class CloneEngine implements TTSEngine {
   private pump(): void {
     if (this.active || this.queue.length === 0) return;
     if (!this.ensureChild()) {
-      const err = new Error('clone: sidecar indisponível');
+      const err = new Error('clone: sidecar unavailable');
       for (const j of this.queue.splice(0)) j.reject(err);
       return;
     }
@@ -202,12 +202,12 @@ export class CloneEngine implements TTSEngine {
       child.stderr!.on('data', (c: Buffer) => log.info(`[clone-py] ${c.toString().trim()}`));
       child.on('exit', (code) => {
         if (this.child !== child) return; // evento de um child JÁ substituído — ignora
-        log.warn(`[clone] sidecar saiu (code ${code})`);
+        log.warn(`[clone] sidecar exited (code ${code})`);
         this.teardown();
       });
       child.on('error', (err) => {
         if (this.child !== child) return; // evento de um child JÁ substituído — ignora
-        log.warn('[clone] falha no sidecar:', err);
+        log.warn('[clone] sidecar failure:', err);
         this.teardown();
       });
       // Warmup: carrega o modelo já; o onLine liga this.ready e faz pump().
@@ -219,14 +219,14 @@ export class CloneEngine implements TTSEngine {
       this.warmupTimer = setTimeout(() => {
         this.warmupTimer = null;
         if (this.ready) return; // corrida benigna: ficou pronto entretanto
-        log.warn(`[clone] sidecar não ficou pronto em ${this.readyTimeoutMs}ms — a reiniciar`);
+        log.warn(`[clone] sidecar was not ready after ${this.readyTimeoutMs}ms; restarting`);
         this.restart();
       }, this.readyTimeoutMs);
       // Não segurar o processo vivo só por causa deste timer (shutdown limpo).
       this.warmupTimer.unref?.();
       return true;
     } catch (err) {
-      log.warn('[clone] não consegui arrancar o sidecar:', err);
+      log.warn('[clone] failed to start the sidecar:', err);
       this.starting = false;
       this.child = null;
       return false;
@@ -257,7 +257,7 @@ export class CloneEngine implements TTSEngine {
       }
       this.ready = true;
       this.starting = false;
-      log.info('[clone] sidecar pronto');
+      log.info('[clone] sidecar ready');
       this.pump();
       return;
     }
@@ -266,7 +266,7 @@ export class CloneEngine implements TTSEngine {
     this.active = null;
     if (job.timer) clearTimeout(job.timer);
     if (msg.ok && msg.out) job.resolve(msg.out);
-    else job.reject(new Error(msg.error || 'clone: erro desconhecido'));
+    else job.reject(new Error(msg.error || 'clone: unknown error'));
     this.pump();
   }
 

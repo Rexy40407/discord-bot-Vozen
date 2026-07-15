@@ -211,7 +211,21 @@ async function handlePremiumInfo(i: ChatInputCommandInteraction, deps: BotDeps):
   const embed = brandEmbed(anyActive ? 'premium' : 'brand')
     .setTitle(t('premium.title', locale))
     .setDescription(desc.join('\n'));
-  await i.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+  const purchaseButtons: ButtonBuilder[] = [];
+  if (i.guildId && deps.config.premiumGuildSkuId) {
+    purchaseButtons.push(
+      new ButtonBuilder().setStyle(ButtonStyle.Premium).setSKUId(deps.config.premiumGuildSkuId),
+    );
+  }
+  if (deps.config.premiumUserSkuId) {
+    purchaseButtons.push(
+      new ButtonBuilder().setStyle(ButtonStyle.Premium).setSKUId(deps.config.premiumUserSkuId),
+    );
+  }
+  const components = purchaseButtons.length
+    ? [new ActionRowBuilder<ButtonBuilder>().addComponents(purchaseButtons)]
+    : [];
+  await i.reply({ embeds: [embed], components, flags: MessageFlags.Ephemeral });
 }
 
 /**

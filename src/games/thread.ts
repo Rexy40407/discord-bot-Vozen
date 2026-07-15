@@ -39,14 +39,14 @@ function diagnoseThreadDelete(ch: unknown, _channelId: string): void {
     if (chanHas) return; // deve conseguir apagar — nada a assinalar
     if (!guildHas) {
       log.warn(
-        `[game] diagnóstico: o Vozen NÃO tem "Gerir Tópicos" ao nível do servidor — o ` +
-          `re-convite não aplicou (link antigo?). Corre /invite no Discord e usa ESSE link.`,
+        `[game] diagnosis: Vozen does not have Manage Threads at guild level; ` +
+          `the invite may be stale. Run /invite in Discord and use that link.`,
       );
     } else {
       log.warn(
-        `[game] diagnóstico: o Vozen tem "Gerir Tópicos" no servidor, mas o canal-pai ` +
-          `(${thread.parentId ?? '?'}) tem uma exceção que a remove — nas permissões DESSE ` +
-          `canal, adiciona o role Vozen com "Gerir Tópicos" ligado.`,
+        `[game] diagnosis: Vozen has Manage Threads at guild level, but parent channel ` +
+          `${thread.parentId ?? '?'} overrides it. Grant Manage Threads to the Vozen role ` +
+          `in that channel.`,
       );
     }
   } catch {
@@ -74,11 +74,11 @@ export async function createGameThread(channel: unknown, name: string): Promise<
       autoArchiveDuration: AUTO_ARCHIVE_MIN,
       reason: 'Vozen game session',
     });
-    if (thread.id) log.info(`[game] thread ${thread.id} criada para a partida.`);
+    if (thread.id) log.info(`[game] thread ${thread.id} created for the match.`);
     return thread.id ?? null;
   } catch (err) {
     log.warn(
-      `[game] criar thread falhou (${(err as Error)?.message ?? String(err)}) — jogo segue no próprio canal.`,
+      `[game] thread creation failed (${(err as Error)?.message ?? String(err)}); the game will continue in the current channel.`,
     );
     return null;
   }
@@ -96,7 +96,7 @@ export async function deleteChannelSafe(client: Client, channelId: string): Prom
     client.channels.cache.get(channelId) ??
     (await client.channels.fetch(channelId).catch(() => null));
   if (!ch) {
-    log.warn(`[game] thread ${channelId} não encontrada para apagar (já removida?).`);
+    log.warn(`[game] thread ${channelId} was not found for deletion (already removed?).`);
     return;
   }
   // Antes de tentar, diz no log se (e onde) falta a permissão de apagar.
@@ -108,24 +108,24 @@ export async function deleteChannelSafe(client: Client, channelId: string): Prom
   try {
     if (typeof c.delete === 'function') {
       await c.delete('Vozen game ended');
-      log.info(`[game] thread ${channelId} apagada.`);
+      log.info(`[game] thread ${channelId} deleted.`);
       return;
     }
   } catch (err) {
     log.warn(
-      `[game] apagar thread ${channelId} falhou (${(err as Error)?.message ?? String(err)}) — ` +
-        `falta Manage Threads? Re-convida o bot com o link do /invite. A arquivar como fallback…`,
+      `[game] deleting thread ${channelId} failed (${(err as Error)?.message ?? String(err)}); ` +
+        `is Manage Threads missing? Re-invite the bot with /invite. Archiving as fallback.`,
     );
   }
   try {
     if (typeof c.setArchived === 'function') {
       await c.setArchived(true, 'Vozen game ended');
-      log.info(`[game] thread ${channelId} arquivada (fallback do apagar).`);
+      log.info(`[game] thread ${channelId} archived as a deletion fallback.`);
     }
   } catch (err) {
     log.warn(
-      `[game] arquivar thread ${channelId} também falhou (${(err as Error)?.message ?? String(err)}) — ` +
-        `auto-arquiva em ${AUTO_ARCHIVE_MIN} min.`,
+      `[game] archiving thread ${channelId} also failed (${(err as Error)?.message ?? String(err)}); ` +
+        `it will auto-archive after ${AUTO_ARCHIVE_MIN} minutes.`,
     );
   }
 }

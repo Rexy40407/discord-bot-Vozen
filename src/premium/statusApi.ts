@@ -104,7 +104,7 @@ export function createStatusApi(deps: StatusApiDeps): StatusApi {
         }
       }
     } catch (err) {
-      deps.logError?.('[premium-api] falha a validar token na Discord', err);
+      deps.logError?.('[premium-api] failed to validate the Discord token', err);
       identity = null;
     } finally {
       clearTimeout(timer);

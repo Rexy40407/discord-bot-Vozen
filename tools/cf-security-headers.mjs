@@ -17,7 +17,7 @@
 
 const TOKEN = process.env.CF_API_TOKEN;
 if (!TOKEN) {
-  console.error('ERRO: falta CF_API_TOKEN no ambiente. Ver o cabeçalho deste ficheiro.');
+  console.error('ERROR: CF_API_TOKEN is missing. See this file header.');
   process.exit(1);
 }
 
@@ -30,8 +30,8 @@ const SECURITY_HEADERS = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   'Content-Security-Policy':
     "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' https://fonts.gstatic.com; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "font-src 'self'; " +
     "img-src 'self' data: https://cdn.discordapp.com; " +
     "connect-src 'self' https://api.vozen.org; media-src 'self'; " +
     "form-action 'self'; frame-ancestors 'none'",
@@ -71,8 +71,8 @@ async function main() {
   console.log(`zona: ${ZONE_NAME} (${zoneId}) status=${zones[0].status}`);
   if (zones[0].status !== 'active') {
     console.warn(
-      "AVISO: a zona ainda não está 'active' (nameservers a propagar). A regra fica criada, " +
-        'mas os cabeçalhos só saem quando ficar active e o DNS estiver proxied.',
+      "WARNING: the zone is not 'active' yet (nameservers are still propagating). The rule is created, " +
+        'but headers are only served after it becomes active and DNS is proxied.',
     );
   }
 
@@ -130,11 +130,11 @@ async function main() {
     console.log(`\nVerificação de https://${ZONE_NAME}/ (HTTP ${res.status}):`);
     const names = Object.keys(SECURITY_HEADERS);
     const missing = names.filter((h) => !res.headers.get(h));
-    for (const h of names) console.log(`  ${res.headers.get(h) ? 'OK   ' : 'FALTA'} ${h}`);
+    for (const h of names) console.log(`  ${res.headers.get(h) ? 'OK   ' : 'MISSING'} ${h}`);
     console.log(
       missing.length
-        ? `\n${missing.length} em falta — DNS a propagar, registo não-proxied, ou regra por aplicar.`
-        : '\nOs 6 cabeçalhos presentes ✅ — confirma o A/A+ em securityheaders.com.',
+        ? `\n${missing.length} missing; DNS may still be propagating, the record may not be proxied, or the rule may not be active.`
+        : '\nAll six headers are present ✅. Confirm the A/A+ grade at securityheaders.com.',
     );
   } catch (e) {
     console.log(
@@ -144,6 +144,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(`FALHOU: ${e.message}`);
+  console.error(`FAILED: ${e.message}`);
   process.exit(1);
 });

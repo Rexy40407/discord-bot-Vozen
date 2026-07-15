@@ -29,14 +29,14 @@ async function main() {
   for (const gid of guildIds) {
     // PUT com body vazio remove TODOS os comandos de guild nesse servidor.
     await rest.put(Routes.applicationGuildCommands(cfg.clientId, gid), { body: [] });
-    console.log(`[clear-guild] comandos de guild apagados no guild ${gid}. Fica só o global.`);
+    console.log(`[clear-guild] guild commands deleted in guild ${gid}; global commands remain.`);
   }
   console.log(
-    '[clear-guild] feito. Já não há duplicados — faz Ctrl+R no Discord (os globais mantêm-se).',
+    '[clear-guild] done. Duplicates are gone; press Ctrl+R in Discord. Global commands remain.',
   );
 }
 
 main().catch((err) => {
-  console.error('[clear-guild] falhou:', err?.message || err);
+  console.error('[clear-guild] failed:', err?.message || err);
   process.exit(1);
 });

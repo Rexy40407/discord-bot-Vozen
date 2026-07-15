@@ -69,7 +69,7 @@ export class PiperProcess {
       }
     });
 
-    this.child.on('exit', () => this.die(new Error('Processo piper terminou')));
+    this.child.on('exit', () => this.die(new Error('Piper process exited')));
     this.child.on('error', (err) =>
       this.die(new Error(`Erro no processo piper: ${(err as Error)?.message ?? err}`)),
     );
@@ -87,12 +87,12 @@ export class PiperProcess {
    */
   synth(text: string, outPath: string, timeoutMs: number): Promise<void> {
     if (this._dead) {
-      return Promise.reject(new Error('Processo piper morto — nao aceita trabalho'));
+      return Promise.reject(new Error('Piper process is dead and cannot accept work'));
     }
     return new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         // Timeout = processo encravado. Mata + rejeita esta e todas as restantes.
-        log.warn(`[piperPool] utterance timeout (${timeoutMs}ms) — a matar processo`);
+        log.warn(`[piperPool] utterance timeout (${timeoutMs}ms); terminating process`);
         this.kill();
         this.die(new Error(`Piper pool timeout (${timeoutMs}ms)`));
       }, timeoutMs);
@@ -130,7 +130,7 @@ export class PiperProcess {
     // Sanity-check opcional: o piper e estritamente sequencial, resolvemos SEMPRE a
     // cabeca; so avisamos se o basename impresso nao bater certo com o esperado.
     if (basename(line) !== basename(head.outPath)) {
-      log.warn(`[piperPool] path do stdout ('${line}') != esperado ('${head.outPath}')`);
+      log.warn(`[piperPool] stdout path ('${line}') != expected path ('${head.outPath}')`);
     }
     head.resolve();
   }

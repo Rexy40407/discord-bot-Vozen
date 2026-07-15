@@ -168,15 +168,13 @@ export const LOCALE_NAMES: Record<string, string> = {
 };
 
 /**
- * Vozes sintéticas gTTS para as línguas SEM modelo Piper no disco. Para cada locale
- * conhecido (LOCALE_NAMES) que nenhum modelo de `piperModels` cobre, devolve
- * `{locale}-google-medium` — assim a língua APARECE no /voice set e fala via Google
- * (o motor por defeito), mesmo num servidor sem .onnx (evita o colapso "só japonês"
- * quando ./models está vazio). Generaliza o caso ja_JP (o Piper standard não tem
- * japonês) e acrescenta no_NO. Vazio em modo neural (operador, sem gTTS). PURO.
+ * Builds synthetic model IDs for locales not covered by an installed Piper model.
+ * These entries are exposed only when the operator explicitly enables the unofficial
+ * Google Translate TTS modes. Local and official-API modes must never advertise a
+ * model they cannot synthesize.
  */
-export function syntheticGttsModels(piperModels: string[], neural: boolean): string[] {
-  if (neural) return [];
+export function syntheticGttsModels(piperModels: string[], enabled: boolean): string[] {
+  if (!enabled) return [];
   const covered = new Set(piperModels.map((m) => m.split('-')[0])); // 'es_ES-davefx-medium' -> 'es_ES'
   return Object.keys(LOCALE_NAMES)
     .filter((locale) => !covered.has(locale))

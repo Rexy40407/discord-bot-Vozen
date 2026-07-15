@@ -1,20 +1,15 @@
 // src/tts/perUserRouter.ts
 //
-// Despacha cada síntese para o motor que o UTILIZADOR escolheu (`req.engine`): 'piper'
-// -> Piper (self-host, local), 'kokoro' -> Kokoro (neural opt-in; já embrulhado num
-// RouterEngine que cai no gTTS nas línguas que não suporta), 'gcloud' -> Google Cloud
-// TTS Standard (perk Premium; também já embrulhado num RouterEngine que cai no gTTS por
-// falha/orçamento — e SEM key é o próprio gTTS), qualquer outro / ausente -> Google
-// (gTTS, o default de toda a gente). Os motores são construídos no arranque; o router só
-// encaminha. Mesmo contrato TTSEngine, por isso vive por baixo do MultiSegmentEngine
-// (cada segmento herda o `engine` da mensagem — ver multiSegment.ts).
+// Routes each synthesis request to the user's selected engine. The historical `google`
+// value means "configured default" for database compatibility; that default is local
+// Piper unless the operator explicitly selects a legacy gTTS mode.
 
 import type { SynthRequest, TTSEngine } from './engine';
 import { log } from '../logging/logger';
 
 export class PerUserEngineRouter implements TTSEngine {
   constructor(
-    private readonly google: TTSEngine,
+    private readonly defaultEngine: TTSEngine,
     private readonly piper: TTSEngine,
     private readonly kokoro: TTSEngine,
     private readonly gcloud: TTSEngine,
@@ -23,15 +18,16 @@ export class PerUserEngineRouter implements TTSEngine {
   async synth(req: SynthRequest): Promise<string> {
     if (req.engine === 'kokoro') return this.kokoro.synth(req);
     if (req.engine === 'gcloud') return this.gcloud.synth(req);
-    if (req.engine !== 'piper') return this.google.synth(req);
+    if (req.engine !== 'piper') return this.defaultEngine.synth(req);
 
     try {
       return await this.piper.synth(req);
     } catch (err) {
+      if (this.defaultEngine === this.piper) throw err;
       log.warn(
-        `[tts] Piper falhou para ${req.model}; fallback para Google: ${(err as Error).message}`,
+        `[tts] Piper failed for ${req.model}; using the configured fallback: ${(err as Error).message}`,
       );
-      return this.google.synth({ ...req, engine: 'google' });
+      return this.defaultEngine.synth({ ...req, engine: 'google' });
     }
   }
 }

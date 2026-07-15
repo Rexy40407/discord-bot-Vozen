@@ -74,7 +74,7 @@ describe('GuildVoicePlayer — throw em createAudioResource nao trava a fila', (
     let onIdleCalls = 0;
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {
       onIdleCalls++;
     });
 

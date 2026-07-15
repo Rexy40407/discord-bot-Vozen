@@ -1,19 +1,16 @@
 // tools/minify-site.mjs
 //
-// Constrói site-dist/ a partir de site/, MINIFICANDO o que é servido em produção:
-//   - index.html  -> HTML compacto (+ CSS/JS inline minificados)
-//   - *.css / *.js -> minificados (o "código" da página principal deixa de ser
-//                     legível num Ctrl+U casual, e carrega mais rápido)
-//   - privacy.html / terms.html -> COPIADAS TAL COMO ESTÃO (legais: têm de ficar
-//                     legíveis para utilizadores, Discord e motores de busca)
-//   - assets/, favicon, etc. -> copiados
+// Builds site-dist/ from site/, minifying what is served in production:
+//   - index.html -> compact HTML (with minified inline CSS/JS)
+//   - *.css / *.js -> minified for smaller and less casually readable output
+//   - privacy.html / terms.html -> copied as-is so legal pages stay readable
+//   - assets/, favicon, etc. -> copied
 //
-// NB honesto: isto NÃO esconde a página. A aba "Elements" do F12 mostra sempre o
-// DOM já desenhado (o browser re-embeleza-o), e a aba Network mostra o ficheiro cru.
-// A minificação só trava o copy-paste casual e melhora o tempo de carregamento; o
-// código-fonte limpo continua no Git (site/), só a saída publicada é compacta.
+// Important: minification does not hide a page. Developer tools still expose the
+// rendered DOM and downloaded resources. It only reduces payload size and deters
+// casual copy/paste; the readable source remains in site/.
 //
-// Puro Node ESM; corre com `npm run build:site`. Não faz parte do build TypeScript.
+// Pure Node ESM, invoked by `npm run build:site`; not part of the TypeScript build.
 
 import { readdir, mkdir, readFile, writeFile, copyFile, rm } from 'node:fs/promises';
 import { join, dirname, extname, basename, relative } from 'node:path';
@@ -26,7 +23,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'site');
 const OUT = join(ROOT, 'site-dist');
 
-// Só a página principal é minificada. As páginas legais ficam legíveis.
+// Only the landing page is minified. Legal pages remain readable.
 const MINIFY_HTML = new Set(['index.html']);
 
 const HTML_OPTS = {
@@ -39,25 +36,25 @@ const HTML_OPTS = {
   useShortDoctype: true,
 };
 
-// Guarda anti-mojibake: apanha UTF-8 lido/gravado como Windows-1252 (o erro do
-// PS 5.1 Get-Content|Set-Content). Digrafos específicos que NUNCA aparecem em
-// UTF-8 correto — não apanha `â` sozinho (ex.: "âmbar" é legítimo).
+// Mojibake guard for UTF-8 accidentally decoded or saved as Windows-1252 (a common
+// PowerShell 5.1 Get-Content|Set-Content failure mode). These sequences should not
+// occur in correctly decoded UTF-8; a lone `â` is intentionally not rejected.
 const MOJIBAKE = /â‚¬|ðŸ|â€™|â€œ|â€|â€“|â€”|Ã©|Ã¡|Ã£|Ã§|Ãµ|Ã­|Ã³|Ãº|Ã \b|Â·|Â«|Â»|âˆ'/;
 const TEXT_EXT = new Set(['.html', '.css', '.js', '.json', '.svg', '.txt', '.webmanifest']);
 
-/** Falha o build se algum ficheiro de texto tiver mojibake (corrupção de encoding). */
+/** Fails the build when a text file contains a known mojibake sequence. */
 function assertNoMojibake(rel, text) {
   const m = text.match(MOJIBAKE);
   if (m) {
     const line = text.slice(0, m.index).split('\n').length;
     throw new Error(
-      `mojibake detetado em ${rel}:${line} (sequência "${m[0]}") — ` +
-        `ficheiro UTF-8 corrompido (lido como Windows-1252?). Restaura do git.`,
+      `mojibake detected in ${rel}:${line} (sequence "${m[0]}") — ` +
+        `corrupt UTF-8 file (possibly decoded as Windows-1252); restore it from git.`,
     );
   }
 }
 
-/** Lista recursiva de todos os ficheiros sob `dir` (caminhos absolutos). */
+/** Recursively lists every file below `dir` as an absolute path. */
 async function walk(dir) {
   const out = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -79,7 +76,7 @@ async function run() {
     await mkdir(dirname(outPath), { recursive: true });
     const ext = extname(file).toLowerCase();
 
-    // Ficheiros de texto: lê uma vez e valida encoding antes de processar.
+    // Read text files once and validate their encoding before processing.
     if (TEXT_EXT.has(ext)) {
       const text = await readFile(file, 'utf8');
       assertNoMojibake(rel, text);
@@ -94,24 +91,22 @@ async function run() {
       } else if (ext === '.css') {
         const res = new CleanCSS({ returnPromise: false }).minify(text);
         if (res.errors.length)
-          throw new Error(`clean-css falhou em ${rel}: ${res.errors.join('; ')}`);
+          throw new Error(`clean-css failed for ${rel}: ${res.errors.join('; ')}`);
         await writeFile(outPath, res.styles);
         minified++;
       } else {
-        await writeFile(outPath, text); // páginas legais (privacy/terms), json, svg
+        await writeFile(outPath, text); // legal pages (privacy/terms), JSON, SVG
         copied++;
       }
     } else {
-      await copyFile(file, outPath); // assets binários, favicon, imagens, mp3
+      await copyFile(file, outPath); // binary assets, favicon, images, MP3
       copied++;
     }
   }
-  console.log(
-    `[minify-site] ${minified} ficheiro(s) minificado(s), ${copied} copiado(s) -> site-dist/`,
-  );
+  console.log(`[minify-site] ${minified} file(s) minified, ${copied} copied -> site-dist/`);
 }
 
 run().catch((err) => {
-  console.error('[minify-site] falhou:', err);
+  console.error('[minify-site] failed:', err);
   process.exit(1);
 });

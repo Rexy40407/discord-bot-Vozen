@@ -310,7 +310,7 @@ async function drawAndAnnounce(
       );
       spoke = outcome.status === 'queued';
     } catch (err) {
-      log.error('[randomizer] falha a falar o resultado (segue por texto)', err);
+      log.error('[randomizer] failed to speak the result; text response remains available', err);
     }
   }
   const content = `🎲 ${line}${spoke ? '' : `\n${t('rand.notInVoice', locale)}`}`;

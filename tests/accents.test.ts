@@ -88,7 +88,7 @@ describe('restoreAccents — repõe acentos da língua', () => {
 });
 
 describe('prepareSpeech — integra o restauro de acentos', () => {
-  const available = ['en_US-amy-medium', 'pt_PT-tugao-medium', 'es_ES-davefx-medium'];
+  const available = ['en_US-amy-medium', 'pt_PT-google-medium', 'es_ES-davefx-medium'];
   // Sem `as const`: tornava `pronunciations` um readonly [] incompatível com o
   // PronunciationEntry[] (mutável) do PrepareSpeechInput.
   const base = {

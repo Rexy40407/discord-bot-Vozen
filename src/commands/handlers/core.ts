@@ -132,10 +132,10 @@ export async function speakRawText(
     resolveUser: (id: string) =>
       guild.members.cache.get(id)?.displayName ??
       deps.client.users.cache.get(id)?.username ??
-      'alguem',
+      'someone',
     resolveChannel: (id: string) => {
       const ch = guild.channels.cache.get(id);
-      return ch && 'name' in ch ? (ch.name as string) : 'canal';
+      return ch && 'name' in ch ? (ch.name as string) : 'channel';
     },
   });
   const media = [...collectUrlMedia(raw), ...collectMarkdownMedia(raw)];
@@ -242,7 +242,7 @@ export async function handleMessageContextMenu(
     const outcome = await speakRawText(deps, i.guildId, i.user.id, i.guild, raw);
     await i.editReply(speakOutcomeMessage(outcome, locale));
   } catch (err) {
-    log.error('[speak] erro no context-menu Speak:', err);
+    log.error('[speak] Speak context-menu error:', err);
     if (!i.isRepliable()) return;
     const msg = t('error.generic', locale);
     if (i.deferred && !i.replied) {

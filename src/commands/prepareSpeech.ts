@@ -156,10 +156,13 @@ function decorateAnnouncements(result: PreparedSpeech, input: PrepareSpeechInput
 
 function prepareSpeechCore(input: PrepareSpeechInput): PreparedSpeech {
   const speed = input.userVoice ? input.userVoice.speed : input.defaultSpeed;
+  const configured = [input.userVoice?.model, input.guildDefaultVoice, input.defaultVoice].filter(
+    (model): model is string => Boolean(model),
+  );
   const preferred =
-    (input.userVoice && input.userVoice.model) ||
-    input.guildDefaultVoice ||
-    input.defaultVoice ||
+    configured.find((model) => input.available.includes(model)) ??
+    input.available[0] ??
+    configured[0] ??
     'en_US-amy-medium';
 
   // Voz FIXA sempre (a deteção automática de língua foi removida): a voz escolhida

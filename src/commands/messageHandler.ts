@@ -70,7 +70,7 @@ function maybeAutojoin(
     becomeSpeakerIfStage(channel); // no-op se não for um canal de palco
     return player;
   } catch (err) {
-    log.warn('[messageHandler] autojoin falhou (ignorado)', err);
+    log.warn('[messageHandler] autojoin failed (ignored)', err);
     return undefined;
   }
 }
@@ -169,7 +169,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
         guildId: message.guildId,
         channelId: message.channelId,
         authorId: message.author.id,
-        authorName: message.member?.displayName ?? message.author.username ?? 'alguém',
+        authorName: message.member?.displayName ?? message.author.username ?? 'someone',
         content: message.content ?? '',
       })
     ) {
@@ -179,7 +179,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       // caminho visível (confirma que o jogo está a receber input). log.debug (não
       // info — ABUSE-02): dispara POR MENSAGEM enquanto o jogo decorre; a nível info
       // um jogo movimentado enchia o log persistente. LOG_LEVEL=debug continua a ver.
-      log.debug(`[game] mensagem consumida no canal ${message.channelId}`);
+      log.debug(`[game] message consumed in channel ${message.channelId}`);
       return;
     }
 
@@ -241,10 +241,10 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       resolveUser: (id: string) =>
         message.guild!.members.cache.get(id)?.displayName ??
         deps.client.users.cache.get(id)?.username ??
-        'alguem',
+        'someone',
       resolveChannel: (id: string) => {
         const ch = message.guild!.channels.cache.get(id);
-        return ch && 'name' in ch ? (ch.name as string) : 'canal';
+        return ch && 'name' in ch ? (ch.name as string) : 'channel';
       },
     });
     // Guard de vazio endurecido: exige pelo menos UMA letra ou numero (\p{L}\p{N}) no
@@ -265,7 +265,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       metrics.inc('messagesRateLimited');
       // log.debug (não info — ABUSE-02): um flood dropava UM log POR MENSAGEM a nível
       // info, tempestade de escrita no log persistente. LOG_LEVEL=debug continua a ver.
-      log.debug(`[rate] mensagem de ${message.author.id} saltada (limite ${cfg.ratePerMin}/min)`);
+      log.debug(`[rate] message from ${message.author.id} dropped (limit ${cfg.ratePerMin}/min)`);
       // Feedback VISÍVEL (🐢, chamada REST) throttled por (guild,user) — ABUSE-02: sem
       // isto, o mesmo flood gerava uma reação REST por mensagem largada. Só a 1.ª de
       // cada janela reage; as seguintes ficam silenciosas (a métrica acima não é afetada).
@@ -286,7 +286,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
         false;
       if (isRepetitionSpam(cleaned) || dup) {
         log.info(
-          `[antispam] mensagem saltada (guild ${message.guildId}, autor ${message.author.id})`,
+          `[antispam] message dropped (guild ${message.guildId}, author ${message.author.id})`,
         );
         return;
       }
@@ -387,7 +387,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     try {
       talk = bumpTalk(deps.db, message.guildId, message.author.id, new Date());
     } catch (err) {
-      log.warn('[messageHandler] falha a registar tagarela (ignorado)', err);
+      log.warn('[messageHandler] failed to update speaker statistics (ignored)', err);
     }
 
     // Silêncio de arranque: o bot só começa a falar `messageLeadMs` depois da mensagem
@@ -412,7 +412,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
           });
         }
       } catch (err) {
-        log.warn('[messageHandler] falha a anunciar streak (ignorado)', err);
+        log.warn('[messageHandler] failed to announce the streak (ignored)', err);
       }
     }
 
@@ -437,10 +437,10 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
           });
         }
       } catch (err) {
-        log.warn('[messageHandler] falha a postar leaderboard automatico (ignorado)', err);
+        log.warn('[messageHandler] failed to post the automatic leaderboard (ignored)', err);
       }
     }
   } catch (err) {
-    log.error('[messageHandler] erro', err);
+    log.error('[messageHandler] error', err);
   }
 }

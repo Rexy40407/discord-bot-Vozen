@@ -96,7 +96,7 @@ export class WhisperTranscriber {
   transcribe(wavPath: string): Promise<Transcript> {
     return new Promise<Transcript>((resolve, reject) => {
       if (!this.cmd) {
-        reject(new Error('whisper: sidecar indisponível'));
+        reject(new Error('whisper: sidecar unavailable'));
         return;
       }
       this.queue.push({ path: wavPath, resolve, reject });
@@ -112,7 +112,7 @@ export class WhisperTranscriber {
   private pump(): void {
     if (this.active || this.queue.length === 0) return;
     if (!this.ensureChild()) {
-      const err = new Error('whisper: sidecar indisponível');
+      const err = new Error('whisper: sidecar unavailable');
       for (const j of this.queue.splice(0)) j.reject(err);
       return;
     }
@@ -148,24 +148,24 @@ export class WhisperTranscriber {
       child.stderr!.on('data', (c: Buffer) => log.info(`[whisper-py] ${c.toString().trim()}`));
       child.on('exit', (code) => {
         if (this.child !== child) return; // evento de um child JÁ substituído — ignora
-        log.warn(`[whisper] sidecar saiu (code ${code})`);
+        log.warn(`[whisper] sidecar exited (code ${code})`);
         this.teardown();
       });
       child.on('error', (err) => {
         if (this.child !== child) return; // evento de um child JÁ substituído — ignora
-        log.warn('[whisper] falha no sidecar:', err);
+        log.warn('[whisper] sidecar failure:', err);
         this.teardown();
       });
       this.readyTimer = setTimeout(() => {
         this.readyTimer = null;
         if (this.ready) return; // corrida benigna
-        log.warn(`[whisper] sidecar não ficou pronto em ${this.readyTimeoutMs}ms — a reiniciar`);
+        log.warn(`[whisper] sidecar was not ready after ${this.readyTimeoutMs}ms; restarting`);
         this.restart();
       }, this.readyTimeoutMs);
       this.readyTimer.unref?.();
       return true;
     } catch (err) {
-      log.warn('[whisper] não consegui arrancar o sidecar:', err);
+      log.warn('[whisper] failed to start the sidecar:', err);
       this.starting = false;
       this.child = null;
       return false;
@@ -196,7 +196,7 @@ export class WhisperTranscriber {
       }
       this.ready = true;
       this.starting = false;
-      log.info('[whisper] sidecar pronto');
+      log.info('[whisper] sidecar ready');
       this.pump();
       return;
     }

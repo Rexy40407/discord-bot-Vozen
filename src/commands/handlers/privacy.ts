@@ -68,7 +68,7 @@ async function handleErase(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   try {
     ({ removedSamplePaths } = eraseUser(deps.db, i.user.id));
   } catch (err) {
-    log.error('[privacy] falha ao apagar os dados do utilizador', err);
+    log.error('[privacy] failed to erase user data', err);
     await btn.update({ content: t('error.generic', locale), components: [] }).catch(() => {});
     return;
   }

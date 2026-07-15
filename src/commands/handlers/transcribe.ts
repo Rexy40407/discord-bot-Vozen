@@ -83,7 +83,7 @@ export async function handleTranscribe(
       await reply(i, t('stt.noManage', locale));
       return;
     }
-    const stopped = await stopSession(guildId, deps, locale, 'command');
+    const stopped = await stopSession(guildId, locale, 'command');
     await reply(i, t(stopped ? 'stt.stopped' : 'stt.notRunning', locale));
     return;
   }
@@ -240,7 +240,7 @@ export async function handleTranscribe(
       if (
         shouldAutoStop(humans, (uid) => hasSttConsent(deps.db, uid, guildId), active.everConsented)
       ) {
-        void stopSession(guildId, deps, locale, 'auto');
+        void stopSession(guildId, locale, 'auto');
       }
     }, 15_000);
     active.autoStopTimer.unref?.();
@@ -253,7 +253,7 @@ export async function handleTranscribe(
     // aqui. Invariante garantida: se o bot alguma vez des-ensurdeceu, este catch volta
     // SEMPRE a ensurdecer, mesmo quando o `channel.send` do anúncio falha. O release do
     // permit global fica no `finally` abaixo (cobre também os early-return sem throw).
-    log.warn(`[stt] falha ao arrancar sessão (guild ${guildId}):`, err);
+    log.warn(`[stt] failed to start session (guild ${guildId}):`, err);
     if (!handedOff) {
       if (onSpeaking) {
         try {
@@ -316,7 +316,6 @@ export function stopTranscriptionForGuild(guildId: string): void {
 /** Pára a sessão do servidor: restaura selfDeaf, limpa listeners/timers, anuncia. */
 async function stopSession(
   guildId: string,
-  deps: BotDeps,
   locale: string,
   _reason: 'command' | 'auto',
 ): Promise<boolean> {
@@ -334,6 +333,6 @@ async function stopSession(
   if (ch && ch.isTextBased() && 'send' in ch) {
     await ch.send({ content: t('stt.announceStop', locale) }).catch(() => {});
   }
-  log.info(`[stt] sessão parada (guild ${guildId}, ${_reason})`);
+  log.info(`[stt] session stopped (guild ${guildId}, ${_reason})`);
   return true;
 }

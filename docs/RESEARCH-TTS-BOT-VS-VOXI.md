@@ -8,16 +8,16 @@ inventário completo do Voxi, e presença pública (GitHub issues, top.gg, Patre
 
 ## 1. O adversário em números
 
-| Métrica | TTS Bot | Voxi |
-|---|---|---|
-| Servidores | **~1.488.000** | (arranque) |
-| Rating top.gg | **3,37/5** (46 reviews) — mediano | — |
-| Votos top.gg | 124 (baixíssimo para a escala) | — |
-| Receita | ~€1.870/mês Patreon (552 pagantes) | €0 |
-| Stack | Rust (Serenity/Songbird/Poise) + PostgreSQL + microserviço tts-service | TypeScript + SQLite + Piper local |
-| Voz grátis | gTTS (Google Translate) / eSpeak (robótico) | **Piper neural** |
-| Voz paga | gCloud (900+ vozes) / Polly (300+) + tradução DeepL | — (tudo grátis) |
-| Última atividade | 2026-06-23 (ativo) | diária |
+| Métrica          | TTS Bot                                                                | Voxi                              |
+| ---------------- | ---------------------------------------------------------------------- | --------------------------------- |
+| Servidores       | **~1.488.000**                                                         | (arranque)                        |
+| Rating top.gg    | **3,37/5** (46 reviews) — mediano                                      | —                                 |
+| Votos top.gg     | 124 (baixíssimo para a escala)                                         | —                                 |
+| Receita          | ~€1.870/mês Patreon (552 pagantes)                                     | €0                                |
+| Stack            | Rust (Serenity/Songbird/Poise) + PostgreSQL + microserviço tts-service | TypeScript + SQLite + Piper local |
+| Voz grátis       | gTTS (Google Translate) / eSpeak (robótico)                            | **Piper neural**                  |
+| Voz paga         | gCloud (900+ vozes) / Polly (300+) + tradução DeepL                    | — (tudo grátis)                   |
+| Última atividade | 2026-06-23 (ativo)                                                     | diária                            |
 
 **Leitura estratégica:** o TTS Bot ganhou por distribuição e antiguidade (2020), não por
 qualidade — o rating 3,37/5, a vaga de queixas de lentidão em mar-abr 2026 e o backlog

@@ -60,9 +60,8 @@ function makeSetupDeps(db: Database.Database): BotDeps {
     client: { user: { id: 'bot-1' } },
     players: new Map(),
     db,
-    // queueCap/inactivityMs sao lidos pelo construtor do GuildVoicePlayer quando o
-    // /setup se junta a voz no caminho feliz.
-    config: { queueCap: 10, inactivityMs: 1000 },
+    // queueCap is read by GuildVoicePlayer when /setup joins voice successfully.
+    config: { queueCap: 10 },
     availableModels: ['en_US-amy-medium'],
   } as unknown as BotDeps;
 }

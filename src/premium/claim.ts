@@ -51,14 +51,12 @@ function applyPending(
  * pessoa durante os 90 dias de retenção do pendente (ver "## Decision" no plano 021). A
  * identidade Discord vem já validada por OAuth. Aplica ao `discordId` TODAS as compras
  * pendentes do MESMO email (renovações órfãs), marca-as reclamadas e memoriza email->Discord ID
- * (renovações futuras resolvem-se sozinhas). Transacional e de USO ÚNICO. `webhookToken` já não
- * é usado no caminho por email (mantido na assinatura por estabilidade).
+ * (future renewals resolve automatically). The operation is transactional and single-use.
  */
 export function claimPendingGrant(
   db: Database.Database,
   discordId: string,
   input: string,
-  webhookToken: string | undefined,
   now: number,
 ): ClaimOutcome {
   const trimmed = input.trim();

@@ -25,7 +25,7 @@ export function loadDictionary(lang: WordChainLang): Dictionary | null {
   if (cached) return cached;
   const file = join(WORDLISTS_DIR, `${lang}.txt`);
   if (!existsSync(file)) {
-    log.error(`[wordchain] wordlist em falta: ${file}`);
+    log.error(`[wordchain] missing word list: ${file}`);
     return null;
   }
   try {
@@ -39,7 +39,7 @@ export function loadDictionary(lang: WordChainLang): Dictionary | null {
     cache.set(lang, dict);
     return dict;
   } catch (err) {
-    log.error(`[wordchain] falha a ler a wordlist ${file}`, err);
+    log.error(`[wordchain] failed to read word list ${file}`, err);
     return null;
   }
 }

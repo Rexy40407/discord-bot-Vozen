@@ -116,7 +116,7 @@ export function createErrorReporter(
       } catch (err) {
         seen.delete(h);
         log.warn(
-          '[errorReporter] falha a enviar erro para o webhook (ignorado):',
+          '[errorReporter] failed to send the error to the webhook (ignored):',
           (err as Error).message,
         );
         return false;

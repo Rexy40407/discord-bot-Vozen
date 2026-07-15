@@ -171,7 +171,7 @@ export function createDashboardApi(deps: DashboardApiDeps): DashboardApi {
       }
       // res.ok false (ex. 401) => guilds fica null (token inválido/expirado).
     } catch (err) {
-      deps.logError?.('[dashboard] falha a listar guilds na Discord', err);
+      deps.logError?.('[dashboard] failed to list Discord guilds', err);
       guilds = null;
     } finally {
       clearTimeout(timer);

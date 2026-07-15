@@ -90,6 +90,15 @@ describe('GameManager', () => {
     expect(mgr.start(GUILD, 'outro-canal', new SpyGame())).toBe('already-active');
   });
 
+  it('tracks the starter for scoped stop authorization and clears it at teardown', () => {
+    expect(mgr.isStarter(GUILD, 'owner')).toBe(false);
+    mgr.start(GUILD, CHAN, new SpyGame(), true, 'en', undefined, 'owner');
+    expect(mgr.isStarter(GUILD, 'owner')).toBe(true);
+    expect(mgr.isStarter(GUILD, 'other')).toBe(false);
+    mgr.stop(GUILD);
+    expect(mgr.isStarter(GUILD, 'owner')).toBe(false);
+  });
+
   it('chama game.start ao iniciar', async () => {
     const g = new SpyGame();
     mgr.start(GUILD, CHAN, g);

@@ -17,6 +17,6 @@ export function rmDirSafe(dir: string): void {
   try {
     rmSync(dir, { recursive: true, force: true });
   } catch (err) {
-    log.warn(`[tts] falha ao limpar o diretório temporário ${dir} (ignorado)`, err);
+    log.warn(`[tts] failed to clean temporary directory ${dir} (ignored)`, err);
   }
 }

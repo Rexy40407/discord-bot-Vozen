@@ -1,6 +1,6 @@
 // src/tts/factory.ts
 import type Database from 'better-sqlite3';
-import type { AppConfig } from '../config/index';
+import type { AppConfig, TtsEngineKind } from '../config/index';
 import type { TTSEngine } from './engine';
 import { AudioCache } from './cache';
 import { PiperEngine } from './piper';
@@ -15,43 +15,43 @@ import { CircuitBreakerEngine } from './circuitBreaker';
 import { KokoroEngine, resolveKokoroCmd } from './kokoroEngine';
 import { log } from '../logging/logger';
 
+/** The unsupported Google Translate endpoint is available only by explicit operator opt-in. */
+export function unofficialGttsEnabled(kind: TtsEngineKind): boolean {
+  return kind === 'gtts' || kind === 'router';
+}
+
 /**
- * Seleciona o motor TTS a partir da config.
- *   - 'piper'  (default) -> PiperEngine (self-host, sem API key).
- *   - 'neural'           -> NeuralEngine (OpenAI tts-1); EXIGE openaiApiKey.
- *
- * Se ttsEngine==='neural' sem openaiApiKey, falha rapido com mensagem clara
- * (apanhado pelo main().catch -> exit(1)). A sintese neural real e verificacao
- * ao vivo pendente; o que aqui se testa e a SELECAO.
- */
-/**
- * Motor POR-UTILIZADOR (Google/Piper): constrói o gTTS (default) e o Piper e devolve um
- * PerUserEngineRouter que despacha por `req.engine`. É o motor-base da instância pública
- * — cada pessoa escolhe o seu motor em `/voice set`, com o Google por defeito.
+ * Builds the per-user engine router. Piper is the safe local default. The unsupported
+ * Google Translate endpoint is created only for the explicit `gtts` and `router` modes.
+ * Kokoro and official Google Cloud TTS fall back to the configured default.
  */
 export function createPerUserEngine(
   config: AppConfig,
   cache: AudioCache,
   db?: Database.Database,
 ): TTSEngine {
-  const gtts = new GTTSEngine(cache.withNamespace('gtts'), {
-    chunkConcurrency: config.gttsChunkConcurrency,
-  });
   const piper = makePiper(config, cache);
-  // Circuit-breaker à volta do gTTS: após N falhas consecutivas (Google bloqueia/
-  // timeout de ~15s), abre durante um cooldown e serve o Piper diretamente — sem
-  // tentar o gTTS — para não acumular stalls de 15s por mensagem. Só o CAMINHO GOOGLE
-  // passa pelo breaker; quem escolheu Piper vai direto ao Piper (inalterado).
-  const google = new CircuitBreakerEngine(gtts, piper, {
-    threshold: config.gttsBreakerThreshold,
-    cooldownMs: config.gttsBreakerCooldownMs,
-    label: 'gtts',
-  });
-  // Kokoro (OPT-IN, /voice set engine:Kokoro): se o sidecar estiver instalado, o caminho
-  // 'kokoro' é um RouterEngine que tenta o Kokoro nas suas línguas e CAI no gTTS (google)
-  // no resto / em falha — quem opta nunca fica sem voz. SEM sidecar, o caminho 'kokoro'
-  // É o próprio gTTS, por isso escolher Kokoro comporta-se como o default. O gTTS de
-  // toda a gente fica INALTERADO em qualquer caso.
+  const useUnofficialGtts = unofficialGttsEnabled(config.ttsEngine);
+  if (useUnofficialGtts) {
+    log.warn(
+      '[factory] TTS_ENGINE enables an unsupported Google Translate endpoint. Use Piper or an official provider API for production services that require contractual API support.',
+    );
+  }
+  const defaultEngine: TTSEngine = useUnofficialGtts
+    ? new CircuitBreakerEngine(
+        new GTTSEngine(cache.withNamespace('gtts'), {
+          chunkConcurrency: config.gttsChunkConcurrency,
+        }),
+        piper,
+        {
+          threshold: config.gttsBreakerThreshold,
+          cooldownMs: config.gttsBreakerCooldownMs,
+          label: 'gtts',
+        },
+      )
+    : piper;
+  // Kokoro is opt-in. Unsupported languages and sidecar failures use the configured
+  // default; without a sidecar the route is exactly the default engine.
   const kokoroCmd = resolveKokoroCmd(config.kokoroCmd);
   const kokoro: TTSEngine = kokoroCmd
     ? new RouterEngine([
@@ -60,17 +60,12 @@ export function createPerUserEngine(
           langs: config.kokoroLangs,
           label: 'kokoro',
         },
-        { engine: google, langs: null, label: 'gtts' },
+        { engine: defaultEngine, langs: null, label: 'default' },
       ])
-    : google;
-  // Google HD (OPT-IN Premium, /voice set engine:Google HD): COM GOOGLE_TTS_API_KEY, o
-  // caminho 'gcloud' é um RouterEngine que tenta a API oficial Google Cloud TTS e CAI no
-  // gTTS (google) por FALHA/timeout/orçamento (o GCloudEngine lança nesses casos) — quem
-  // opta nunca fica sem voz. SEM key, o caminho 'gcloud' É o próprio gTTS (identidade),
-  // por isso escolher Google HD comporta-se como o default e não há custo. O gTTS de toda
-  // a gente fica INALTERADO em qualquer caso. Gate + contagem de custo: Fases 2 e 3.
-  // Contadores mensais PERSISTENTES (SQLite) + tetos de custo (config). Sem db (ex.
-  // testes de wiring), o motor não conta mas continua a aplicar maxChars/fail-safe.
+    : defaultEngine;
+  // Google HD is a Premium opt-in. With an API key it uses the official Google Cloud
+  // endpoint and falls back on failure or exhausted budget. Without a key it is the
+  // configured default. Monthly counters are persistent when a database is supplied.
   const gcloudUsage: GcloudUsage | undefined = db
     ? {
         getMonthly: (s, k, m) => getGcloudMonthlyChars(db, s, k, m),
@@ -94,19 +89,18 @@ export function createPerUserEngine(
           langs: null,
           label: 'gcloud',
         },
-        { engine: google, langs: null, label: 'gtts' },
+        { engine: defaultEngine, langs: null, label: 'default' },
       ])
-    : google;
+    : defaultEngine;
   log.info(
-    `[factory] motor por-utilizador ativo: google+breaker (${config.gttsBreakerThreshold} falhas -> ${config.gttsBreakerCooldownMs}ms) + piper + kokoro (${kokoroCmd ? 'sidecar detetado' : 'sem sidecar -> = gTTS'}) + gcloud (${config.googleTtsApiKey ? 'key detetada' : 'sem key -> = gTTS'}) (opção do user).`,
+    `[factory] per-user engine active: default=${useUnofficialGtts ? 'unofficial-gtts-with-piper-fallback' : 'piper-local'}; kokoro=${kokoroCmd ? 'sidecar-detected' : 'default-fallback'}; gcloud=${config.googleTtsApiKey ? 'official-api-configured' : 'default-fallback'}.`,
   );
-  return new PerUserEngineRouter(google, piper, kokoro, gcloud);
+  return new PerUserEngineRouter(defaultEngine, piper, kokoro, gcloud);
 }
 
 function makePiper(config: AppConfig, cache: AudioCache): TTSEngine {
   return new PiperEngine(config.piperPath, config.modelsDir, cache.withNamespace('piper'), {
-    // Params de qualidade globais vindos da config (envs NOISE_*/SENTENCE_SILENCE).
-    // Defaults = preset ORGANICO (0.75/0.95/0.4) quando as envs nao existirem.
+    // Global synthesis-quality parameters from the environment-backed configuration.
     noiseScale: config.noiseScale,
     noiseW: config.noiseW,
     sentenceSilence: config.sentenceSilence,
@@ -116,23 +110,18 @@ function makePiper(config: AppConfig, cache: AudioCache): TTSEngine {
 export function createEngine(config: AppConfig, cache: AudioCache): TTSEngine {
   if (config.ttsEngine === 'neural') {
     if (!config.openaiApiKey) {
-      throw new Error('TTS_ENGINE=neural requer OPENAI_API_KEY');
+      throw new Error('TTS_ENGINE=neural requires OPENAI_API_KEY');
     }
     return new NeuralEngine(config.openaiApiKey, cache.withNamespace('neural'));
   }
   if (config.ttsEngine === 'gtts') {
-    // Google Translate TTS (grátis, sem API key, multilingue). Opt-in via
-    // TTS_ENGINE=gtts. Endpoint não-oficial — pode ser limitado pela Google.
+    // Legacy explicit opt-in. This is not an official or supported Google API.
     return new GTTSEngine(cache.withNamespace('gtts'), {
       chunkConcurrency: config.gttsChunkConcurrency,
     });
   }
   if (config.ttsEngine === 'router') {
-    // MOTOR HÍBRIDO (Vaga 2): combina vários motores por-língua com fallback-por-falha.
-    // Fase 1 — gTTS (Google, boa qualidade, todas as línguas) como PRINCIPAL, e o Piper
-    // (local, todas as 34, sem rate-limits) como REDE DE SEGURANÇA quando a Google
-    // bloqueia/limita. Ambos apanha-tudo, por isso NENHUMA língua fica sem voz. O Kokoro
-    // (Fase 2) entrará ANTES do gTTS para as suas ~8 línguas, sem perder cobertura.
+    // Legacy explicit hybrid mode: unofficial gTTS first, local Piper on failure.
     const routes = [
       {
         engine: new GTTSEngine(cache.withNamespace('gtts'), {
@@ -143,23 +132,13 @@ export function createEngine(config: AppConfig, cache: AudioCache): TTSEngine {
       },
       { engine: makePiper(config, cache), langs: null, label: 'piper' },
     ];
-    log.info(`[factory] motor 'router' ativo: ${routes.map((r) => r.label).join(' -> ')}`);
+    log.info(`[factory] engine 'router' active: ${routes.map((r) => r.label).join(' -> ')}`);
     return new RouterEngine(routes);
   }
   return makePiper(config, cache);
 }
 
-/**
- * P14.4 — decide o motor efetivo a partir da flag EXPERIMENTAL
- * `multilingualSegments` (default OFF):
- *   - OFF (default) -> devolve o `base` TAL E QUAL (identidade `===`). O caminho
- *     de sintese fica byte-a-byte o de hoje: voz unica para a frase toda.
- *   - ON            -> embrulha `base` num MultiSegmentEngine (mesmo contrato
- *     TTSEngine) que parte textos multi-lingua por-segmento e concatena os WAVs.
- *
- * Extraido para funcao PURA (sem I/O) para tornar a SELECAO testavel e provar a
- * invariante do caminho OFF de forma executavel (ver tests/factory.test.ts).
- */
+/** Optionally wraps the base engine with multilingual segment synthesis. */
 export function selectEngine(
   base: TTSEngine,
   config: AppConfig,

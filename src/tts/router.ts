@@ -30,13 +30,13 @@ export interface EngineRoute {
 export class RouterEngine implements TTSEngine {
   constructor(private readonly routes: EngineRoute[]) {
     if (routes.length === 0) {
-      throw new Error('[router] pelo menos um motor é obrigatório');
+      throw new Error('[router] at least one engine is required');
     }
     // Invariante de COBERTURA: o último motor tem de ser apanha-tudo (langs=null),
     // senão uma língua sem rota específica cairia num throw. Barato de garantir aqui.
     if (routes[routes.length - 1].langs !== null) {
       throw new Error(
-        '[router] o último motor tem de ser apanha-tudo (langs=null) — cobertura total',
+        '[router] the last engine must be a catch-all (langs=null) to guarantee coverage',
       );
     }
   }
@@ -54,8 +54,8 @@ export class RouterEngine implements TTSEngine {
         lastErr = err;
         const next = candidates[idx + 1];
         log.warn(
-          `[router] motor '${route.label}' falhou para '${key}'` +
-            (next ? ` — a cair para '${next.label}'` : ' — sem mais alternativas') +
+          `[router] engine '${route.label}' failed for '${key}'` +
+            (next ? `; falling back to '${next.label}'` : '; no alternatives remain') +
             `: ${(err as Error).message}`,
         );
       }

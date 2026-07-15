@@ -1,9 +1,11 @@
 import type Database from 'better-sqlite3';
-// Tabela CACHEADA (lida a cada mensagem): todo o setter TEM de chamar invalidate.
+// Cached table read on every message; every setter must invalidate it.
 import { cached, invalidate } from './cache';
 
-/** Motor de TTS escolhido pelo utilizador: 'google' (gTTS, default), 'piper', 'kokoro' ou
- *  'gcloud' (Google HD — Google Cloud TTS Standard, perk Premium; sem key comporta-se como gTTS). */
+/**
+ * User-selected engine. The historical `google` value now means the operator-configured
+ * default for database compatibility; that default is local Piper unless explicitly changed.
+ */
 export type UserEngine = 'google' | 'piper' | 'kokoro' | 'gcloud';
 
 interface UserVoiceRow {
@@ -26,7 +28,7 @@ export function getUserVoice(
       )
       .get(guildId, userId) as UserVoiceRow | undefined;
     if (!r) return null;
-    // Coluna NOT NULL DEFAULT 'google'; valor desconhecido cai em 'google' (seguro).
+    // The column is NOT NULL; unknown legacy values use the configured-default route.
     return {
       model: r.voice_model,
       speed: r.speed,
@@ -44,7 +46,7 @@ export function getUserVoice(
       engine: UserEngine;
     };
   });
-  return row ? { ...row } : null; // cópia: o chamador não deve mutar o cacheado
+  return row ? { ...row } : null; // Return a copy so callers cannot mutate cached state.
 }
 
 export function setUserVoice(

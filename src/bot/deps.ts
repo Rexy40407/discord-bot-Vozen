@@ -130,7 +130,7 @@ export function handleGuildDelete(
     // 24/7 in-call: a guild desapareceu -> esquece a presença (não repor no arranque).
     if (deps.db) forgetVoicePresence(deps.db, guildId);
   } catch (err) {
-    log.warn('[client] falha ao libertar recursos da guild em guildDelete (ignorado)', err);
+    log.warn('[client] failed to release guild resources on guildDelete (ignored)', err);
   }
 }
 

@@ -12,13 +12,13 @@ import { shutdownPiperPool } from '../tts/piper';
  * para que esta funcao seja testavel sem matar o test runner.
  */
 export function shutdown(deps: Pick<BotDeps, 'players' | 'db'>): void {
-  log.info('[shutdown] a encerrar — a destruir players e a fechar a DB...');
+  log.info('[shutdown] stopping; destroying players and closing the database...');
 
   for (const player of deps.players.values()) {
     try {
       player.destroy(); // ja e idempotente (if (this.destroyed) return)
     } catch (err) {
-      log.error('[shutdown] erro ao destruir player', err);
+      log.error('[shutdown] failed to destroy player', err);
     }
   }
   deps.players.clear();
@@ -28,7 +28,7 @@ export function shutdown(deps: Pick<BotDeps, 'players' | 'db'>): void {
   try {
     shutdownPiperPool();
   } catch (err) {
-    log.error('[shutdown] erro ao fechar o pool piper', err);
+    log.error('[shutdown] failed to close the Piper pool', err);
   }
 
   try {
@@ -38,10 +38,10 @@ export function shutdown(deps: Pick<BotDeps, 'players' | 'db'>): void {
       deps.db.close();
     }
   } catch (err) {
-    log.error('[shutdown] erro ao fechar a DB', err);
+    log.error('[shutdown] failed to close the database', err);
   }
 
-  log.info('[shutdown] encerramento concluido.');
+  log.info('[shutdown] complete.');
 }
 
 /**
@@ -51,7 +51,7 @@ export function shutdown(deps: Pick<BotDeps, 'players' | 'db'>): void {
  */
 export function installSignalHandlers(deps: Pick<BotDeps, 'players' | 'db'>): void {
   const handler = (signal: string): void => {
-    log.info(`[shutdown] sinal ${signal} recebido.`);
+    log.info(`[shutdown] received ${signal}.`);
     shutdown(deps);
     process.exit(0);
   };

@@ -16,14 +16,14 @@ const req = (model: string): SynthRequest => ({ text: 'olá', model, speed: 1 })
 
 describe('RouterEngine — construção', () => {
   it('exige pelo menos um motor', () => {
-    expect(() => new RouterEngine([])).toThrow(/pelo menos um motor/);
+    expect(() => new RouterEngine([])).toThrow(/at least one engine/);
   });
 
   it('exige que o último motor seja apanha-tudo (langs=null)', () => {
     const routes: EngineRoute[] = [
       { engine: fakeEngine('kokoro'), langs: new Set(['pt']), label: 'kokoro' },
     ];
-    expect(() => new RouterEngine(routes)).toThrow(/apanha-tudo/);
+    expect(() => new RouterEngine(routes)).toThrow(/catch-all/);
   });
 });
 

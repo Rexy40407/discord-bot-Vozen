@@ -32,14 +32,10 @@ export function createClient(): Client {
       GatewayIntentBits.GuildVoiceStates,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
-      GatewayIntentBits.GuildMembers,
     ],
     partials: [Partials.Channel],
-    // Default GLOBAL de segurança: nenhum conteúdo postado pelo bot pinga
-    // @everyone/@here/roles/utilizadores a partir do TEXTO — desarma o vetor de
-    // mass-mention (risco de ban) em qualquer send/reply/editReply que ecoe input
-    // do utilizador (jogos, /8ball, /randomizer…). Uma chamada que precise mesmo de
-    // pingar tem de fazer o seu próprio override explícito de allowedMentions.
+    // Global security default: user-controlled bot output cannot mention everyone,
+    // roles, or users unless a call site opts in explicitly.
     allowedMentions: { parse: [] },
   });
 }
@@ -87,7 +83,7 @@ function greetOnJoin(deps: BotDeps, oldState: VoiceState, newState: VoiceState):
     });
     void player.say(req);
   } catch (err) {
-    log.warn('[client] falha na saudação de entrada (ignorado)', err);
+    log.warn('[client] join greeting failed (ignored)', err);
   }
 }
 
@@ -95,13 +91,13 @@ export function bindEvents(deps: BotDeps): void {
   const { client } = deps;
 
   client.once(Events.ClientReady, (c) => {
-    log.info(`[client] online como ${c.user.tag}`);
+    log.info(`[client] online as ${c.user.tag}`);
     // P9.3 — presenca como auto-marketing subtil (marca + CTA). Defensivo: nunca
     // deixar uma falha na presenca crashar o arranque do bot.
     try {
       c.user.setPresence(buildPresence(deps.config));
     } catch (err) {
-      log.warn('[client] falha ao definir a presenca (ignorado)', err);
+      log.warn('[client] failed to set presence (ignored)', err);
     }
   });
 
@@ -145,7 +141,7 @@ export function bindEvents(deps: BotDeps): void {
     try {
       if (deps.db) unmarkGuildDeparted(deps.db, guild.id);
     } catch (err) {
-      log.warn('[retencao] falha ao desmarcar saída do servidor (ignorado)', err);
+      log.warn('[retention] failed to clear the departed-guild marker (ignored)', err);
     }
     void (async () => {
       try {
@@ -161,7 +157,7 @@ export function bindEvents(deps: BotDeps): void {
           await sendable.send({ embeds: [embed] });
         }
       } catch (err) {
-        log.warn('[client] falha ao enviar welcome embed (ignorado)', err);
+        log.warn('[client] failed to send the welcome embed (ignored)', err);
       }
     })();
   });
@@ -184,7 +180,7 @@ export function bindEvents(deps: BotDeps): void {
     try {
       if (deps.db) markGuildDeparted(deps.db, guild.id, Date.now());
     } catch (err) {
-      log.warn('[retencao] falha ao marcar saída do servidor (ignorado)', err);
+      log.warn('[retention] failed to mark the guild as departed (ignored)', err);
     }
   });
 
@@ -194,7 +190,7 @@ export function bindEvents(deps: BotDeps): void {
   const errorReporter = createErrorReporter(deps.config.errorWebhookUrl);
 
   client.on(Events.Error, (err) => {
-    log.error('[client] erro do gateway', err);
+    log.error('[client] gateway error', err);
     void errorReporter.report(err, 'gateway');
   });
 
@@ -218,7 +214,7 @@ export function bindEvents(deps: BotDeps): void {
   });
   process.on('uncaughtException', (err) => {
     log.error(
-      '[process] uncaughtException — a reportar e a SAIR (o supervisor reinicia limpo)',
+      '[process] uncaughtException; reporting and exiting for a clean supervisor restart',
       err,
     );
     // Guia do Node: após uma exceção não-apanhada o processo fica em estado indefinido.

@@ -1,5 +1,6 @@
 node_modules
 dist
+coverage/
 .env
 cache/
 *.db
@@ -7,29 +8,29 @@ cache/
 models/
 piper/
 
-# Motor de clone de voz (venv Python local, ~6GB) + temporários
+# Voice-cloning engine (local Python environment, about 6 GB) and temporary files
 tools/clone-venv/
 tools/_smoke_*
 voice-clones/
 
-# Sidecar STT Whisper (venv Python local + modelo ~140MB) — instalado por setup-whisper.sh
+# Whisper STT sidecar (local Python environment and model)
 tools/whisper-venv/
 
-# Sidecar TTS Kokoro (venv Python local + modelo/vozes ~340MB) — descarregados por setup-kokoro.ps1
+# Kokoro TTS sidecar (local Python environment, model, and voices)
 tools/kokoro-venv/
 tools/kokoro-v1.0.onnx
 tools/voices-v1.0.bin
 
-# Logs de produção (supervisor start-prod.mjs) + estado do registo de comandos
+# Production logs and command-registration state
 logs/
 commands-state.json
 
-# Cache de áudio sintetizado em runtime (regenera-se; nunca commitar blobs)
+# Regenerable runtime audio cache
 audio-cache/
 
-# Scratch de agentes/pessoal e índice do Obsidian (o repo vive dentro da vault)
+# Local agent/personal scratch files and the surrounding Obsidian vault index
 scratchpad/
 _Índice Voxi-bot.md
 
-# Saída da minificação do site (gerada por `npm run build:site`; publicada só em CI)
+# Generated site build output; publication happens in CI
 site-dist/

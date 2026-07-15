@@ -131,6 +131,7 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
       def.needsVoice,
       locale,
       threadId ? i.channelId : undefined, // canal-pai só quando corre em thread
+      i.user.id,
     );
     if (res === 'already-active') {
       // Perdemos a race após o active() acima — limpa a thread que acabámos de criar.
@@ -148,12 +149,10 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
   }
 
   if (sub === 'stop') {
-    // Gate ManageGuild (ABUSE-04): sem isto, QUALQUER membro parava o jogo de outro
-    // (troll de play->stop->play sem fricção). Sem "starter próprio pode parar" por
-    // agora — o GameManager (src/games/manager.ts) não guarda quem iniciou a partida;
-    // seguir esse caminho exigiria adicionar esse estado lá, fora do âmbito deste
-    // plano (030) — segue como follow-up. Mesmo padrão do /transcribe stop.
-    if (!(i.memberPermissions?.has(PermissionFlagsBits.ManageGuild) ?? false)) {
+    // Only the starter or a server manager may stop a game. This prevents trolling
+    // while ensuring a regular member is never trapped in a game they created.
+    const canManage = i.memberPermissions?.has(PermissionFlagsBits.ManageGuild) ?? false;
+    if (!canManage && !deps.games.isStarter(i.guildId!, i.user.id)) {
       await reply(i, t('error.needManageGuild', locale));
       return;
     }

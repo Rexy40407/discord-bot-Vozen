@@ -36,7 +36,7 @@ for (const { lang, text } of SAMPLES) {
   const url = `${GTTS_URL}?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(lang)}&q=${encodeURIComponent(text)}`;
   const res = await fetch(url, { headers: { 'User-Agent': UA } });
   if (!res.ok) {
-    console.error(`FALHOU ${lang}: HTTP ${res.status}`);
+    console.error(`FAILED ${lang}: HTTP ${res.status}`);
     process.exit(1);
   }
   const buf = Buffer.from(await res.arrayBuffer());

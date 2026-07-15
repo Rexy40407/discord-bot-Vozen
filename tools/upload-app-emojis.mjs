@@ -57,6 +57,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('[upload-app-emojis] falhou:', err);
+  console.error('[upload-app-emojis] failed:', err);
   process.exit(1);
 });

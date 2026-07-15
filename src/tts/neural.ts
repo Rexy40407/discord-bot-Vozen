@@ -89,7 +89,9 @@ export class NeuralEngine implements TTSEngine {
         (err as Error)?.name === 'AbortError'
           ? `timeout (${NEURAL_TIMEOUT_MS}ms)`
           : (err as Error).message;
-      throw new Error(`Falha de rede ao contactar a API OpenAI TTS: ${reason}`, { cause: err });
+      throw new Error(`Network failure while contacting the OpenAI TTS API: ${reason}`, {
+        cause: err,
+      });
     } finally {
       clearTimeout(timer);
     }
@@ -103,7 +105,7 @@ export class NeuralEngine implements TTSEngine {
 
     const buf = Buffer.from(await res.arrayBuffer());
     if (buf.length === 0) {
-      throw new Error('API OpenAI TTS devolveu corpo vazio');
+      throw new Error('OpenAI TTS API returned an empty body');
     }
     return buf;
   }

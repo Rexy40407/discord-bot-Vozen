@@ -63,7 +63,7 @@ describe('NeuralEngine.synth — caminhos de erro (fetch mockado)', () => {
       }),
     );
 
-    await expect(engine.synth(req)).rejects.toThrow(/Falha de rede/);
+    await expect(engine.synth(req)).rejects.toThrow(/Network failure/);
     await expect(engine.synth(req)).rejects.toThrow(/ECONNREFUSED/);
   });
 
@@ -78,7 +78,7 @@ describe('NeuralEngine.synth — caminhos de erro (fetch mockado)', () => {
       })),
     );
 
-    await expect(engine.synth(req)).rejects.toThrow(/corpo vazio/);
+    await expect(engine.synth(req)).rejects.toThrow(/empty body/);
     // Body vazio rejeita ANTES de qualquer writeFile -> cache continua vazia.
     expect(readdirSync(dir)).toHaveLength(0);
   });

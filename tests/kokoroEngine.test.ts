@@ -96,13 +96,13 @@ describe('KokoroEngine', () => {
   it('sem sidecar (cmd null) -> LANÇA (o router cai no gTTS)', async () => {
     const eng = new KokoroEngine(cache(), null);
     expect(eng.available).toBe(false);
-    await expect(eng.synth(REQ())).rejects.toThrow(/indispon/i);
+    await expect(eng.synth(REQ())).rejects.toThrow(/unavailable/i);
   });
 
   it('língua não mapeada -> LANÇA sem sequer arrancar o sidecar', async () => {
     const counter = { spawns: 0 };
     const eng = new KokoroEngine(cache(), { exe: 'x', args: [] }, fakeSidecar('ok', counter));
-    await expect(eng.synth(REQ({ model: 'zz_XX-foo-medium' }))).rejects.toThrow(/suportada/i);
+    await expect(eng.synth(REQ({ model: 'zz_XX-foo-medium' }))).rejects.toThrow(/unsupported/i);
     expect(counter.spawns).toBe(0);
   });
 

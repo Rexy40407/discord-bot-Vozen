@@ -20,7 +20,7 @@ import ffmpegPath from 'ffmpeg-static';
 const PIPER_EXE = process.env.PIPER_EXE;
 const PIPER_MODELS = process.env.PIPER_MODELS;
 if (!PIPER_EXE || !PIPER_MODELS) {
-  console.error('Define PIPER_EXE e PIPER_MODELS (ver cabecalho do ficheiro).');
+  console.error('Set PIPER_EXE and PIPER_MODELS (see this file header).');
   process.exit(1);
 }
 
@@ -76,7 +76,7 @@ function run(exe, args, opts, stdin) {
 for (const { lang, model, text } of SAMPLES) {
   const onnx = join(PIPER_MODELS, `${model}.onnx`);
   if (!existsSync(onnx)) {
-    console.error(`FALTA o modelo: ${onnx}`);
+    console.error(`Missing model: ${onnx}`);
     process.exit(1);
   }
   const work = join(tmpdir(), `vozen-piper-${lang}`);

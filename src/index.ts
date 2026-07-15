@@ -11,7 +11,12 @@ import { startPendingPurgeJob } from './store/kofiPending';
 import { purgeOldGcloudUsage, monthKeyUTC } from './store/gcloudUsage';
 import { sweepOrphanClones } from './store/voiceCloneSweep';
 import { AudioCache } from './tts/cache';
-import { createEngine, createPerUserEngine, selectEngine } from './tts/factory';
+import {
+  createEngine,
+  createPerUserEngine,
+  selectEngine,
+  unofficialGttsEnabled,
+} from './tts/factory';
 import { syntheticGttsModels } from './language/voiceMap';
 import { EffectEngine } from './tts/effects';
 import { ProsodyEngine } from './tts/prosody';
@@ -73,9 +78,15 @@ async function main(): Promise<void> {
   const EXCLUDED_MODELS = new Set<string>(['pt_PT-tugao-medium']);
   const piperModels = discoverModels(config.modelsDir).filter((m) => !EXCLUDED_MODELS.has(m));
   if (piperModels.length === 0) {
-    log.warn(
-      `[index] nenhum modelo .onnx em ${config.modelsDir} — so vozes gTTS ficarao disponiveis.`,
-    );
+    if (unofficialGttsEnabled(config.ttsEngine)) {
+      log.warn(
+        `[index] no .onnx models found in ${config.modelsDir}; only gTTS voices are available.`,
+      );
+    } else if (config.ttsEngine === 'piper') {
+      throw new Error(
+        `TTS_ENGINE=piper requires at least one .onnx voice model in ${config.modelsDir}`,
+      );
+    }
   }
   // Vozes SO-Google: para CADA lingua conhecida (LOCALE_NAMES) SEM modelo Piper no disco,
   // injetamos uma voz sintetica `{locale}-google-medium`, para o /voice set e a detecao
@@ -84,7 +95,10 @@ async function main(): Promise<void> {
   // .onnx) as ~40 linguas aparecem na mesma, em vez de colapsar para so o japones. O nome
   // segue a convencao Piper (locale-voz-qualidade) para o gttsLangOfModel derivar o tl
   // (ja_JP-... -> 'ja') e o LOCALE_NAMES dar o autonimo. Excluidas em neural (sem gTTS).
-  const GTTS_ONLY_MODELS = syntheticGttsModels(piperModels, config.ttsEngine === 'neural');
+  const GTTS_ONLY_MODELS = syntheticGttsModels(
+    piperModels,
+    unofficialGttsEnabled(config.ttsEngine),
+  );
   const availableModels = [...piperModels, ...GTTS_ONLY_MODELS].sort();
 
   // P13.2 — health-check do ffmpeg no ARRANQUE. O @discordjs/voice transcodifica
@@ -103,13 +117,11 @@ async function main(): Promise<void> {
       log.error(`[health] ${ff.error}`);
     }
   } catch (err) {
-    log.error('[health] falha inesperada no health-check do ffmpeg (ignorado)', err);
+    log.error('[health] unexpected FFmpeg health-check failure (ignored)', err);
   }
 
-  // Motor base. Por defeito (free), é o motor POR-UTILIZADOR: gTTS (Google, default) +
-  // Piper, escolhido em /voice set por cada pessoa (PerUserEngineRouter via req.engine).
-  // Só com TTS_ENGINE=neural (operador) é que se usa o motor único (OpenAI). P14.4:
-  // selectEngine embrulha-o num MultiSegmentEngine se a flag multilingualSegments estiver ON.
+  // The hosted/default path is the per-user router. Piper is local by default; gTTS is
+  // created only by the explicit legacy modes. Neural mode uses a single OpenAI engine.
   const baseEngine =
     config.ttsEngine === 'neural'
       ? createEngine(config, cache)
@@ -131,7 +143,7 @@ async function main(): Promise<void> {
     config.cloneKey, // cifra em repouso das amostras (no-op sem CLONE_KEY)
   );
   log.info(
-    `[index] clone de voz: ${cloneEngine.available ? 'motor detetado' : 'sem motor (voz normal)'}`,
+    `[index] voice clone: ${cloneEngine.available ? 'engine detected' : 'no engine (normal voice)'}`,
   );
   // Plano 024 (SECRET-02) — fail-open genuino: com o motor de clone disponível
   // mas SEM CLONE_KEY, as amostras (dado biométrico, ToS §5(c) + RGPD) ficam
@@ -140,8 +152,8 @@ async function main(): Promise<void> {
   // adiada, não corrigida aqui).
   if (cloneEngine.available && config.cloneKey === undefined) {
     log.warn(
-      '[index] CLONE_KEY não definida com o motor de clone ATIVO — as amostras de voz clonada ' +
-        '(dado biométrico) ficam gravadas em claro, sem cifra em repouso. Define CLONE_KEY no .env.',
+      '[index] CLONE_KEY is not set while the clone engine is active; cloned voice samples ' +
+        '(biometric data) will be stored without encryption at rest. Set CLONE_KEY in .env.',
     );
   }
   // Pré-aquece o modelo de clone no arranque (~35s de GPU), para a 1.ª mensagem clonada
@@ -157,7 +169,7 @@ async function main(): Promise<void> {
   );
   if (config.multilingualSegments) {
     log.warn(
-      '[index] MULTILINGUAL_SEGMENTS ON — sintese multi-lingua por-segmento EXPERIMENTAL ativa.',
+      '[index] MULTILINGUAL_SEGMENTS ON; experimental per-segment multilingual synthesis is active.',
     );
   }
 
@@ -259,7 +271,7 @@ async function main(): Promise<void> {
   try {
     startHealthServer(config);
   } catch (err) {
-    log.error('[index] falha ao arrancar o servidor de health (ignorado)', err);
+    log.error('[index] failed to start the health server (ignored)', err);
   }
 
   // RECOMPENSA por voto (growth loop): cada upvote ELEGÍVEL dá VOTE_REWARD_HOURS de Plus a
@@ -280,7 +292,7 @@ async function main(): Promise<void> {
         );
       }
     } catch (err) {
-      log.error(`[vote] falha a conceder a recompensa do voto a ${userId} (ignorado)`, err);
+      log.error(`[vote] failed to grant a vote reward to ${userId} (ignored)`, err);
     }
   };
 
@@ -290,7 +302,7 @@ async function main(): Promise<void> {
   try {
     startVoteWebhookServer(config, rewardVote);
   } catch (err) {
-    log.error('[index] falha ao arrancar o webhook top.gg (ignorado)', err);
+    log.error('[index] failed to start the top.gg webhook (ignored)', err);
   }
 
   // Webhook do Ko-fi (compras -> premium). INERTE sem KOFI_WEBHOOK_TOKEN. Independente do
@@ -337,7 +349,7 @@ async function main(): Promise<void> {
       onUpvote: rewardVote,
     });
   } catch (err) {
-    log.error('[index] falha ao arrancar o servidor HTTP do Premium (ignorado)', err);
+    log.error('[index] failed to start the Premium HTTP server (ignored)', err);
   }
 
   // Vaga 3 — auto-post da contagem de servidores para o top.gg. OPT-IN (TOPGG_TOKEN).
@@ -359,11 +371,11 @@ async function main(): Promise<void> {
         const endpoint = app.interactions_endpoint_url;
         log.info(
           `[diag] app: identidade ${idOk ? 'OK ✓' : '⚠️ token != CLIENT_ID'} · ` +
-            `Interactions Endpoint URL ${endpoint ? '⚠️ DEFINIDO (' + endpoint + ') — apaga-o no portal' : 'vazio ✓'} · ` +
-            `${client.guilds.cache.size} servidor(es)`,
+            `Interactions Endpoint URL ${endpoint ? '⚠️ SET (' + endpoint + '); remove it in the portal' : 'empty ✓'} · ` +
+            `${client.guilds.cache.size} server(s)`,
         );
       } catch (err) {
-        log.warn('[diag] não consegui ler a config da app (ignorado)', err);
+        log.warn('[diag] failed to read the application configuration (ignored)', err);
       }
     })();
     try {
@@ -373,7 +385,7 @@ async function main(): Promise<void> {
         serverCount: () => client.guilds.cache.size,
       });
     } catch (err) {
-      log.error('[index] falha ao arrancar o bot-list updater (ignorado)', err);
+      log.error('[index] failed to start the bot-list updater (ignored)', err);
     }
     // Carrega os emojis do tabuleiro de xadrez (preenche `boardEmojis` por referência).
     // Best-effort: falha => o xadrez usa ASCII.
@@ -391,7 +403,7 @@ async function main(): Promise<void> {
         logError: (m, err) => log.error(m, err),
       });
     } catch (err) {
-      log.error('[index] falha ao arrancar a sync de entitlements (ignorado)', err);
+      log.error('[index] failed to start entitlement synchronization (ignored)', err);
     }
     // Conformidade §5(b): purga os dados dos servidores que removeram o bot há >30 dias
     // (marcados em guild_departed no guildDelete real). Corre já e depois 1x/dia.
@@ -402,17 +414,17 @@ async function main(): Promise<void> {
         ),
       );
     } catch (err) {
-      log.error('[index] falha ao arrancar o job de purga de servidores saídos (ignorado)', err);
+      log.error('[index] failed to start the departed-guild purge job (ignored)', err);
     }
     // Minimização de dados: purga as compras Ko-fi PENDENTES (por reclamar) com >90 dias.
     // Corre já e depois 1x/dia. O comprador reclama muito antes; as renovações não dependem
     // de pendentes antigos (usam o mapa email->Discord ID). Best-effort.
     try {
       startPendingPurgeJob(db, (removed) =>
-        log.info(`[retencao] purgadas ${removed} compra(s) Ko-fi pendente(s) antiga(s).`),
+        log.info(`[retention] purged ${removed} old pending Ko-fi purchase(s).`),
       );
     } catch (err) {
-      log.error('[index] falha ao arrancar o job de purga de pendentes Ko-fi (ignorado)', err);
+      log.error('[index] failed to start the pending Ko-fi purchase purge job (ignored)', err);
     }
     // DATA-06: sweep de reconciliação de .wav ÓRFÃOS em voice-clones/ — a rede de
     // segurança dos unlinks best-effort do eraseUser/`/voice clone delete` (se o processo
@@ -431,7 +443,7 @@ async function main(): Promise<void> {
         );
       }
     } catch (err) {
-      log.error('[index] falha no sweep de clones órfãos (ignorado)', err);
+      log.error('[index] orphaned clone sweep failed (ignored)', err);
     }
     // Retenção do gcloud_usage (contadores mensais de chars): apaga meses com mais de ~3
     // meses. Corre já e depois 1x/dia. Evita crescimento sem fim; o gate de custo só olha
@@ -442,19 +454,17 @@ async function main(): Promise<void> {
           const cutoff = monthKeyUTC(Date.now() - 92 * 86_400_000);
           const removed = purgeOldGcloudUsage(db, cutoff);
           if (removed > 0) {
-            log.info(
-              `[retencao] purgadas ${removed} linha(s) antigas de gcloud_usage (< ${cutoff}).`,
-            );
+            log.info(`[retention] purged ${removed} old gcloud_usage row(s) (< ${cutoff}).`);
           }
         } catch (err) {
-          log.error('[retencao] falha na purga do gcloud_usage (ignorado)', err);
+          log.error('[retention] gcloud_usage purge failed (ignored)', err);
         }
       };
       purgeGcloud();
       const gcloudTimer = setInterval(purgeGcloud, 24 * 60 * 60 * 1000);
       gcloudTimer.unref?.();
     } catch (err) {
-      log.error('[index] falha ao arrancar a purga do gcloud_usage (ignorado)', err);
+      log.error('[index] failed to start the gcloud_usage purge job (ignored)', err);
     }
     // 24/7 in-call: repõe os servidores Premium nos canais onde estavam antes do
     // restart/deploy (as ligações de voz morrem no encerramento; as linhas de
@@ -491,7 +501,7 @@ async function main(): Promise<void> {
             if (chan?.isVoiceBased()) becomeSpeakerIfStage(chan);
             rejoined++;
           } catch (err) {
-            log.warn(`[voice] falha ao repor 24/7 na guild ${row.guildId} (ignorado)`, err);
+            log.warn(`[voice] failed to restore 24/7 mode in guild ${row.guildId} (ignored)`, err);
           }
         }
         log.info(
@@ -499,7 +509,7 @@ async function main(): Promise<void> {
         );
       }
     } catch (err) {
-      log.error('[index] falha no rejoin 24/7 (ignorado)', err);
+      log.error('[index] 24/7 rejoin failed (ignored)', err);
     }
     // Comandos OWNER-ONLY (/vozengrant): resolve o(s) dono(s) REAL(is) via a application
     // (User ou membros da Team) + OWNER_ID, e regista o comando SÓ na guild de controlo
@@ -518,14 +528,14 @@ async function main(): Promise<void> {
           }
         }
         deps.ownerIds = ids;
-        log.info(`[owner] ${ids.size} dono(s) resolvido(s) para o /vozengrant.`);
+        log.info(`[owner] resolved ${ids.size} owner(s) for /vozengrant.`);
         if (config.ownerGuildId) {
           await registerOwnerCommands(config.token, config.clientId, config.ownerGuildId);
         } else {
-          log.info('[owner] OWNER_GUILD_ID não definido — /vozengrant não é registado.');
+          log.info('[owner] OWNER_GUILD_ID is not set; /vozengrant will not be registered.');
         }
       } catch (err) {
-        log.error('[owner] falha a resolver dono(s)/registar /vozengrant (ignorado)', err);
+        log.error('[owner] failed to resolve owners or register /vozengrant (ignored)', err);
       }
     })();
   });
@@ -543,15 +553,12 @@ async function main(): Promise<void> {
       stateFile: path.join(path.dirname(config.dbPath), 'commands-state.json'),
     });
   } catch (err) {
-    log.error(
-      '[index] falha ao sincronizar comandos (ignorado, arranco com os já registados)',
-      err,
-    );
+    log.error('[index] failed to synchronize commands; starting with existing commands', err);
   }
   await client.login(config.token);
 }
 
 main().catch((err) => {
-  log.error('[index] falha fatal no arranque', err);
+  log.error('[index] fatal startup failure', err);
   process.exit(1);
 });

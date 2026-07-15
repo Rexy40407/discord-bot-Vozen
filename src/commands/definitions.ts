@@ -236,10 +236,10 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .addStringOption((o) =>
           o
             .setName('engine')
-            .setDescription('Voice engine: Google (default), Piper, Kokoro, or Google HD (Premium)')
+            .setDescription('Voice engine: default, Piper, Kokoro, or Google HD (Premium)')
             .setRequired(false)
             .addChoices(
-              { name: 'Google (default)', value: 'google' },
+              { name: 'Default (local Piper)', value: 'google' },
               { name: 'Piper', value: 'piper' },
               { name: 'Kokoro (neural)', value: 'kokoro' },
               { name: '💎 Google HD (Premium)', value: 'gcloud' },

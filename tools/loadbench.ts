@@ -53,14 +53,14 @@ async function main(): Promise<void> {
     console.log(s);
   };
 
-  log('# BENCHMARKS — carga + soak (T4.1/T4.2)');
+  log('# BENCHMARKS — load and soak (T4.1/T4.2)');
   log('');
   log(
-    `- Cap concorrência: **${resolvePiperConcurrency()}** · WARM_VOICES: ${process.env.PIPER_WARM_VOICES ?? '3 (default)'} · persistente: ${process.env.PIPER_PERSISTENT === '0' ? 'OFF' : 'ON'}`,
+    `- Concurrency cap: **${resolvePiperConcurrency()}** · WARM_VOICES: ${process.env.PIPER_WARM_VOICES ?? '3 (default)'} · persistent: ${process.env.PIPER_PERSISTENT === '0' ? 'OFF' : 'ON'}`,
   );
   log('');
   if (models.length === 0) {
-    log('> ⚠️ Sem modelos — abortado.');
+    log('> ⚠️ No models found; benchmark aborted.');
     writeFileSync('BENCHMARKS-load.md', lines.join('\n'));
     return;
   }
@@ -77,15 +77,15 @@ async function main(): Promise<void> {
   let counter = 0;
   const oneSynth = (): Promise<string> => {
     const i = counter++;
-    const req: SynthRequest = { text: `carga ${i} ${wordsOf(8)}`, model: voices[i % 2], speed: 1 };
+    const req: SynthRequest = { text: `load ${i} ${wordsOf(8)}`, model: voices[i % 2], speed: 1 };
     return engine.synth(req);
   };
 
   try {
     // ── T4.1 carga: N concorrentes ──────────────────────────────────────────
-    log('## T4.1 — carga concorrente');
+    log('## T4.1 — concurrent load');
     log('');
-    log('| N concorrentes | wall-time (ms) | ok/N | throughput (síntese/s) |');
+    log('| Concurrent N | wall time (ms) | ok/N | throughput (synthesis/s) |');
     log('|---:|---:|---:|---:|');
     for (const N of [5, 10, 20]) {
       const t0 = process.hrtime.bigint();
@@ -97,7 +97,7 @@ async function main(): Promise<void> {
     log('');
 
     // ── T4.2 soak: rajada grande + RAM + processos vivos ────────────────────
-    log('## T4.2 — soak (leak-check)');
+    log('## T4.2 — soak (leak check)');
     log('');
     const SOAK = 200;
     const BATCH = 10;
@@ -110,23 +110,23 @@ async function main(): Promise<void> {
     const rssAfter = process.memoryUsage().rss;
     const livePiper = countPiperProcs();
     const warm = process.env.PIPER_WARM_VOICES ? Number(process.env.PIPER_WARM_VOICES) : 3;
-    log(`- ${soakOk}/${SOAK} sínteses ok.`);
+    log(`- ${soakOk}/${SOAK} successful syntheses.`);
     log(
       `- RSS: ${(rssBefore / 2 ** 20).toFixed(0)}MB → ${(rssAfter / 2 ** 20).toFixed(0)}MB (Δ ${((rssAfter - rssBefore) / 2 ** 20).toFixed(1)}MB).`,
     );
     log(
-      `- piper.exe vivos no fim: **${livePiper}** (esperado ≤ WARM_VOICES=${warm}; -1 = não-Windows).`,
+      `- live piper.exe processes at end: **${livePiper}** (expected ≤ WARM_VOICES=${warm}; -1 = non-Windows).`,
     );
     const leak = livePiper > warm + 1;
-    log(`- Fuga de processos: ${leak ? '⚠️ POSSÍVEL' : '✅ não'} .`);
+    log(`- Process leak: ${leak ? '⚠️ POSSIBLE' : '✅ no'}.`);
     log('');
     log('---');
     log(
-      '_Após shutdownPiperPool() os processos quentes são fechados (o supervisor de produção fá-lo no shutdown central)._',
+      '_shutdownPiperPool() closes warm processes; the production supervisor calls it during centralized shutdown._',
     );
 
     writeFileSync(join(process.cwd(), 'BENCHMARKS-load.md'), lines.join('\n') + '\n');
-    console.log('\n✅ BENCHMARKS-load.md escrito.');
+    console.log('\n✅ BENCHMARKS-load.md written.');
   } finally {
     shutdownPiperPool();
     rmSync(cacheDir, { recursive: true, force: true });
@@ -134,7 +134,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((e) => {
-  console.error('loadbench falhou:', e);
+  console.error('load benchmark failed:', e);
   shutdownPiperPool();
   process.exit(1);
 });

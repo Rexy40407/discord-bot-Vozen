@@ -60,7 +60,7 @@ describe('GuildVoicePlayer.isActive() (P18.3)', () => {
     const engine: TTSEngine = { synth: async (r: SynthRequest) => r.text };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     expect(player.isActive()).toBe(false);
 
@@ -73,7 +73,7 @@ describe('GuildVoicePlayer.isActive() (P18.3)', () => {
     const engine: TTSEngine = { synth: () => new Promise<string>(() => {}) };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await player.say(req('a'));
     expect(player.isActive()).toBe(true);

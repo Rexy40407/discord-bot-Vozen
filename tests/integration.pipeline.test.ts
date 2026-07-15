@@ -46,7 +46,7 @@ const USER = 'user-1';
 
 // Modelos disponiveis no "Piper" falso: PT europeu + EN. Inclui pt_ e en_ para
 // que pickVoice consiga escolher por prefixo quando a deteccao acerta.
-const AVAILABLE = ['pt_PT-tugao-medium', 'en_US-amy-medium'];
+const AVAILABLE = ['pt_PT-google-medium', 'en_US-amy-medium'];
 // Fallback GLOBAL deliberadamente numa TERCEIRA lingua (alemao). A guild NAO
 // define default_voice (fica ''), por isso uma deteccao falhada cairia em de_ —
 // nunca em pt_/en_ — tornando as asercoes de voz significativas.

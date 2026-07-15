@@ -41,7 +41,7 @@ describe('claimPendingGrant — reclamar compra pendente (só por código, plano
   // ── EMAIL (plano 021: já não é prova de posse — rejeitado, sem tocar na BD) ─────────
   it('input tipo email -> use_receipt_code (não aplica nada, pendente continua por reclamar)', () => {
     recordPendingGrant(db, pend(), now);
-    const out = claimPendingGrant(db, DID, EMAIL, TOKEN, now + 10);
+    const out = claimPendingGrant(db, DID, EMAIL, now + 10);
     expect(out).toEqual({ ok: false, reason: 'use_receipt_code' });
     expect(isUserPremium(db, DID, now + 20)).toBe(false);
     expect(findUnclaimedPendingByTx(db, 'tx-1')).not.toBeNull(); // continua por reclamar
@@ -50,22 +50,14 @@ describe('claimPendingGrant — reclamar compra pendente (só por código, plano
 
   it('email normalizado (maiúsculas/espaços) -> use_receipt_code também', () => {
     recordPendingGrant(db, pend(), now);
-    expect(claimPendingGrant(db, DID, '  BUYER@Example.COM ', TOKEN, now)).toEqual({
+    expect(claimPendingGrant(db, DID, '  BUYER@Example.COM ', now)).toEqual({
       ok: false,
       reason: 'use_receipt_code',
     });
   });
 
   it('email desconhecido -> use_receipt_code igual (sem oráculo: nunca consulta a BD)', () => {
-    expect(claimPendingGrant(db, DID, 'stranger@x.com', TOKEN, now)).toEqual({
-      ok: false,
-      reason: 'use_receipt_code',
-    });
-  });
-
-  it('email SEM token do webhook -> use_receipt_code na mesma (já não depende do hash)', () => {
-    recordPendingGrant(db, pend(), now);
-    expect(claimPendingGrant(db, DID, EMAIL, undefined, now)).toEqual({
+    expect(claimPendingGrant(db, DID, 'stranger@x.com', now)).toEqual({
       ok: false,
       reason: 'use_receipt_code',
     });
@@ -75,7 +67,7 @@ describe('claimPendingGrant — reclamar compra pendente (só por código, plano
   it('código (tx id) -> ativa e casa por email interno (aplica todas as do email)', () => {
     recordPendingGrant(db, pend({ transactionId: 'tx-1' }), now);
     recordPendingGrant(db, pend({ transactionId: 'tx-2' }), now + 100);
-    const out = claimPendingGrant(db, DID, 'tx-1', TOKEN, now + 200);
+    const out = claimPendingGrant(db, DID, 'tx-1', now + 200);
     expect(out.ok).toBe(true);
     if (out.ok) expect(out.items).toHaveLength(2); // tx-1 + tx-2 (mesmo email)
     expect(findUnclaimedPendingByTx(db, 'tx-2')).toBeNull();
@@ -87,7 +79,7 @@ describe('claimPendingGrant — reclamar compra pendente (só por código, plano
       pend({ transactionId: 'tx-p', plan: 'premium', days: 365, seats: 8 }),
       now,
     );
-    const out = claimPendingGrant(db, DID, 'tx-p', TOKEN, now);
+    const out = claimPendingGrant(db, DID, 'tx-p', now);
     expect(out.ok).toBe(true);
     const pass = getPremiumPass(db, DID)!;
     expect(pass.seats).toBe(8);
@@ -95,14 +87,14 @@ describe('claimPendingGrant — reclamar compra pendente (só por código, plano
   });
 
   it('código desconhecido -> not_found', () => {
-    const out = claimPendingGrant(db, DID, 'nao-existe', TOKEN, now);
+    const out = claimPendingGrant(db, DID, 'nao-existe', now);
     expect(out).toEqual({ ok: false, reason: 'not_found' });
   });
 
   it('pendente sem email (emailHash null), reclamado pelo código -> só a própria compra', () => {
     recordPendingGrant(db, pend({ transactionId: 'tx-solo', emailHash: null }), now);
     recordPendingGrant(db, pend({ transactionId: 'tx-other', emailHash: null }), now);
-    const out = claimPendingGrant(db, DID, 'tx-solo', TOKEN, now);
+    const out = claimPendingGrant(db, DID, 'tx-solo', now);
     expect(out.ok).toBe(true);
     if (out.ok) expect(out.items).toHaveLength(1);
     expect(findUnclaimedPendingByTx(db, 'tx-other')).not.toBeNull();
@@ -110,21 +102,21 @@ describe('claimPendingGrant — reclamar compra pendente (só por código, plano
 
   it('código memoriza email->Discord ID (renovações futuras resolvem-se sozinhas)', () => {
     recordPendingGrant(db, pend(), now);
-    claimPendingGrant(db, DID, 'tx-1', TOKEN, now);
+    claimPendingGrant(db, DID, 'tx-1', now);
     expect(lookupKofiSupporter(db, EMAIL_HASH)).toBe(DID);
   });
 
   it('2.º claim do mesmo código -> not_found (uso único, nunca dobra o grant)', () => {
     recordPendingGrant(db, pend(), now);
-    expect(claimPendingGrant(db, DID, 'tx-1', TOKEN, now).ok).toBe(true);
-    expect(claimPendingGrant(db, DID, 'tx-1', TOKEN, now)).toEqual({
+    expect(claimPendingGrant(db, DID, 'tx-1', now).ok).toBe(true);
+    expect(claimPendingGrant(db, DID, 'tx-1', now)).toEqual({
       ok: false,
       reason: 'not_found',
     });
   });
 
   it('input vazio -> not_found', () => {
-    expect(claimPendingGrant(db, DID, '   ', TOKEN, now)).toEqual({
+    expect(claimPendingGrant(db, DID, '   ', now)).toEqual({
       ok: false,
       reason: 'not_found',
     });

@@ -145,7 +145,7 @@ export class PiperEngine implements TTSEngine {
 
   async synth(req: SynthRequest): Promise<string> {
     if (!isSafeModelName(req.model)) {
-      throw new Error(`Nome de modelo invalido: ${req.model}`);
+      throw new Error(`Invalid model name: ${req.model}`);
     }
 
     const key = cacheKey(req);
@@ -154,7 +154,7 @@ export class PiperEngine implements TTSEngine {
 
     const modelPath = join(this.modelsDir, `${req.model}.onnx`);
     if (!existsSync(modelPath)) {
-      throw new Error(`Modelo Piper nao encontrado: ${modelPath}`);
+      throw new Error(`Piper model not found: ${modelPath}`);
     }
 
     const lengthScale = lengthScaleFor(req.model, req.speed);
@@ -201,7 +201,7 @@ export class PiperEngine implements TTSEngine {
             poolOk = existsSync(outPath) && statSync(outPath).size > 0;
           } catch (err) {
             log.warn(
-              `[piper] pool persistente falhou (${(err as Error).message}) — fallback one-shot`,
+              `[piper] persistent pool failed (${(err as Error).message}); using one-shot fallback`,
             );
           }
           if (!poolOk) {
@@ -217,7 +217,7 @@ export class PiperEngine implements TTSEngine {
       }
 
       if (!existsSync(outPath) || statSync(outPath).size === 0) {
-        throw new Error('Piper nao gerou WAV (ficheiro vazio ou inexistente)');
+        throw new Error('Piper did not produce a WAV file (missing or empty output)');
       }
 
       // Pausa opcional: PREPENDER `leadSilenceMs` de silencio ao WAV base. Escreve

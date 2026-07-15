@@ -39,7 +39,7 @@ export function checkFfmpeg(getInfo: GetInfo = () => FFmpeg.getInfo()): FfmpegCh
     return {
       ok: false,
       error:
-        'ffmpeg nao encontrado ou invalido — corre: node node_modules/ffmpeg-static/install.js ' +
+        'FFmpeg was not found or is invalid; run: node node_modules/ffmpeg-static/install.js ' +
         `(${String(err)})`,
     };
   }

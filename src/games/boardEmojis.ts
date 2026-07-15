@@ -50,9 +50,9 @@ export async function loadBoardEmojis(
     }
     const chess = CHESS_EMOJI_NAMES.filter((name) => target[name]).length;
     log.info(
-      `[emojis] ${n} tiles carregados (xadrez ${chess}/${CHESS_EMOJI_NAMES.length})${n === 0 ? ' — usa ASCII' : ''}`,
+      `[emojis] ${n} tiles loaded (chess ${chess}/${CHESS_EMOJI_NAMES.length})${n === 0 ? '; using ASCII' : ''}`,
     );
   } catch (err) {
-    log.warn('[emojis] falha a carregar tiles (jogos usam ASCII)', err);
+    log.warn('[emojis] failed to load tiles; games will use ASCII', err);
   }
 }

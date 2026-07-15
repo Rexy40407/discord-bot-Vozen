@@ -178,14 +178,14 @@ export function startVoteWebhookServer(
       // arrancar é o default seguro; o opt-in explícito fica para quem sabe o risco.
       log.error(
         `[vote] TOPGG_WEBHOOK_PORT definido (${port}) mas TOPGG_WEBHOOK_SECRET vazio — ` +
-          'o webhook NÃO vai arrancar. Define TOPGG_WEBHOOK_SECRET, ou (por tua conta e ' +
-          'risco) TOPGG_WEBHOOK_ALLOW_INSECURE=true para arrancar sem autenticação.',
+          'the webhook will not start. Set TOPGG_WEBHOOK_SECRET, or explicitly accept the ' +
+          'risk with TOPGG_WEBHOOK_ALLOW_INSECURE=true to start without authentication.',
       );
       return undefined;
     }
     log.warn(
       `[vote] TOPGG_WEBHOOK_PORT definido (${port}) sem TOPGG_WEBHOOK_SECRET e com ` +
-        'TOPGG_WEBHOOK_ALLOW_INSECURE=true — webhook SEM autenticação (inseguro).',
+        'TOPGG_WEBHOOK_ALLOW_INSECURE=true; webhook authentication is disabled (unsafe).',
     );
   }
 
@@ -229,7 +229,7 @@ export function startVoteWebhookServer(
       res.end(result.body);
     });
     req.on('error', (err) => {
-      log.error('[vote] erro ao ler o corpo do webhook', err);
+      log.error('[vote] failed to read the webhook body', err);
       if (!res.headersSent) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'bad_request' }));
@@ -238,7 +238,7 @@ export function startVoteWebhookServer(
   });
 
   server.on('error', (err) => {
-    log.error(`[vote] erro no servidor de webhook top.gg (porta ${port})`, err);
+    log.error(`[vote] top.gg webhook server error (port ${port})`, err);
   });
 
   hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
@@ -246,9 +246,7 @@ export function startVoteWebhookServer(
   // Loopback-only (defesa em profundidade): a exposição pública faz-se via reverse
   // proxy no mesmo host (Caddy), nunca com a porta crua na internet.
   server.listen(port, '127.0.0.1', () => {
-    log.info(
-      `[vote] servidor de webhook top.gg a ouvir em 127.0.0.1:${port} (POST /webhook/topgg).`,
-    );
+    log.info(`[vote] top.gg webhook server listening on 127.0.0.1:${port} (POST /webhook/topgg).`);
   });
 
   return server;

@@ -369,9 +369,9 @@ describe('pickVoice — cada lingua dos 38 modelos routa para a voz certa', () =
 // syntheticGttsModels — catalogo INDEPENDENTE do disco (resiliencia)
 // ------------------------------------------------------------------
 
-describe('syntheticGttsModels — vozes gTTS para linguas sem modelo Piper', () => {
+describe('syntheticGttsModels — voices exposed only when unofficial gTTS is enabled', () => {
   it('sem NENHUM modelo Piper: injeta todas as linguas conhecidas via Google', () => {
-    const synth = syntheticGttsModels([], false);
+    const synth = syntheticGttsModels([], true);
     // Uma voz sintetica por cada locale de LOCALE_NAMES (>=39).
     expect(synth.length).toBeGreaterThanOrEqual(39);
     // Todas seguem a convencao `{locale}-google-medium`.
@@ -383,19 +383,19 @@ describe('syntheticGttsModels — vozes gTTS para linguas sem modelo Piper', () 
   });
 
   it('com os 38 modelos Piper: so injeta as linguas SEM modelo (ja_JP e no_NO)', () => {
-    const synth = syntheticGttsModels(MODELS_38, false);
+    const synth = syntheticGttsModels(MODELS_38, true);
     expect(synth).toEqual(['ja_JP-google-medium', 'no_NO-google-medium']);
   });
 
   it('NUNCA duplica um locale que ja tem modelo Piper', () => {
-    const synth = syntheticGttsModels(MODELS_38, false);
+    const synth = syntheticGttsModels(MODELS_38, true);
     // pt_PT/en_US/es_ES tem modelo Piper -> nao ha voz google para eles.
     expect(synth.some((m) => m.startsWith('pt_PT'))).toBe(false);
     expect(synth.some((m) => m.startsWith('en_US'))).toBe(false);
   });
 
-  it('modo neural (operador, sem gTTS): lista vazia', () => {
-    expect(syntheticGttsModels([], true)).toEqual([]);
-    expect(syntheticGttsModels(MODELS_38, true)).toEqual([]);
+  it('returns an empty list when unofficial gTTS is disabled', () => {
+    expect(syntheticGttsModels([], false)).toEqual([]);
+    expect(syntheticGttsModels(MODELS_38, false)).toEqual([]);
   });
 });

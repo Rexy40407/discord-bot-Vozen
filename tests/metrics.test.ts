@@ -308,7 +308,7 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
     };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await player.say({ text: 'ola', model: 'm', speed: 1 });
 
@@ -326,7 +326,7 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
     };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await player.say({ text: 'texto', model: 'm', speed: 1 });
 
@@ -342,7 +342,7 @@ describe('GuildVoicePlayer — wiring de métricas', () => {
     };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await player.say({ text: 'teste', model: 'm', speed: 1 });
 
@@ -367,7 +367,7 @@ describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)'
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     // Emite a queda: handleDisconnect conta o drop e, como entersState resolve
     // sempre (mock), a recuperacao "soft" volta a Ready -> conta o reconnect.
@@ -383,7 +383,7 @@ describe('GuildVoicePlayer — wiring de reconexao (voiceDrops/voiceReconnects)'
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     // Dois eventos Disconnected SINCRONOS no mesmo episodio: o primeiro entra em
     // handleDisconnect, poe reconnecting=true e conta o drop antes do 1o await;

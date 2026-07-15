@@ -48,8 +48,8 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, word)
       );
 
-      -- Dicionário de pronúncia por-SERVIDOR (/serverpronunciation, admin): aplica-se
-      -- a toda a guild. Limite fixo 3. (O dicionário PESSOAL vive em pronunciation_user.)
+      -- Per-guild pronunciation dictionary (/serverpronunciation, admin). It applies to
+      -- the entire guild and has a fixed limit of 3. Personal entries live elsewhere.
       CREATE TABLE IF NOT EXISTS pronunciation (
         guild_id    TEXT NOT NULL,
         term        TEXT NOT NULL,
@@ -70,9 +70,8 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (user_id, term)
       );
 
-      -- Pronuncias PESSOAIS (/pronunciation): so se aplicam as mensagens do proprio
-      -- autor, em qualquer servidor (globais, como user_abbreviation). Limite imposto
-      -- no handler: 3 Free / 50 Premium (Plus ou servidor Premium).
+      -- Personal pronunciations (/pronunciation) apply only to their author's messages
+      -- in every guild. The handler enforces 3 Free or 50 Premium entries.
       CREATE TABLE IF NOT EXISTS pronunciation_user (
         user_id     TEXT NOT NULL,
         term        TEXT NOT NULL,
@@ -80,9 +79,8 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (user_id, term)
       );
 
-      -- Apelido FONETICO por-(guild,user) para o xsaid: como a pessoa quer ser CHAMADA
-      -- em voz alta (nomes com emojis/simbolos sao ilegiveis). Sem linha => usa o
-      -- displayName sanitizado. Ver /voice nickname.
+      -- Phonetic nickname per (guild,user), used by xsaid when speaking the author's
+      -- name. A missing row falls back to the sanitized display name. See /voice nickname.
       CREATE TABLE IF NOT EXISTS user_nickname (
         guild_id TEXT NOT NULL,
         user_id  TEXT NOT NULL,
@@ -90,10 +88,8 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, user_id)
       );
 
-      -- Leaderboard dos minijogos (/game) por-(guild,user). A coluna points acumula os
-      -- pontos ganhos em todas as partidas; wins conta quantas PARTIDAS a pessoa venceu
-      -- (foi a que mais pontuou nessa partida). Tabela NOVA: o CREATE IF NOT EXISTS cobre
-      -- tanto DBs novas como antigas (sem coluna a migrar), por isso nao ha ALTER abaixo.
+      -- Minigame leaderboard (/game) per (guild,user). points accumulates across matches;
+      -- wins counts matches won. CREATE IF NOT EXISTS supports new and existing databases.
       CREATE TABLE IF NOT EXISTS game_score (
         guild_id TEXT NOT NULL,
         user_id  TEXT NOT NULL,
@@ -102,9 +98,8 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, user_id)
       );
 
-      -- Aniversário por-(guild,user): mês + dia (sem ano). Quando a pessoa entra na call
-      -- do Vozen no seu dia de anos, ele diz "Parabéns {nome}". Tabela NOVA (CREATE IF NOT
-      -- EXISTS cobre DBs novas e antigas).
+      -- Birthday per (guild,user): month and day, without a year. Vozen greets the member
+      -- when they join its voice channel on that date.
       CREATE TABLE IF NOT EXISTS user_birthday (
         guild_id TEXT NOT NULL,
         user_id  TEXT NOT NULL,
@@ -113,9 +108,8 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, user_id)
       );
 
-      -- "Tagarelas": quantas mensagens de cada pessoa o Vozen leu (auto-read) + streak de
-      -- dias seguidos. Alimenta o /topspeakers. last_date = chave 'YYYY-MM-DD' do dia local
-      -- da última mensagem. Tabela NOVA (CREATE IF NOT EXISTS cobre DBs novas e antigas).
+      -- Speaker statistics: auto-read message count and consecutive-day streaks for
+      -- /topspeakers. last_date is the local YYYY-MM-DD date of the latest message.
       CREATE TABLE IF NOT EXISTS talk_stats (
         guild_id     TEXT NOT NULL,
         user_id      TEXT NOT NULL,
@@ -126,32 +120,30 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, user_id)
       );
 
-      -- Vozen Premium por-servidor: expira em expires_at (unix ms). Sem linha OU expirado
-      -- => Free. source regista a origem (redeem/kofi/manual). Só features NOVAS sao
-      -- gated por isto; nada do que ja e gratis passa a pago.
+      -- Per-guild Vozen Premium. expires_at uses Unix milliseconds; a missing or expired
+      -- row is Free. source records redeem, kofi, discord, or manual provenance.
       CREATE TABLE IF NOT EXISTS premium_guild (
         guild_id   TEXT PRIMARY KEY,
         expires_at INTEGER NOT NULL,
         source     TEXT NOT NULL DEFAULT ''
       );
 
-      -- Vozen Plus por-utilizador (perks pessoais que seguem a pessoa entre servidores).
+      -- Per-user Vozen Plus; personal perks follow the member across guilds.
       CREATE TABLE IF NOT EXISTS premium_user (
         user_id    TEXT PRIMARY KEY,
         expires_at INTEGER NOT NULL,
         source     TEXT NOT NULL DEFAULT ''
       );
 
-      -- Recompensa por VOTO no top.gg (GROWTH·1): guarda só o instante do último Plus
-      -- ganho por voto, para o cooldown de 30 dias (uma recompensa por conta por mês).
-      -- Dado pessoal minimalista (só facto+timestamp), apagável por /privacy erase.
+      -- top.gg vote reward: stores only the latest reward timestamp for the 30-day
+      -- cooldown. This minimal personal record is erasable through /privacy erase.
       CREATE TABLE IF NOT EXISTS vote_reward (
         user_id     TEXT PRIMARY KEY,
         rewarded_at INTEGER NOT NULL
       );
 
-      -- Efeito de voz por-(guild,user): filtro ffmpeg aplicado ao TTS da pessoa (premium,
-      -- com 2 amostras gratis). Sem linha => 'none' (voz limpa). Tabela NOVA.
+      -- Voice effect per (guild,user): FFmpeg filter applied to the member's TTS.
+      -- A missing row means 'none' (clean voice).
       CREATE TABLE IF NOT EXISTS user_effect (
         guild_id TEXT NOT NULL,
         user_id  TEXT NOT NULL,
@@ -159,11 +151,9 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, user_id)
       );
 
-      -- Clone de voz por-UTILIZADOR (global). O DONO (user_id) e quem gravou e vai FALAR
-      -- com esta voz; target_id e a pessoa cuja VOZ foi gravada (== user_id num auto-clone;
-      -- diferente quando A grava a voz de B com o consentimento de B). consent_at regista o
-      -- consentimento. O dono usa/apaga o seu clone; ALEM disso, a pessoa gravada (target_id)
-      -- pode SEMPRE revogar (apagar) qualquer clone feito a partir da sua voz (RGPD).
+      -- Global per-user voice clone. user_id owns and uses the clone; target_id identifies
+      -- the recorded speaker. consent_at records consent. The owner may delete the clone,
+      -- and the recorded speaker may always revoke every clone made from their voice.
       CREATE TABLE IF NOT EXISTS user_clone (
         user_id     TEXT PRIMARY KEY,
         sample_path TEXT NOT NULL,
@@ -172,11 +162,9 @@ export function initDb(path: string): Database.Database {
         target_id   TEXT NOT NULL DEFAULT ''
       );
 
-      -- Consentimento para o STT (transcrição voz->texto, Fase 4). CONSENT-FIRST: a linha
-      -- só existe depois de o locutor consentir; a sua PRESENÇA É o consentimento (o gate
-      -- hasSttConsent decide se a fala da pessoa entra no receiver). Por-SERVIDOR (1-clique
-      -- lembrado): a pessoa consente UMA vez por guild e não lhe é mais pedido. Revogar =
-      -- apagar a linha. Zero áudio guardado aqui; só o facto+timestamp do consentimento.
+      -- Per-guild speech-to-text consent. A row exists only after explicit consent;
+      -- hasSttConsent gates receiver input. Revocation deletes the row. No audio is stored
+      -- here, only the consent fact and timestamp.
       CREATE TABLE IF NOT EXISTS stt_consent (
         user_id    TEXT NOT NULL,
         guild_id   TEXT NOT NULL,
@@ -184,12 +172,9 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (user_id, guild_id)
       );
 
-      -- PASSE Vozen Premium por-UTILIZADOR: uma compra de Premium (guild) dá à pessoa um
-      -- passe com N "licenças" (seats) e uma DATA DE FIM ABSOLUTA (expires_at, unix ms). O
-      -- relógio corre no passe: ativar/desativar um servidor não pausa nem estende a data.
-      -- A pessoa gasta uma licença num servidor com /premium activate (ver premium_pass_
-      -- activation); renovar (webhook) só estende expires_at e os servidores ativos herdam
-      -- a nova data em tempo real (isGuildPremium lê o passe). source = kofi|discord|manual.
+      -- Per-user Premium pass with N seats and an absolute expires_at timestamp. Activating
+      -- or deactivating a guild does not pause or extend it. /premium activate consumes a
+      -- seat; renewals extend expires_at and active guilds inherit the new date immediately.
       CREATE TABLE IF NOT EXISTS premium_pass (
         user_id    TEXT PRIMARY KEY,
         seats      INTEGER NOT NULL,
@@ -197,10 +182,8 @@ export function initDb(path: string): Database.Database {
         source     TEXT NOT NULL DEFAULT ''
       );
 
-      -- Que servidores é que o dono de um passe ativou (1 linha = 1 licença gasta). O nº de
-      -- linhas por user_id nunca passa premium_pass.seats. Um servidor é Premium enquanto
-      -- existir aqui uma ativação cujo passe (premium_pass) ainda não expirou. idx por guild
-      -- para o isGuildPremium ser rápido.
+      -- Guilds activated by a pass owner. One row consumes one seat, and rows per user_id
+      -- never exceed premium_pass.seats. The guild index keeps isGuildPremium efficient.
       CREATE TABLE IF NOT EXISTS premium_pass_activation (
         user_id      TEXT NOT NULL,
         guild_id     TEXT NOT NULL,
@@ -210,12 +193,9 @@ export function initDb(path: string): Database.Database {
       CREATE INDEX IF NOT EXISTS idx_pass_activation_guild
         ON premium_pass_activation (guild_id);
 
-      -- Consumo MENSAL de chars do motor Google HD (gcloud), por pool. Salvaguarda de
-      -- custo PERSISTENTE (em memoria, um restart zerava o mes). scope = 'user' (pool
-      -- pessoal do Plus), 'pass' (pool partilhado do passe, keyed pelo dono), 'guild'
-      -- (servidor Premium direto sem passe) ou 'global'; key = o id do pool; month =
-      -- 'YYYY-MM' UTC (roda sozinho no dia 1). O motor conta SO em cache-miss (chamada
-      -- real a Google). Ver tts/gcloudUsage.ts.
+      -- Persistent monthly Google HD character usage by pool. scope is user, pass, guild,
+      -- or global; key identifies the pool; month is UTC YYYY-MM. Only cache misses that
+      -- call Google are counted. See tts/gcloudUsage.ts.
       CREATE TABLE IF NOT EXISTS gcloud_usage (
         scope TEXT NOT NULL,
         key   TEXT NOT NULL,
@@ -224,33 +204,25 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (scope, key, month)
       );
 
-      -- Mapa HASH(email)->Discord ID para o webhook do Ko-fi. O comprador escreve o Discord
-      -- ID na 1.ª compra (guardado aqui, indexado pelo HASH do email); nas RENOVAÇÕES o Ko-fi
-      -- já não reenvia a mensagem, por isso reencontramos o Discord ID pelo hash do email.
-      -- NUNCA guardamos o email em claro (minimização de PII) — ver hashKofiEmail.
+      -- Hashed-email to Discord-ID map for Ko-fi renewals. The first purchase supplies the
+      -- Discord ID; later renewals are matched by email hash. Plain email is never stored.
       CREATE TABLE IF NOT EXISTS kofi_supporter (
         email_hash TEXT PRIMARY KEY,
         discord_id TEXT NOT NULL,
         updated_at INTEGER NOT NULL
       );
 
-      -- Ledger de transações Ko-fi processadas (IDEMPOTÊNCIA do webhook). O Ko-fi
-      -- reenvia entregas em timeout/não-2xx; sem este ledger um retry re-aplicava o
-      -- grant — e como grantUserPremium/grantGuildPass ACUMULAM expiry, a mesma compra
-      -- pagava dias a dobrar. Renovações legítimas trazem kofi_transaction_id DISTINTO,
-      -- por isso nunca são bloqueadas por engano.
+      -- Processed Ko-fi transaction ledger for webhook idempotency. Ko-fi retries timed-out
+      -- or non-2xx deliveries; this prevents a retry from extending a grant twice. Legitimate
+      -- renewals carry distinct transaction IDs.
       CREATE TABLE IF NOT EXISTS kofi_transaction (
         transaction_id TEXT PRIMARY KEY,
         processed_at   INTEGER NOT NULL
       );
 
-      -- Compras Ko-fi PENDENTES: chegaram pelo webhook mas SEM Discord ID associável (o
-      -- checkout de subscrição do Ko-fi não tem caixa de mensagem fiável). Ficam aqui à
-      -- espera de o comprador as RECLAMAR no site (login Discord + código do recibo). Indexadas
-      -- pela PK transaction_id (que o comprador tem no recibo — chave forte) e por email_hash
-      -- (para renovações órfãs); email_hash pode ser NULL se o payload não trouxe email, e aí
-      -- a compra só é reclamável pelo tx id. claimed_at NULL = por reclamar. Ver store/
-      -- kofiPending.ts; uma purga remove as antigas (minimização de dados).
+      -- Pending Ko-fi purchases without an attributable Discord ID. The buyer claims them
+      -- on the site using Discord login and the receipt transaction ID. email_hash supports
+      -- orphaned renewals and may be NULL. claimed_at NULL means unclaimed. Old rows are purged.
       CREATE TABLE IF NOT EXISTS kofi_pending (
         transaction_id TEXT PRIMARY KEY,
         email_hash     TEXT,
@@ -263,22 +235,18 @@ export function initDb(path: string): Database.Database {
       CREATE INDEX IF NOT EXISTS idx_kofi_pending_email
         ON kofi_pending (email_hash);
 
-      -- 24/7 in-call (Premium): canal de voz onde o bot estava, por guild. Guardado ao
-      -- entrar numa call (só servidores Premium) e apagado no /leave e no guildDelete —
-      -- NÃO no funil genérico removePlayer nem no shutdown, para SOBREVIVER a um restart
-      -- (deploy). No arranque (ClientReady) o bot repõe-se nestes canais se ainda for
-      -- Premium; as linhas não-Premium são limpas aí como rede de segurança.
+      -- Per-guild 24/7 voice presence. Stored on Premium joins and deleted by /leave or
+      -- guildDelete, but not by generic teardown or shutdown so it survives deployment.
+      -- ClientReady restores valid Premium rows and removes stale non-Premium rows.
       CREATE TABLE IF NOT EXISTS voice_presence (
         guild_id   TEXT PRIMARY KEY,
         channel_id TEXT NOT NULL,
         updated_at INTEGER NOT NULL
       );
 
-      -- Códigos de presente (gift codes): o dono gera com /gencode (owner-only) e a
-      -- pessoa resgata com /redeem. USO ÚNICO — redeemed_by/redeemed_at ficam NULL até
-      -- ser resgatado (o resgate é atómico, ver store/premiumCode.ts). plan = premium|
-      -- plus; seats só conta para premium; expires_at é a validade do CÓDIGO (não do
-      -- premium), NULL = nunca expira.
+      -- Single-use gift codes generated by /gencode and redeemed by /redeem. Redemption
+      -- is atomic. plan is premium or plus; seats applies to premium; expires_at limits
+      -- the code itself and NULL means that the code does not expire.
       CREATE TABLE IF NOT EXISTS premium_code (
         code        TEXT PRIMARY KEY,
         plan        TEXT NOT NULL,
@@ -291,10 +259,8 @@ export function initDb(path: string): Database.Database {
         redeemed_at INTEGER
       );
 
-      -- Marca de SAÍDA do bot de um servidor (conformidade §5(b): não reter dados além
-      -- do necessário). Escrita no guildDelete REAL (não em outages); apagada no
-      -- guildCreate (re-convite). Um job diário purga os dados dos servidores cuja saída
-      -- foi há mais de 30 dias (grace period p/ re-convite). Ver store/guildDeparted.ts.
+      -- Records a real guild departure, not a transient outage. Re-inviting clears it.
+      -- A daily job purges guild data after a 30-day re-invite grace period.
       CREATE TABLE IF NOT EXISTS guild_departed (
         guild_id TEXT PRIMARY KEY,
         left_at  INTEGER NOT NULL
@@ -367,7 +333,7 @@ export function initDb(path: string): Database.Database {
     }
     // Mensagem clara em vez de stack trace cru (caminho invalido/sem permissoes,
     // ou ficheiro existente que nao e uma base de dados SQLite valida).
-    throw new Error(`Falha ao abrir a base de dados em ${path}: ${(err as Error).message}`, {
+    throw new Error(`Failed to open the database at ${path}: ${(err as Error).message}`, {
       cause: err,
     });
   }

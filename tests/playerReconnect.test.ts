@@ -94,7 +94,7 @@ describe('GuildVoicePlayer — rejoin manual (ciclo de backoff) e metricas', () 
     const engine: TTSEngine = { synth: async (req: SynthRequest) => req.text };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     // Uma queda: soft falha -> catch -> tryRejoin corre 2 tentativas (1a falha,
     // 2a recupera). A 1a falha agenda um backoff real (~1s), por isso o waitFor
@@ -131,7 +131,7 @@ describe('GuildVoicePlayer — rejoin manual (ciclo de backoff) e metricas', () 
     const conn = makeConnection() as any;
     conn.destroy = vi.fn();
     const onIdle = vi.fn();
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, onIdle);
+    const player = new GuildVoicePlayer(conn, engine, 20, onIdle);
 
     // Uma queda: soft falha -> catch -> tryRejoin(3) corre 3 tentativas, todas
     // falham (Ready rejeita sempre), com backoffs de ~1s/2s/3s pelo meio.

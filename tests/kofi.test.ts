@@ -348,6 +348,8 @@ describe('kofiWebhook — API Premium HTTP', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toMatch(/application\/json/);
     expect(res.headers.get('access-control-allow-origin')).toBe('https://vozen.org');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
     expect(await res.json()).toEqual({ premium: true, plan: 'plus' });
   });
 

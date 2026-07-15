@@ -1,7 +1,6 @@
 import {
   AudioPlayer,
   AudioPlayerStatus,
-  AudioResource,
   StreamType,
   VoiceConnection,
   VoiceConnectionStatus,
@@ -25,21 +24,18 @@ const CONNECTION_READY_TIMEOUT_MS = 10_000;
 export class GuildVoicePlayer {
   private readonly player: AudioPlayer;
   private readonly queue: PlayQueue;
-  private current: AudioResource | null = null;
   private playing = false;
   private destroyed = false;
   // /skip disparado DURANTE a janela de sintese (synth + entersState Ready), quando
   // o AudioPlayer real ainda esta Idle e player.stop() e no-op. Sinaliza que o item
   // in-flight deve ser DESCARTADO antes de tocar. Ver skip()/playNext().
   private pendingSkip = false;
-  private idleTimer: NodeJS.Timeout | null = null;
   private reconnecting = false;
 
   constructor(
     private readonly connection: VoiceConnection,
     private readonly engine: TTSEngine,
     queueCap: number,
-    private readonly inactivityMs: number,
     private readonly onIdle: () => void,
   ) {
     this.queue = new PlayQueue(queueCap);
@@ -47,7 +43,6 @@ export class GuildVoicePlayer {
     this.connection.subscribe(this.player);
 
     this.player.on(AudioPlayerStatus.Idle, () => {
-      this.current = null;
       void this.playNext();
     });
 
@@ -62,14 +57,12 @@ export class GuildVoicePlayer {
       // this.state.resource no onStreamError), logo current aponta para o recurso
       // NOVO e anula-lo aqui quebraria a reproducao; o reset de current fica so no
       // Idle, que so ocorre para o recurso corrente.
-      log.error('[player] erro no AudioPlayer:', err);
+      log.error('[player] AudioPlayer error:', err);
     });
 
     this.connection.on(VoiceConnectionStatus.Disconnected, () => {
       void this.handleDisconnect();
     });
-
-    this.armIdleTimer();
   }
 
   async say(req: SynthRequest): Promise<boolean> {
@@ -85,7 +78,7 @@ export class GuildVoicePlayer {
     // pedidos concorrentes pela duracao/cache-hit da sintese.
     const ok = this.queue.enqueue({ req });
     if (!ok) {
-      log.warn('[player] fila cheia, pedido descartado');
+      log.warn('[player] queue is full; request dropped');
       return false;
     }
     if (!this.playing) {
@@ -143,9 +136,7 @@ export class GuildVoicePlayer {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.clearIdleTimer();
     this.queue.clear();
-    this.current = null;
     this.playing = false;
     try {
       this.player.stop(true);
@@ -164,10 +155,8 @@ export class GuildVoicePlayer {
     const next = this.queue.dequeue();
     if (!next) {
       this.playing = false;
-      this.armIdleTimer();
       return;
     }
-    this.clearIdleTimer();
     // RESET do pendingSkip no INICIO de cada iteracao (logo apos o dequeue, ANTES
     // dos awaits). Garante que um /skip so afeta o item ATUAL e nunca vaza para o
     // seguinte: se a janela de sintese de B foi saltada (ou a sintese de B falhou e
@@ -186,7 +175,7 @@ export class GuildVoicePlayer {
       // sem motor/cache/efeitos (nada disso se aplica a um clip fixo). Ficheiro em falta =
       // tratado como falha de síntese (salta o item, não crasha).
       if (!existsSync(next.req.assetPath)) {
-        log.error('[player] asset de audio inexistente, item saltado:', next.req.assetPath);
+        log.error('[player] audio asset is missing; item skipped:', next.req.assetPath);
         metrics.inc('synthErrors');
         void this.playNext();
         return;
@@ -198,7 +187,7 @@ export class GuildVoicePlayer {
         // Latencia de sintese efetiva (inclui cache hit rapido e miss/spawn lento).
         metrics.recordSynthMs(Number(process.hrtime.bigint() - synthStart) / 1e6);
       } catch (err) {
-        log.error('[player] erro na sintese, item saltado:', err);
+        log.error('[player] synthesis error; item skipped:', err);
         metrics.inc('synthErrors');
         // Salta este item e continua a fila sem crashar (sem crescimento de stack:
         // estamos depois do await).
@@ -221,7 +210,7 @@ export class GuildVoicePlayer {
     } catch (err) {
       // A rejeicao pode ter sido causada por destroy() (que destroi a ligacao).
       if (this.destroyed) return;
-      log.warn('[player] ligacao de voz nao ficou Ready, fala saltada:', err);
+      log.warn('[player] voice connection did not become Ready; speech skipped:', err);
       // Mesmo tratamento do skip de sintese: nao tocamos para o vazio; saltamos
       // este item e continuamos a fila (sem crescimento de stack — estamos
       // depois de um await; sem loop apertado — cada iteracao e gated pelo
@@ -240,7 +229,6 @@ export class GuildVoicePlayer {
     // skip() e sera reposto a false no inicio da proxima iteracao (anti-leak).
     if (this.pendingSkip) {
       this.pendingSkip = false;
-      this.current = null;
       void this.playNext();
       return;
     }
@@ -262,7 +250,6 @@ export class GuildVoicePlayer {
         inlineVolume: gain !== 1,
       });
       if (gain !== 1) resource.volume?.setVolume(gain);
-      this.current = resource;
       // play() PRIMEIRO: se lançar sincronamente (transcoder/prism a falhar), o catch
       // conta synthErrors — e NÃO queremos contar essa mensagem como "falada". Por isso
       // messagesSpoken incrementa SÓ DEPOIS de play() ter sido chamado com sucesso (o
@@ -270,28 +257,11 @@ export class GuildVoicePlayer {
       this.player.play(resource);
       metrics.inc('messagesSpoken');
     } catch (err) {
-      log.error('[player] erro ao criar/tocar o recurso, item saltado:', err);
+      log.error('[player] failed to create or play resource; item skipped:', err);
       metrics.inc('synthErrors');
-      this.current = null;
       // Sem crescimento de stack (estamos depois de awaits); repõe o worker via
       // a próxima iteração, que fará playing=false se a fila esvaziar.
       void this.playNext();
-    }
-  }
-
-  private armIdleTimer(): void {
-    // SAÍDA-POR-INATIVIDADE REMOVIDA: o Vozen já NÃO sai só porque não há TTS. A única
-    // saída discricionária é "sozinho na call 5 min" (ver AloneWatcher, fora do
-    // player). Este método é agora um NO-OP — mantido (com os call-sites) para não
-    // remexer no lifecycle; `onIdle` continua a ser usado no caminho de
-    // desistência-de-reconexão (handleDisconnect), que NÃO é discricionário.
-    // `inactivityMs`/`idleTimer` ficam sem uso funcional (inofensivos).
-  }
-
-  private clearIdleTimer(): void {
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
     }
   }
 

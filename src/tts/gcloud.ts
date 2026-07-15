@@ -131,7 +131,7 @@ export class GCloudEngine implements TTSEngine {
     if (!this.limits) return; // sem tetos configurados => comportamento Fase 1 (sem gate)
     const budget = req.gcloudBudget;
     if (!budget) {
-      this.deny('pedido gcloud sem orçamento (fail-safe)');
+      this.deny('gcloud request without a budget (fail-safe)');
     }
     if (chars > this.limits.maxChars) {
       this.deny(`texto ${chars} chars > máx ${this.limits.maxChars}`);
@@ -177,7 +177,7 @@ export class GCloudEngine implements TTSEngine {
       shouldWarn = !this.warnedDenials.has(throttleKey);
       if (shouldWarn) this.warnedDenials.add(throttleKey);
     }
-    if (shouldWarn) log.warn(`[gcloud] recusado, a cair no gTTS: ${reason}`);
+    if (shouldWarn) log.warn(`[gcloud] request denied; falling back to gTTS: ${reason}`);
     throw new GcloudBudgetError(reason);
   }
 
@@ -252,7 +252,7 @@ export class GCloudEngine implements TTSEngine {
         (err as Error)?.name === 'AbortError'
           ? `timeout (${GCLOUD_TIMEOUT_MS}ms)`
           : (err as Error).message;
-      throw new Error(`Falha de rede ao contactar a API Google Cloud TTS: ${reason}`, {
+      throw new Error(`Network failure while contacting the Google Cloud TTS API: ${reason}`, {
         cause: err,
       });
     } finally {
@@ -268,11 +268,11 @@ export class GCloudEngine implements TTSEngine {
 
     const data = (await res.json().catch(() => ({}))) as { audioContent?: string };
     if (!data.audioContent) {
-      throw new Error('API Google Cloud TTS devolveu resposta sem audioContent');
+      throw new Error('Google Cloud TTS API response did not contain audioContent');
     }
     const buf = Buffer.from(data.audioContent, 'base64');
     if (buf.length === 0) {
-      throw new Error('API Google Cloud TTS devolveu audioContent vazio');
+      throw new Error('Google Cloud TTS API returned empty audioContent');
     }
     return buf;
   }

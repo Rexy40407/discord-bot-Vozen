@@ -66,7 +66,7 @@ function makeDeps(): BotDeps {
   return {
     client: { user: { id: 'bot-1' } },
     players: new Map(),
-    config: { queueCap: 10, inactivityMs: 1000 },
+    config: { queueCap: 10 },
   } as unknown as BotDeps;
 }
 

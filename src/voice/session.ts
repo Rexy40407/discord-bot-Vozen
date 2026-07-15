@@ -33,7 +33,7 @@ export function becomeSpeakerIfStage(channel: VoiceBasedChannel): void {
   Promise.resolve(voice.setSuppressed(false)).catch(() => {
     // Sem permissão para se auto-promover -> pede para falar (o moderador aceita).
     Promise.resolve(voice.setRequestToSpeak(true)).catch((err) => {
-      log.warn('[voice] não consegui tornar-me orador no stage (ignorado)', err);
+      log.warn('[voice] failed to become a stage speaker (ignored)', err);
     });
   });
 }
@@ -59,17 +59,11 @@ export function createVoiceSession(
     selfDeaf: true,
     selfMute: false,
   });
-  const player = new GuildVoicePlayer(
-    connection,
-    deps.engine,
-    deps.config.queueCap,
-    deps.config.inactivityMs,
-    () => {
-      if (deps.players.get(guildId) !== player) return;
-      removePlayer(deps, guildId);
-      getVoiceConnection(guildId)?.destroy();
-    },
-  );
+  const player = new GuildVoicePlayer(connection, deps.engine, deps.config.queueCap, () => {
+    if (deps.players.get(guildId) !== player) return;
+    removePlayer(deps, guildId);
+    getVoiceConnection(guildId)?.destroy();
+  });
   deps.players.set(guildId, player);
   // 24/7 in-call: só persiste o canal quando a guild é Premium E ligou o toggle
   // (/config always-on, default OFF) — assim é reposto no arranque (ver rejoin.ts).
@@ -83,7 +77,7 @@ export function createVoiceSession(
       rememberVoicePresence(deps.db, guildId, channelId, Date.now());
     }
   } catch (err) {
-    log.warn('[voice] não consegui guardar a presença 24/7 (ignorado)', err);
+    log.warn('[voice] failed to persist 24/7 presence (ignored)', err);
   }
   return player;
 }

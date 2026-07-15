@@ -69,6 +69,11 @@ interface RateState {
   reset: number;
 }
 
+const API_SECURITY_HEADERS: Readonly<Record<string, string>> = {
+  'Cache-Control': 'no-store',
+  'X-Content-Type-Options': 'nosniff',
+};
+
 /**
  * Aplica um grant do Ko-fi no store (estende/acumula, nunca reduz). Sem Discord ID
  * associado devolve null (o chamador loga para grant manual com /vozengrant).
@@ -174,6 +179,7 @@ function handleApiRequest(
   const cors: Record<string, string> = {
     'Access-Control-Allow-Origin': ctx.apiOrigin,
     Vary: 'Origin',
+    ...API_SECURITY_HEADERS,
   };
   // Preflight do browser.
   if (req.method === 'OPTIONS') {
@@ -215,7 +221,7 @@ function handleApiRequest(
         .end(JSON.stringify(body));
     })
     .catch((err) => {
-      ctx.logError('[premium-api] erro a servir /api/me/premium', err);
+      ctx.logError('[premium-api] failed to serve /api/me/premium', err);
       try {
         res
           .writeHead(500, { ...cors, 'Content-Type': 'application/json' })
@@ -234,8 +240,6 @@ interface ClaimCtx {
   rate: Map<string, RateState>;
   rateMaxEntries: number;
   logError: (m: string, err: unknown) => void;
-  /** Token do webhook Ko-fi = chave do HMAC do email (para casar o claim por email). */
-  token: string | undefined;
 }
 
 /**
@@ -252,6 +256,7 @@ function handleClaimRequest(
   const cors: Record<string, string> = {
     'Access-Control-Allow-Origin': ctx.apiOrigin,
     Vary: 'Origin',
+    ...API_SECURITY_HEADERS,
   };
   if (req.method === 'OPTIONS') {
     res
@@ -332,7 +337,7 @@ function handleClaimRequest(
           respond(401, { error: 'invalid_token' });
           return;
         }
-        const outcome = claimPendingGrant(ctx.db, identity.id, code!, ctx.token, ctx.now());
+        const outcome = claimPendingGrant(ctx.db, identity.id, code!, ctx.now());
         if (!outcome.ok) {
           // use_receipt_code (plano 021): o input parecia um email — pede o código do recibo
           // em vez de um 404 genérico, para o site conseguir mostrar uma mensagem útil.
@@ -346,7 +351,7 @@ function handleClaimRequest(
         respond(200, { ok: true, items: outcome.items });
       })
       .catch((err) => {
-        ctx.logError('[claim] erro a processar o claim', err);
+        ctx.logError('[claim] failed to process claim', err);
         try {
           respond(500, { error: 'internal' });
         } catch {
@@ -354,7 +359,7 @@ function handleClaimRequest(
         }
       });
   });
-  req.on('error', (err) => ctx.logError('[claim] erro no request do claim', err));
+  req.on('error', (err) => ctx.logError('[claim] request error', err));
 }
 
 interface DashboardCtx {
@@ -384,6 +389,7 @@ function handleDashboardRequest(
   const cors: Record<string, string> = {
     'Access-Control-Allow-Origin': ctx.apiOrigin,
     Vary: 'Origin',
+    ...API_SECURITY_HEADERS,
   };
   const path = (req.url ?? '').split('?')[0];
   const json = (code: number, body: unknown): void => {
@@ -430,7 +436,7 @@ function handleDashboardRequest(
         guilds === null ? json(401, { error: 'invalid_token' }) : json(200, { guilds }),
       )
       .catch((err) => {
-        ctx.logError('[dashboard] erro a listar guilds', err);
+        ctx.logError('[dashboard] failed to list guilds', err);
         try {
           json(500, { error: 'internal' });
         } catch {
@@ -455,7 +461,7 @@ function handleDashboardRequest(
           cfg === null ? json(403, { error: 'forbidden' }) : json(200, { config: cfg }),
         )
         .catch((err) => {
-          ctx.logError('[dashboard] erro a ler config', err);
+          ctx.logError('[dashboard] failed to read configuration', err);
           try {
             json(500, { error: 'internal' });
           } catch {
@@ -493,7 +499,7 @@ function handleDashboardRequest(
             cfg === null ? json(403, { error: 'forbidden' }) : json(200, { config: cfg }),
           )
           .catch((err) => {
-            ctx.logError('[dashboard] erro a guardar config', err);
+            ctx.logError('[dashboard] failed to save configuration', err);
             try {
               json(500, { error: 'internal' });
             } catch {
@@ -501,7 +507,7 @@ function handleDashboardRequest(
             }
           });
       });
-      req.on('error', (err) => ctx.logError('[dashboard] erro no request', err));
+      req.on('error', (err) => ctx.logError('[dashboard] request error', err));
       return;
     }
 
@@ -556,7 +562,7 @@ function handleTopggRequest(
     });
     res.writeHead(result.status, { 'Content-Type': 'application/json' }).end(result.body);
   });
-  req.on('error', (err) => ctx.logError('[vote] erro no request do webhook top.gg', err));
+  req.on('error', (err) => ctx.logError('[vote] top.gg webhook request error', err));
 }
 
 /**
@@ -570,7 +576,9 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
   const { db, token, port, now, logInfo, logError, statusApi, apiOrigin, dashboardApi } = deps;
   const { topggWebhookSecret, onUpvote } = deps;
   if (!token && !statusApi && !topggWebhookSecret) {
-    logInfo('[premium] servidor HTTP inativo (sem webhook Ko-fi, API do painel nem top.gg).');
+    logInfo(
+      '[premium] HTTP server disabled (no Ko-fi webhook, dashboard API, or top.gg endpoint).',
+    );
     return null;
   }
   const rate = new Map<string, RateState>();
@@ -596,7 +604,6 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         rate: claimRate,
         rateMaxEntries,
         logError,
-        token,
       });
       return;
     }
@@ -654,7 +661,7 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         }
         // Segurança: só aceitamos payloads com o NOSSO token de verificação do Ko-fi.
         if (!verifyKofiToken(event, token)) {
-          logError('[kofi] token de verificação inválido — ignorado', event.transactionId);
+          logError('[kofi] invalid verification token; request ignored', event.transactionId);
           res.writeHead(401).end('bad token');
           return;
         }
@@ -715,7 +722,7 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
           // Minimização de PII: NÃO registamos o nome do comprador; o tx id chega para
           // reconciliar a compra no painel do Ko-fi (onde o nome/email vivem).
           logError(
-            `[kofi] compra SEM Discord ID — ${applied.pending ? 'PENDENTE (reclamável no site)' : 'grant MANUAL'}: ` +
+            `[kofi] purchase without a Discord ID; ${applied.pending ? 'PENDING (claimable on the site)' : 'MANUAL grant'}: ` +
               `${grant.plan} ${grant.days}d, tx=${event.transactionId ?? '?'}`,
             null,
           );
@@ -731,7 +738,7 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         // do grant a rebentar (SQLITE_BUSY, disco cheio, I/O). Responder 200 diria ao Ko-fi
         // "recebido" e ele NÃO re-tentava → compra paga perdida. Respondemos 5xx para o
         // Ko-fi reentregar; o ledger kofi_transaction torna o retry idempotente.
-        logError('[kofi] falha a PERSISTIR o grant — 503 para o Ko-fi re-tentar', err);
+        logError('[kofi] failed to persist grant; returning 503 for Ko-fi to retry', err);
         try {
           res.writeHead(503).end('retry');
         } catch {
@@ -739,9 +746,9 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         }
       }
     });
-    req.on('error', (err) => logError('[kofi] erro no request do webhook', err));
+    req.on('error', (err) => logError('[kofi] webhook request error', err));
   });
-  server.on('error', (err) => logError('[kofi] erro no servidor de webhook', err));
+  server.on('error', (err) => logError('[kofi] webhook server error', err));
   hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
   // Loopback-only: o mundo exterior chega via Caddy (reverse_proxy localhost:3001).
   // Assim a garantia não depende só da firewall (defesa em profundidade).

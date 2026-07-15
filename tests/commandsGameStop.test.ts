@@ -1,7 +1,3 @@
-// tests/commandsGameStop.test.ts — /game stop com gate de permissão (plano 030, ABUSE-04).
-// Antes, QUALQUER membro podia parar o jogo de outro (sem gate nenhum). Gate mínimo:
-// exige ManageGuild — mesmo padrão de /transcribe stop (transcribe.ts) e /config
-// (config.ts): `i.memberPermissions?.has(PermissionFlagsBits.ManageGuild)`.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { handleGame } from '../src/commands/handlers/games';
@@ -11,10 +7,14 @@ import { initDb } from '../src/store/db';
 const GUILD = 'g-game';
 const USER = 'user-1';
 
-function makeDeps(db: Database.Database, stop: ReturnType<typeof vi.fn>): BotDeps {
+function makeDeps(
+  db: Database.Database,
+  stop: ReturnType<typeof vi.fn>,
+  isStarter = vi.fn(() => false),
+): BotDeps {
   return {
     db,
-    games: { stop },
+    games: { stop, isStarter },
   } as unknown as BotDeps;
 }
 
@@ -32,7 +32,7 @@ function makeStopInteraction(opts: { canManage: boolean }) {
   };
 }
 
-describe('/game stop — gate de permissão (ABUSE-04)', () => {
+describe('/game stop authorization', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -42,7 +42,7 @@ describe('/game stop — gate de permissão (ABUSE-04)', () => {
     db.close();
   });
 
-  it('SEM ManageGuild: recusa com erro e NÃO chama games.stop', async () => {
+  it('rejects a non-starter without Manage Server', async () => {
     const stop = vi.fn().mockReturnValue(true);
     const deps = makeDeps(db, stop);
     const i = makeStopInteraction({ canManage: false });
@@ -53,7 +53,20 @@ describe('/game stop — gate de permissão (ABUSE-04)', () => {
     expect(i.replies.some((r) => /manage server/i.test(r))).toBe(true);
   });
 
-  it('COM ManageGuild: chama games.stop e responde "parei o jogo"', async () => {
+  it('allows the person who started the game to stop it', async () => {
+    const stop = vi.fn().mockReturnValue(true);
+    const isStarter = vi.fn(() => true);
+    const deps = makeDeps(db, stop, isStarter);
+    const i = makeStopInteraction({ canManage: false });
+
+    await handleGame(i as any, deps);
+
+    expect(isStarter).toHaveBeenCalledWith(GUILD, USER);
+    expect(stop).toHaveBeenCalledWith(GUILD);
+    expect(i.replies.some((r) => /stopped/i.test(r))).toBe(true);
+  });
+
+  it('allows a member with Manage Server to stop any game', async () => {
     const stop = vi.fn().mockReturnValue(true);
     const deps = makeDeps(db, stop);
     const i = makeStopInteraction({ canManage: true });
@@ -64,7 +77,7 @@ describe('/game stop — gate de permissão (ABUSE-04)', () => {
     expect(i.replies.some((r) => /stopped/i.test(r))).toBe(true);
   });
 
-  it('COM ManageGuild mas sem jogo ativo: responde "nenhum jogo a decorrer"', async () => {
+  it('reports when an administrator stops but no game is active', async () => {
     const stop = vi.fn().mockReturnValue(false);
     const deps = makeDeps(db, stop);
     const i = makeStopInteraction({ canManage: true });

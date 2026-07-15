@@ -536,7 +536,7 @@ describe('initDb — erro de abertura', () => {
     // better-sqlite3 NAO cria directorios intermedios: um caminho cujo pai nao
     // existe falha de forma fiavel (portavel, ao contrario de permission-denied).
     const bad = join(tmpdir(), `nope-${Date.now()}-${Math.random().toString(36).slice(2)}`, 'x.db');
-    expect(() => initDb(bad)).toThrow(/Falha ao abrir a base de dados/);
+    expect(() => initDb(bad)).toThrow(/Failed to open the database/);
     // A mensagem inclui o caminho para diagnostico.
     expect(() => initDb(bad)).toThrow(bad);
   });
@@ -549,7 +549,7 @@ describe('initDb — erro de abertura', () => {
     const file = join(dir, 'not-a-db.sqlite');
     writeFileSync(file, 'isto nao e uma base de dados sqlite, e texto qualquer\n');
     try {
-      expect(() => initDb(file)).toThrow(/Falha ao abrir a base de dados/);
+      expect(() => initDb(file)).toThrow(/Failed to open the database/);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

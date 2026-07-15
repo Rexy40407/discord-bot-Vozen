@@ -25,7 +25,6 @@ describe('loadConfig', () => {
       DB_PATH: undefined,
       DEFAULT_VOICE: undefined,
       DEFAULT_SPEED: undefined,
-      INACTIVITY_MS: undefined,
       QUEUE_CAP: undefined,
       MAX_CHARS: undefined,
       RATE_PER_MIN: undefined,
@@ -117,7 +116,6 @@ describe('loadConfig', () => {
     setEnv(REQUIRED);
     const cfg = loadConfig();
     expect(cfg.defaultSpeed).toBe(1);
-    expect(cfg.inactivityMs).toBe(1_500_000); // 25 min
     expect(cfg.messageLeadMs).toBe(200); // 0.20s de silêncio antes de falar
     expect(cfg.queueCap).toBe(20);
     expect(cfg.maxChars).toBe(300);
@@ -128,14 +126,12 @@ describe('loadConfig', () => {
     setEnv({
       ...REQUIRED,
       DEFAULT_SPEED: '1.5',
-      INACTIVITY_MS: '60000',
       QUEUE_CAP: '10',
       MAX_CHARS: '500',
       RATE_PER_MIN: '3',
     });
     const cfg = loadConfig();
     expect(cfg.defaultSpeed).toBe(1.5);
-    expect(cfg.inactivityMs).toBe(60000);
     expect(cfg.queueCap).toBe(10);
     expect(cfg.maxChars).toBe(500);
     expect(cfg.ratePerMin).toBe(3);

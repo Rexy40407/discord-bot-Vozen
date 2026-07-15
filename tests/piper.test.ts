@@ -81,7 +81,7 @@ describe('PiperEngine.synth — spawn mockado (EPIPE / falhas)', () => {
     child.stdin.emit('error', Object.assign(new Error('write EPIPE'), { code: 'EPIPE' }));
     child.emit('close', 0); // saiu 0 mas nada escrito no outPath (fs real)
 
-    await expect(p).rejects.toThrow(/nao gerou WAV/);
+    await expect(p).rejects.toThrow(/did not produce a WAV/);
   });
 
   it('erro de stdin NAO-EPIPE -> rejeita com "Falha ao escrever no stdin"', async () => {
@@ -238,7 +238,7 @@ describe('PiperEngine.synth — guard de nome inseguro (rejeita antes de spawn)'
 
   it('nome com path-traversal -> rejeita com "Nome de modelo invalido" e nunca faz spawn', async () => {
     const badReq: SynthRequest = { text: 'ola', model: '../../etc/passwd', speed: 1 };
-    await expect(engine.synth(badReq)).rejects.toThrow(/Nome de modelo invalido/);
+    await expect(engine.synth(badReq)).rejects.toThrow(/Invalid model name/);
     expect(spawnMock).not.toHaveBeenCalled();
   });
 });

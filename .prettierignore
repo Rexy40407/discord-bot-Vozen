@@ -1,4 +1,5 @@
 dist/
+coverage/
 site/
 site-dist/
 logs/
@@ -8,9 +9,7 @@ audio-cache/
 voice-clones/
 package-lock.json
 scratchpad/
-# docs/ contém material de outras sessões e ficheiros não-versionados que este
-# toolchain não deve reformatar — fora do âmbito da passagem de estilo.
+# docs/ contains prose and untracked artifacts from other sessions; do not rewrite it.
 docs/
-# plans/ são artefactos de prosa (handoff) como docs/; além disso o Prettier tem um
-# bug de não-idempotência em spans de código inline multi-linha dentro de listas.
+# plans/ contains prose handoff artifacts and is intentionally outside formatting scope.
 plans/

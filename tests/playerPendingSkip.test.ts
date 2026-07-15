@@ -132,7 +132,7 @@ describe('GuildVoicePlayer — /skip na janela de sintese (pendingSkip, P19.C)',
     const { engine, waitSynthCalled, release } = makeDeferredEngine();
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     // Enfileira A (vai tocar) e B (fica na fila). Nao usamos await para nao
     // bloquear — say() enfileira sincronamente e arranca o worker.
@@ -167,7 +167,7 @@ describe('GuildVoicePlayer — /skip na janela de sintese (pendingSkip, P19.C)',
     const { engine, waitSynthCalled, release } = makeDeferredEngine();
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     void player.say(req('A'));
     void player.say(req('B'));
@@ -201,7 +201,7 @@ describe('GuildVoicePlayer — /skip na janela de sintese (pendingSkip, P19.C)',
     const engine: TTSEngine = { synth: async (r: SynthRequest) => r.text };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     void player.say(req('A'));
     void player.say(req('B'));
@@ -256,7 +256,7 @@ describe('GuildVoicePlayer — /skip na janela de sintese (pendingSkip, P19.C)',
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     void player.say(req('A'));
     void player.say(req('B'));

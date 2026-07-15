@@ -30,10 +30,10 @@ interface ParsedWav {
 export function parseWav(wav: Buffer, index: number): ParsedWav {
   const where = `WAV #${index + 1}`;
   if (wav.length < 12) {
-    throw new Error(`${where}: buffer demasiado pequeno para ser um WAV`);
+    throw new Error(`${where}: buffer is too small to be a WAV file`);
   }
   if (wav.toString('ascii', 0, 4) !== 'RIFF' || wav.toString('ascii', 8, 12) !== 'WAVE') {
-    throw new Error(`${where}: nao e um WAV RIFF/WAVE valido`);
+    throw new Error(`${where}: not a valid RIFF/WAVE file`);
   }
 
   let fmt: {
@@ -52,7 +52,7 @@ export function parseWav(wav: Buffer, index: number): ParsedWav {
     const body = offset + 8;
     if (body + size > wav.length) {
       // Chunk anuncia mais bytes do que existem — WAV truncado/corrompido.
-      throw new Error(`${where}: chunk '${id}' excede o tamanho do buffer`);
+      throw new Error(`${where}: chunk '${id}' exceeds the buffer length`);
     }
     if (id === 'fmt ') {
       fmt = {
@@ -68,8 +68,8 @@ export function parseWav(wav: Buffer, index: number): ParsedWav {
     offset = body + size + (size % 2);
   }
 
-  if (!fmt) throw new Error(`${where}: chunk 'fmt ' ausente`);
-  if (!data) throw new Error(`${where}: chunk 'data' ausente`);
+  if (!fmt) throw new Error(`${where}: missing 'fmt ' chunk`);
+  if (!data) throw new Error(`${where}: missing 'data' chunk`);
 
   return { ...fmt, data };
 }
@@ -78,7 +78,7 @@ export function parseWav(wav: Buffer, index: number): ParsedWav {
 function validateFormat(w: ParsedWav, index: number): void {
   const where = `WAV #${index + 1}`;
   if (w.audioFormat !== 1) {
-    throw new Error(`${where}: audioFormat ${w.audioFormat} nao suportado (esperado PCM=1)`);
+    throw new Error(`${where}: unsupported audioFormat ${w.audioFormat} (expected PCM=1)`);
   }
   if (w.sampleRate !== REQUIRED_SAMPLE_RATE) {
     throw new Error(
@@ -86,10 +86,10 @@ function validateFormat(w: ParsedWav, index: number): void {
     );
   }
   if (w.channels !== REQUIRED_CHANNELS) {
-    throw new Error(`${where}: ${w.channels} canais nao suportado (esperado mono=1 channel)`);
+    throw new Error(`${where}: unsupported channel count ${w.channels} (expected mono=1)`);
   }
   if (w.bits !== REQUIRED_BITS) {
-    throw new Error(`${where}: ${w.bits} bits nao suportado (esperado 16-bit)`);
+    throw new Error(`${where}: unsupported ${w.bits}-bit audio (expected 16-bit)`);
   }
 }
 
@@ -135,7 +135,7 @@ export function silenceWav(ms: number): Buffer {
  */
 export function concatWavs(wavs: Buffer[], opts: { silenceMs?: number } = {}): Buffer {
   if (wavs.length === 0) {
-    throw new Error('concatWavs: e preciso pelo menos um WAV (array vazio)');
+    throw new Error('concatWavs: at least one WAV is required (received an empty array)');
   }
 
   const parsed = wavs.map((w, i) => {

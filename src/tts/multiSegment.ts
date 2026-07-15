@@ -99,7 +99,7 @@ export class MultiSegmentEngine implements TTSEngine {
       // crashamos e NAO deixamos cair conteudo — caimos no caminho single-voice
       // de TODO o texto com a voz-base (req.model). O player recebe sempre um WAV.
       log.warn(
-        '[multiSegment] falha no caminho por-segmento, fallback single-voice:',
+        '[multiSegment] per-segment path failed; falling back to a single voice:',
         (err as Error).message,
       );
       return this.base.synth(req);
@@ -162,7 +162,7 @@ export class MultiSegmentEngine implements TTSEngine {
       // Mesma resiliencia do caminho por-script: se qualquer parte (ou a
       // concatenacao) falha, cai no single-voice de TODO o texto com a voz-base.
       log.warn(
-        '[multiSegment] falha no caminho de segmentos explicitos, fallback single-voice:',
+        '[multiSegment] explicit-segment path failed; falling back to a single voice:',
         (err as Error).message,
       );
       return this.base.synth({

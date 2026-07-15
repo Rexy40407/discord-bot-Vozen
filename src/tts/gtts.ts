@@ -228,7 +228,7 @@ export class GTTSEngine implements TTSEngine {
     // deCapsForGoogle: evita que a Google SOLETRE palavras todo-maiúsculas (ver função).
     const chunks = chunkText(deCapsForGoogle(req.text), GTTS_MAX_CHARS);
     if (chunks.length === 0) {
-      throw new Error('gTTS: texto vazio');
+      throw new Error('gTTS: empty text');
     }
 
     // Um MP3 por pedaço; concatenam-se os bytes (frames MP3 do mesmo formato) e o
@@ -268,7 +268,7 @@ export class GTTSEngine implements TTSEngine {
       retries: this.retries,
       sleep: this.sleep,
       onRetry: (err, attempt) =>
-        log.warn(`[gtts] tentativa ${attempt + 1} falhou (${(err as Error).message}) — a repetir…`),
+        log.warn(`[gtts] attempt ${attempt + 1} failed (${(err as Error).message}); retrying`),
     });
   }
 
@@ -302,7 +302,7 @@ export class GTTSEngine implements TTSEngine {
       );
     }
     const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length === 0) throw taggedError('gTTS: resposta vazia', false);
+    if (buf.length === 0) throw taggedError('gTTS: empty response', false);
     return buf;
   }
 }
@@ -315,7 +315,7 @@ export class GTTSEngine implements TTSEngine {
 function mp3ToWav(mp3: Buffer, speed: number): Promise<Buffer> {
   const ff = ffmpegPath as unknown as string | null;
   if (!ff) {
-    return Promise.reject(new Error('gTTS: ffmpeg-static não encontrado (corre o install.js)'));
+    return Promise.reject(new Error('gTTS: ffmpeg-static not found (run install.js)'));
   }
   // Setup síncrono guardado: se mkdtempSync/writeFileSync lançar (disco cheio,
   // EACCES), limpamos o workDir já criado antes de propagar — senão vazava um temp

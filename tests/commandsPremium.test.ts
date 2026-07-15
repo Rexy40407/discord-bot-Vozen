@@ -34,6 +34,7 @@ function makePremiumInteraction(
   const { manage = true, guildId = GUILD, userId = U } = opts;
   const replies: string[] = [];
   const embedTexts: string[] = [];
+  const componentRows: unknown[] = [];
   return {
     commandName: 'premium',
     guildId,
@@ -42,10 +43,16 @@ function makePremiumInteraction(
     member: { permissions: { has: () => manage } },
     replies,
     embedTexts,
-    reply: async (o: { content?: string; embeds?: { data: { description?: string } }[] }) => {
+    componentRows,
+    reply: async (o: {
+      content?: string;
+      embeds?: { data: { description?: string } }[];
+      components?: unknown[];
+    }) => {
       if (o.content) replies.push(o.content);
       if (o.embeds)
         for (const e of o.embeds) if (e.data.description) embedTexts.push(e.data.description);
+      if (o.components) componentRows.push(...o.components);
     },
     editReply: async () => {},
     // Só o caminho de confirmação do activate chega aqui; nunca clicamos (timeout).
@@ -76,6 +83,19 @@ describe('/premium — info / activate / deactivate (passe de licenças)', () =>
     const i = makePremiumInteraction('info');
     await handleInteraction(i as any, makeDeps(db));
     expect(i.embedTexts.join('\n')).toMatch(/ko-fi\.com\/vozentest/);
+  });
+
+  it('shows native Discord purchase buttons when Premium App SKUs are configured', async () => {
+    const deps = makeDeps(db);
+    deps.config.premiumGuildSkuId = '111111111111111111';
+    deps.config.premiumUserSkuId = '222222222222222222';
+    const i = makePremiumInteraction('info');
+
+    await handleInteraction(i as any, deps);
+
+    const json = JSON.stringify(i.componentRows);
+    expect(json).toContain('111111111111111111');
+    expect(json).toContain('222222222222222222');
   });
 
   it('info com passe ativo -> mostra a linha do passe (licenças em uso)', async () => {

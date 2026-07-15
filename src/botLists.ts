@@ -37,13 +37,13 @@ export async function postTopggStats(
       signal: controller.signal,
     });
     if (!res.ok) {
-      log.warn(`[botlist] top.gg respondeu HTTP ${res.status} ao publicar server_count.`);
+      log.warn(`[botlist] top.gg returned HTTP ${res.status} while publishing server_count.`);
       return false;
     }
-    log.info(`[botlist] top.gg atualizado: ${serverCount} servidores.`);
+    log.info(`[botlist] top.gg updated: ${serverCount} servers.`);
     return true;
   } catch (err) {
-    log.warn('[botlist] falha ao publicar no top.gg (ignorado):', (err as Error).message);
+    log.warn('[botlist] failed to publish to top.gg (ignored):', (err as Error).message);
     return false;
   } finally {
     clearTimeout(timer);
@@ -80,6 +80,6 @@ export function startBotListUpdater(deps: BotListDeps): () => void {
   post(); // primeira publicação imediata
   const handle = setIv(post, BOTLIST_POST_INTERVAL_MS);
   (handle as unknown as { unref?: () => void }).unref?.();
-  log.info('[botlist] auto-post da contagem de servidores para o top.gg ATIVO.');
+  log.info('[botlist] automatic server-count publishing to top.gg is active.');
   return () => clearIv(handle);
 }

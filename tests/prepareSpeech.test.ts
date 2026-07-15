@@ -41,6 +41,27 @@ describe('prepareSpeech — voz FIXA (deteção removida)', () => {
     expect(req.segments).toBeUndefined();
   });
 
+  it('falls back safely when a saved voice model is no longer installed', () => {
+    const { req } = prepareSpeech({
+      ...BASE,
+      personal: 'hello',
+      userVoice: { model: 'pt_PT-retired-medium', speed: 1.1 },
+    });
+    expect(req.model).toBe('en_US-amy-medium');
+    expect(req.speed).toBe(1.1);
+  });
+
+  it('uses the first installed model when every configured preference is stale', () => {
+    const { req } = prepareSpeech({
+      ...BASE,
+      personal: 'hello',
+      userVoice: { model: 'xx_XX-retired-medium', speed: 1 },
+      guildDefaultVoice: 'yy_YY-retired-medium',
+      defaultVoice: 'zz_ZZ-retired-medium',
+    });
+    expect(req.model).toBe(AVAILABLE[0]);
+  });
+
   it('expande gírias embutidas no texto falado (btw -> by the way)', () => {
     const { req, spoken } = prepareSpeech({ ...BASE, personal: 'brb omg' });
     expect(req.segments).toBeUndefined();

@@ -55,7 +55,7 @@ export function startHealthServer(config: Pick<AppConfig, 'healthPort'>): Server
     // req; sem listener, o Node relança-o como exceção não-apanhada. Espelha o
     // servidor de webhook (vote.ts) que já tem este guard.
     req.on('error', (err) => {
-      log.warn('[health] erro no stream do pedido (ignorado)', err);
+      log.warn('[health] request stream error (ignored)', err);
     });
     const { status, body } = healthResponse(req.url);
     res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -63,14 +63,14 @@ export function startHealthServer(config: Pick<AppConfig, 'healthPort'>): Server
   });
 
   server.on('error', (err) => {
-    log.error(`[health] erro no servidor de health (porta ${port})`, err);
+    log.error(`[health] server error (port ${port})`, err);
   });
 
   hardenServerTimeouts(server); // timeouts curtos (anti-slowloris)
 
   // Loopback-only (defesa em profundidade): o health é para monitorização local/proxy.
   server.listen(port, '127.0.0.1', () => {
-    log.info(`[health] servidor de health a ouvir em 127.0.0.1:${port} (GET /health).`);
+    log.info(`[health] server listening on 127.0.0.1:${port} (GET /health).`);
   });
 
   return server;

@@ -48,7 +48,7 @@ export function saveRegisterState(stateFile: string, clientId: string, fingerpri
     );
   } catch (err) {
     log.warn(
-      '[register] não consegui gravar o estado do registo (re-registará no próximo arranque)',
+      '[register] failed to persist registration state; commands will register again on next startup',
       err,
     );
   }
@@ -75,12 +75,12 @@ export async function registerCommands(
     process.env.FORCE_REGISTER !== '1' &&
     shouldSkipRegister(opts.stateFile, clientId, fingerprint)
   ) {
-    log.info(`[register] comandos inalterados (${fingerprint.slice(0, 8)}) — PUT global saltado.`);
+    log.info(`[register] commands unchanged (${fingerprint.slice(0, 8)}); global PUT skipped.`);
     return false;
   }
   const rest = new REST({ version: '10' }).setToken(token);
   await rest.put(Routes.applicationCommands(clientId), { body: commandDefs });
-  log.info(`[register] ${commandDefs.length} comandos registados globalmente.`);
+  log.info(`[register] ${commandDefs.length} commands registered globally.`);
   if (opts.stateFile) saveRegisterState(opts.stateFile, clientId, fingerprint);
   return true;
 }
@@ -97,7 +97,9 @@ export async function registerOwnerCommands(
 ): Promise<void> {
   const rest = new REST({ version: '10' }).setToken(token);
   await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: ownerCommandDefs });
-  log.info(`[register] ${ownerCommandDefs.length} comando(s) owner na guild ${guildId}.`);
+  log.info(
+    `[register] ${ownerCommandDefs.length} owner command(s) registered in guild ${guildId}.`,
+  );
 }
 
 // arranque quando corrido via `npm run register`
@@ -105,7 +107,7 @@ if (process.argv[1] && process.argv[1].endsWith('registerCommands.ts')) {
   const cfg = loadConfig();
   const stateFile = join(dirname(cfg.dbPath), 'commands-state.json');
   registerCommands(cfg.token, cfg.clientId, { stateFile }).catch((err) => {
-    log.error('[register] falhou', err);
+    log.error('[register] failed', err);
     process.exit(1);
   });
 }

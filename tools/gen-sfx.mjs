@@ -230,4 +230,4 @@ for (const [key, make] of Object.entries(CLIPS)) {
   writeFileSync(path, wav);
   console.log(`wrote ${key}.wav (${(wav.length / 1024).toFixed(1)} KiB)`);
 }
-console.log('feito.');
+console.log('done.');

@@ -104,9 +104,9 @@ export class KokoroEngine implements TTSEngine {
   }
 
   async synth(req: SynthRequest): Promise<string> {
-    if (!this.cmd) throw new Error('kokoro: sidecar indisponível');
+    if (!this.cmd) throw new Error('kokoro: sidecar unavailable');
     const m = KOKORO_VOICES[langKeyOfModel(req.model)];
-    if (!m) throw new Error(`kokoro: língua não suportada (${langKeyOfModel(req.model)})`);
+    if (!m) throw new Error(`kokoro: unsupported language (${langKeyOfModel(req.model)})`);
 
     const key = cacheKey(req);
     const hit = this.cache.get(key);
@@ -141,7 +141,7 @@ export class KokoroEngine implements TTSEngine {
   private pump(): void {
     if (this.active || this.queue.length === 0) return;
     if (!this.ensureChild()) {
-      const err = new Error('kokoro: sidecar indisponível');
+      const err = new Error('kokoro: sidecar unavailable');
       for (const j of this.queue.splice(0)) j.reject(err);
       return;
     }
@@ -177,25 +177,25 @@ export class KokoroEngine implements TTSEngine {
       child.stderr!.on('data', (c: Buffer) => log.info(`[kokoro-py] ${c.toString().trim()}`));
       child.on('exit', (code) => {
         if (this.child !== child) return; // evento de um child JÁ substituído — ignora
-        log.warn(`[kokoro] sidecar saiu (code ${code})`);
+        log.warn(`[kokoro] sidecar exited (code ${code})`);
         this.teardown();
       });
       child.on('error', (err) => {
         if (this.child !== child) return; // evento de um child JÁ substituído — ignora
-        log.warn('[kokoro] falha no sidecar:', err);
+        log.warn('[kokoro] sidecar failure:', err);
         this.teardown();
       });
       child.stdin!.write(JSON.stringify({ warmup: true }) + '\n');
       this.warmupTimer = setTimeout(() => {
         this.warmupTimer = null;
         if (this.ready) return; // corrida benigna: ficou pronto entretanto
-        log.warn(`[kokoro] sidecar não ficou pronto em ${this.readyTimeoutMs}ms — a reiniciar`);
+        log.warn(`[kokoro] sidecar was not ready after ${this.readyTimeoutMs}ms; restarting`);
         this.restart();
       }, this.readyTimeoutMs);
       this.warmupTimer.unref?.();
       return true;
     } catch (err) {
-      log.warn('[kokoro] não consegui arrancar o sidecar:', err);
+      log.warn('[kokoro] failed to start the sidecar:', err);
       this.starting = false;
       this.child = null;
       return false;
@@ -226,7 +226,7 @@ export class KokoroEngine implements TTSEngine {
       }
       this.ready = true;
       this.starting = false;
-      log.info('[kokoro] sidecar pronto');
+      log.info('[kokoro] sidecar ready');
       this.pump();
       return;
     }
@@ -235,7 +235,7 @@ export class KokoroEngine implements TTSEngine {
     this.active = null;
     if (job.timer) clearTimeout(job.timer);
     if (msg.ok && msg.out) job.resolve(msg.out);
-    else job.reject(new Error(msg.error || 'kokoro: erro desconhecido'));
+    else job.reject(new Error(msg.error || 'kokoro: unknown error'));
     this.pump();
   }
 

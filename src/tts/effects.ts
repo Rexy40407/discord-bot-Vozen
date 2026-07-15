@@ -109,7 +109,7 @@ export function applyEffect(
 ): Promise<string> {
   const ff = (deps.ffmpegPath ?? (ffmpegStatic as unknown as string | null)) as string | null;
   const spawnImpl = deps.spawnImpl ?? spawn;
-  if (!ff) return Promise.reject(new Error('fx: ffmpeg-static não encontrado'));
+  if (!ff) return Promise.reject(new Error('fx: ffmpeg-static not found'));
 
   const workDir = mkdtempSync(join(tmpdir(), 'vozen-fx-'));
   const outPath = join(workDir, 'out.wav');
@@ -204,7 +204,7 @@ export class EffectEngine implements TTSEngine {
       tmp = await applyEffect(base, filter, this.deps);
       return this.cache.put(key, tmp);
     } catch (err) {
-      log.warn('[fx] efeito falhou, a servir voz limpa:', err);
+      log.warn('[fx] effect failed; using clean voice:', err);
       return base;
     } finally {
       // Limpa o DIR temporário do applyEffect (a cache já tem a sua própria cópia do WAV).

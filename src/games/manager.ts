@@ -4,6 +4,8 @@ import type { Game, GameContext, GameEnv, GameMessage, Sendable, TimerHandle } f
 interface Session {
   guildId: string;
   channelId: string;
+  /** User who started the game, used for scoped stop authorization. */
+  starterId?: string;
   game: Game;
   timers: Set<TimerHandle>;
   /** Pontos acumulados nesta partida (userId -> pontos), persistidos no fim. */
@@ -69,6 +71,11 @@ export class GameManager {
     return this.sessions.get(guildId)?.channelId ?? null;
   }
 
+  /** Whether `userId` started the active game in this guild. */
+  isStarter(guildId: string, userId: string): boolean {
+    return this.sessions.get(guildId)?.starterId === userId;
+  }
+
   /**
    * Inicia `game` no canal indicado. Devolve 'already-active' se ja houver um jogo
    * nesta guild (o chamador traduz para uma mensagem amigavel). O `game.start` pode
@@ -81,11 +88,13 @@ export class GameManager {
     needsVoice = true,
     locale?: string,
     parentChannelId?: string,
+    starterId?: string,
   ): StartResult {
     if (this.sessions.has(guildId)) return 'already-active';
     const session: Session = {
       guildId,
       channelId,
+      starterId,
       game,
       timers: new Set(),
       points: new Map(),

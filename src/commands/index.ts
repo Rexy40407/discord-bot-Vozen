@@ -253,7 +253,7 @@ export async function handleAutocomplete(i: AutocompleteInteraction, deps: BotDe
       );
       return;
     }
-    log.error(`[autocomplete] erro em "${i.commandName}:${focusedName}"`, err);
+    log.error(`[autocomplete] error in "${i.commandName}:${focusedName}"`, err);
   }
 }
 
@@ -335,7 +335,7 @@ export async function handleInteraction(
         return await handlePrivacy(i, deps);
     }
   } catch (err) {
-    log.error('[command] erro em', i.commandName, err);
+    log.error('[command] error in', i.commandName, err);
     if (!i.isRepliable()) return;
     // localeFor nunca lanca (fallback DEFAULT_LOCALE em falha/db ausente), por isso
     // e seguro no catch — a mensagem de erro nunca fica presa por uma leitura de config.

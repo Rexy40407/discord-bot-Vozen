@@ -2,7 +2,7 @@
 
 > _type it, hear it._
 
-**Last updated:** 2026-07-07
+**Last updated:** 2026-07-15
 
 Vozen is an **open-source**, **self-hosted** Text-to-Speech (TTS) bot for Discord: each instance is run by an independent **operator**. By using a Vozen instance, you agree to these Terms. Because the software is self-hosted, the **instance operator** is responsible for its operation and for compliance with the applicable rules.
 
@@ -40,19 +40,37 @@ To report a problem, abuse, or a violation of these Terms or of the Discord Deve
 
 ---
 
-## 5. No warranty
+## 5. Premium, payments, cancellation, and refunds
+
+The official Vozen instance may offer optional paid features through **Discord Premium Apps** and **Ko-fi**. The purchase channel's own terms also apply. A Ko-fi purchase is a transaction between the buyer and the official instance operator; Ko-fi is the payment platform, not the seller of Vozen's digital service.
+
+- Paid features offered through an external channel must also be available through Discord Premium Apps wherever Discord supports that offering, at a final pre-tax price no higher on Discord than through the external channel.
+- A subscription can be cancelled through the channel where it was purchased. Cancellation stops future renewal; access normally remains available until the end of the paid period, subject to that channel's rules.
+- For a missing, defective, or misdescribed digital service, or to request a refund, contact the [support server](https://discord.gg/V6PZYZmhcQ). Ko-fi refunds are handled by the operator; Discord purchases are also subject to Discord's purchase and refund process.
+- Nothing in these Terms limits mandatory consumer rights. In the EU/EEA, a 14-day withdrawal right may apply to a distance contract. It is lost early only where all legal conditions are met, including any required prior express consent and acknowledgement. Statutory conformity remedies remain unaffected.
+- Price or feature changes do not reduce the benefits already promised for a paid period. Material changes apply prospectively unless a platform's terms or applicable law require otherwise.
+
+Self-hosters who charge for their own instance are the seller and are solely responsible for checkout disclosures, taxes, invoices, cancellations, refunds, and consumer-law compliance.
+
+---
+
+## 6. No warranty
 
 Vozen is provided **"as is"**, without warranties of any kind, express or implied, including (but not limited to) warranties of merchantability, fitness for a particular purpose, availability, or freedom from errors. Being self-hosted, **there is no guarantee of availability (uptime)**, of speech synthesis quality, nor of data preservation — the service depends entirely on the instance each operator runs.
 
 ---
 
-## 6. Limitation of liability
-
-To the maximum extent permitted by law, **the Vozen project authors are not liable** for any direct, indirect, incidental, or consequential damages arising from the use or inability to use the software, nor for content generated, processed, or broadcast by any instance. The **operator of each instance** is solely responsible for how they run it, for the data they process, and for compliance with the laws and terms of third parties (Discord and, where applicable, OpenAI).
+This section does not exclude warranties, remedies, or rights that cannot lawfully be excluded, including mandatory consumer rights.
 
 ---
 
-## 7. Operator responsibility
+## 7. Limitation of liability
+
+To the maximum extent permitted by law, **the Vozen project authors are not liable** for any direct, indirect, incidental, or consequential damages arising from the use or inability to use the software, nor for content generated, processed, or broadcast by any instance. The **operator of each instance** is solely responsible for how they run it, for the data they process, and for compliance with the laws and terms of third parties (Discord and, where applicable, Google or OpenAI). Nothing in this section excludes liability that cannot lawfully be excluded.
+
+---
+
+## 8. Operator responsibility
 
 Whoever runs a Vozen instance (the **operator**) is responsible for:
 
@@ -60,16 +78,17 @@ Whoever runs a Vozen instance (the **operator**) is responsible for:
 - Ensuring the proper handling of the data the instance stores (see [PRIVACY.md](PRIVACY.md)).
 - Complying with the terms of any third parties they enable — in particular those of **Google** if using `TTS_ENGINE=gtts` or `router` (the text to be read is sent to Google Translate TTS), and those of **OpenAI** if using `TTS_ENGINE=neural`.
 - Providing a point of contact and responding to reasonable user requests about their data.
+- If charging users, providing all legally required trader identity, pre-contract, tax, cancellation, refund, and digital-service information before purchase.
 
 ---
 
-## 8. License
+## 9. License
 
 Vozen is free software distributed under the **GNU AGPL-3.0** license (file [`LICENSE`](LICENSE); declared in the `license` field of `package.json`). The use, copying, modification, and distribution of the source code are governed by that license. In particular, the AGPL requires that anyone who **runs a modified version accessible over a network** make the corresponding source code available to users.
 
 ---
 
-## 9. Changes
+## 10. Changes
 
 These Terms may be updated. The version in force is the one present in this repository. Continued use of the bot after changes implies acceptance of the new Terms.
 

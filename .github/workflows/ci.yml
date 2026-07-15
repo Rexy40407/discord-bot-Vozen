@@ -11,9 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 22.x = piso real (o @discordjs/voice exige >=22.12; o VPS corre 22).
-        # 24.x = cobertura forward (a máquina de dev corre 24). O 20.x saiu:
-        # era um alvo que a dependência core já não suporta (EBADENGINE).
+        # 22.x is the supported floor; 24.x provides forward-compatibility coverage.
         node-version: [22.x, 24.x]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -21,19 +19,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-      # sec(031): scripts de install BLOQUEADOS por omissão (--ignore-scripts) — reduz
-      # a superfície de RCE no install de 363 deps (todo o grafo transitivo) para só
-      # as 4 que PRECISAM de correr o próprio script (fetch de binário/prebuild
-      # nativo): better-sqlite3, @discordjs/opus, esbuild, ffmpeg-static. Reconstruídas
-      # a seguir, explicitamente (sodium-native e @snazzah/davey, usado pelo
-      # @discordjs/voice, não têm install script — prebuilds via optionalDependencies —
-      # por isso não entram nesta lista).
+      # Block dependency install scripts by default, then rebuild only the four packages
+      # whose native/binary installation is required by the application.
       - run: npm ci --ignore-scripts
-      # Novo dep nativo? Junta-o aqui E ao passo homólogo em deploy-bot.yml — sem isto
-      # o `require()` falha em runtime com o binário nativo por compilar/descarregar.
+      # Add any future native dependency here and in deploy-bot.yml.
       - run: npm rebuild better-sqlite3 @discordjs/opus esbuild ffmpeg-static
       - run: npm run build
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
-      - run: npx vitest run
+      - run: npm run test:coverage

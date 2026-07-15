@@ -3,7 +3,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createEngine, createPerUserEngine, selectEngine } from '../src/tts/factory';
+import {
+  createEngine,
+  createPerUserEngine,
+  selectEngine,
+  unofficialGttsEnabled,
+} from '../src/tts/factory';
 import { AudioCache } from '../src/tts/cache';
 import { PiperEngine } from '../src/tts/piper';
 import { NeuralEngine } from '../src/tts/neural';
@@ -22,7 +27,6 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     defaultVoice: 'en_US-amy-medium',
     defaultSpeed: 1,
     messageLeadMs: 200,
-    inactivityMs: 300000,
     queueCap: 20,
     maxChars: 300,
     ratePerMin: 5,
@@ -80,10 +84,22 @@ describe('createEngine', () => {
     expect(engine).toBeInstanceOf(NeuralEngine);
   });
 
-  it('neural sem key -> lanca erro claro (fail-fast)', () => {
+  it('neural without a key fails fast with a clear error', () => {
     expect(() =>
       createEngine(baseConfig({ ttsEngine: 'neural', openaiApiKey: undefined }), cache),
-    ).toThrow(/TTS_ENGINE=neural requer OPENAI_API_KEY/);
+    ).toThrow(/TTS_ENGINE=neural requires OPENAI_API_KEY/);
+  });
+});
+
+describe('unofficial Google Translate TTS opt-in', () => {
+  it('is disabled for the safe local default', () => {
+    expect(unofficialGttsEnabled('piper')).toBe(false);
+    expect(unofficialGttsEnabled('neural')).toBe(false);
+  });
+
+  it('is enabled only by the explicit legacy engine modes', () => {
+    expect(unofficialGttsEnabled('gtts')).toBe(true);
+    expect(unofficialGttsEnabled('router')).toBe(true);
   });
 });
 

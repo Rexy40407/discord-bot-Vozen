@@ -38,7 +38,7 @@ export function runShardLauncher(): void {
     // SEM sharding: corre o bot single-process. require PREGUICOSO — importar
     // ./index no topo executaria main() (login no Discord) sempre, inclusive no
     // ramo de sharding, o que NÃO queremos.
-    log.info('[shard] BOT_SHARDS ausente/desativado — a correr single-process (default).');
+    log.info('[shard] BOT_SHARDS is unset or disabled; running as a single process.');
     require('./index');
     return;
   }
@@ -55,12 +55,12 @@ export function runShardLauncher(): void {
   });
 
   manager.on('shardCreate', (shard) => {
-    log.info(`[shard] shard #${shard.id} lancado.`);
+    log.info(`[shard] shard #${shard.id} launched.`);
   });
 
-  log.info(`[shard] sharding ATIVO (totalShards=${totalShards}). A fazer spawn…`);
+  log.info(`[shard] sharding active (totalShards=${totalShards}); spawning...`);
   manager.spawn().catch((err) => {
-    log.error('[shard] falha ao fazer spawn dos shards', err);
+    log.error('[shard] failed to spawn shards', err);
     process.exit(1);
   });
 }

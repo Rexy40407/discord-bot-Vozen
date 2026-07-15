@@ -71,7 +71,7 @@ export class TranscriptionSession {
       );
       await Promise.allSettled(pending);
     } catch (err) {
-      log.warn(`[stt] captura falhou (user ${userId}):`, err);
+      log.warn(`[stt] capture failed (user ${userId}):`, err);
     } finally {
       this.active.delete(userId);
     }
@@ -95,7 +95,7 @@ export class TranscriptionSession {
         await this.deps.post(formatTranscript(this.deps.displayName(userId), text));
       }
     } catch (err) {
-      log.warn(`[stt] transcrição falhou (user ${userId}):`, err);
+      log.warn(`[stt] transcription failed (user ${userId}):`, err);
     } finally {
       try {
         rmSync(out, { force: true });

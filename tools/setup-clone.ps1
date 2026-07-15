@@ -20,7 +20,9 @@ Write-Host "Python base: $($basePy -join ' ')"
 # 2) venv
 if (-not (Test-Path $py)) {
   Write-Host "A criar venv em $venv ..."
-  & $basePy[0] $basePy[1..($basePy.Count-1)] -m venv $venv
+  $pyArgs = @()
+  if ($basePy.Count -gt 1) { $pyArgs = $basePy[1..($basePy.Count - 1)] }
+  & $basePy[0] @pyArgs -m venv $venv
 }
 
 # 3) deps (torch CUDA 12.4 para a RTX 4070 + chatterbox + pillow p/ og-image)

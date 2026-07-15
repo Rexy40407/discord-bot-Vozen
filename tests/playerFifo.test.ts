@@ -69,7 +69,7 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     };
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     // Tres say() CONCORRENTES, por ordem de chamada: primeiro, segundo, terceiro.
     // NAO se faz await individual — disparam-se quase em simultaneo, como mensagens
@@ -121,7 +121,7 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     process.on('unhandledRejection', onUnhandled);
 
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await Promise.all([
       player.say({ text: 'falha', model: 'm', speed: 1 }),
@@ -158,7 +158,7 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     const synth = vi.fn((req: SynthRequest) => Promise.resolve(req.text));
     const engine: TTSEngine = { synth };
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await Promise.all([
       player.say({ text: 'normal', model: 'm', speed: 1 }),
@@ -187,7 +187,7 @@ describe('GuildVoicePlayer FIFO (synth no worker)', () => {
     (globalThis as Record<string, unknown>).__playOrder = [];
     const engine: TTSEngine = { synth: (req: SynthRequest) => Promise.resolve(req.text) };
     const conn = makeConnection() as any;
-    const player = new GuildVoicePlayer(conn, engine, 20, 60_000, () => {});
+    const player = new GuildVoicePlayer(conn, engine, 20, () => {});
 
     await Promise.all([
       player.say({ text: '', model: 'm', speed: 1, assetPath: '/nao/existe/rizz.wav' }),

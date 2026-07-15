@@ -13,7 +13,6 @@ export interface AppConfig {
   dbPath: string;
   defaultVoice: string;
   defaultSpeed: number;
-  inactivityMs: number;
   /** Silêncio (ms) PREPENDido a cada mensagem lida — o bot só começa a falar depois. */
   messageLeadMs: number;
   queueCap: number;
@@ -161,7 +160,7 @@ function numEnvPositive(name: string, fallback: number, opts: { integer?: boolea
     !Number.isFinite(parsed) || parsed <= 0 || (opts.integer && !Number.isInteger(parsed));
   if (bad) {
     log.warn(
-      `[config] ${name}="${raw}" invalido (esperado ${opts.integer ? 'inteiro ' : ''}> 0). A usar o default ${fallback}.`,
+      `[config] ${name}="${raw}" is invalid (expected ${opts.integer ? 'an integer ' : ''}> 0). Using default ${fallback}.`,
     );
     return fallback;
   }
@@ -219,7 +218,7 @@ function engineEnv(): TtsEngineKind {
   if (value === 'piper' || value === 'neural' || value === 'gtts' || value === 'router')
     return value;
   log.warn(
-    `[config] TTS_ENGINE invalido: "${raw}". Valores aceites: piper | neural | gtts | router. A usar 'piper'.`,
+    `[config] invalid TTS_ENGINE "${raw}"; accepted values are piper, neural, gtts, and router. Falling back to piper.`,
   );
   return 'piper';
 }
@@ -270,7 +269,7 @@ export function validateConfigEnv(env: Record<string, string | undefined>): Conf
     findings.push({
       level: 'warn',
       message:
-        '[config] TOPGG_WEBHOOK_PORT está definido junto com um TOPGG_WEBHOOK_SECRET não-vazio — o listener dedicado é redundante com a rota partilhada /webhook/topgg na API pública; considera remover TOPGG_WEBHOOK_PORT.',
+        '[config] TOPGG_WEBHOOK_PORT is set with a non-empty TOPGG_WEBHOOK_SECRET; the dedicated listener duplicates the shared public /webhook/topgg route, so consider removing TOPGG_WEBHOOK_PORT.',
     });
   }
 
@@ -290,7 +289,6 @@ export function loadConfig(): AppConfig {
     dbPath: strEnv('DB_PATH', './tts.db'),
     defaultVoice: strEnv('DEFAULT_VOICE', 'en_US-amy-medium'),
     defaultSpeed: numEnvPositive('DEFAULT_SPEED', 1), // > 0 (fracionario ok: 0.5–2.0)
-    inactivityMs: numEnv('INACTIVITY_MS', 1_500_000), // 25 min sem atividade -> sai do canal
     messageLeadMs: numEnv('MESSAGE_LEAD_MS', 200), // 0.20s (0 = sem espera, por isso NÃO exige > 0)
     queueCap: numEnvPositive('QUEUE_CAP', 20, { integer: true }),
     maxChars: numEnvPositive('MAX_CHARS', 300, { integer: true }),

@@ -116,7 +116,6 @@ Edit `.env`:
 | `DB_PATH`       | SQLite path, e.g. `./tts.db`                                  |
 | `DEFAULT_VOICE` | Name of a model present in `models/`, e.g. `en_US-amy-medium` |
 | `DEFAULT_SPEED` | Base speed, e.g. `1.0`                                        |
-| `INACTIVITY_MS` | Auto-leave on inactivity in ms, e.g. `300000` (5 min)         |
 | `QUEUE_CAP`     | Maximum queue size, e.g. `20`                                 |
 | `MAX_CHARS`     | Max characters per message, e.g. `300`                        |
 | `RATE_PER_MIN`  | Messages per minute per user, e.g. `5`                        |
@@ -252,7 +251,7 @@ With autoread on, type each of these and confirm the behavior you hear:
 ### 3.12 Reliability — reconnection and inactivity
 
 - [ ] With the bot playing, **force-disconnect it**: right-click the bot in the voice channel → **Disconnect** (or move it to another channel). Expected: the bot **reconnects automatically** to the channel and resumes, without crashing.
-- [ ] Leave the bot silent (no reads) for longer than `INACTIVITY_MS`. Expected: the bot leaves the voice channel on its own due to inactivity.
+- [ ] Leave the bot alone in a voice channel with no human members. Expected: it leaves automatically unless Premium 24/7 mode is enabled.
 - [ ] Throughout the whole session: confirm in the terminal that there was **no crash** (no stack trace killing the process). Occasional errors should be caught and logged, but the bot stays alive.
 
 ---
@@ -318,12 +317,11 @@ Fill in **only** the secrets and tunables — do **not** set `DB_PATH`, `MODELS_
 | `CLIENT_ID`      | **Yes**                     | Application ID (Dev Portal → General Information)       |
 | `DEFAULT_VOICE`  | No                          | Model present in `./models/`, e.g. `en_US-amy-medium`   |
 | `DEFAULT_SPEED`  | No                          | Base speed (default `1.0`)                              |
-| `INACTIVITY_MS`  | No                          | Auto-leave on inactivity in ms (default `300000`)       |
 | `QUEUE_CAP`      | No                          | Maximum queue size (default `20`)                       |
 | `MAX_CHARS`      | No                          | Max characters per message (default `300`)              |
 | `RATE_PER_MIN`   | No                          | Messages per minute per user (default `5`)              |
 | `LOG_LEVEL`      | No                          | `debug` \| `info` \| `warn` \| `error` (default `info`) |
-| `TTS_ENGINE`     | No                          | `piper` (default) or `neural`                           |
+| `TTS_ENGINE`     | No                          | `piper` (default), `neural`, or legacy `gtts`/`router`  |
 | `OPENAI_API_KEY` | Only if `TTS_ENGINE=neural` | OpenAI API key                                          |
 
 ### 5.5 Startup
@@ -348,7 +346,12 @@ docker compose down            # stops and removes the container (data persists 
 
 ## 6. Privacy and Terms
 
-- [**Privacy Policy** (`PRIVACY.md`)](PRIVACY.md) — what data the instance stores (only Discord IDs + preferences/config), what happens to message content, retention and deletion, and third parties (Discord; **Google Translate TTS** if `TTS_ENGINE=gtts`/`router`; OpenAI if `TTS_ENGINE=neural`).
+- [**Privacy Policy** (`PRIVACY.md`)](PRIVACY.md) — what identifiers, preferences, consent, usage, and payment records the instance stores; what happens to message content; retention and deletion; and third parties (Discord; **Google Translate TTS** if `TTS_ENGINE=gtts`/`router`; OpenAI if `TTS_ENGINE=neural`).
+
+> `gtts` and `router` call an unofficial Google Translate endpoint and are retained only
+> as explicit legacy/self-hosting options. The supported local default is Piper; use an
+> official provider API when a production deployment requires contractual API support.
+
 - [**Terms of Service** (`TERMS.md`)](TERMS.md) — acceptable use, absence of warranties, limitation of liability and license (AGPL-3.0).
 
 > **Note for Discord registration/verification.** The Discord Developer Portal asks for a **Privacy Policy URL** and a **Terms of Service URL** (e.g. for _Public Bot_ / verification). When this repository is **public**, the URLs to paste into those fields are the files here in the repo:

@@ -71,7 +71,7 @@
         the moment it is spoken.
       </p>
       <ul>
-        <li><b>Your preferences</b> — your chosen voice and engine, speaking speed, an optional voice effect, your language-detection setting, personal abbreviations, and a phonetic nickname (how you want your name pronounced out loud).</li>
+        <li><b>Your preferences</b> — your chosen voice and engine, speaking speed, an optional voice effect, personal abbreviations, and a phonetic nickname (how you want your name pronounced out loud).</li>
         <li><b>Server settings</b> — set by server admins: the TTS channel, auto-read on/off, default voice, character/rate limits, language, greeting options, a word blocklist, and pronunciation overrides.</li>
         <li><b>Opt-out list</b> — if you ask Vozen not to read your messages, we store that choice.</li>
         <li><b>Fun stats</b> — minigame scores (points and wins) and "top speaker" counts (how many of your messages were read aloud, plus daily streaks). These power the <code>/topspeakers</code> and <code>/game</code> leaderboards.</li>
@@ -90,7 +90,7 @@
       <h2>4. What we do NOT store</h2>
       <ul>
         <li>We do <b>not</b> keep a history or log of your chat messages. Text is turned into speech on the fly and then discarded.</li>
-        <li>To speed up repeated phrases, recently synthesized audio may be cached briefly on the server. This cache is keyed by a hash of the text, is not tied to your identity, and rotates out over time.</li>
+        <li>To speed up repeated phrases, recently synthesized audio may be cached on the server. It is keyed by a content hash rather than your user ID, rotates out under a bounded cache policy, and can still reveal the spoken content to someone with server-file access.</li>
         <li>Outside of a transcription session you consented to, the bot stays deafened and does not listen to or store voice-channel audio.</li>
         <li>We do <b>not</b> keep web access logs that tie your IP address to your activity. Our API (<code>api.vozen.org</code>) uses your IP only <b>momentarily</b>, in memory, for rate-limiting and security — it is never written to our logs. (This website is served by GitHub Pages, whose standard host logs are outside our control; see §8.)</li>
       </ul>
@@ -139,7 +139,7 @@
       <h2>8. Who we share data with</h2>
       <p>We do <b>not</b> sell your data or share it with data brokers or ad networks. We use a small number of providers to run the service:</p>
       <ul>
-        <li><b>Google</b> — the official service uses Google voices, so the <b>text to be spoken</b> is sent to Google to generate the audio (never your user ID or message history). Subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
+        <li><b>Speech providers</b> — local Piper voices do not send text to a third party. If a Google voice is selected or enabled by the operator, the <b>text to be spoken</b> is sent to Google to generate audio (never your user ID or message history), subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
         <li><b>Discord</b> — the platform the bot runs on; all bot activity is processed under <a href="https://discord.com/privacy" target="_blank" rel="noopener">Discord's Privacy Policy</a>.</li>
         <li><b>Ko-fi</b> — processes Premium payments; its receipt includes your email, of which we keep only a one-way hash (see §2).</li>
         <li><b>top.gg</b> — we publish only the <b>server count</b> (a single number), never any personal data.</li>
@@ -150,8 +150,8 @@
       <h2>9. Where your data is processed (international transfers)</h2>
       <ul>
         <li><b>The bot's database and processing</b> run on a server in <b>Germany (EU)</b> (Hetzner) — no international transfer.</li>
-        <li><b>This website</b> is hosted by <b>GitHub Pages</b> in the <b>United States</b>, relying on the EU–US Data Privacy Framework and Standard Contractual Clauses for the transfer.</li>
-        <li><b>Google voices</b>: text you have read aloud with a Google voice is processed by <b>Google in the United States</b>, under the EU–US Data Privacy Framework.</li>
+        <li><b>This website</b> is hosted by <b>GitHub Pages</b>, whose infrastructure may process requests outside the EEA. Transfers rely on an applicable adequacy decision where available and otherwise on appropriate safeguards such as Standard Contractual Clauses.</li>
+        <li><b>Google voices</b>: text read with a Google voice may be processed outside the EEA. Transfers rely on the provider's applicable transfer mechanism, such as an adequacy framework where certified or Standard Contractual Clauses.</li>
       </ul>
 
       <h2>10. How long we keep it</h2>
@@ -161,7 +161,7 @@
         <li><b>Audio cache</b> — rotates automatically (about 500 files per engine, oldest first); not tied to you.</li>
         <li><b>HD-voice usage counter</b> — auto-purged after about 3 months.</li>
         <li><b>An unclaimed Ko-fi purchase</b> — auto-purged after 90 days.</li>
-        <li><b>Premium / payment records</b> (including the hashed Ko-fi email) — kept while your subscription is active and afterwards as financial records.</li>
+        <li><b>Premium / payment records</b> (including the hashed Ko-fi email) — kept while needed for an active entitlement and afterwards only for accounting, fraud prevention, disputes, and legal obligations; deleted or anonymized when no longer necessary.</li>
         <li><b>Website login</b> — your token lives only in your browser session; the ~60-second server-side cache is discarded immediately.</li>
       </ul>
 
@@ -177,9 +177,16 @@
         <li><b>Complaint</b> — you can lodge a complaint with your local EU/EEA data protection authority. The operator's authority is Portugal's <b>CNPD</b> (<a href="https://www.cnpd.pt" target="_blank" rel="noopener">cnpd.pt</a>).</li>
       </ul>
       <p>
-        Your <b>paid Premium and its purchase history are intentionally kept</b> even after an
-        erasure request — they belong to you and to legally-required financial records; to stop
-        Premium, let it expire or contact us.
+        An active entitlement and the minimum purchase records needed for accounting, fraud
+        prevention, disputes, or law may be retained despite an erasure request. They are
+        restricted to those purposes and deleted or anonymized when no longer necessary.
+      </p>
+      <p>
+        Where a US state privacy law applies, residents may also request access, correction,
+        deletion, or a portable copy and may appeal a refusal through the support server.
+        Vozen does not sell personal data, share it for cross-context behavioural advertising,
+        run targeted advertising, or discriminate against anyone for exercising a privacy right.
+        An authorised agent may submit a request where local law permits, subject to verification.
       </p>
 
       <h2>12. Automated decisions</h2>
@@ -189,7 +196,10 @@
       <p>
         Vozen is not directed at children. You must be at least <b>13 years old</b> (or the
         higher minimum age required by the laws of your country) to use Discord and, by
-        extension, Vozen. We do not knowingly collect data from anyone under that age.
+        extension, Vozen. We do not knowingly collect data from anyone under that age. If we
+        learn that an underage child supplied personal data, we will stop the relevant processing
+        and delete it unless retention is legally required. A parent or guardian can contact us
+        through the support server.
       </p>
 
       <h2>14. Changes</h2>

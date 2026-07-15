@@ -90,7 +90,7 @@ export function bindGatewayWatch(deps: GatewayWatchDeps): { stop: () => void } {
   );
   client.on(Events.ShardReady, (id) => logInfo(`[gateway] shard ${id} pronto.`));
   client.on(Events.ShardError, (err, id) => {
-    logError(`[gateway] erro no shard ${id}`, err);
+    logError(`[gateway] shard ${id} error`, err);
     reportError(err, 'shardError');
   });
   client.on(Events.Warn, (m) => logWarn(`[gateway] aviso: ${m}`));
@@ -118,7 +118,7 @@ export function bindGatewayWatch(deps: GatewayWatchDeps): { stop: () => void } {
     );
     if (decision.shouldRestart) {
       logError(
-        '[gateway] gateway em baixo além do limite — a SAIR para o supervisor reiniciar limpo.',
+        '[gateway] gateway remained unavailable beyond the limit; exiting for a clean supervisor restart.',
       );
       exit();
     }

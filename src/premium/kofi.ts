@@ -96,7 +96,7 @@ export function verifyKofiToken(event: KofiEvent, expected: string | undefined):
 }
 
 /**
- * Chave OPACA para o email do comprador do Ko-fi: HMAC-SHA256(token, email normalizado).
+ * Opaque key for the Ko-fi buyer email: HMAC-SHA256(token, normalized email).
  * Guardamos ISTO na BD (tabela kofi_supporter) em vez do email em claro — minimização de
  * PII. As renovações reenviam o email → hasheia-se e casa com o hash guardado, por isso a
  * associação email→Discord ID continua a funcionar sem nunca reter o email. O token do

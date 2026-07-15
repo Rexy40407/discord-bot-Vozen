@@ -117,7 +117,7 @@ describe('GuildVoicePlayer — cross-player-kill (player morto nao derruba o sub
 
     const connA = makeConnection() as any;
     connA.destroy = vi.fn();
-    const playerA = new GuildVoicePlayer(connA, engine, 20, 60_000, onIdleA);
+    const playerA = new GuildVoicePlayer(connA, engine, 20, onIdleA);
     players.set(GUILD, playerA);
 
     // B — o substituto instalado pelo /join. So precisamos de espiar o seu destroy.

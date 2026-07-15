@@ -7,6 +7,20 @@ $py = Join-Path $venv "Scripts\python.exe"
 $model = Join-Path $PSScriptRoot "kokoro-v1.0.onnx"
 $voices = Join-Path $PSScriptRoot "voices-v1.0.bin"
 $rel = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0"
+$modelSha256 = "7D5DF8ECF7D4B1878015A32686053FD0EEBE2BC377234608764CC0EF3636A6C5"
+$voicesSha256 = "BCA610B8308E8D99F32E6FE4197E7EC01679264EFED0CAC9140FE9C29F1FBF7D"
+
+function Assert-FileSha256 {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [Parameter(Mandatory = $true)][string]$Expected
+  )
+  $actual = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
+  if ($actual -ne $Expected) {
+    Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+    throw "SHA-256 mismatch for $Path (download removed). Expected $Expected, got $actual."
+  }
+}
 
 # 1) Python: o onnxruntime ainda nao tem wheels p/ 3.14 — preferir 3.12/3.11/3.13.
 $basePy = $null
@@ -56,6 +70,8 @@ if (-not (Test-Path $voices)) {
   Write-Host "A descarregar voices-v1.0.bin (~27MB) ..."
   Invoke-WebRequest -Uri "$rel/voices-v1.0.bin" -OutFile $voices
 }
+Assert-FileSha256 -Path $model -Expected $modelSha256
+Assert-FileSha256 -Path $voices -Expected $voicesSha256
 
 # 5) verificacao
 & $py -c "import onnxruntime, kokoro_onnx; print('kokoro-onnx OK')"

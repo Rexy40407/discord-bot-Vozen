@@ -243,7 +243,7 @@ export function pcmToWavFile(
 ): Promise<string> {
   const ff = (deps.ffmpegPath ?? (ffmpegStatic as unknown as string | null)) as string | null;
   const spawnImpl = deps.spawnImpl ?? spawn;
-  if (!ff) return Promise.reject(new Error('recorder: ffmpeg-static não encontrado'));
+  if (!ff) return Promise.reject(new Error('recorder: ffmpeg-static not found'));
 
   const workDir = mkdtempSync(join(tmpdir(), 'vozen-rec-'));
   const rawPath = join(workDir, 'in.raw');

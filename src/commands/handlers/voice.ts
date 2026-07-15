@@ -169,9 +169,9 @@ async function handleVoiceClone(
   const connection = getVoiceConnection(i.guildId!);
   const botChannelId = i.guild?.members.me?.voice?.channelId ?? null;
   await i.deferReply({ flags: MessageFlags.Ephemeral });
-  // A presença do ALVO no canal do bot é o que importa (é a voz dele que gravamos).
-  const targetMember = await i.guild?.members.fetch(targetId).catch(() => null);
-  const targetChannelId = targetMember?.voice?.channelId ?? null;
+  // Voice-state events already provide the only fact needed here. Avoiding a member
+  // fetch lets the bot operate without the privileged GuildMembers gateway intent.
+  const targetChannelId = i.guild?.voiceStates.cache.get(targetId)?.channelId ?? null;
   if (!connection || !botChannelId) {
     await i.editReply({ content: t('clone.notInVoice', locale) });
     return;
@@ -368,7 +368,7 @@ async function handleVoiceClone(
       components: [],
     });
   } catch (err) {
-    log.error('[clone] gravação falhou:', err);
+    log.error('[clone] recording failed:', err);
     await i.editReply({ content: t('clone.failed', locale), components: [] }).catch(() => {});
   } finally {
     collectorHandle?.stop('finally');

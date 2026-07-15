@@ -20,7 +20,7 @@ async function main(): Promise<void> {
   const rest = new REST({ version: '10' }).setToken(cfg.token);
   const guilds = (await rest.get(Routes.userGuilds())) as { id: string; name: string }[];
   if (!guilds.length) {
-    console.error('O bot não está em nenhum servidor — convida-o primeiro.');
+    console.error('The bot is not in any server. Invite it first.');
     process.exit(1);
   }
   for (const g of guilds) {
@@ -32,10 +32,10 @@ async function main(): Promise<void> {
         : `✅ ${commandDefs.length} comandos registados em "${g.name}" (${g.id}) — já aparecem (DUPLICADOS com os globais até correres --clear).`,
     );
   }
-  console.log('\nRecarrega o Discord (Ctrl+R) se não vires a mudança logo.');
+  console.log('\nReload Discord (Ctrl+R) if the change is not immediately visible.');
 }
 
 main().catch((err) => {
-  console.error('Falha a registar por-servidor:', err);
+  console.error('Failed to register guild commands:', err);
   process.exit(1);
 });

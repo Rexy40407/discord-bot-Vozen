@@ -73,7 +73,7 @@ class HeadsOrTailsGame implements Game {
     ctx.after(2_500, () => this.nextRound(ctx));
   }
 
-  onMessage(ctx: GameContext, msg: GameMessage): void {
+  onMessage(_ctx: GameContext, msg: GameMessage): void {
     if (!this.open) return;
     const w = msg.content.trim().toLowerCase();
     const side: Side | null = HEADS_WORDS.has(w) ? 'heads' : TAILS_WORDS.has(w) ? 'tails' : null;

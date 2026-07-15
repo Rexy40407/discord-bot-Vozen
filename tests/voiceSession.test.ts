@@ -26,13 +26,7 @@ vi.mock('../src/voice/player', () => ({
   GuildVoicePlayer: class {
     onIdle: () => void;
     destroy = vi.fn();
-    constructor(
-      _conn: unknown,
-      _engine: unknown,
-      _cap: number,
-      _idleMs: number,
-      onIdle: () => void,
-    ) {
+    constructor(_conn: unknown, _engine: unknown, _cap: number, onIdle: () => void) {
       this.onIdle = onIdle;
       captured.players.push(
         this as unknown as { onIdle: () => void; destroy: ReturnType<typeof vi.fn> },
@@ -48,7 +42,7 @@ function makeDeps(): BotDeps {
   return {
     players: new Map(),
     engine: {},
-    config: { queueCap: 20, inactivityMs: 1000 },
+    config: { queueCap: 20 },
   } as unknown as BotDeps;
 }
 

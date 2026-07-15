@@ -1,10 +1,8 @@
 // src/premium/entitlementSync.ts
 //
-// Liga os entitlements (Premium Apps) do Discord ao premium interno. INERTE quando não
-// há SKUs configurados. Faz um FETCH TOTAL dos entitlements ativos e reconcilia com as
-// tabelas premium_* (concede ativos, revoga cancelados) — no arranque e a cada evento
-// de entitlement. Fetch-total-por-evento é simples e seguro (entitlements são de baixo
-// volume) e evita reconciliação incremental frágil.
+// Connects Discord Premium App entitlements to Vozen's internal Premium records. The
+// subsystem is inert without configured SKUs. Every refresh fetches the complete active
+// set so cancellation and refund reconciliation cannot drift.
 
 import { type Client, Events } from 'discord.js';
 import type Database from 'better-sqlite3';
@@ -17,7 +15,7 @@ import {
 } from './entitlements';
 import { syncDiscordEntitlements } from '../store/premium';
 
-/** Tamanho de página do endpoint /entitlements do Discord (máximo aceite). */
+/** Maximum accepted page size for Discord's entitlements endpoint. */
 const ENTITLEMENT_PAGE = 100;
 
 export interface EntitlementSyncDeps {
@@ -29,25 +27,20 @@ export interface EntitlementSyncDeps {
   logError: (msg: string, err: unknown) => void;
 }
 
-/**
- * Arranca a sincronização de entitlements. No-op (e diz porquê) se não houver SKUs
- * configurados. Deve ser chamado quando o client já está pronto (ClientReady), porque
- * usa client.application.
- */
+/** Starts entitlement synchronization after the Discord client is ready. */
 export function startEntitlementSync(deps: EntitlementSyncDeps): void {
   const { client, db, sku, now, logInfo, logError } = deps;
   if (!entitlementsEnabled(sku)) {
-    logInfo('[premium] Premium Apps do Discord inativos (sem PREMIUM_*_SKU_ID) — só /redeem.');
+    logInfo('[premium] Discord Premium Apps inactive: no PREMIUM_*_SKU_ID configured.');
     return;
   }
 
-  const refresh = async (): Promise<void> => {
+  const refreshOnce = async (): Promise<void> => {
     try {
       const app = client.application;
       if (!app) return;
-      // PAGINAÇÃO OBRIGATÓRIA: o /entitlements devolve ≤100 por chamada e NÃO auto-pagina.
-      // A reconciliação apaga o premium 'discord' ausente da lista, por isso a lista tem de
-      // ser COMPLETA — senão, com >100 subscrições, revogaríamos clientes pagantes.
+      // Pagination is mandatory. Reconciliation removes Discord grants missing from the
+      // fetched set, so a partial first page could incorrectly revoke paying customers.
       const list = await collectPaged<EntitlementLike & { id: string }>(async (after) => {
         const page = await app.entitlements.fetch({ limit: ENTITLEMENT_PAGE, after });
         return [...page.values()].map((e) => ({
@@ -62,14 +55,34 @@ export function startEntitlementSync(deps: EntitlementSyncDeps): void {
       const grants = activeEntitlementGrants(list, sku, now());
       const res = syncDiscordEntitlements(db, grants);
       logInfo(
-        `[premium] entitlements sincronizados: ${res.guildsActive} servidor(es), ${res.usersActive} utilizador(es) ativos; ${res.revoked} revogado(s).`,
+        `[premium] entitlements synchronized: ${res.guildsActive} guild(s), ${res.usersActive} active user(s), ${res.revoked} revoked.`,
       );
     } catch (err) {
-      logError('[premium] falha ao sincronizar entitlements (ignorado)', err);
+      logError('[premium] entitlement synchronization failed; keeping the previous state', err);
     }
   };
 
-  // Reconcilia agora e a cada mudança de entitlement (compra/renovação/reembolso).
+  // Coalesce events while a refresh is running. Without this single-flight guard, a slow
+  // older response could finish after a newer one and revoke a just-created entitlement.
+  let activeRefresh: Promise<void> | undefined;
+  let refreshQueued = false;
+  const refresh = (): Promise<void> => {
+    if (activeRefresh) {
+      refreshQueued = true;
+      return activeRefresh;
+    }
+    activeRefresh = (async () => {
+      do {
+        refreshQueued = false;
+        await refreshOnce();
+      } while (refreshQueued);
+    })().finally(() => {
+      activeRefresh = undefined;
+    });
+    return activeRefresh;
+  };
+
+  // Reconcile immediately and after purchases, renewals, cancellations, and refunds.
   void refresh();
   client.on(Events.EntitlementCreate, () => void refresh());
   client.on(Events.EntitlementUpdate, () => void refresh());

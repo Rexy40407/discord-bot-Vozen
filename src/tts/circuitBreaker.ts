@@ -70,12 +70,12 @@ export class CircuitBreakerEngine implements TTSEngine {
         this.openUntil = this.now() + this.opts.cooldownMs;
         this.failures = 0;
         log.warn(
-          `[breaker] '${this.label}' ABERTO por ${this.opts.cooldownMs}ms (${halfOpen ? 'sondagem falhou' : `${this.opts.threshold} falhas`}) — a servir o fallback`,
+          `[breaker] '${this.label}' OPEN for ${this.opts.cooldownMs}ms (${halfOpen ? 'probe failed' : `${this.opts.threshold} failures`}); serving the fallback`,
         );
         this.opts.onOpen?.();
       } else {
         log.warn(
-          `[breaker] '${this.label}' falhou (${this.failures}/${this.opts.threshold}): ${(err as Error).message}`,
+          `[breaker] '${this.label}' failed (${this.failures}/${this.opts.threshold}): ${(err as Error).message}`,
         );
       }
       // Degradação graciosa: usa o fallback para ESTA mensagem também (não a deixa muda).
