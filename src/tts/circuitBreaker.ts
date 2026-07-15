@@ -34,6 +34,7 @@ export interface CircuitBreakerOpts {
 export class CircuitBreakerEngine implements TTSEngine {
   private failures = 0;
   private openUntil = 0;
+  private probing = false; // MEIO-ABERTO: há uma sondagem do primary em curso?
   private readonly now: () => number;
   private readonly label: string;
 
@@ -60,6 +61,15 @@ export class CircuitBreakerEngine implements TTSEngine {
     // uma ÚNICA falha da sondagem reabre já (não espera juntar `threshold` outra vez —
     // senão cada expiração de cooldown re-provocava N stalls de 15s numa outage longa).
     const halfOpen = this.openUntil > 0;
+    // MEIO-ABERTO: deixa passar UMA sondagem de cada vez. Sem este latch, todos os pedidos
+    // que chegam na janela após o cooldown expirar (e antes de a sondagem de ~15s resolver)
+    // sondavam o primary em paralelo — N stalls de 15s por cooldown numa outage longa. Os
+    // concorrentes servem o fallback diretamente; o latch é posto antes do await e limpo
+    // no finally.
+    if (halfOpen && this.probing) {
+      return this.fallback.synth(req);
+    }
+    if (halfOpen) this.probing = true;
     try {
       const out = await this.primary.synth(req);
       this.failures = 0; // sucesso -> FECHA e reseta
@@ -80,6 +90,8 @@ export class CircuitBreakerEngine implements TTSEngine {
       }
       // Degradação graciosa: usa o fallback para ESTA mensagem também (não a deixa muda).
       return this.fallback.synth(req);
+    } finally {
+      if (halfOpen) this.probing = false;
     }
   }
 }

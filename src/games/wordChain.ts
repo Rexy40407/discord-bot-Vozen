@@ -71,6 +71,7 @@ class WordChainGame implements Game {
   private readonly lives = new Map<string, number>();
   private idx = 0; // índice do jogador atual em `order`
   private turnGen = 0; // geração do turno: um timer de turno obsoleto (gen != atual) é no-op
+  private busy = false; // reentrancy latch: one guess is in flight (set before the first await)
 
   constructor(opts?: GameStartOptions) {
     this.lang = resolveLang(opts?.language);
@@ -97,7 +98,18 @@ class WordChainGame implements Game {
     if (this.phase !== 'playing') return;
     // Só a mensagem do jogador ATUAL conta; espectadores são ignorados (turnos limpos).
     if (msg.authorId !== this.order[this.idx]) return;
-    await this.handleGuess(ctx, msg);
+    // Reentrancy guard: onMessage is dispatched fire-and-forget (manager does not await it),
+    // so a same-player message can arrive while a prior handleGuess is suspended at
+    // `await ctx.send`, before `idx` advances — letting the current player play twice and
+    // skip the next. The latch is set synchronously before any await, so the second
+    // dispatch sees it and is dropped. Cleared in finally.
+    if (this.busy) return;
+    this.busy = true;
+    try {
+      await this.handleGuess(ctx, msg);
+    } finally {
+      this.busy = false;
+    }
   }
 
   private join(msg: GameMessage): void {

@@ -61,6 +61,25 @@ class ChessGame implements Game {
     const looksLikeMove = isResign || RE_COORD.test(content) || RE_SAN.test(content);
     if (!looksLikeMove) return; // conversa normal no canal -> ignora, nao e jogada
 
+    // Resign concedes to the OPPONENT, so it only makes sense from a player who is already
+    // seated in a game that has both seats filled. Crucially it must NOT itself seat anyone:
+    // otherwise typing "resign" as the very first message takes White and then ends the game
+    // with no opponent to award and no announcement (silent teardown). Handle it before seat
+    // assignment and ignore it until there is a real game to concede.
+    if (isResign) {
+      const seat = this.colorOf(msg.authorId);
+      if (!seat || !this.whiteId || !this.blackId) return;
+      this.over = true;
+      const winnerId = seat === 'w' ? this.blackId : this.whiteId;
+      ctx.award(winnerId, 3);
+      void ctx.send(
+        ctx.t('game.chess.resigned', { user: msg.authorName, winner: this.names[winnerId] }),
+      );
+      announceWinner(ctx, this.names[winnerId]);
+      ctx.end();
+      return;
+    }
+
     this.names[msg.authorId] = msg.authorName;
 
     // Atribuicao de assentos: 1o a tentar -> brancas; 2o DISTINTO -> pretas; resto = espetador.
@@ -84,20 +103,6 @@ class ChessGame implements Game {
           color: this.colorName(ctx, this.chess.turn()),
         }),
       );
-      return;
-    }
-
-    if (isResign) {
-      this.over = true;
-      const winnerId = color === 'w' ? this.blackId : this.whiteId;
-      if (winnerId) {
-        ctx.award(winnerId, 3);
-        void ctx.send(
-          ctx.t('game.chess.resigned', { user: msg.authorName, winner: this.names[winnerId] }),
-        );
-        announceWinner(ctx, this.names[winnerId]);
-      }
-      ctx.end();
       return;
     }
 

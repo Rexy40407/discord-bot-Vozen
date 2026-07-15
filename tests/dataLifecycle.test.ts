@@ -19,6 +19,7 @@ import {
   LIFECYCLE_REVIEWED_EXEMPT,
 } from '../src/store/dataLifecycle';
 import { purgeOldGcloudUsage } from '../src/store/gcloudUsage';
+import { getUserPronunciations } from '../src/store/pronunciation';
 
 function count(db: Database.Database, table: string, col: string, id: string): number {
   return (
@@ -102,6 +103,25 @@ describe('purgeGuild', () => {
 });
 
 describe('eraseUser', () => {
+  it('invalida o cache de pronunciation_user (senão serve pronúncias apagadas após o erase)', () => {
+    const db = initDb(':memory:');
+    try {
+      db.prepare('INSERT INTO pronunciation_user (user_id, term, replacement) VALUES (?,?,?)').run(
+        'U',
+        'nginx',
+        'engine x',
+      );
+      // Popula o cache em memória (chave `pronunciation_user`).
+      expect(getUserPronunciations(db, 'U')).toHaveLength(1);
+      // O erase apaga as linhas E tem de invalidar o cache do utilizador.
+      eraseUser(db, 'U');
+      // Sem o fix, isto devolve a entrada em cache (dado apagado a persistir — falha RGPD).
+      expect(getUserPronunciations(db, 'U')).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
   it('apaga os dados pessoais do utilizador em TODOS os servidores, retém o financeiro, devolve os WAVs', () => {
     const db = initDb(':memory:');
     try {

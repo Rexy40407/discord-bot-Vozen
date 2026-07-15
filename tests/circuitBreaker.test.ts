@@ -96,6 +96,21 @@ describe('CircuitBreakerEngine — cooldown do gTTS', () => {
     expect(primary.calls.n).toBe(4); // uma sondagem
   });
 
+  it('MEIO-ABERTO: pedidos concorrentes só sondam o primary UMA vez (resto vai ao fallback)', async () => {
+    const { breaker, primary, fallback, advance } = make(3, 60_000);
+    primary.setFail(true);
+    for (let i = 0; i < 3; i++) await breaker.synth(REQ); // abre
+    advance(60_000); // cooldown expira -> meio-aberto
+    primary.calls.n = 0;
+    fallback.calls.n = 0;
+    // Google ainda em baixo. 5 pedidos concorrentes chegam antes de a 1.ª sondagem
+    // resolver: só UM deve tocar no primary; os outros 4 vão direto ao fallback.
+    const results = await Promise.all(Array.from({ length: 5 }, () => breaker.synth(REQ)));
+    expect(primary.calls.n).toBe(1); // uma única sondagem, não 5 stalls
+    expect(results.every((r) => r === '/piper.wav')).toBe(true); // todos serviram fallback
+    expect(breaker.isOpen()).toBe(true); // a sondagem falhou -> reabriu
+  });
+
   it('um sucesso reseta o contador de falhas (não abre com falhas espalhadas)', async () => {
     const { breaker, primary } = make(3);
     primary.setFail(true);

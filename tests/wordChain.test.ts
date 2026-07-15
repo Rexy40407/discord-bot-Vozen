@@ -173,6 +173,54 @@ describe('word-chain — integração (manager + clock falso, wordlist PT real)'
     expect(send.mock.calls.length).toBe(before);
   });
 
+  it('reentrancia: dois palpites validos seguidos do MESMO jogador nao pontuam/avancam a dobrar', async () => {
+    const { env, clock, send, say } = harness();
+    const mgr = new GameManager(env);
+    mgr.start(G, C, gameById('word-chain')!.create({ language: 'pt' }), false, 'pt');
+    await flush();
+    mgr.handleMessage(msg('u1', 'entro'));
+    mgr.handleMessage(msg('u2', 'eu tambem'));
+    await flush();
+    clock.advance(20000); // fim do lobby -> turno do u1
+    await flush();
+
+    const turn1 = lastSend(send);
+    expect(turn1.key).toBe('game.wordChain.turn');
+    const letter1 = String(turn1.params.letter).toLowerCase();
+
+    // Picks a chainable pair: word1 (for the required letter) whose LAST letter has a
+    // follow-up word2 — so both guesses would be individually valid, isolating the race.
+    let word1 = '';
+    let word2 = '';
+    for (const cand of wordByLetter.get(letter1) ?? []) {
+      const arr = (wordByLetter.get(cand[cand.length - 1]) ?? []).filter((w) => w !== cand);
+      if (arr.length) {
+        word1 = cand;
+        word2 = arr[0];
+        break;
+      }
+    }
+    expect(word1 && word2).toBeTruthy();
+
+    say.mockClear();
+    // Race: u1 fires TWO valid guesses back-to-back, with NO flush in between, so the
+    // second onMessage runs while the first handleGuess is suspended at `await ctx.send`.
+    mgr.handleMessage(msg('u1', word1));
+    mgr.handleMessage(msg('u1', word2));
+    await flush();
+
+    // Only the first guess must count: the word is read aloud exactly ONCE and the turn
+    // moves to u2 (not back to u1 via a double idx-advance).
+    const sayCalls = say.mock.calls as unknown as Array<[{ text?: string }]>;
+    const wordSays = sayCalls.filter(
+      (c) => typeof c[0]?.text === 'string' && /\S/.test(c[0].text ?? ''),
+    );
+    expect(wordSays.length).toBe(1);
+    const turn2 = lastSend(send);
+    expect(turn2.key).toBe('game.wordChain.turn');
+    expect(turn2.params.name).toBe('U2');
+  });
+
   it('2 vidas: timeouts eliminam e declaram vencedor (pontos persistidos)', async () => {
     const { env, clock, send, persistScores } = harness();
     const mgr = new GameManager(env);

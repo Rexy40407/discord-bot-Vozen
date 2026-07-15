@@ -226,4 +226,70 @@ describe('GCloudEngine — allowances no chokepoint (Fase 3)', () => {
     await expect(engine.synth(budgeted({ text: 'ola' }))).rejects.toThrow(); // 3 > 2 diário
     expect(calls).toHaveLength(0);
   });
+
+  it('concorrência: 2 syntheses do MESMO pool não excedem o teto (race check-then-act)', async () => {
+    // fetch com barreira: ambos os pedidos passam a validação antes de a Google responder.
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const calls: string[] = [];
+    const impl = (async (_url: string, init?: RequestInit) => {
+      calls.push(String((init as { body?: string } | undefined)?.body ?? ''));
+      await gate;
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        async json() {
+          return { audioContent: FAKE_WAV.toString('base64') };
+        },
+        async text() {
+          return '';
+        },
+      } as unknown as Response;
+    }) as unknown as typeof fetch;
+
+    const u = memUsage();
+    // Pool mensal = 5: cabe UMA síntese de 3 chars, não duas (3+3=6 > 5).
+    const engine = new GCloudEngine('KEY', cache, {
+      fetchImpl: impl,
+      usage: u,
+      limits: { ...LIMITS, plusMonthly: 5 },
+      now: FIXED_NOW,
+    });
+    const pool = { scope: 'user', key: 'u1' } as const;
+    // Textos DIFERENTES (chaves de cache distintas) mas o MESMO pool de orçamento.
+    const p1 = engine.synth(req({ text: 'aaa', gcloudBudget: pool }));
+    const p2 = engine.synth(req({ text: 'bbb', gcloudBudget: pool }));
+    release();
+    const results = await Promise.allSettled([p1, p2]);
+
+    // Só UMA pôde ir à Google; o pool nunca ultrapassa o teto.
+    expect(calls.length).toBe(1);
+    expect(u.getMonthly('user', 'u1', '2026-07')).toBeLessThanOrEqual(5);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+  });
+
+  it('síntese falhada devolve a reserva ao pool (refund)', async () => {
+    const u = memUsage();
+    const impl = (async () =>
+      ({
+        ok: false,
+        status: 500,
+        statusText: 'Err',
+        async text() {
+          return 'boom';
+        },
+      }) as unknown as Response) as unknown as typeof fetch;
+    const engine = new GCloudEngine('KEY', cache, {
+      fetchImpl: impl,
+      usage: u,
+      limits: LIMITS,
+      now: FIXED_NOW,
+    });
+    await expect(
+      engine.synth(req({ text: 'ola', gcloudBudget: { scope: 'user', key: 'u1' } })),
+    ).rejects.toThrow();
+    // Falhou -> não deve consumir orçamento.
+    expect(u.getMonthly('user', 'u1', '2026-07')).toBe(0);
+  });
 });
