@@ -316,11 +316,15 @@ export function initDb(path: string): Database.Database {
       "UPDATE guild_config SET default_voice = 'pt_PT-google-medium' WHERE default_voice = 'pt_PT-tugao-medium'",
     );
 
-    // Migracao: a feature de DETECAO AUTOMATICA de lingua (/voice detection) foi REMOVIDA
-    // — toda a gente passa a usar a voz FIXA escolhida. As tabelas do toggle (e a legada)
-    // deixam de existir. DROP IF EXISTS: no-op em DBs novas, limpa as antigas.
-    db.exec('DROP TABLE IF EXISTS tts_lang_detect_on');
+    // Language-detection opt-in toggle (/voice detection): one row per (guild,user) that
+    // turned it ON; no row => OFF (the default fixed voice). Recreated idempotently (a
+    // prior build had DROP'd it). The legacy tts_lang_detect_off table stays dropped.
     db.exec('DROP TABLE IF EXISTS tts_lang_detect_off');
+    db.exec(`CREATE TABLE IF NOT EXISTS tts_lang_detect_on (
+      guild_id TEXT NOT NULL,
+      user_id  TEXT NOT NULL,
+      PRIMARY KEY (guild_id, user_id)
+    )`);
 
     return db;
   } catch (err) {

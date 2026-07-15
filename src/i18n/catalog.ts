@@ -242,6 +242,14 @@ export const catalog: Record<string, Entry> = {
     en: '✅ Your voice is back to the default. Pick another anytime with `/voice list` and `/voice set`.',
     pt: '✅ A tua voz voltou ao valor por defeito. Escolhe outra quando quiseres com `/voice list` e `/voice set`.',
   },
+  'voice.detection.on': {
+    en: '✅ Automatic language detection is ON: each message is read in a voice for its detected language (the speaker may change). Turn it off with `/voice detection active:false`.',
+    pt: '✅ Deteção automática de língua LIGADA: cada mensagem é lida numa voz da língua detetada (o locutor pode mudar). Desliga com `/voice detection active:false`.',
+  },
+  'voice.detection.off': {
+    en: '✅ Automatic language detection is OFF: your one fixed voice reads everything, so you always sound the same.',
+    pt: '✅ Deteção automática de língua DESLIGADA: a tua voz fixa lê tudo, para soares sempre igual.',
+  },
   'voice.optout': {
     en: "You won't be read automatically anymore. Run /voice optin to turn it back on.",
     pt: 'Ja nao seras lido automaticamente. Usa /voice optin para voltar.',

@@ -12,6 +12,7 @@ import type { BotDeps } from '../../bot/deps';
 import { getPlayer, removePlayer, getLimiter } from '../../bot/deps';
 import { createVoiceSession, becomeSpeakerIfStage } from '../../voice/session';
 import { getUserVoice } from '../../store/userVoice';
+import { isDetectionOn } from '../../store/langDetect';
 import { resolveUserEngine } from '../../tts/resolveEngine';
 import { getGuildConfig } from '../../store/guildConfig';
 import { getBlocklist } from '../../store/blocklist';
@@ -152,6 +153,7 @@ export async function speakRawText(
     ],
     userVoice,
     available: deps.availableModels,
+    autoDetect: isDetectionOn(deps.db, guildId, userId),
     guildDefaultVoice: cfg.defaultVoice,
     defaultVoice: deps.config.defaultVoice,
     defaultSpeed: deps.config.defaultSpeed,

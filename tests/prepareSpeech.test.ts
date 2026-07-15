@@ -3,8 +3,8 @@ import { prepareSpeech, redactRequest, hasReadableText } from '../src/commands/p
 import { emphasisGain } from '../src/tts/emphasis';
 import type { SynthRequest } from '../src/tts/engine';
 
-// Model catalog (used only as strings — automatic detection was removed, so
-// the voice is ALWAYS the preferred one, never chosen by the text's language).
+// Model catalog. Automatic language detection is OPT-IN (default OFF): without autoDetect the
+// voice is ALWAYS the preferred one; with autoDetect:true it follows the message's language.
 const AVAILABLE = ['en_US-amy-medium', 'pt_PT-google-medium', 'es_ES-davefx-medium'];
 
 // Without `as const`: keeping it made `pronunciations` a `readonly []` that does not fit
@@ -17,7 +17,7 @@ const BASE = {
   defaultSpeed: 1,
 };
 
-describe('prepareSpeech — FIXED voice (detection removed)', () => {
+describe('prepareSpeech — FIXED voice (detection OFF, the default)', () => {
   it('always reads in the preferred voice, singleVoice, no segments — even text in another language', () => {
     const { req } = prepareSpeech({
       ...BASE,
@@ -218,5 +218,27 @@ describe('redactRequest — redacts the blocklist in the SynthRequest', () => {
     const out = redactRequest(req, ['palavrao']);
     expect(out.segments).toBeUndefined();
     expect(hasReadableText(out.text)).toBe(false); // caller does not speak
+  });
+});
+
+describe('prepareSpeech — detection ON (opt-in via /voice detection)', () => {
+  it('takes the detection path (no singleVoice) and the voice follows the message language', () => {
+    const ptText =
+      'bom dia a todos isto aqui e uma frase bem comprida escrita em portugues de portugal para nao restar duvida nenhuma sobre a lingua desta mensagem';
+    const { req } = prepareSpeech({ ...BASE, autoDetect: true, personal: ptText });
+    // Structural proof the ON branch ran: it never sets singleVoice.
+    expect(req.singleVoice).toBeUndefined();
+    // The voice is picked for the DETECTED language (PT), not the .env default (EN).
+    expect(req.model.startsWith('pt_')).toBe(true);
+  });
+
+  it('OFF (default) keeps the fixed voice even for clearly foreign text', () => {
+    const { req } = prepareSpeech({
+      ...BASE,
+      // autoDetect omitted => OFF (undefined)
+      personal: 'isto e claramente portugues de portugal sem qualquer duvida',
+    });
+    expect(req.model).toBe('en_US-amy-medium');
+    expect(req.singleVoice).toBe(true);
   });
 });

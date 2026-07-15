@@ -21,6 +21,7 @@ import { getUserPronunciations, getServerPronunciations } from '../store/pronunc
 import { getUserVoice } from '../store/userVoice';
 import { resolveUserEngine } from '../tts/resolveEngine';
 import { isOptedOut } from '../store/optout';
+import { isDetectionOn } from '../store/langDetect';
 import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { t } from '../i18n/index';
 import { log } from '../logging/logger';
@@ -338,6 +339,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       ],
       userVoice,
       available: deps.availableModels,
+      autoDetect: isDetectionOn(deps.db, message.guildId, message.author.id),
       guildDefaultVoice: cfg.defaultVoice,
       defaultVoice: deps.config.defaultVoice,
       defaultSpeed: deps.config.defaultSpeed,

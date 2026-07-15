@@ -4,7 +4,9 @@ import {
   buildMediaSuffix,
   type MediaItem,
 } from '../language/spokenPhrases';
-import { expandAbbreviations } from '../textCleaning/abbreviations';
+import { expandAbbreviations, splitEnglishSlang } from '../textCleaning/abbreviations';
+import { detectLangDetailed } from '../language/detect';
+import { pickVoiceForLang } from '../language/voiceMap';
 import { restoreAccents, accentLangOfModel } from '../textCleaning/accents';
 import { applyPronunciation, type PronunciationEntry } from '../textCleaning/pronunciation';
 import { redactBlocked } from '../moderation/filter';
@@ -38,6 +40,10 @@ export interface PrepareSpeechInput {
   pronunciations: PronunciationEntry[];
   userVoice: { model: string; speed: number } | null;
   available: string[];
+  /** Per-user AUTOMATIC language detection toggle. Default OFF (undefined/false = fixed
+   *  voice); opt-in via /voice detection. When true, the message's language is detected and
+   *  the voice is picked per detected language / per slang segment. */
+  autoDetect?: boolean;
   /** Per-guild default voice (`default_voice`); empty = the guild did not set one. */
   guildDefaultVoice?: string;
   /** Global default voice from .env (DEFAULT_VOICE). */
@@ -166,17 +172,72 @@ function prepareSpeechCore(input: PrepareSpeechInput): PreparedSpeech {
     configured[0] ??
     'en_US-amy-medium';
 
-  // Always a FIXED voice (automatic language detection was removed): the chosen voice
-  // (user > guild > .env > amy) reads EVERYTHING, singleVoice, without detecting the text's
-  // language or splitting by segment — the person always sounds the same. The language for
-  // accent restoration comes from the VOICE (not the text): "nao"->"não" if the voice is PT.
-  // ORDER: guild pronunciation BEFORE the built-in slang — so a /pronunciation like
-  // btw->batata WINS over "by the way". Final precedence (the personal one was already applied
-  // upstream in the messageHandler): personal > /pronunciation > slang.
-  const spokenRaw = expandAbbreviations(applyPronunciation(input.personal, input.pronunciations));
-  const spoken = restoreAccents(spokenRaw, accentLangOfModel(preferred));
+  // Detection OFF (the DEFAULT): the chosen voice (user > guild > .env > amy) reads
+  // EVERYTHING, singleVoice, without detecting the text's language or splitting by segment —
+  // the person always sounds the same. Accent restoration uses the language of the VOICE
+  // (not the text): "nao"->"não" if the voice is PT. ORDER: guild pronunciation BEFORE the
+  // built-in slang — so a /pronunciation like btw->batata WINS over "by the way". Final
+  // precedence (personal already applied upstream): personal > /pronunciation > slang.
+  if (!input.autoDetect) {
+    const spokenRaw = expandAbbreviations(applyPronunciation(input.personal, input.pronunciations));
+    const spoken = restoreAccents(spokenRaw, accentLangOfModel(preferred));
+    return {
+      spoken,
+      req: { text: spoken, model: preferred, speed, singleVoice: true, emphasisSource: spoken },
+    };
+  }
+
+  // Detection ON (opt-in via /voice detection). Guild pronunciation FIRST — before slang
+  // splitting — so a /pronunciation like btw->batata stops being "slang" and does NOT create
+  // a separate EN segment (it comes out in the base voice). Then split by slang and expand
+  // each part. Precedence: personal (upstream) > /pronunciation > built-in slang.
+  const pronounced = applyPronunciation(input.personal, input.pronunciations);
+  const rawSegs = splitEnglishSlang(pronounced);
+  const proc0 = rawSegs.map((seg) => ({
+    isEnglish: seg.isEnglish,
+    text: expandAbbreviations(seg.text),
+  }));
+
+  // Base language = detection of the NON-slang part only (EN slang does not pollute it).
+  const baseText = proc0
+    .filter((s) => !s.isEnglish)
+    .map((s) => s.text)
+    .join(' ');
+  const { lang: baseLang } = detectLangDetailed(baseText);
+
+  // Per-segment accent restoration, in each one's language (base for non-slang; EN slang has
+  // no dictionary -> no-op). E.g. PT "nao"->"não", "amanha"->"amanhã".
+  const procSegs = proc0.map((s) => ({
+    isEnglish: s.isEnglish,
+    text: restoreAccents(s.text, s.isEnglish ? 'eng' : baseLang),
+  }));
+  const spoken = procSegs.map((s) => s.text).join(' ');
+
+  const hasEng = procSegs.some((s) => s.isEnglish);
+  const hasOther = procSegs.some((s) => !s.isEnglish);
+
+  // No EN slang (the common case): a single voice of the base language. Also covers empty
+  // `personal` (procSegs [], spoken '') -> a single-voice req with the preferred voice.
+  if (!hasEng) {
+    const model = pickVoiceForLang(baseLang, input.available, preferred);
+    return { spoken, req: { text: spoken, model, speed, emphasisSource: spoken } };
+  }
+
+  // Only EN slang: a single English voice.
+  if (!hasOther) {
+    const model = pickVoiceForLang('eng', input.available, preferred);
+    return { spoken, req: { text: spoken, model, speed, emphasisSource: spoken } };
+  }
+
+  // MIXED: each segment with its own voice (slang -> EN, rest -> base language). The top-level
+  // req.model/text are the single-voice fallback + cache base; MultiSegmentEngine concatenates.
+  const segments = procSegs.map((s) => ({
+    text: s.text,
+    model: pickVoiceForLang(s.isEnglish ? 'eng' : baseLang, input.available, preferred),
+  }));
+  const baseModel = pickVoiceForLang(baseLang, input.available, preferred);
   return {
     spoken,
-    req: { text: spoken, model: preferred, speed, singleVoice: true, emphasisSource: spoken },
+    req: { text: spoken, model: baseModel, speed, segments, emphasisSource: spoken },
   };
 }

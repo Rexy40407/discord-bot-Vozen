@@ -14,6 +14,7 @@ import { brandEmbed } from '../../ui/theme';
 import { getUserVoice, setUserVoice, resetUserVoice } from '../../store/userVoice';
 import { getGuildConfig } from '../../store/guildConfig';
 import { setOptOut, setOptIn } from '../../store/optout';
+import { setDetection } from '../../store/langDetect';
 import { setNickname, clearNickname } from '../../store/nickname';
 import { isGuildPremium, isUserPremium } from '../../store/premium';
 import { setVoiceEffect } from '../../store/voiceEffect';
@@ -458,6 +459,12 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
   } else if (sub === 'reset') {
     resetUserVoice(deps.db, i.guildId!, i.user.id);
     await reply(i, t('voice.reset', locale));
+  } else if (sub === 'detection') {
+    // Opt-in per (guild,user): ON => the message language is detected and the voice picked
+    // per language (the speaker may change); OFF (default) => one fixed voice reads all.
+    const active = i.options.getBoolean('active', true);
+    setDetection(deps.db, i.guildId!, i.user.id, active);
+    await reply(i, active ? t('voice.detection.on', locale) : t('voice.detection.off', locale));
   } else if (sub === 'optout') {
     // Per-user (no admin gate): each person manages their own opt-out of auto-read.
     setOptOut(deps.db, i.guildId!, i.user.id);

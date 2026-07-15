@@ -21,6 +21,7 @@ export const GUILD_PURGE_TABLES = [
   'blocklist',
   'pronunciation',
   'tts_optout',
+  'tts_lang_detect_on', // per-(guild,user) automatic language-detection opt-in
   'user_nickname',
   'game_score',
   'user_birthday',
@@ -43,6 +44,7 @@ export const GUILD_RETAINED_TABLES = ['premium_guild', 'premium_pass_activation'
 export const USER_ERASE_TABLES = [
   'user_voice',
   'tts_optout',
+  'tts_lang_detect_on', // the user's automatic language-detection opt-in (per guild)
   'user_nickname',
   'game_score',
   'user_birthday',

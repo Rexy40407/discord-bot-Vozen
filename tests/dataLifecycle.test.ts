@@ -20,6 +20,7 @@ import {
 } from '../src/store/dataLifecycle';
 import { purgeOldGcloudUsage } from '../src/store/gcloudUsage';
 import { getUserPronunciations } from '../src/store/pronunciation';
+import { isDetectionOn, setDetection } from '../src/store/langDetect';
 
 function count(db: Database.Database, table: string, col: string, id: string): number {
   return (
@@ -43,6 +44,7 @@ function seedGuild(db: Database.Database, g: string, u: string): void {
     'good game',
   );
   db.prepare('INSERT INTO tts_optout (guild_id, user_id) VALUES (?,?)').run(g, u);
+  db.prepare('INSERT INTO tts_lang_detect_on (guild_id, user_id) VALUES (?,?)').run(g, u);
   db.prepare('INSERT INTO user_nickname (guild_id, user_id, nickname) VALUES (?,?,?)').run(
     g,
     u,
@@ -117,6 +119,21 @@ describe('eraseUser', () => {
       eraseUser(db, 'U');
       // Without the fix, this returns the cached entry (deleted data persisting — GDPR failure).
       expect(getUserPronunciations(db, 'U')).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it('invalidates the tts_lang_detect_on cache (otherwise serves the erased opt-in as still ON)', () => {
+    const db = initDb(':memory:');
+    try {
+      setDetection(db, 'G', 'U', true);
+      // Populates the in-memory cache (key `G:U`) with ON.
+      expect(isDetectionOn(db, 'G', 'U')).toBe(true);
+      // The erase deletes the row AND must invalidate the user's cache.
+      eraseUser(db, 'U');
+      // Without the fix, this returns the cached ON (erased opt-in persisting — GDPR failure).
+      expect(isDetectionOn(db, 'G', 'U')).toBe(false);
     } finally {
       db.close();
     }

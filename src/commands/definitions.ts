@@ -249,6 +249,17 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
     .addSubcommand((s) => s.setName('list').setDescription('List the available models'))
     .addSubcommand((s) => s.setName('reset').setDescription('Reset your voice to the default'))
     .addSubcommand((s) =>
+      s
+        .setName('detection')
+        .setDescription('Native voice per language (the speaker may change). Off by default.')
+        .addBooleanOption((o) =>
+          o
+            .setName('active')
+            .setDescription('On = native voice per language; Off (default) = one fixed voice')
+            .setRequired(true),
+        ),
+    )
+    .addSubcommand((s) =>
       s.setName('optout').setDescription('Stop being read automatically in the auto-read channel'),
     )
     .addSubcommand((s) =>

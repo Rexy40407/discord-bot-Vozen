@@ -110,6 +110,7 @@ const USER_KEYED = new Set([
   'user_voice',
   'user_nickname',
   'tts_optout',
+  'tts_lang_detect_on',
   'user_effect',
   'user_clone',
   // pronunciation_user is deleted by eraseUser (GDPR) but cached by userId; without being
