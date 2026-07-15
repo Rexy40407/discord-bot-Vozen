@@ -66,4 +66,18 @@ export default tseslint.config(
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
+  {
+    // Regras TYPE-AWARE cirúrgicas só para src/ (não o recommendedTypeChecked inteiro, que
+    // inundaria): apanham a classe de bugs "promessa fire-and-forget cuja rejeição vira um
+    // unhandledRejection" — que já mordeu o projeto uma vez (plano 002). Precisa de type-info,
+    // por isso `projectService`.
+    files: ['src/**/*.ts'],
+    languageOptions: {
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+    },
+  },
 );
