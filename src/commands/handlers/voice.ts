@@ -44,6 +44,8 @@ import {
   deleteClonesByTarget,
 } from '../../store/voiceClone';
 import { recordUserSample, pcmToWavFile } from '../../voice/recorder';
+import { markCloneRecording, clearCloneRecording } from '../../voice/exclusivity';
+import { isTranscribing } from './transcribe';
 import { encryptSampleFileInPlace } from '../../tts/cloneSampleFile';
 import { join, dirname } from 'node:path';
 import { unlinkSync } from 'node:fs';
@@ -198,10 +200,31 @@ async function handleVoiceClone(
     await i.editReply(editCard(t('clone.alreadyRecording', locale), { tone: 'warning' }));
     return;
   }
+  // The bot has ONE microphone: /transcribe holds selfDeaf:false for its whole session,
+  // and this recording ALWAYS re-deafens in its finally (a privacy invariant we keep) —
+  // which would leave the session running but deaf. Take turns. Checked BEFORE reserving
+  // so a refusal leaves no state behind. See voice/exclusivity.ts.
+  if (isTranscribing(i.guildId!)) {
+    await i.editReply(editCard(t('clone.busyStt', locale), { tone: 'warning' }));
+    return;
+  }
   // Reserve the target NOW (before the 60s consent window), otherwise two people pointing
   // at the same victim would both pass the has() and fire two requests. Released on
   // ALL exits: in the early consent returns and in the recording's finally.
   activeCloneRecordings.add(targetId);
+  // Claim the guild's mic for the whole flow (consent window included — the target could
+  // take 60s to answer, and a /transcribe start meanwhile would collide). Refcounted, and
+  // released on EVERY exit path below, exactly like activeCloneRecordings.
+  markCloneRecording(i.guildId!);
+  /**
+   * Releases BOTH reservations. They are always taken together and must always be dropped
+   * together — a single helper is what keeps a future exit path from freeing one and
+   * leaking the other (a leaked mic claim would block /transcribe until a restart).
+   */
+  const releaseMic = (): void => {
+    activeCloneRecordings.delete(targetId);
+    clearCloneRecording(i.guildId!);
+  };
 
   const { channelId } = connection.joinConfig;
 
@@ -210,7 +233,7 @@ async function handleVoiceClone(
   if (!isSelf) {
     const ch = i.channel;
     if (!ch || !ch.isTextBased() || ch.isDMBased()) {
-      activeCloneRecordings.delete(targetId);
+      releaseMic();
       await i.editReply(editCard(t('clone.failed', locale), { tone: 'danger' }));
       return;
     }
@@ -268,7 +291,7 @@ async function handleVoiceClone(
       });
     });
     if (outcome !== 'granted') {
-      activeCloneRecordings.delete(targetId);
+      releaseMic();
       // Not answering is NOT the same as saying no: collapsing both into "declined" told
       // the target they had actively refused when they simply never saw the prompt.
       // `clone.consentTimeout` exists and is translated in every locale for exactly this.
@@ -416,7 +439,7 @@ async function handleVoiceClone(
     } catch {
       // the connection may have died in the meantime — harmless
     }
-    activeCloneRecordings.delete(targetId);
+    releaseMic();
   }
 }
 

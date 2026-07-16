@@ -651,4 +651,8 @@ export default {
   'rand.speak': 'Ég vel… {winner}!',
   'rand.notInVoice': '_(farðu inn í talrás með mér og ég segi það upphátt næst)_',
   'rand.timeout': '⏰ Ekkert valið — keyrðu `/randomizer` aftur þegar þú ert tilbúinn.',
+  'stt.busyClone':
+    '⏳ Einhver er að taka upp raddklón í þessu símtali núna. Ég er bara með einn hljóðnema — reyndu aftur þegar því lýkur (nokkrar sekúndur).',
+  'clone.busyStt':
+    '⏳ Umritun er í gangi í þessu símtali og ég er bara með einn hljóðnema. Keyrðu `/transcribe stop` fyrst og taktu svo upp klóninn þinn.',
 };

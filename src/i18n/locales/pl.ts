@@ -663,4 +663,8 @@ export default {
   'rand.speak': 'Wybieram… {winner}!',
   'rand.notInVoice': '_(dołącz do kanału głosowego ze mną, a następnym razem powiem to na głos)_',
   'rand.timeout': '⏰ Nic nie wybrano — uruchom `/randomizer` ponownie, gdy będziesz gotowy.',
+  'stt.busyClone':
+    '⏳ Ktoś właśnie nagrywa klon głosu na tej rozmowie. Mam tylko jeden mikrofon — spróbuj ponownie, gdy skończy (kilka sekund).',
+  'clone.busyStt':
+    '⏳ Na tej rozmowie działa transkrypcja, a ja mam tylko jeden mikrofon. Uruchom najpierw `/transcribe stop`, a potem nagraj swój klon.',
 };

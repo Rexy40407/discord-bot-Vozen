@@ -677,4 +677,8 @@ export default {
   'rand.notInVoice':
     '_(rejoignez un salon vocal avec moi et je le dirai à voix haute la prochaine fois)_',
   'rand.timeout': '⏰ Rien de choisi — relancez `/randomizer` quand vous êtes prêt.',
+  'stt.busyClone':
+    "⏳ Quelqu'un enregistre un clone vocal dans cet appel en ce moment. Je n'ai qu'un seul micro — réessaie quand ce sera terminé (quelques secondes).",
+  'clone.busyStt':
+    "⏳ La transcription est en cours dans cet appel et je n'ai qu'un seul micro. Lance d'abord `/transcribe stop`, puis enregistre ton clone.",
 };

@@ -589,4 +589,8 @@ export default {
   'rand.speak': '我选择……{winner}！',
   'rand.notInVoice': '_（和我一起加入语音频道，下次我就会大声念出来）_',
   'rand.timeout': '⏰ 什么都没选——准备好后再次运行 `/randomizer`。',
+  'stt.busyClone':
+    '⏳ 现在有人正在此通话中录制语音克隆。我只有一个麦克风——等结束后再试一次（几秒钟）。',
+  'clone.busyStt':
+    '⏳ 此通话正在进行转录，而我只有一个麦克风。请先运行 `/transcribe stop`，然后再录制你的克隆。',
 };

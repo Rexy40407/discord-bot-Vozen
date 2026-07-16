@@ -646,4 +646,8 @@ export default {
   'rand.speak': 'Vybírám… {winner}!',
   'rand.notInVoice': '_(připoj se ke mně do hlasového kanálu a příště to řeknu nahlas)_',
   'rand.timeout': '⏰ Nic nevybráno — spusť `/randomizer` znovu, až budeš chtít.',
+  'stt.busyClone':
+    '⏳ Někdo právě v tomto hovoru nahrává hlasový klon. Mám jen jeden mikrofon — zkus to znovu, až skončí (pár sekund).',
+  'clone.busyStt':
+    '⏳ V tomto hovoru běží přepis a já mám jen jeden mikrofon. Nejdřív spusť `/transcribe stop` a pak nahraj svůj klon.',
 };

@@ -648,4 +648,8 @@ export default {
   'rand.speak': 'Tôi chọn… {winner}!',
   'rand.notInVoice': '_(hãy vào một kênh thoại cùng tôi và lần sau tôi sẽ đọc to nó)_',
   'rand.timeout': '⏰ Chưa chọn gì — hãy chạy `/randomizer` lại khi sẵn sàng.',
+  'stt.busyClone':
+    '⏳ Ngay lúc này có người đang ghi âm bản sao giọng nói trong cuộc gọi. Tôi chỉ có một micro — hãy thử lại khi xong (vài giây).',
+  'clone.busyStt':
+    '⏳ Cuộc gọi này đang chạy phiên ghi lời và tôi chỉ có một micro. Hãy chạy `/transcribe stop` trước, rồi ghi bản sao giọng của bạn.',
 };

@@ -670,4 +670,8 @@ export default {
   'rand.speak': "Dw i'n dewis… {winner}!",
   'rand.notInVoice': "_(ymuna â sianel lais gyda mi a bydda i'n ei ddweud yn uchel y tro nesaf)_",
   'rand.timeout': "⏰ Dim byd wedi'i ddewis — rheda `/randomizer` eto pan fyddi'n barod.",
+  'stt.busyClone':
+    '⏳ Mae rhywun yn recordio clôn llais yn yr alwad hon ar hyn o bryd. Dim ond un meicroffon sydd gen i — rho gynnig arall arni pan fydd wedi gorffen (ychydig eiliadau).',
+  'clone.busyStt':
+    '⏳ Mae trawsgrifio yn rhedeg yn yr alwad hon, a dim ond un meicroffon sydd gen i. Rheda `/transcribe stop` yn gyntaf, wedyn recordia dy glôn.',
 };

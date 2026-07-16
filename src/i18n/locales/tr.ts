@@ -656,4 +656,8 @@ export default {
   'rand.notInVoice': '_(benimle bir ses kanalına katıl, bir dahaki sefere sesli söyleyeyim)_',
   'rand.timeout':
     '⏰ Hiçbir şey seçilmedi — hazır olduğunda `/randomizer` komutunu tekrar çalıştır.',
+  'stt.busyClone':
+    '⏳ Şu anda bu aramada biri ses klonu kaydediyor. Yalnızca bir mikrofonum var — bittiğinde tekrar dene (birkaç saniye).',
+  'clone.busyStt':
+    '⏳ Bu aramada transkripsiyon çalışıyor ve yalnızca bir mikrofonum var. Önce `/transcribe stop` çalıştır, sonra klonunu kaydet.',
 };

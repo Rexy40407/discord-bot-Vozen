@@ -655,4 +655,8 @@ export default {
   'rand.notInVoice':
     '_(pridruži se glasovnemu kanalu z mano in naslednjič bom to povedal na glas)_',
   'rand.timeout': '⏰ Nič ni bilo izbrano — ko boš pripravljen, znova zaženi `/randomizer`.',
+  'stt.busyClone':
+    '⏳ Nekdo prav zdaj v tem klicu snema glasovni klon. Imam samo en mikrofon — poskusi znova, ko konča (nekaj sekund).',
+  'clone.busyStt':
+    '⏳ V tem klicu teče prepis, jaz pa imam samo en mikrofon. Najprej zaženi `/transcribe stop`, nato posnemi svoj klon.',
 };

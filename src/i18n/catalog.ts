@@ -59,6 +59,17 @@ export const catalog: Record<string, Entry> = {
     en: 'Too many transcriptions are running right now across all servers. Please try again shortly.',
     pt: 'Há demasiadas transcrições a correr agora em todos os servidores. Tenta outra vez daqui a pouco.',
   },
+  // The bot has one microphone per call: a voice clone is being recorded right now, and
+  // that recording always re-deafens the bot when it ends — which would silently kill a
+  // transcription started meanwhile. So they take turns (see voice/exclusivity.ts).
+  'stt.busyClone': {
+    en: "⏳ Someone is recording a voice clone in this call right now. I only have one microphone — try again once it's done (a few seconds).",
+    pt: '⏳ Alguém está a gravar um clone de voz nesta call neste momento. Só tenho um microfone — tenta outra vez quando terminar (poucos segundos).',
+  },
+  'clone.busyStt': {
+    en: '⏳ Transcription is running in this call, and I only have one microphone. Run `/transcribe stop` first, then record your clone.',
+    pt: '⏳ A transcrição está a correr nesta call e eu só tenho um microfone. Corre `/transcribe stop` primeiro e depois grava o teu clone.',
+  },
   'stt.noChannel': {
     en: "I can't post transcripts in this channel. Try running the command from a normal text channel.",
     pt: 'Não consigo postar transcrições neste canal. Tenta correr o comando de um canal de texto normal.',

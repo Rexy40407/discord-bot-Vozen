@@ -649,4 +649,8 @@ export default {
   'rand.speak': 'Jag väljer… {winner}!',
   'rand.notInVoice': '_(gå med i en röstkanal med mig så säger jag det högt nästa gång)_',
   'rand.timeout': '⏰ Inget valt — kör `/randomizer` igen när du är redo.',
+  'stt.busyClone':
+    '⏳ Någon spelar in en röstklon i det här samtalet just nu. Jag har bara en mikrofon — försök igen när det är klart (några sekunder).',
+  'clone.busyStt':
+    '⏳ Transkribering pågår i det här samtalet och jag har bara en mikrofon. Kör `/transcribe stop` först och spela sedan in din klon.',
 };

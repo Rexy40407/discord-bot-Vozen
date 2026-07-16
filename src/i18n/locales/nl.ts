@@ -664,4 +664,8 @@ export default {
   'rand.notInVoice':
     '_(sluit je bij een spraakkanaal aan samen met mij en dan zeg ik het de volgende keer hardop)_',
   'rand.timeout': '⏰ Niets gekozen — gebruik `/randomizer` opnieuw wanneer je klaar bent.',
+  'stt.busyClone':
+    '⏳ Iemand neemt op dit moment een stemkloon op in dit gesprek. Ik heb maar één microfoon — probeer het opnieuw zodra het klaar is (een paar seconden).',
+  'clone.busyStt':
+    '⏳ De transcriptie loopt in dit gesprek en ik heb maar één microfoon. Voer eerst `/transcribe stop` uit en neem daarna je kloon op.',
 };

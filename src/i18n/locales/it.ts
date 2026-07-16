@@ -663,4 +663,8 @@ export default {
   'rand.notInVoice':
     '_(entra in un canale vocale con me e la prossima volta lo dirò ad alta voce)_',
   'rand.timeout': '⏰ Niente scelto — esegui di nuovo `/randomizer` quando sei pronto.',
+  'stt.busyClone':
+    '⏳ Qualcuno sta registrando un clone vocale in questa chiamata proprio ora. Ho un solo microfono: riprova quando ha finito (pochi secondi).',
+  'clone.busyStt':
+    '⏳ La trascrizione è attiva in questa chiamata e ho un solo microfono. Esegui prima `/transcribe stop`, poi registra il tuo clone.',
 };

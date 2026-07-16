@@ -24,19 +24,35 @@ export interface TranscribeStartInput {
    * lose TTS, not just STT degrading).
    */
   atCapacity: boolean;
+  /**
+   * A /voice clone record is capturing audio in this guild RIGHT NOW. The bot has one
+   * microphone: the clone recorder always re-deafens in its finally (privacy invariant),
+   * which would kill a transcription session started meanwhile — the session would keep
+   * running and hear nothing. They must be exclusive; see voice/exclusivity.ts.
+   */
+  cloneRecording: boolean;
 }
 
 export type TranscribeStartVerdict =
-  'ok' | 'noManage' | 'notPremium' | 'unavailable' | 'notInVoice' | 'alreadyRunning' | 'atCapacity';
+  | 'ok'
+  | 'noManage'
+  | 'notPremium'
+  | 'unavailable'
+  | 'notInVoice'
+  | 'alreadyRunning'
+  | 'busyClone'
+  | 'atCapacity';
 
 /**
  * Gate order: authz (Manage-Guild) BEFORE entitlement (Premium) — to whoever cannot manage
  * the server we say "you don't have permission", not "buy Premium". Then availability
- * (sidecar), presence in the call, a session already running IN THIS guild, and only last
- * the GLOBAL cap (atCapacity). The per-guild state (alreadyRunning) comes BEFORE the global
- * one on purpose: it is more specific and more useful to the caller ("it's already running
- * here" > "the system is full") — and it avoids showing "system full" to someone who would
- * in fact just be "already running".
+ * (sidecar), presence in the call, a session already running IN THIS guild, the mic being
+ * held by a clone recording, and only last the GLOBAL cap (atCapacity). The per-guild
+ * states come BEFORE the global one on purpose: they are more specific and more useful to
+ * the caller ("it's already running here" > "the system is full") — and it avoids showing
+ * "system full" to someone who would in fact just be "already running". `busyClone` sits
+ * after `alreadyRunning` for the same reason, and after the authz/entitlement checks so we
+ * never leak what the guild is doing to someone who could not start a session anyway.
  */
 export function evaluateTranscribeStart(i: TranscribeStartInput): TranscribeStartVerdict {
   if (!i.canManage) return 'noManage';
@@ -44,6 +60,7 @@ export function evaluateTranscribeStart(i: TranscribeStartInput): TranscribeStar
   if (!i.sidecarAvailable) return 'unavailable';
   if (!i.botInVoice) return 'notInVoice';
   if (i.alreadyRunning) return 'alreadyRunning';
+  if (i.cloneRecording) return 'busyClone';
   if (i.atCapacity) return 'atCapacity';
   return 'ok';
 }

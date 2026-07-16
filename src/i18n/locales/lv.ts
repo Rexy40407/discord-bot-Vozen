@@ -653,4 +653,8 @@ export default {
   'rand.notInVoice':
     '_(pievienojies balss kanālam kopā ar mani, un nākamreiz es to pateikšu skaļi)_',
   'rand.timeout': '⏰ Nekas nav izvēlēts — palaid `/randomizer` vēlreiz, kad būsi gatavs.',
+  'stt.busyClone':
+    '⏳ Kāds šobrīd šajā zvanā ieraksta balss klonu. Man ir tikai viens mikrofons — mēģini vēlreiz, kad būs pabeigts (dažas sekundes).',
+  'clone.busyStt':
+    '⏳ Šajā zvanā darbojas transkripcija, un man ir tikai viens mikrofons. Vispirms palaid `/transcribe stop`, tad ieraksti savu klonu.',
 };

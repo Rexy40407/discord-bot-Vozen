@@ -667,4 +667,8 @@ export default {
   'rand.speak': 'Trio… {winner}!',
   'rand.notInVoice': '_(entra en un canal de veu amb mi i la propera vegada ho diré en veu alta)_',
   'rand.timeout': "⏰ No s'ha triat res: torna a executar `/randomizer` quan vulguis.",
+  'stt.busyClone':
+    '⏳ Algú està gravant un clon de veu en aquesta trucada ara mateix. Només tinc un micròfon: torna-ho a provar quan acabi (uns segons).',
+  'clone.busyStt':
+    '⏳ La transcripció està activa en aquesta trucada i només tinc un micròfon. Executa `/transcribe stop` primer i després grava el teu clon.',
 };

@@ -663,4 +663,8 @@ export default {
   'rand.speak': 'Aleg… {winner}!',
   'rand.notInVoice': '_(intră într-un canal de voce cu mine și data viitoare o spun cu voce tare)_',
   'rand.timeout': '⏰ Nimic ales — rulează `/randomizer` din nou când ești gata.',
+  'stt.busyClone':
+    '⏳ Cineva înregistrează chiar acum o clonă vocală în acest apel. Am un singur microfon — încearcă din nou când termină (câteva secunde).',
+  'clone.busyStt':
+    '⏳ Transcrierea rulează în acest apel și am un singur microfon. Rulează întâi `/transcribe stop`, apoi înregistrează-ți clona.',
 };

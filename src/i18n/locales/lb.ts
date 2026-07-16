@@ -666,4 +666,8 @@ export default {
   'rand.speak': 'Ech wielen… {winner}!',
   'rand.notInVoice': '_(géi mat mir an ee Sproochkanal an ech soen et déi nächst Kéier haart)_',
   'rand.timeout': '⏰ Näischt gewielt — laf `/randomizer` nach eng Kéier, wann s du prett bass.',
+  'stt.busyClone':
+    '⏳ Elo grad hëlt een an dësem Uruff e Stëmmklon op. Ech hunn nëmmen ee Mikro — probéier et nach eng Kéier, wann et fäerdeg ass (e puer Sekonnen).',
+  'clone.busyStt':
+    '⏳ An dësem Uruff leeft d’Transkriptioun, an ech hunn nëmmen ee Mikro. Maach fir d’éischt `/transcribe stop` an huel dann däi Klon op.',
 };

@@ -661,4 +661,8 @@ export default {
   'rand.notInVoice':
     '_(jiunge na kituo cha sauti pamoja nami nami nitakisema kwa sauti wakati ujao)_',
   'rand.timeout': '⏰ Hakuna kilichochaguliwa — endesha `/randomizer` tena ukiwa tayari.',
+  'stt.busyClone':
+    '⏳ Kuna mtu anarekodi kloni ya sauti kwenye simu hii sasa hivi. Nina maikrofoni moja tu — jaribu tena itakapomalizika (sekunde chache).',
+  'clone.busyStt':
+    '⏳ Unukuzi unaendelea kwenye simu hii, na nina maikrofoni moja tu. Endesha `/transcribe stop` kwanza, kisha rekodi kloni yako.',
 };

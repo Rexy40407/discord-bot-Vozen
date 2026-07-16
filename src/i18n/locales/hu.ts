@@ -677,4 +677,8 @@ export default {
     '_(csatlakozz velem egy hangcsatornához, és legközelebb hangosan is kimondom)_',
   'rand.timeout':
     '⏰ Semmi sem lett kiválasztva — futtasd újra a `/randomizer` parancsot, amikor készen állsz.',
+  'stt.busyClone':
+    '⏳ Valaki éppen hangklónt rögzít ebben a hívásban. Csak egy mikrofonom van — próbáld újra, ha végzett (pár másodperc).',
+  'clone.busyStt':
+    '⏳ Ebben a hívásban átirat készül, és csak egy mikrofonom van. Futtasd előbb a `/transcribe stop` parancsot, aztán vedd fel a klónodat.',
 };

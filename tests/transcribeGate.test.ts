@@ -16,6 +16,9 @@ describe('evaluateTranscribeStart', () => {
     botInVoice: true,
     alreadyRunning: false,
     atCapacity: false,
+    // The bot has one mic per call; a live /voice clone record holds it. Exercised in
+    // tests/voiceExclusivity.test.ts — here it just stays out of the way.
+    cloneRecording: false,
   };
 
   it('all green -> ok', () => {

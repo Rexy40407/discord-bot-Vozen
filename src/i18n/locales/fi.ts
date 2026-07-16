@@ -658,4 +658,8 @@ export default {
   'rand.speak': 'Valitsen… {winner}!',
   'rand.notInVoice': '_(liity puhekanavalle kanssani niin sanon sen ääneen ensi kerralla)_',
   'rand.timeout': '⏰ Mitään ei valittu — suorita `/randomizer` uudelleen kun olet valmis.',
+  'stt.busyClone':
+    '⏳ Joku nauhoittaa juuri nyt äänikloonia tässä puhelussa. Minulla on vain yksi mikrofoni — yritä uudelleen, kun se on valmis (muutama sekunti).',
+  'clone.busyStt':
+    '⏳ Litterointi on käynnissä tässä puhelussa, ja minulla on vain yksi mikrofoni. Aja ensin `/transcribe stop` ja nauhoita sitten kloonisi.',
 };
