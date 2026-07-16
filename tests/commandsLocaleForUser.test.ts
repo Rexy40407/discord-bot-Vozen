@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Mock minimo de @discordjs/voice — nao e usado neste caminho, mas o import de
 // commands/index precisa de resolver.
@@ -155,8 +156,8 @@ describe('/leave — usa o Discord locale do utilizador (nao o da guild)', () =>
       replied: false,
       deferred: false,
       isRepliable: () => true,
-      reply: async (o: { content: string }) => {
-        replies.push(o.content);
+      reply: async (o: unknown) => {
+        replies.push(messageText(o));
       },
     };
   }

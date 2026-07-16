@@ -10,7 +10,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
-  MessageFlags,
 } from 'discord.js';
 import { unlink } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
@@ -21,6 +20,7 @@ import { isUserPremium, isGuildPremium } from '../../store/premium';
 import { t } from '../../i18n/index';
 import { localeForUser } from '../helpers';
 import { log } from '../../logging/logger';
+import { editCard, replyCard, updateCard } from '../../ui/messages';
 
 export async function handlePrivacy(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   if (i.options.getSubcommand() === 'erase') {
@@ -50,18 +50,16 @@ async function handleErase(i: ChatInputCommandInteraction, deps: BotDeps): Promi
       .setLabel(t('privacy.eraseNo', locale))
       .setStyle(ButtonStyle.Secondary),
   );
-  const response = await i.reply({
-    content: warning,
-    components: [row],
-    flags: MessageFlags.Ephemeral,
-  });
+  const response = await i.reply(
+    replyCard(warning, { ephemeral: true, tone: 'danger', rows: [row] }),
+  );
 
   const btn = await response
     .awaitMessageComponent({ componentType: ComponentType.Button, time: 30_000 })
     .catch(() => null);
   if (!btn || btn.customId !== 'privEraseYes') {
     await i
-      .editReply({ content: t('privacy.eraseCancelled', locale), components: [] })
+      .editReply(editCard(t('privacy.eraseCancelled', locale), { tone: 'warning' }))
       .catch(() => {});
     return;
   }
@@ -71,7 +69,7 @@ async function handleErase(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     ({ removedSamplePaths } = eraseUser(deps.db, i.user.id));
   } catch (err) {
     log.error('[privacy] failed to erase user data', err);
-    await btn.update({ content: t('error.generic', locale), components: [] }).catch(() => {});
+    await btn.update(updateCard(t('error.generic', locale), { tone: 'danger' })).catch(() => {});
     return;
   }
   // Delete the clone .wav files from disk (best-effort — the DB row is already gone).
@@ -84,5 +82,5 @@ async function handleErase(i: ChatInputCommandInteraction, deps: BotDeps): Promi
   if (removedSamplePaths.length > 0) {
     purgeCloneDerivedAudio(join(dirname(deps.config.dbPath), 'audio-cache'));
   }
-  await btn.update({ content: t('privacy.eraseDone', locale), components: [] }).catch(() => {});
+  await btn.update(updateCard(t('privacy.eraseDone', locale), { tone: 'success' })).catch(() => {});
 }

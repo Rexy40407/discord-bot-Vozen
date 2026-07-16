@@ -23,6 +23,7 @@ import {
 } from '../../content/microfun';
 import { t } from '../../i18n/index';
 import { localeForUser, localePrefixOf, reply } from '../helpers';
+import { editCard } from '../../ui/messages';
 
 /**
  * /laugh — Vozen laughs in the voice CURRENTLY selected by the user. Per-user
@@ -38,7 +39,7 @@ export async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps)
   const locale = localeForUser(deps, i);
   const player = getPlayer(deps, i.guildId!);
   if (!player) {
-    await i.editReply(t('tts.notInVoice', locale));
+    await i.editReply(editCard(t('tts.notInVoice', locale), { tone: 'danger' }));
     return;
   }
   const cfg = getGuildConfig(deps.db, i.guildId!);
@@ -48,7 +49,7 @@ export async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps)
   // editReply works.
   const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
   if (!rl.allow(i.user.id, Date.now())) {
-    await i.editReply(t('tts.tooFast', locale));
+    await i.editReply(editCard(t('tts.tooFast', locale), { tone: 'warning' }));
     return;
   }
 
@@ -69,7 +70,11 @@ export async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps)
   };
   // say() returns false when the queue is at cap: in that case we reuse tts.busy.
   const queued = await player.say(req);
-  await i.editReply(queued ? t('laugh.playing', locale) : t('tts.busy', locale));
+  await i.editReply(
+    editCard(queued ? t('laugh.playing', locale) : t('tts.busy', locale), {
+      tone: queued ? 'success' : 'warning',
+    }),
+  );
 }
 
 /**
@@ -92,13 +97,13 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
   const locale = localeForUser(deps, i);
   const player = getPlayer(deps, i.guildId!);
   if (!player) {
-    await i.editReply(t('tts.notInVoice', locale));
+    await i.editReply(editCard(t('tts.notInVoice', locale), { tone: 'danger' }));
     return;
   }
   const langKey = i.options.getString('language', true);
   const lang = jokeLangByKey(langKey);
   if (!lang) {
-    await i.editReply(t('joke.unknownLang', locale));
+    await i.editReply(editCard(t('joke.unknownLang', locale), { tone: 'danger' }));
     return;
   }
   const risos = i.options.getBoolean('laughter', true);
@@ -112,7 +117,7 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
   // editReply works.
   const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
   if (!rl.allow(i.user.id, Date.now())) {
-    await i.editReply(t('tts.tooFast', locale));
+    await i.editReply(editCard(t('tts.tooFast', locale), { tone: 'warning' }));
     return;
   }
 
@@ -170,7 +175,11 @@ export async function handleJoke(i: ChatInputCommandInteraction, deps: BotDeps):
   }
 
   // Confirmation includes the written joke (the user sees what is being read).
-  await i.editReply(queued ? t('joke.playing', locale, { joke }) : t('tts.busy', locale));
+  await i.editReply(
+    editCard(queued ? t('joke.playing', locale, { joke }) : t('tts.busy', locale), {
+      tone: queued ? 'success' : 'warning',
+    }),
+  );
 }
 
 // /rizz sound effect: a ready WAV in assets/sfx/ (repo root). At runtime this
@@ -196,19 +205,19 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
   const premium =
     isUserPremium(deps.db, i.user.id, now) || isGuildPremium(deps.db, i.guildId!, now);
   if (!premium) {
-    await i.editReply(t('rizz.locked', locale));
+    await i.editReply(editCard(t('rizz.locked', locale), { tone: 'premium' }));
     return;
   }
 
   const player = getPlayer(deps, i.guildId!);
   if (!player) {
-    await i.editReply(t('tts.notInVoice', locale));
+    await i.editReply(editCard(t('tts.notInVoice', locale), { tone: 'danger' }));
     return;
   }
   const langKey = i.options.getString('language', true);
   const lang = jokeLangByKey(langKey);
   if (!lang) {
-    await i.editReply(t('rizz.unknownLang', locale));
+    await i.editReply(editCard(t('rizz.unknownLang', locale), { tone: 'danger' }));
     return;
   }
   const sound = i.options.getBoolean('sound', true);
@@ -217,7 +226,7 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
   // per-user rate-limit (SAME limiter as /tts and /joke): AFTER deferReply.
   const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
   if (!rl.allow(i.user.id, Date.now())) {
-    await i.editReply(t('tts.tooFast', locale));
+    await i.editReply(editCard(t('tts.tooFast', locale), { tone: 'warning' }));
     return;
   }
 
@@ -255,7 +264,11 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
     await player.say({ text: '', model, speed, singleVoice: true, assetPath: RIZZ_SFX_PATH });
   }
 
-  await i.editReply(queued ? t('rizz.playing', locale, { line }) : t('tts.busy', locale));
+  await i.editReply(
+    editCard(queued ? t('rizz.playing', locale, { line }) : t('tts.busy', locale), {
+      tone: queued ? 'success' : 'warning',
+    }),
+  );
 }
 
 // Directory of the soundboard clips (repo root /assets/sfx). At runtime this module
@@ -275,7 +288,7 @@ export async function handleSound(i: ChatInputCommandInteraction, deps: BotDeps)
   // Per-server kill-switch: an admin can turn off /sound with /config soundboard.
   const cfg = getGuildConfig(deps.db, i.guildId!);
   if (!cfg.soundboard) {
-    await i.editReply(t('sound.disabled', locale));
+    await i.editReply(editCard(t('sound.disabled', locale), { tone: 'warning' }));
     return;
   }
 
@@ -283,20 +296,20 @@ export async function handleSound(i: ChatInputCommandInteraction, deps: BotDeps)
   const key = i.options.getString('name');
   if (!key) {
     const list = SOUNDS.map((s) => `${s.emoji ?? '🔊'} \`${s.key}\``).join(' · ');
-    await i.editReply(t('sound.list', locale, { sounds: list }));
+    await i.editReply(editCard(t('sound.list', locale, { sounds: list })));
     return;
   }
 
   // `name` comes from choices, but via the API an invalid key can arrive -> clear message.
   const clip = soundByKey(key);
   if (!clip) {
-    await i.editReply(t('sound.unknown', locale));
+    await i.editReply(editCard(t('sound.unknown', locale), { tone: 'danger' }));
     return;
   }
 
   const player = getPlayer(deps, i.guildId!);
   if (!player) {
-    await i.editReply(t('tts.notInVoice', locale));
+    await i.editReply(editCard(t('tts.notInVoice', locale), { tone: 'danger' }));
     return;
   }
 
@@ -304,7 +317,7 @@ export async function handleSound(i: ChatInputCommandInteraction, deps: BotDeps)
   // voice queue with clips and drown out everyone's TTS. AFTER deferReply.
   const rl = getLimiter(deps, i.guildId!, cfg.ratePerMin);
   if (!rl.allow(i.user.id, Date.now())) {
-    await i.editReply(t('tts.tooFast', locale));
+    await i.editReply(editCard(t('tts.tooFast', locale), { tone: 'warning' }));
     return;
   }
 
@@ -319,7 +332,9 @@ export async function handleSound(i: ChatInputCommandInteraction, deps: BotDeps)
     assetPath: join(SFX_DIR, soundFilename(clip.key)),
   });
   await i.editReply(
-    queued ? t('sound.playing', locale, { name: clip.name }) : t('tts.busy', locale),
+    editCard(queued ? t('sound.playing', locale, { name: clip.name }) : t('tts.busy', locale), {
+      tone: queued ? 'success' : 'warning',
+    }),
   );
 }
 
@@ -396,7 +411,7 @@ export async function handleMicroFun(
     }
   }
 
-  await i.editReply(replyText);
+  await i.editReply(editCard(replyText));
 }
 
 /**

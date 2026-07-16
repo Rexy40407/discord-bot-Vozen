@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Minimal mock of @discordjs/voice (the commands module imports it transitively).
 vi.mock('@discordjs/voice', () => ({
@@ -49,7 +50,8 @@ function makePremiumInteraction(
       embeds?: { data: { description?: string } }[];
       components?: unknown[];
     }) => {
-      if (o.content) replies.push(o.content);
+      const text = messageText(o);
+      if (text) replies.push(text);
       if (o.embeds)
         for (const e of o.embeds) if (e.data.description) embedTexts.push(e.data.description);
       if (o.components) componentRows.push(...o.components);

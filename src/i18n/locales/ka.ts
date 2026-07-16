@@ -24,6 +24,19 @@ export default {
     'სიჩქარე უნდა იყოს 0.5-სა და 2.0-ს შორის (1.0 ნორმალურია). სცადეთ `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ თქვენი ხმა ახლა არის **{name}** სიჩქარით {speed}×. მოსასმენად სცადეთ `/tts hello`. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **ხმის დაყენება** — აირჩიეთ ქვემოთ მოცემული ვარიანტები და დააჭირეთ **შენახვას**. მანამდე არაფერი შეიცვლება.',
+  'voice.config.summary': 'მიმდინარე არჩევანი: **{voice}** · ძრავა **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'ენა…',
+  'voice.config.pickVoice': 'ხმა…',
+  'voice.config.pickEngine': 'ძრავა…',
+  'voice.config.pickSpeed': 'სიჩქარე…',
+  'voice.config.more': '▼ მეტი ენა',
+  'voice.config.engDefault': 'ნაგულისხმევი (ლოკალური)',
+  'voice.config.save': 'შენახვა',
+  'voice.config.cancel': 'გაუქმება',
+  'voice.config.cancelled': 'დაყენება გაუქმდა — არაფერი შეცვლილა.',
+  'voice.config.expired': 'პანელის ვადა ამოიწურა — გასაგრძელებლად კვლავ გაუშვით `/voice config`.',
   'voice.listHeader': 'ხელმისაწვდომი ხმები:',
   'voice.listEmpty': '(არცერთი დაინსტალირებული)',
   'voice.reset':

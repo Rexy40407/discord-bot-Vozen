@@ -8,7 +8,6 @@ import {
   ChatInputCommandInteraction,
   ComponentType,
   GuildMember,
-  MessageFlags,
   ModalBuilder,
   PermissionFlagsBits,
   StringSelectMenuBuilder,
@@ -35,6 +34,7 @@ import { voteUpsellLine } from '../voteUpsell';
 import { localeForUser, reply } from '../helpers';
 import { speakRawText } from './core';
 import { log } from '../../logging/logger';
+import { editCard, replyCard } from '../../ui/messages';
 
 const MODAL_WAIT_MS = 5 * 60_000; // modals can take a while — Discord allows up to ~15 min
 const SELECT_WAIT_MS = 60_000;
@@ -127,8 +127,8 @@ async function applyAddPronunciation(
   replacement: string,
 ): Promise<void> {
   const send = async (content: string) => {
-    if (i.replied || i.deferred) await i.followUp({ content, flags: MessageFlags.Ephemeral });
-    else await i.reply({ content, flags: MessageFlags.Ephemeral });
+    if (i.replied || i.deferred) await i.followUp(replyCard(content, { ephemeral: true }));
+    else await i.reply(replyCard(content, { ephemeral: true }));
   };
   if (!term || !replacement) {
     await send(t('pron.empty', locale));
@@ -251,8 +251,8 @@ async function applyAddServerPron(
   replacement: string,
 ): Promise<void> {
   const send = async (content: string) => {
-    if (i.replied || i.deferred) await i.followUp({ content, flags: MessageFlags.Ephemeral });
-    else await i.reply({ content, flags: MessageFlags.Ephemeral });
+    if (i.replied || i.deferred) await i.followUp(replyCard(content, { ephemeral: true }));
+    else await i.reply(replyCard(content, { ephemeral: true }));
   };
   if (!term || !replacement) {
     await send(t('pron.empty', locale));
@@ -315,8 +315,8 @@ async function drawAndAnnounce(
   }
   const content = `🎲 ${line}${spoke ? '' : `\n${t('rand.notInVoice', locale)}`}`;
   // PUBLIC reply on purpose: the draw is of interest to the channel, not just to whoever ran it.
-  if (i.replied || i.deferred) await i.followUp({ content });
-  else await i.reply({ content });
+  if (i.replied || i.deferred) await i.followUp(replyCard(content, { tone: 'success' }));
+  else await i.reply(replyCard(content, { tone: 'success' }));
 }
 
 export async function handleRandomizer(
@@ -354,11 +354,12 @@ export async function handleRandomizer(
           value: String(n),
         })),
       );
-    await i.reply({
-      content: t('rand.selectPrompt', locale),
-      components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select)],
-      flags: MessageFlags.Ephemeral,
-    });
+    await i.reply(
+      replyCard(t('rand.selectPrompt', locale), {
+        ephemeral: true,
+        rows: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select)],
+      }),
+    );
     let picked;
     try {
       picked = await i.channel?.awaitMessageComponent({
@@ -367,14 +368,14 @@ export async function handleRandomizer(
         filter: (c) => c.customId === `randAmount:${i.id}` && c.user.id === i.user.id,
       });
     } catch {
-      await i.editReply({ content: t('rand.timeout', locale), components: [] }).catch(() => {});
+      await i.editReply(editCard(t('rand.timeout', locale), { tone: 'warning' })).catch(() => {});
       return;
     }
     if (!picked) return;
     amount = Number(picked.values[0]);
     // The modal MUST be the 1st response to the select interaction.
     await picked.showModal(randomizerModal(i.id, amount, locale));
-    await i.editReply({ content: t('rand.filling', locale), components: [] }).catch(() => {});
+    await i.editReply(editCard(t('rand.filling', locale))).catch(() => {});
     let submit: ModalSubmitInteraction;
     try {
       submit = await picked.awaitModalSubmit({

@@ -65,6 +65,19 @@ export default {
     'Брзина мора бити између 0.5 и 2.0 (1.0 је нормално). Пробај `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Твој глас је сада **{name}** при {speed}×. Пробај `/tts здраво` да га чујеш. (ид: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Подешавање гласа** — изаберите опције испод, па притисните **Сачувај**. До тада се ништа неће променити.',
+  'voice.config.summary': 'Тренутни избор: **{voice}** · механизам **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Језик…',
+  'voice.config.pickVoice': 'Глас…',
+  'voice.config.pickEngine': 'Механизам…',
+  'voice.config.pickSpeed': 'Брзина…',
+  'voice.config.more': '▼ Још језика',
+  'voice.config.engDefault': 'Подразумевано (локално)',
+  'voice.config.save': 'Сачувај',
+  'voice.config.cancel': 'Откажи',
+  'voice.config.cancelled': 'Подешавање је отказано — ништа није промењено.',
+  'voice.config.expired': 'Панел је истекао — поново покрените `/voice config` да наставите.',
   'voice.listHeader': 'Доступни гласови:',
   'voice.listEmpty': '(ниједан није инсталиран)',
   'voice.reset':

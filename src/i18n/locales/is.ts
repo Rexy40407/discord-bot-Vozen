@@ -64,6 +64,19 @@ export default {
     'Hraðinn verður að vera á milli 0.5 og 2.0 (1.0 er eðlilegt). Prófaðu `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Röddin þín er núna **{name}** á {speed}×. Prófaðu `/tts halló` til að heyra hana. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Raddstilling** — veldu valkostina hér fyrir neðan og ýttu síðan á **Vista**. Ekkert breytist fyrr en þú gerir það.',
+  'voice.config.summary': 'Núverandi val: **{voice}** · vél **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Tungumál…',
+  'voice.config.pickVoice': 'Rödd…',
+  'voice.config.pickEngine': 'Vél…',
+  'voice.config.pickSpeed': 'Hraði…',
+  'voice.config.more': '▼ Fleiri tungumál',
+  'voice.config.engDefault': 'Sjálfgefið (staðbundið)',
+  'voice.config.save': 'Vista',
+  'voice.config.cancel': 'Hætta við',
+  'voice.config.cancelled': 'Stillingu hætt við — engu var breytt.',
+  'voice.config.expired': 'Spjaldið rann út — keyrðu `/voice config` aftur til að halda áfram.',
   'voice.listHeader': 'Tiltækar raddir:',
   'voice.listEmpty': '(engin uppsett)',
   'voice.reset':

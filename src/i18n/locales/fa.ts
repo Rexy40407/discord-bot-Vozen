@@ -24,6 +24,19 @@ export default {
     'سرعت باید بین 0.5 و 2.0 باشد (1.0 عادی است). `/voice set model:… speed:1.0` را امتحان کن.',
   'voice.set':
     '✅ صدای تو حالا **{name}** با سرعت {speed}× است. برای شنیدنش `/tts hello` را امتحان کن. (شناسه: `{model}`)',
+  'voice.config.title':
+    '🎙️ **تنظیم صدا** — گزینه‌های زیر را انتخاب کنید، سپس **ذخیره** را بزنید. تا آن زمان چیزی تغییر نمی‌کند.',
+  'voice.config.summary': 'انتخاب فعلی: **{voice}** · موتور **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'زبان…',
+  'voice.config.pickVoice': 'صدا…',
+  'voice.config.pickEngine': 'موتور…',
+  'voice.config.pickSpeed': 'سرعت…',
+  'voice.config.more': '▼ زبان‌های بیشتر',
+  'voice.config.engDefault': 'پیش‌فرض (محلی)',
+  'voice.config.save': 'ذخیره',
+  'voice.config.cancel': 'لغو',
+  'voice.config.cancelled': 'تنظیم لغو شد — چیزی تغییر نکرد.',
+  'voice.config.expired': 'پنل منقضی شد — برای ادامه دوباره `/voice config` را اجرا کنید.',
   'voice.listHeader': 'صداهای موجود:',
   'voice.listEmpty': '(هیچ‌کدام نصب نشده)',
   'voice.reset':

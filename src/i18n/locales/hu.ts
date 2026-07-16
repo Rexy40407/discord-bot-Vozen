@@ -25,6 +25,20 @@ export default {
     'A sebességnek 0.5 és 2.0 között kell lennie (1.0 a normál). Próbáld: `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ A hangod mostantól **{name}** {speed}× sebességgel. Próbáld ki a `/tts hello` paranccsal. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Hangbeállítás** — válaszd ki az alábbi lehetőségeket, majd nyomd meg a **Mentés** gombot. Addig semmi sem változik.',
+  'voice.config.summary': 'Jelenlegi választás: **{voice}** · motor **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Nyelv…',
+  'voice.config.pickVoice': 'Hang…',
+  'voice.config.pickEngine': 'Motor…',
+  'voice.config.pickSpeed': 'Sebesség…',
+  'voice.config.more': '▼ További nyelvek',
+  'voice.config.engDefault': 'Alapértelmezett (helyi)',
+  'voice.config.save': 'Mentés',
+  'voice.config.cancel': 'Mégse',
+  'voice.config.cancelled': 'A beállítás megszakítva — semmi sem változott.',
+  'voice.config.expired':
+    'A panel lejárt — a folytatáshoz futtasd újra a `/voice config` parancsot.',
   'voice.listHeader': 'Elérhető hangok:',
   'voice.listEmpty': '(nincs telepítve)',
   'voice.reset':

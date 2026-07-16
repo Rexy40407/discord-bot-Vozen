@@ -18,6 +18,7 @@
 // startup/stop of the session.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
+import { messageText } from './messagePayload';
 import { initDb } from '../src/store/db';
 import { grantGuildPremium } from '../src/store/premium';
 import { t, DEFAULT_LOCALE } from '../src/i18n/index';
@@ -153,12 +154,12 @@ function makeInteraction(opts: {
       getSubcommand: () => opts.sub,
       getString: () => null,
     },
-    reply: vi.fn(async (o: { content: string }) => {
-      replies.push(o.content);
+    reply: vi.fn(async (o: unknown) => {
+      replies.push(messageText(o));
     }),
     deferReply: vi.fn(async () => {}),
-    editReply: vi.fn(async (o: string | { content: string }) => {
-      replies.push(typeof o === 'string' ? o : o.content);
+    editReply: vi.fn(async (o: unknown) => {
+      replies.push(messageText(o));
       return {};
     }),
     replies,

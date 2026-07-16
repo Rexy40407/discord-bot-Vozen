@@ -24,6 +24,19 @@ export default {
     'La velocidad tiene que estar entre 0.5 y 2.0 (1.0 es lo normal). Prueba `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Tu voz ahora es **{name}** a {speed}×. Prueba `/tts hola` para escucharla. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Configuración de voz** — elige las opciones de abajo y pulsa **Guardar**. Nada cambiará hasta entonces.',
+  'voice.config.summary': 'Selección actual: **{voice}** · motor **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Idioma…',
+  'voice.config.pickVoice': 'Voz…',
+  'voice.config.pickEngine': 'Motor…',
+  'voice.config.pickSpeed': 'Velocidad…',
+  'voice.config.more': '▼ Más idiomas',
+  'voice.config.engDefault': 'Predeterminado (local)',
+  'voice.config.save': 'Guardar',
+  'voice.config.cancel': 'Cancelar',
+  'voice.config.cancelled': 'Configuración cancelada — no ha cambiado nada.',
+  'voice.config.expired': 'El panel ha caducado — ejecuta `/voice config` de nuevo para continuar.',
   'voice.listHeader': 'Voces disponibles:',
   'voice.listEmpty': '(ninguna instalada)',
   'voice.reset':

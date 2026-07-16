@@ -65,6 +65,19 @@ export default {
     'गति ०.५ र २.० बीचमा हुनुपर्छ (१.० सामान्य हो)। `/voice set model:… speed:1.0` प्रयास गर्नुहोस्।',
   'voice.set':
     '✅ तपाईंको स्वर अब **{name}** मा {speed}× गतिमा छ। सुन्न `/tts hello` प्रयास गर्नुहोस्। (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **आवाज सेटअप** — तलका विकल्पहरू छान्नुहोस् र त्यसपछि **सेभ** थिच्नुहोस्। त्यसअघि केही परिवर्तन हुँदैन।',
+  'voice.config.summary': 'हालको छनोट: **{voice}** · इन्जिन **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'भाषा…',
+  'voice.config.pickVoice': 'आवाज…',
+  'voice.config.pickEngine': 'इन्जिन…',
+  'voice.config.pickSpeed': 'गति…',
+  'voice.config.more': '▼ थप भाषाहरू',
+  'voice.config.engDefault': 'पूर्वनिर्धारित (स्थानीय)',
+  'voice.config.save': 'सेभ',
+  'voice.config.cancel': 'रद्द',
+  'voice.config.cancelled': 'सेटअप रद्द गरियो — केही परिवर्तन भएन।',
+  'voice.config.expired': 'प्यानलको म्याद सकियो — जारी राख्न `/voice config` फेरि चलाउनुहोस्।',
   'voice.listHeader': 'उपलब्ध स्वरहरू:',
   'voice.listEmpty': '(कुनै पनि स्थापना गरिएको छैन)',
   'voice.reset':

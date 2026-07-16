@@ -3,6 +3,7 @@
 // Follows the tests/commandsServerPron.test.ts pattern (interaction stub + fast-path add,
 // which skips the modal).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { messageText } from './messagePayload';
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
@@ -43,10 +44,10 @@ function makeInteraction(opts: { sub: string; optionsMap?: Record<string, unknow
     deferred: false,
     isRepliable: () => true,
     reply: async (o: { content: string }) => {
-      replies.push(o.content);
+      replies.push(messageText(o));
     },
     followUp: async (o: { content: string }) => {
-      replies.push(o.content);
+      replies.push(messageText(o));
     },
     member: { permissions: { has: () => true } },
     guild: null,

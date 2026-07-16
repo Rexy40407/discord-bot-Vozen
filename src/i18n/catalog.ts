@@ -1299,7 +1299,7 @@ export const catalog: Record<string, Entry> = {
   // por isso 'help.title' e texto simpatico sem `**…**`.
   'help.title': {
     en: 'Vozen — type it, hear it.',
-    // Sem `pt`: a marca/tagline e a mesma em qualquer idioma (fallback a en).
+    pt: 'Vozen — escreve, ouve.',
   },
   'help.embedTitle': {
     en: 'Vozen — Commands',
@@ -1474,7 +1474,7 @@ export const catalog: Record<string, Entry> = {
   },
   'welcome.footer': {
     en: 'Vozen — type it, hear it.',
-    // Sem `pt`: a tagline e a mesma em qualquer idioma (fallback a en).
+    pt: 'Vozen — escreve, ouve.',
   },
   // Diferenciador vs. o lider pago do mercado ("TTS Bot", ~€5/mes): a voz neural do
   // Vozen e gratuita e sem paywall. SO texto de posicionamento — NAO promete "mais

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Mock minimo de @discordjs/voice — nao e usado no /voice optout/optin, mas o import resolve-o.
 vi.mock('@discordjs/voice', () => ({
@@ -35,8 +36,8 @@ function makeVoiceInteraction(sub: string) {
     replied: false,
     deferred: false,
     isRepliable: () => true,
-    reply: async (o: { content: string }) => {
-      replies.push(o.content);
+    reply: async (o: unknown) => {
+      replies.push(messageText(o));
     },
     options: {
       getSubcommandGroup: (_required = false) => null,

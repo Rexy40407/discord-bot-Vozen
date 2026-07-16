@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Minimal mock of @discordjs/voice — not used in the /tts path (the player is
 // injected into the deps), but index.ts's import needs to resolve.
@@ -44,7 +45,7 @@ function makeTtsInteraction(text: string) {
       this.deferred = true;
     },
     editReply: async (o: string | { content: string }) => {
-      replies.push(typeof o === 'string' ? o : o.content);
+      replies.push(messageText(o));
     },
     // guild.members.cache / channels.cache used by the cleanText resolver.
     guild: {

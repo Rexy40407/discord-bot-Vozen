@@ -13,6 +13,7 @@ import { getVoiceConnection } from '@discordjs/voice';
 import type { BotDeps } from '../../bot/deps';
 import { getPlayer, getLimiter } from '../../bot/deps';
 import { brandEmbed } from '../../ui/theme';
+import { channelCard, editCard, messageEditCard, replyCard, updateCard } from '../../ui/messages';
 import { getUserVoice, setUserVoice, resetUserVoice, type UserEngine } from '../../store/userVoice';
 import {
   seedPanelState,
@@ -180,19 +181,20 @@ async function handleVoiceClone(
   // fetch lets the bot operate without the privileged GuildMembers gateway intent.
   const targetChannelId = i.guild?.voiceStates.cache.get(targetId)?.channelId ?? null;
   if (!connection || !botChannelId) {
-    await i.editReply({ content: t('clone.notInVoice', locale) });
+    await i.editReply(editCard(t('clone.notInVoice', locale), { tone: 'danger' }));
     return;
   }
   if (targetChannelId !== botChannelId) {
-    await i.editReply({
-      content: isSelf
-        ? t('clone.notInVoice', locale)
-        : t('clone.targetNotInVoice', locale, { who }),
-    });
+    await i.editReply(
+      editCard(
+        isSelf ? t('clone.notInVoice', locale) : t('clone.targetNotInVoice', locale, { who }),
+        { tone: 'danger' },
+      ),
+    );
     return;
   }
   if (activeCloneRecordings.has(targetId)) {
-    await i.editReply({ content: t('clone.alreadyRecording', locale) });
+    await i.editReply(editCard(t('clone.alreadyRecording', locale), { tone: 'warning' }));
     return;
   }
   // Reserve the target NOW (before the 60s consent window), otherwise two people pointing
@@ -208,7 +210,7 @@ async function handleVoiceClone(
     const ch = i.channel;
     if (!ch || !ch.isTextBased() || ch.isDMBased()) {
       activeCloneRecordings.delete(targetId);
-      await i.editReply({ content: t('clone.failed', locale) });
+      await i.editReply(editCard(t('clone.failed', locale), { tone: 'danger' }));
       return;
     }
     // The target reads this — use the guild locale (neutral), not the invoker's.
@@ -225,29 +227,36 @@ async function handleVoiceClone(
         .setStyle(ButtonStyle.Secondary)
         .setEmoji('✖️'),
     );
-    await i.editReply({ content: t('clone.consentWaiting', locale, { who }) });
-    const consentMsg = await ch.send({
-      content: t('clone.consentRequest', gLocale, { invoker: `<@${userId}>`, target: seconds }),
-      components: [consentRow],
-    });
+    await i.editReply(editCard(t('clone.consentWaiting', locale, { who }), { tone: 'warning' }));
+    const consentMsg = await ch.send(
+      channelCard(
+        t('clone.consentRequest', gLocale, { invoker: `<@${userId}>`, target: seconds }),
+        { tone: 'warning', rows: [consentRow] },
+      ),
+    );
     const granted = await new Promise<boolean>((resolve) => {
       const col = consentMsg.createMessageComponentCollector({
         componentType: ComponentType.Button,
         time: 60_000,
       });
       col.on('collect', (btn) => {
+        const buttonLocale = localeForUser(deps, btn);
         if (btn.user.id !== targetId) {
-          void btn.reply({
-            content: t('clone.consentNotYou', gLocale),
-            flags: MessageFlags.Ephemeral,
-          });
+          void btn.reply(
+            replyCard(t('clone.consentNotYou', buttonLocale), {
+              ephemeral: true,
+              tone: 'danger',
+            }),
+          );
           return;
         }
         const ok = btn.customId.startsWith('cloneok:');
-        void btn.update({
-          content: t(ok ? 'clone.consentGranted' : 'clone.consentRefused', gLocale, { who }),
-          components: [],
-        });
+        void btn.update(
+          updateCard(
+            t(ok ? 'clone.consentGranted' : 'clone.consentRefused', buttonLocale, { who }),
+            { tone: ok ? 'success' : 'warning' },
+          ),
+        );
         resolve(ok);
         col.stop('answered');
       });
@@ -257,8 +266,12 @@ async function handleVoiceClone(
     });
     if (!granted) {
       activeCloneRecordings.delete(targetId);
-      await i.editReply({ content: t('clone.consentRefused', locale, { who }) }).catch(() => {});
-      await consentMsg.edit({ components: [] }).catch(() => {}); // clear buttons if it was a timeout
+      await i
+        .editReply(editCard(t('clone.consentRefused', locale, { who }), { tone: 'warning' }))
+        .catch(() => {});
+      await consentMsg
+        .edit(messageEditCard(t('clone.consentRefused', gLocale, { who }), { tone: 'warning' }))
+        .catch(() => {});
       return;
     }
   }
@@ -281,12 +294,14 @@ async function handleVoiceClone(
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(stopBtn);
     // Uncover the ears ONLY for this window (selfDeaf false), recording only the target.
     connection.rejoin({ channelId, selfDeaf: false, selfMute: false });
-    const msg = await i.editReply({
-      content: isSelf
-        ? t('clone.recording', locale, { target: seconds })
-        : t('clone.recordingOther', locale, { who, target: seconds }),
-      components: [row],
-    });
+    const msg = await i.editReply(
+      editCard(
+        isSelf
+          ? t('clone.recording', locale, { target: seconds })
+          : t('clone.recordingOther', locale, { who, target: seconds }),
+        { tone: 'warning', rows: [row] },
+      ),
+    );
 
     // Manual stop signal: the button collector sets it; the recorder polls it.
     let stopped = false;
@@ -297,7 +312,12 @@ async function handleVoiceClone(
     collectorHandle = collector;
     collector.on('collect', (btn) => {
       if (btn.user.id !== userId && btn.user.id !== targetId) {
-        void btn.reply({ content: t('clone.stopNotYours', locale), flags: MessageFlags.Ephemeral });
+        void btn.reply(
+          replyCard(t('clone.stopNotYours', localeForUser(deps, btn)), {
+            ephemeral: true,
+            tone: 'danger',
+          }),
+        );
         return;
       }
       stopped = true;
@@ -317,13 +337,15 @@ async function handleVoiceClone(
         if (now - lastEdit < 2_500) return;
         lastEdit = now;
         void i
-          .editReply({
-            content: t('clone.recordingProgress', locale, {
-              got: Math.round(ms / 1000),
-              target: seconds,
-            }),
-            components: [row],
-          })
+          .editReply(
+            editCard(
+              t('clone.recordingProgress', locale, {
+                got: Math.round(ms / 1000),
+                target: seconds,
+              }),
+              { tone: 'warning', rows: [row] },
+            ),
+          )
           .catch(() => {});
       },
     });
@@ -338,14 +360,16 @@ async function handleVoiceClone(
         `threshold=${diag.threshold} rounds=${diag.rounds}`,
     );
     if (voicedMs < minMs) {
-      await i.editReply({
-        content: t('clone.tooShort', locale, {
-          seconds: Math.round(voicedMs / 1000),
-          min: Math.round(minMs / 1000),
-          target: seconds,
-        }),
-        components: [],
-      });
+      await i.editReply(
+        editCard(
+          t('clone.tooShort', locale, {
+            seconds: Math.round(voicedMs / 1000),
+            min: Math.round(minMs / 1000),
+            target: seconds,
+          }),
+          { tone: 'warning' },
+        ),
+      );
       return;
     }
     // File VERSIONED by timestamp: a re-recording is a new path -> new cache key
@@ -368,15 +392,17 @@ async function handleVoiceClone(
         // old file already removed — harmless
       }
     }
-    await i.editReply({
-      content: isSelf
-        ? t('clone.saved', locale, { seconds: Math.round(voicedMs / 1000) })
-        : t('clone.savedOther', locale, { seconds: Math.round(voicedMs / 1000), who }),
-      components: [],
-    });
+    await i.editReply(
+      editCard(
+        isSelf
+          ? t('clone.saved', locale, { seconds: Math.round(voicedMs / 1000) })
+          : t('clone.savedOther', locale, { seconds: Math.round(voicedMs / 1000), who }),
+        { tone: 'success' },
+      ),
+    );
   } catch (err) {
     log.error('[clone] recording failed:', err);
-    await i.editReply({ content: t('clone.failed', locale), components: [] }).catch(() => {});
+    await i.editReply(editCard(t('clone.failed', locale), { tone: 'danger' })).catch(() => {});
   } finally {
     collectorHandle?.stop('finally');
     // ALWAYS deafen again (privacy by default), no matter what happens.
@@ -438,7 +464,7 @@ async function handleVoiceConfig(
 
   function render(): {
     content: string;
-    components: ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[];
+    rows: ActionRowBuilder<StringSelectMenuBuilder | ButtonBuilder>[];
   } {
     const curLocale = localeOf(state.model);
     const page = paginateLocales(locales, state.langPage);
@@ -532,22 +558,25 @@ async function handleVoiceConfig(
       engine: engineName(state.engine),
       speed: state.speed,
     });
-    return { content: `${t('voice.config.title', locale)}\n${summary}`, components: rows };
+    return { content: `${t('voice.config.title', locale)}\n${summary}`, rows };
   }
 
-  await i.reply({ ...render(), flags: MessageFlags.Ephemeral });
+  const initial = render();
+  await i.reply(replyCard(initial.content, { ephemeral: true, rows: initial.rows }));
   const msg = await i.fetchReply();
   let done = false;
   const collector = msg.createMessageComponentCollector({ time: 120_000 });
   const onCollect = async (ci: MessageComponentInteraction): Promise<void> => {
     // The panel is ephemeral (only the invoker sees it), but guard anyway.
     if (ci.user.id !== i.user.id) {
-      await ci.reply({ content: t('clone.stopNotYours', locale), flags: MessageFlags.Ephemeral });
+      await ci.reply(
+        replyCard(t('clone.stopNotYours', locale), { ephemeral: true, tone: 'danger' }),
+      );
       return;
     }
     if (ci.isButton() && ci.customId === `vcfg:cancel:${i.id}`) {
       done = true;
-      await ci.update({ content: t('voice.config.cancelled', locale), components: [] });
+      await ci.update(updateCard(t('voice.config.cancelled', locale), { tone: 'warning' }));
       collector.stop('cancelled');
       return;
     }
@@ -558,23 +587,27 @@ async function handleVoiceConfig(
       const check = validateSave(state, { premium });
       if (!check.ok) {
         // Keep the panel open; tell them via a follow-up so they can pick another engine.
-        await ci.reply({
-          content: t('voice.engine.gcloudLocked', locale),
-          flags: MessageFlags.Ephemeral,
-        });
+        await ci.reply(
+          replyCard(t('voice.engine.gcloudLocked', locale), {
+            ephemeral: true,
+            tone: 'premium',
+          }),
+        );
         return;
       }
       setUserVoice(deps.db, i.guildId!, i.user.id, state.model, state.speed, state.engine);
       done = true;
-      await ci.update({
-        content: t('voice.set', locale, {
-          name: fullNamer(state.model),
-          model: state.model,
-          speed: state.speed,
-          engine: engineName(state.engine),
-        }),
-        components: [],
-      });
+      await ci.update(
+        updateCard(
+          t('voice.set', locale, {
+            name: fullNamer(state.model),
+            model: state.model,
+            speed: state.speed,
+            engine: engineName(state.engine),
+          }),
+          { tone: 'success' },
+        ),
+      );
       collector.stop('saved');
       return;
     }
@@ -594,14 +627,15 @@ async function handleVoiceConfig(
       } else if (ci.customId === `vcfg:speed:${i.id}`) {
         state.speed = Number(value);
       }
-      await ci.update(render());
+      const next = render();
+      await ci.update(updateCard(next.content, { rows: next.rows }));
     }
   };
   collector.on('collect', (ci) => void onCollect(ci));
   collector.on('end', () => {
     if (done) return;
     void i
-      .editReply({ content: t('voice.config.expired', locale), components: [] })
+      .editReply(editCard(t('voice.config.expired', locale), { tone: 'warning' }))
       .catch(() => {});
   });
 }

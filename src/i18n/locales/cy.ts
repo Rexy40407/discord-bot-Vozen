@@ -24,6 +24,19 @@ export default {
     "Rhaid i'r cyflymder fod rhwng 0.5 a 2.0 (mae 1.0 yn arferol). Rho gynnig ar `/voice set model:… speed:1.0`.",
   'voice.set':
     "✅ Dy lais nawr yw **{name}** ar {speed}×. Rho gynnig ar `/tts helo` i'w glywed. (id: `{model}`)",
+  'voice.config.title':
+    '🎙️ **Gosodiad llais** — dewiswch yr opsiynau isod, yna pwyswch **Cadw**. Ni fydd dim yn newid tan hynny.',
+  'voice.config.summary': 'Dewis cyfredol: **{voice}** · peiriant **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Iaith…',
+  'voice.config.pickVoice': 'Llais…',
+  'voice.config.pickEngine': 'Peiriant…',
+  'voice.config.pickSpeed': 'Cyflymder…',
+  'voice.config.more': '▼ Rhagor o ieithoedd',
+  'voice.config.engDefault': 'Diofyn (lleol)',
+  'voice.config.save': 'Cadw',
+  'voice.config.cancel': 'Canslo',
+  'voice.config.cancelled': 'Gosodiad wedi ei ganslo — ni newidiodd dim.',
+  'voice.config.expired': 'Mae’r panel wedi dod i ben — rhedwch `/voice config` eto i barhau.',
   'voice.listHeader': 'Lleisiau ar gael:',
   'voice.listEmpty': "(dim wedi'u gosod)",
   'voice.reset':

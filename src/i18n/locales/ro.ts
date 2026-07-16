@@ -67,6 +67,19 @@ export default {
     'Viteza trebuie să fie între 0.5 și 2.0 (1.0 e normală). Încearcă `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Vocea ta este acum **{name}** la {speed}×. Încearcă `/tts salut` ca s-o auzi. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Configurarea vocii** — alege opțiunile de mai jos, apoi apasă **Salvează**. Nimic nu se schimbă până atunci.',
+  'voice.config.summary': 'Selecția curentă: **{voice}** · motor **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Limbă…',
+  'voice.config.pickVoice': 'Voce…',
+  'voice.config.pickEngine': 'Motor…',
+  'voice.config.pickSpeed': 'Viteză…',
+  'voice.config.more': '▼ Mai multe limbi',
+  'voice.config.engDefault': 'Implicit (local)',
+  'voice.config.save': 'Salvează',
+  'voice.config.cancel': 'Anulează',
+  'voice.config.cancelled': 'Configurare anulată — nu s-a schimbat nimic.',
+  'voice.config.expired': 'Panoul a expirat — rulează din nou `/voice config` pentru a continua.',
   'voice.listHeader': 'Voci disponibile:',
   'voice.listEmpty': '(niciuna instalată)',
   'voice.reset':

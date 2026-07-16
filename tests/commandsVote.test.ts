@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { isEphemeral, messageText } from './messagePayload';
 
 // Mock minimo de @discordjs/voice — o /vote nao liga a voz, mas o modulo de
 // comandos importa-o no topo, por isso o import precisa de resolver.
@@ -17,8 +18,8 @@ interface FakeInteraction {
   commandName: string;
   guildId: string;
   replies: string[];
-  flags: (number | undefined)[];
-  reply: (opts: { content: string; flags?: number }) => Promise<void>;
+  ephemeral: boolean[];
+  reply: (opts: unknown) => Promise<void>;
   isRepliable: () => boolean;
   replied: boolean;
   deferred: boolean;
@@ -26,18 +27,18 @@ interface FakeInteraction {
 
 function makeVoteInteraction(): FakeInteraction {
   const replies: string[] = [];
-  const flags: (number | undefined)[] = [];
+  const ephemeral: boolean[] = [];
   return {
     commandName: 'vote',
     guildId: GUILD,
     replies,
-    flags,
+    ephemeral,
     replied: false,
     deferred: false,
     isRepliable: () => true,
-    reply: async (o: { content: string; flags?: number }) => {
-      replies.push(o.content);
-      flags.push(o.flags);
+    reply: async (o: unknown) => {
+      replies.push(messageText(o));
+      ephemeral.push(isEphemeral(o));
     },
   };
 }
@@ -73,8 +74,8 @@ describe('/vote — link para a pagina de voto top.gg', () => {
     const i = makeVoteInteraction();
     await handleInteraction(i as any, makeDeps(CLIENT_ID));
     // reply normal: sem flags ephemeral, para o link ficar visivel no canal.
-    for (const f of i.flags) {
-      expect(f).toBeUndefined();
+    for (const ephemeral of i.ephemeral) {
+      expect(ephemeral).toBe(false);
     }
   });
 

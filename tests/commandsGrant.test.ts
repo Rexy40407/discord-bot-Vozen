@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { messageText } from './messagePayload';
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
@@ -38,8 +39,9 @@ function makeGrantInteraction(opts: {
     isRepliable: () => true,
     user: { id: opts.callerId },
     replies,
-    reply: async (o: { content?: string }) => {
-      if (o.content) replies.push(o.content);
+    reply: async (o: unknown) => {
+      const text = messageText(o);
+      if (text) replies.push(text);
     },
     options: {
       getSubcommand: () => '',

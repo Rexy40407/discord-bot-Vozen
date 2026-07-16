@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
+import { messageText } from './messagePayload';
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
@@ -48,8 +49,8 @@ function makeInteraction(content: string) {
     targetMessage: { content },
     replies,
     deferReply: async () => {},
-    editReply: async (msg: string | { content?: string }) => {
-      replies.push(typeof msg === 'string' ? msg : (msg.content ?? ''));
+    editReply: async (msg: unknown) => {
+      replies.push(messageText(msg));
     },
   };
 }
@@ -123,11 +124,11 @@ describe('context-menu "Speak"', () => {
       deferReply: async function (this: { deferred: boolean }) {
         this.deferred = true;
       },
-      editReply: async (msg: string | { content?: string }) => {
-        replies.push(typeof msg === 'string' ? msg : (msg.content ?? ''));
+      editReply: async (msg: unknown) => {
+        replies.push(messageText(msg));
       },
-      reply: async (msg: string | { content?: string }) => {
-        replies.push(typeof msg === 'string' ? msg : (msg.content ?? ''));
+      reply: async (msg: unknown) => {
+        replies.push(messageText(msg));
       },
     };
 

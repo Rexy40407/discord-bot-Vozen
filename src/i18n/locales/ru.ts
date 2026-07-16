@@ -24,6 +24,20 @@ export default {
     'Скорость должна быть от 0.5 до 2.0 (1.0 — обычная). Попробуйте `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Ваш голос теперь **{name}** со скоростью {speed}×. Напишите `/tts привет`, чтобы услышать его. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Настройка голоса** — выберите параметры ниже и нажмите **Сохранить**. До этого ничего не изменится.',
+  'voice.config.summary': 'Текущий выбор: **{voice}** · движок **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Язык…',
+  'voice.config.pickVoice': 'Голос…',
+  'voice.config.pickEngine': 'Движок…',
+  'voice.config.pickSpeed': 'Скорость…',
+  'voice.config.more': '▼ Больше языков',
+  'voice.config.engDefault': 'По умолчанию (локальный)',
+  'voice.config.save': 'Сохранить',
+  'voice.config.cancel': 'Отмена',
+  'voice.config.cancelled': 'Настройка отменена — ничего не изменилось.',
+  'voice.config.expired':
+    'Срок действия панели истёк — снова запустите `/voice config` для продолжения.',
   'voice.listHeader': 'Доступные голоса:',
   'voice.listEmpty': '(не установлено)',
   'voice.reset':

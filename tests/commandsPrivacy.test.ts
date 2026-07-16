@@ -1,5 +1,6 @@
 // tests/commandsPrivacy.test.ts
 import { describe, it, expect, vi } from 'vitest';
+import { messageText } from './messagePayload';
 import { handlePrivacy } from '../src/commands/handlers/privacy';
 import { initDb } from '../src/store/db';
 import type { BotDeps } from '../src/bot/deps';
@@ -57,9 +58,7 @@ describe('/privacy erase', () => {
       });
       // Mostrou a mensagem de cancelamento.
       expect(editReply).toHaveBeenCalledOnce();
-      expect(String((editReply.mock.calls[0][0] as { content: string }).content)).toMatch(
-        /Cancel/i,
-      );
+      expect(messageText(editReply.mock.calls[0][0])).toMatch(/Cancel/i);
     } finally {
       db.close();
     }

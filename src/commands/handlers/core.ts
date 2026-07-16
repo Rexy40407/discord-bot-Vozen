@@ -24,7 +24,8 @@ import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../../textClea
 import { prepareSpeech, redactRequest, hasReadableText } from '../prepareSpeech';
 import { log } from '../../logging/logger';
 import { t } from '../../i18n/index';
-import { localeFor, localeForUser, reply } from '../helpers';
+import { localeForUser, reply } from '../helpers';
+import { editCard, replyCard } from '../../ui/messages';
 
 /**
  * Result (discriminated) of trying to join Vozen to the caller's voice channel.
@@ -78,13 +79,14 @@ export async function handleJoin(i: ChatInputCommandInteraction, deps: BotDeps):
       await reply(i, t('join.missingPerms', locale, { channel: outcome.channelName }));
       return;
     case 'joined':
-      // PUBLIC announcement (everyone in the channel sees that Vozen joined, as a TTS
-      // bot does) — NOT ephemeral. In the GUILD's language (localeFor), because it's a message
-      // for everyone, not just the caller. The errors above stay ephemeral
-      // (they're feedback for the caller). `i.reply` without flags = public message.
-      await i.reply({
-        content: t('join.joined', localeFor(deps, i.guildId), { channel: outcome.channelName }),
-      });
+      // Discord exposes the invoking user's selected client language in `i.locale`.
+      // Public responses cannot render a different language per viewer, so the command
+      // invoker's locale is the only user-specific locale available for this message.
+      await i.reply(
+        replyCard(t('join.joined', locale, { channel: outcome.channelName }), {
+          tone: 'success',
+        }),
+      );
       return;
   }
 }
@@ -207,11 +209,16 @@ export async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): 
   const locale = localeForUser(deps, i);
   const raw = i.options.getString('text', true).trim();
   if (!raw) {
-    await i.editReply(t('tts.nothingToRead', locale));
+    await i.editReply(editCard(t('tts.nothingToRead', locale), { tone: 'warning' }));
     return;
   }
   const outcome = await speakRawText(deps, i.guildId!, i.user.id, i.guild!, raw);
-  await i.editReply(speakOutcomeMessage(outcome, locale));
+  await i.editReply(
+    editCard(speakOutcomeMessage(outcome, locale), {
+      tone:
+        outcome.status === 'queued' ? 'success' : outcome.status === 'busy' ? 'warning' : 'danger',
+    }),
+  );
 }
 
 /**
@@ -233,24 +240,33 @@ export async function handleMessageContextMenu(
   try {
     await i.deferReply({ flags: MessageFlags.Ephemeral });
     if (!i.guildId || !i.guild) {
-      await i.editReply(t('error.generic', locale));
+      await i.editReply(editCard(t('error.generic', locale), { tone: 'danger' }));
       return;
     }
     const raw = (i.targetMessage.content ?? '').trim();
     if (!raw) {
-      await i.editReply(t('speak.emptyMessage', locale));
+      await i.editReply(editCard(t('speak.emptyMessage', locale), { tone: 'warning' }));
       return;
     }
     const outcome = await speakRawText(deps, i.guildId, i.user.id, i.guild, raw);
-    await i.editReply(speakOutcomeMessage(outcome, locale));
+    await i.editReply(
+      editCard(speakOutcomeMessage(outcome, locale), {
+        tone:
+          outcome.status === 'queued'
+            ? 'success'
+            : outcome.status === 'busy'
+              ? 'warning'
+              : 'danger',
+      }),
+    );
   } catch (err) {
     log.error('[speak] Speak context-menu error:', err);
     if (!i.isRepliable()) return;
     const msg = t('error.generic', locale);
     if (i.deferred && !i.replied) {
-      await i.editReply({ content: msg }).catch(() => {});
+      await i.editReply(editCard(msg, { tone: 'danger' })).catch(() => {});
     } else if (!i.replied) {
-      await i.reply({ content: msg, flags: MessageFlags.Ephemeral }).catch(() => {});
+      await i.reply(replyCard(msg, { ephemeral: true, tone: 'danger' })).catch(() => {});
     }
   }
 }

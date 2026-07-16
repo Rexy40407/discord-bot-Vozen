@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { messageText } from './messagePayload';
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
@@ -44,7 +45,8 @@ function makeGenCode(opts: {
     user: { id: opts.callerId },
     replies,
     reply: async (o: { content?: string }) => {
-      if (o.content) replies.push(o.content);
+      const text = messageText(o);
+      if (text) replies.push(text);
     },
     options: {
       getSubcommand: () => '',
@@ -70,7 +72,8 @@ function makeRedeem(opts: { callerId: string; code: string }) {
     user: { id: opts.callerId },
     replies,
     reply: async (o: { content?: string }) => {
-      if (o.content) replies.push(o.content);
+      const text = messageText(o);
+      if (text) replies.push(text);
     },
     options: {
       getSubcommand: () => '',

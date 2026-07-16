@@ -26,9 +26,10 @@ import { hasSttConsent, grantSttConsent, revokeSttConsent } from '../../store/st
 import { isGuildPremium } from '../../store/premium';
 import { evaluateTranscribeStart, shouldAutoStop, resolveTranscribeLang } from '../transcribeGate';
 import { sanitizeSpeakerName } from '../../language/speakerName';
-import { localeFor, reply } from '../helpers';
+import { localeFor, localeForUser, reply } from '../helpers';
 import { t } from '../../i18n/index';
 import { log } from '../../logging/logger';
+import { channelCard, editCard, messageEditCard, replyCard } from '../../ui/messages';
 
 interface ActiveSession {
   session: TranscriptionSession;
@@ -43,6 +44,8 @@ interface ActiveSession {
   everConsented: boolean;
   /** Releases the permit of the GLOBAL STT cap (plan 029) — idempotent, callable one or more times. */
   releaseSttSlot: () => void;
+  /** Locale used to render the public recording-state card when the session ends. */
+  locale: string;
 }
 
 // One transcription session per server.
@@ -64,13 +67,13 @@ export async function handleTranscribe(
   i: ChatInputCommandInteraction,
   deps: BotDeps,
 ): Promise<void> {
+  const locale = localeForUser(deps, i);
   const guildId = i.guildId;
   if (!guildId) {
-    await reply(i, t('stt.guildOnly', 'en'));
+    await reply(i, t('stt.guildOnly', locale));
     return;
   }
   const sub = i.options.getSubcommand();
-  const locale = localeFor(deps, guildId);
 
   if (sub === 'revoke') {
     const had = revokeSttConsent(deps.db, i.user.id, guildId);
@@ -83,7 +86,7 @@ export async function handleTranscribe(
       await reply(i, t('stt.noManage', locale));
       return;
     }
-    const stopped = await stopSession(guildId, locale, 'command');
+    const stopped = await stopSession(guildId, 'command');
     await reply(i, t(stopped ? 'stt.stopped' : 'stt.notRunning', locale));
     return;
   }
@@ -147,13 +150,13 @@ export async function handleTranscribe(
 
     const channel = i.channel;
     if (!channel || !channel.isTextBased() || channel.isDMBased() || !('send' in channel)) {
-      await i.editReply(t('stt.noChannel', locale));
+      await i.editReply(editCard(t('stt.noChannel', locale), { tone: 'danger' }));
       return;
     }
 
     const vcid = conn.joinConfig.channelId;
     if (!vcid) {
-      await i.editReply(t('stt.notInVoice', locale));
+      await i.editReply(editCard(t('stt.notInVoice', locale), { tone: 'warning' }));
       return;
     }
     voiceChannelId = vcid;
@@ -161,7 +164,7 @@ export async function handleTranscribe(
     // FORCE the transcription language: the one chosen in `language:` wins; otherwise the server's
     // locale (2 letters, e.g. 'pt'). Whisper's auto-detection on short real speech transcribes
     // badly (PT comes out as Czech/Swedish); the sidecar falls back to auto-detection if the language is invalid.
-    const lang = resolveTranscribeLang(i.options.getString('language'), locale);
+    const lang = resolveTranscribeLang(i.options.getString('language'), localeFor(deps, guildId));
     if (cmd) cmd.args.push('--lang', lang);
     const tr = new WhisperTranscriber(cmd);
     transcriber = tr;
@@ -204,10 +207,12 @@ export async function handleTranscribe(
     );
     // MAY THROW (SendMessages lost, rate-limit, network failure) — this is exactly the case
     // the catch below handles (DISCORD-02: bot stays un-deafened and listening with no session).
-    const announceMsg = await channel.send({
-      content: t('stt.announceStart', locale),
-      components: [consentRow],
-    });
+    const announceMsg = await channel.send(
+      channelCard(t('stt.announceStart', locale), {
+        tone: 'warning',
+        rows: [consentRow],
+      }),
+    );
 
     const collector = announceMsg.createMessageComponentCollector({
       componentType: ComponentType.Button,
@@ -223,6 +228,7 @@ export async function handleTranscribe(
       autoStopTimer: null,
       everConsented: false,
       releaseSttSlot,
+      locale,
     };
     activeSessions.set(guildId, active);
     handedOff = true;
@@ -230,7 +236,12 @@ export async function handleTranscribe(
     collector.on('collect', (btn) => {
       grantSttConsent(deps.db, btn.user.id, guildId, Date.now());
       active.everConsented = true;
-      void btn.reply({ content: t('stt.consentThanks', locale), flags: MessageFlags.Ephemeral });
+      void btn.reply(
+        replyCard(t('stt.consentThanks', localeForUser(deps, btn)), {
+          ephemeral: true,
+          tone: 'success',
+        }),
+      );
     });
 
     // Auto-stop: periodically checks whether it still makes sense to continue (empty call, or
@@ -240,12 +251,12 @@ export async function handleTranscribe(
       if (
         shouldAutoStop(humans, (uid) => hasSttConsent(deps.db, uid, guildId), active.everConsented)
       ) {
-        void stopSession(guildId, locale, 'auto');
+        void stopSession(guildId, 'auto');
       }
     }, 15_000);
     active.autoStopTimer.unref?.();
 
-    await i.editReply(t('stt.started', locale));
+    await i.editReply(editCard(t('stt.started', locale), { tone: 'success' }));
   } catch (err) {
     // Error teardown (plan 029, part B/DISCORD-02). If `handedOff` is false, the session
     // NEVER reached `activeSessions` — neither /transcribe stop nor the voice-left funnel
@@ -274,7 +285,7 @@ export async function handleTranscribe(
       // true here, the session is registered and alive (the only thing that could have thrown after
       // that is the final `editReply(stt.started)`) — lying "nothing is being recorded"
       // would contradict the very trust invariant of plan 029/DISCORD-02.
-      await i.editReply(t('stt.startFailed', locale)).catch(() => {});
+      await i.editReply(editCard(t('stt.startFailed', locale), { tone: 'danger' })).catch(() => {});
     }
   } finally {
     // Release the global permit IF the session never reached `activeSessions` — covers BOTH
@@ -310,15 +321,13 @@ export function stopTranscriptionForGuild(guildId: string): void {
   // registered in `activeSessions` eventually passes (stop() calls it too, see below).
   // Idempotent: even if something called it twice, it does not over-release.
   a.releaseSttSlot();
-  a.announceMsg.edit({ components: [] }).catch(() => {});
+  a.announceMsg
+    .edit(messageEditCard(t('stt.announceStop', a.locale), { tone: 'warning' }))
+    .catch(() => {});
 }
 
 /** Stops the server's session: restores selfDeaf, clears listeners/timers, announces. */
-async function stopSession(
-  guildId: string,
-  locale: string,
-  _reason: 'command' | 'auto',
-): Promise<boolean> {
+async function stopSession(guildId: string, _reason: 'command' | 'auto'): Promise<boolean> {
   const a = activeSessions.get(guildId);
   if (!a) return false;
   stopTranscriptionForGuild(guildId);
@@ -328,10 +337,6 @@ async function stopSession(
     a.connection.rejoin({ channelId: a.voiceChannelId, selfDeaf: true, selfMute: false });
   } catch {
     // the connection may have already dropped
-  }
-  const ch = a.announceMsg.channel;
-  if (ch && ch.isTextBased() && 'send' in ch) {
-    await ch.send({ content: t('stt.announceStop', locale) }).catch(() => {});
   }
   log.info(`[stt] session stopped (guild ${guildId}, ${_reason})`);
   return true;

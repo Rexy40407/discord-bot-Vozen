@@ -10,6 +10,7 @@ import {
 import type { BotDeps } from '../../bot/deps';
 import { getPlayer } from '../../bot/deps';
 import { brandEmbed, rankMedal } from '../../ui/theme';
+import { editCard, replyCard } from '../../ui/messages';
 import { isGuildPremium, isUserPremium } from '../../store/premium';
 import { GAME_DEFS, gameById } from '../../games/index';
 import { createGameThread, deleteChannelSafe } from '../../games/thread';
@@ -54,11 +55,12 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
             value: g.id,
           })),
         );
-      await i.reply({
-        content: t('game.pickPrompt', locale),
-        components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select)],
-        flags: MessageFlags.Ephemeral,
-      });
+      await i.reply(
+        replyCard(t('game.pickPrompt', locale), {
+          ephemeral: true,
+          rows: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select)],
+        }),
+      );
       let picked;
       try {
         picked = await i.channel?.awaitMessageComponent({
@@ -68,13 +70,13 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
         });
       } catch {
         await i
-          .editReply({ content: t('game.pickTimeout', locale), components: [] })
+          .editReply(editCard(t('game.pickTimeout', locale), { tone: 'warning' }))
           .catch(() => {});
         return;
       }
       if (!picked) return;
       await picked.deferUpdate(); // the UI continues via i.editReply (same ephemeral message)
-      await i.editReply({ components: [] }).catch(() => {});
+      await i.editReply(editCard(t('game.pickPrompt', locale))).catch(() => {});
       gameId = picked.values[0];
     } else {
       // IMMEDIATE ack: creating the thread is a REST call that on a slow gateway blows
@@ -84,12 +86,12 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
     }
     const def = gameById(gameId);
     if (!def) {
-      await i.editReply(t('game.unknownGame', locale));
+      await i.editReply(editCard(t('game.unknownGame', locale), { tone: 'danger' }));
       return;
     }
     // Voice games require the bot in a call (like /tts): no player, nothing to announce.
     if (def.needsVoice && !getPlayer(deps, i.guildId!)) {
-      await i.editReply(t('game.start.needVoice', locale));
+      await i.editReply(editCard(t('game.start.needVoice', locale), { tone: 'warning' }));
       return;
     }
     // 💎 Premium games (e.g. chess): the user's own Plus OR the server's Premium, same
@@ -99,7 +101,11 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
       const premium =
         isUserPremium(deps.db, i.user.id, now) || isGuildPremium(deps.db, i.guildId!, now);
       if (!premium) {
-        await i.editReply(t('game.start.premiumLocked', locale, { game: t(def.nameKey, locale) }));
+        await i.editReply(
+          editCard(t('game.start.premiumLocked', locale, { game: t(def.nameKey, locale) }), {
+            tone: 'premium',
+          }),
+        );
         return;
       }
     }
@@ -108,7 +114,9 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
     // real gate); if we lose it, we delete the orphan thread below.
     if (deps.games.active(i.guildId!)) {
       const ch = deps.games.channelOf(i.guildId!) ?? i.channelId;
-      await i.editReply(t('game.start.alreadyActive', locale, { channel: ch }));
+      await i.editReply(
+        editCard(t('game.start.alreadyActive', locale, { channel: ch }), { tone: 'warning' }),
+      );
       return;
     }
     // Large servers flood the channel with the game's messages — we run it in a disposable
@@ -137,13 +145,18 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
       // We lost the race after the active() above — clean up the thread we just created.
       if (threadId) void deleteChannelSafe(i.client, threadId);
       const ch = deps.games.channelOf(i.guildId!) ?? i.channelId;
-      await i.editReply(t('game.start.alreadyActive', locale, { channel: ch }));
+      await i.editReply(
+        editCard(t('game.start.alreadyActive', locale, { channel: ch }), { tone: 'warning' }),
+      );
       return;
     }
     await i.editReply(
-      threadId
-        ? t('game.start.startedThread', locale, { game: gameName, channel: threadId })
-        : t('game.start.started', locale, { game: gameName }),
+      editCard(
+        threadId
+          ? t('game.start.startedThread', locale, { game: gameName, channel: threadId })
+          : t('game.start.started', locale, { game: gameName }),
+        { tone: 'success' },
+      ),
     );
     return;
   }

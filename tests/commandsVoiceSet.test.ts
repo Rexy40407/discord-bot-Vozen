@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Minimal mock of @discordjs/voice — not used in /voice set|reset, but the import
 // from index.ts resolves it (same pattern as commandsVoiceList.test.ts).
@@ -44,7 +45,7 @@ function makeVoiceInteraction(opts: {
     deferred: false,
     isRepliable: () => true,
     reply: async (o: { content: string }) => {
-      replies.push(o.content);
+      replies.push(messageText(o));
     },
     options: {
       getSubcommandGroup: (_required = false) => null,

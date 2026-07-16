@@ -65,6 +65,19 @@ export default {
     'Hastigheden skal være mellem 0.5 og 2.0 (1.0 er normal). Prøv `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Din stemme er nu **{name}** ved {speed}×. Prøv `/tts hej` for at høre den. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Stemmeopsætning** — vælg mulighederne nedenfor, og tryk derefter på **Gem**. Intet ændres, før du gør det.',
+  'voice.config.summary': 'Aktuelt valg: **{voice}** · motor **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Sprog…',
+  'voice.config.pickVoice': 'Stemme…',
+  'voice.config.pickEngine': 'Motor…',
+  'voice.config.pickSpeed': 'Hastighed…',
+  'voice.config.more': '▼ Flere sprog',
+  'voice.config.engDefault': 'Standard (lokal)',
+  'voice.config.save': 'Gem',
+  'voice.config.cancel': 'Annuller',
+  'voice.config.cancelled': 'Opsætningen blev annulleret — intet blev ændret.',
+  'voice.config.expired': 'Panelet er udløbet — kør `/voice config` igen for at fortsætte.',
   'voice.listHeader': 'Tilgængelige stemmer:',
   'voice.listEmpty': '(ingen installeret)',
   'voice.reset':

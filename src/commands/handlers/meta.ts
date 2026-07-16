@@ -4,7 +4,6 @@ import {
   GuildMember,
   PermissionFlagsBits,
   MessageFlags,
-  EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -13,6 +12,7 @@ import {
 import type { BotDeps } from '../../bot/deps';
 import { metrics } from '../../metrics';
 import { brandEmbed } from '../../ui/theme';
+import { editCard, replyCard, updateCard } from '../../ui/messages';
 import { getTopSpeakers } from '../../store/talkStats';
 import { buildServerStats } from '../../store/serverStats';
 import {
@@ -63,7 +63,11 @@ export async function handleTopSpeakers(
       streak: r.streak,
     }),
   );
-  await i.reply({ content: `${t('topspeakers.title', locale)}\n${lines.join('\n')}` });
+  await i.reply(
+    replyCard(`${t('topspeakers.title', locale)}\n${lines.join('\n')}`, {
+      allowedMentions: { parse: [] },
+    }),
+  );
 }
 
 /**
@@ -136,7 +140,7 @@ export async function handleServerStats(
     if (vote) lines.push(vote);
   }
 
-  await i.reply({ content: lines.join('\n'), allowedMentions: { parse: [] } });
+  await i.reply(replyCard(lines.join('\n'), { allowedMentions: { parse: [] } }));
 }
 
 // Discord renders <t:SECONDS:D> as a per-user localized date.
@@ -274,11 +278,13 @@ async function handlePremiumActivate(i: ChatInputCommandInteraction, deps: BotDe
       .setLabel(t('premium.confirmNo', locale))
       .setStyle(ButtonStyle.Secondary),
   );
-  await i.reply({
-    content: t('premium.confirmActivate', locale, { total: pass.seats, used: acts.length }),
-    components: [row],
-    flags: MessageFlags.Ephemeral,
-  });
+  await i.reply(
+    replyCard(t('premium.confirmActivate', locale, { total: pass.seats, used: acts.length }), {
+      ephemeral: true,
+      tone: 'premium',
+      rows: [row],
+    }),
+  );
   const msg = await i.fetchReply();
 
   let btn;
@@ -286,12 +292,12 @@ async function handlePremiumActivate(i: ChatInputCommandInteraction, deps: BotDe
     btn = await msg.awaitMessageComponent({ componentType: ComponentType.Button, time: 30_000 });
   } catch {
     await i
-      .editReply({ content: t('premium.activateTimeout', locale), components: [] })
+      .editReply(editCard(t('premium.activateTimeout', locale), { tone: 'warning' }))
       .catch(() => {});
     return;
   }
   if (btn.customId === 'premActNo') {
-    await btn.update({ content: t('premium.activateCancelled', locale), components: [] });
+    await btn.update(updateCard(t('premium.activateCancelled', locale), { tone: 'warning' }));
     return;
   }
   // Re-checks and spends in a transaction (the state may have changed during the 30s confirmation).
@@ -313,7 +319,7 @@ async function handlePremiumActivate(i: ChatInputCommandInteraction, deps: BotDe
   } else {
     out = t('premium.noPass', locale, { link: deps.config.kofiUrl });
   }
-  await btn.update({ content: out, components: [] });
+  await btn.update(updateCard(out, { tone: res.status === 'ok' ? 'success' : 'warning' }));
 }
 
 /** /premium deactivate — frees this server's licence (reversible and safe action). */
@@ -513,7 +519,7 @@ export async function handleInvite(i: ChatInputCommandInteraction, deps: BotDeps
       .setLabel(t('invite.button', locale))
       .setEmoji('➕'),
   );
-  await i.reply({ content: t('invite.link', locale, { url }), components: [row] });
+  await i.reply(replyCard(t('invite.link', locale, { url }), { rows: [row] }));
 }
 
 /**
@@ -546,7 +552,7 @@ export async function handleVote(i: ChatInputCommandInteraction, deps: BotDeps):
       .setLabel(t('vote.button', locale))
       .setEmoji('🗳️'),
   );
-  await i.reply({ content: t('vote.link', locale, { url }), components: [row] });
+  await i.reply(replyCard(t('vote.link', locale, { url }), { rows: [row] }));
 }
 
 /**
@@ -606,8 +612,7 @@ export async function handleHelp(i: ChatInputCommandInteraction, deps: BotDeps):
   // those who never open the site. Public and stable repo URL.
   const sourceLine = t('help.source', locale, { url: SOURCE_URL });
 
-  const embed = new EmbedBuilder()
-    .setColor(0x5865f2) // blurple — looks intentional, not the default gray
+  const embed = brandEmbed()
     .setTitle(t('help.embedTitle', locale))
     // Description: brand tagline + what Vozen does (intro) + the differentiator
     // (free neural voice) — the same key as the welcome embed — + support + source (AGPL §13).

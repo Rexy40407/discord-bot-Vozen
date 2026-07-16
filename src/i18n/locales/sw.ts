@@ -66,6 +66,20 @@ export default {
     'Kasi lazima iwe kati ya 0.5 na 2.0 (1.0 ni ya kawaida). Jaribu `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Sauti yako sasa ni **{name}** kwa {speed}×. Jaribu `/tts hello` ili kuisikia. (kitambulisho: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Mipangilio ya sauti** — chagua machaguo yaliyo hapa chini, kisha bonyeza **Hifadhi**. Hakuna kitakachobadilika hadi ufanye hivyo.',
+  'voice.config.summary': 'Chaguo la sasa: **{voice}** · injini **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Lugha…',
+  'voice.config.pickVoice': 'Sauti…',
+  'voice.config.pickEngine': 'Injini…',
+  'voice.config.pickSpeed': 'Kasi…',
+  'voice.config.more': '▼ Lugha zaidi',
+  'voice.config.engDefault': 'Chaguo-msingi (ya ndani)',
+  'voice.config.save': 'Hifadhi',
+  'voice.config.cancel': 'Ghairi',
+  'voice.config.cancelled': 'Mipangilio imeghairiwa — hakuna kilichobadilika.',
+  'voice.config.expired':
+    'Kidirisha kimepitwa na muda — endesha `/voice config` tena ili kuendelea.',
   'voice.listHeader': 'Sauti zinazopatikana:',
   'voice.listEmpty': '(hakuna iliyosakinishwa)',
   'voice.reset':

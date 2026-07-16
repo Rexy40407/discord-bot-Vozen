@@ -1,5 +1,6 @@
 // tests/metrics.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -71,6 +72,7 @@ function makeStatsDeps(overrides: Partial<BotDeps> = {}): BotDeps {
 interface FakeInteraction {
   commandName: string;
   guildId: string;
+  locale?: string;
   replies: string[];
   reply: (opts: {
     content?: string;
@@ -86,11 +88,12 @@ interface FakeInteraction {
   user: { id: string };
 }
 
-function makeStatsInteraction(isAdmin = true): FakeInteraction {
+function makeStatsInteraction(isAdmin = true, locale?: string): FakeInteraction {
   const replies: string[] = [];
   return {
     commandName: 'stats',
     guildId: 'g-stats-test',
+    locale,
     replies,
     replied: false,
     deferred: false,
@@ -98,7 +101,7 @@ function makeStatsInteraction(isAdmin = true): FakeInteraction {
     reply: async (o: { content?: string; embeds?: { data?: { description?: string } }[] }) => {
       // /stats moved to an embed — record the text OR the embed description.
       const fromEmbeds = (o.embeds ?? []).map((e) => e?.data?.description ?? '').join('\n');
-      replies.push(o.content ?? fromEmbeds);
+      replies.push(messageText(o) || fromEmbeds);
     },
     member: {
       permissions: { has: () => isAdmin },
@@ -438,6 +441,18 @@ describe('/stats — handleInteraction', () => {
     expect(reply).toContain('Active players: 1');
     expect(reply).toContain('Servers: 3');
     expect(reply).toContain('Uptime:');
+  });
+
+  it('uses the invoking user Discord locale instead of the guild locale', async () => {
+    const i = makeStatsInteraction(true, 'fr');
+
+    await handleInteraction(
+      i as unknown as import('discord.js').ChatInputCommandInteraction,
+      makeStatsDeps(),
+    );
+
+    expect(i.replies.join(' ')).toMatch(/Messages prononcés|Serveurs|Disponibilité/i);
+    expect(i.replies.join(' ')).not.toMatch(/Messages spoken|Servers:/i);
   });
 
   it('shows zeros when no event has occurred yet', async () => {

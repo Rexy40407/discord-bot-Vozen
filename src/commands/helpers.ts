@@ -2,12 +2,12 @@
 import {
   PermissionsBitField,
   PermissionFlagsBits,
-  MessageFlags,
   type ChatInputCommandInteraction,
 } from 'discord.js';
 import type { BotDeps } from '../bot/deps';
 import { getGuildConfig } from '../store/guildConfig';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '../i18n/index';
+import { replyCard } from '../ui/messages';
 
 /**
  * INTERFACE locale for an interaction. Reads `guild_config.locale` for the guild; in
@@ -88,7 +88,7 @@ export const INVITE_PERMISSIONS: string = new PermissionsBitField([
 ]).bitfield.toString();
 
 export async function reply(i: ChatInputCommandInteraction, content: string): Promise<void> {
-  await i.reply({ content, flags: MessageFlags.Ephemeral });
+  await i.reply(replyCard(content, { ephemeral: true }));
 }
 
 /**

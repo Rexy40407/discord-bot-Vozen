@@ -24,6 +24,20 @@ export default {
     'Жылдамдық 0.5 пен 2.0 аралығында болуы керек (1.0 — қалыпты). `/voice set model:… speed:1.0` деп көріңіз.',
   'voice.set':
     '✅ Дауысыңыз енді **{name}**, жылдамдығы {speed}×. Оны есту үшін `/tts hello` деп көріңіз. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Дауысты баптау** — төмендегі параметрлерді таңдап, **Сақтау** түймесін басыңыз. Оған дейін ештеңе өзгермейді.',
+  'voice.config.summary': 'Ағымдағы таңдау: **{voice}** · қозғалтқыш **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Тіл…',
+  'voice.config.pickVoice': 'Дауыс…',
+  'voice.config.pickEngine': 'Қозғалтқыш…',
+  'voice.config.pickSpeed': 'Жылдамдық…',
+  'voice.config.more': '▼ Қосымша тілдер',
+  'voice.config.engDefault': 'Әдепкі (жергілікті)',
+  'voice.config.save': 'Сақтау',
+  'voice.config.cancel': 'Болдырмау',
+  'voice.config.cancelled': 'Баптау тоқтатылды — ештеңе өзгерген жоқ.',
+  'voice.config.expired':
+    'Панель мерзімі аяқталды — жалғастыру үшін `/voice config` пәрменін қайта іске қосыңыз.',
   'voice.listHeader': 'Қолжетімді дауыстар:',
   'voice.listEmpty': '(орнатылмаған)',
   'voice.reset':

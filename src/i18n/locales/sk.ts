@@ -24,6 +24,20 @@ export default {
     'Rýchlosť musí byť medzi 0.5 a 2.0 (1.0 je normálna). Skús `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Tvoj hlas je teraz **{name}** pri {speed}×. Skús `/tts hello`, aby si ho počul. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Nastavenie hlasu** — vyber možnosti nižšie a stlač **Uložiť**. Dovtedy sa nič nezmení.',
+  'voice.config.summary': 'Aktuálny výber: **{voice}** · modul **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Jazyk…',
+  'voice.config.pickVoice': 'Hlas…',
+  'voice.config.pickEngine': 'Modul…',
+  'voice.config.pickSpeed': 'Rýchlosť…',
+  'voice.config.more': '▼ Ďalšie jazyky',
+  'voice.config.engDefault': 'Predvolené (miestne)',
+  'voice.config.save': 'Uložiť',
+  'voice.config.cancel': 'Zrušiť',
+  'voice.config.cancelled': 'Nastavenie zrušené — nič sa nezmenilo.',
+  'voice.config.expired':
+    'Platnosť panela vypršala — pre pokračovanie znova spusti `/voice config`.',
   'voice.listHeader': 'Dostupné hlasy:',
   'voice.listEmpty': '(žiadne nainštalované)',
   'voice.reset':

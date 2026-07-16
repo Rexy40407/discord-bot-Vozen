@@ -14,7 +14,7 @@ import { addBlockword, removeBlockword, getBlocklist, MAX_BLOCKWORDS } from '../
 import { makeLocalizedNamer } from '../../language/voiceMap';
 import { GREET_LANGUAGE_CHOICES, GREET_LOCALES } from '../../voice/greeting';
 import { t, SUPPORTED_LOCALES, LOCALE_DISPLAY_NAMES, type SupportedLocale } from '../../i18n/index';
-import { localeFor, localeForUser, reply } from '../helpers';
+import { localeForUser, reply } from '../helpers';
 import { joinUserVoice } from './core';
 
 export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
@@ -371,7 +371,7 @@ export async function handleSetup(i: ChatInputCommandInteraction, deps: BotDeps)
 }
 
 export async function handleStats(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
-  const locale = localeFor(deps, i.guildId);
+  const locale = localeForUser(deps, i);
   const member = i.member as GuildMember;
   if (!member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
     await reply(i, t('error.needManageGuild', locale));

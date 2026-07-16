@@ -66,6 +66,19 @@ export default {
     'Nopeuden on oltava välillä 0.5 ja 2.0 (1.0 on normaali). Kokeile `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Äänesi on nyt **{name}** nopeudella {speed}×. Kokeile `/tts hei` kuullaksesi sen. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Ääniasetukset** — valitse vaihtoehdot alta ja paina sitten **Tallenna**. Mikään ei muutu ennen sitä.',
+  'voice.config.summary': 'Nykyinen valinta: **{voice}** · moottori **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Kieli…',
+  'voice.config.pickVoice': 'Ääni…',
+  'voice.config.pickEngine': 'Moottori…',
+  'voice.config.pickSpeed': 'Nopeus…',
+  'voice.config.more': '▼ Lisää kieliä',
+  'voice.config.engDefault': 'Oletus (paikallinen)',
+  'voice.config.save': 'Tallenna',
+  'voice.config.cancel': 'Peruuta',
+  'voice.config.cancelled': 'Asetus peruutettu — mitään ei muutettu.',
+  'voice.config.expired': 'Paneeli vanheni — jatka suorittamalla `/voice config` uudelleen.',
   'voice.listHeader': 'Saatavilla olevat äänet:',
   'voice.listEmpty': '(ei asennettuja)',
   'voice.reset':

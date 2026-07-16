@@ -27,6 +27,20 @@ export default {
     '速度は 0.5 から 2.0 の間で指定してください（1.0 が標準）。`/voice set model:… speed:1.0` を試してください。',
   'voice.set':
     '✅ あなたの声を **{name}**（{speed}×）に設定しました。`/tts こんにちは` で聞いてみてください。(id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **音声設定** — 下の項目を選び、**保存**を押してください。保存するまで変更は反映されません。',
+  'voice.config.summary': '現在の選択：**{voice}** · エンジン **{engine}** · {speed}×',
+  'voice.config.pickLanguage': '言語…',
+  'voice.config.pickVoice': '音声…',
+  'voice.config.pickEngine': 'エンジン…',
+  'voice.config.pickSpeed': '速度…',
+  'voice.config.more': '▼ その他の言語',
+  'voice.config.engDefault': 'デフォルト（ローカル）',
+  'voice.config.save': '保存',
+  'voice.config.cancel': 'キャンセル',
+  'voice.config.cancelled': '設定をキャンセルしました。変更はありません。',
+  'voice.config.expired':
+    'パネルの有効期限が切れました。続けるには `/voice config` をもう一度実行してください。',
   'voice.listHeader': '利用できる声：',
   'voice.listEmpty': '（インストールされていません）',
   'voice.reset':

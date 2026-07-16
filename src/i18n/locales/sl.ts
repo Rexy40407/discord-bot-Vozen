@@ -65,6 +65,19 @@ export default {
     'Hitrost mora biti med 0.5 in 2.0 (1.0 je običajna). Poskusi `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Tvoj glas je zdaj **{name}** pri {speed}×. Napiši `/tts hello`, da ga slišiš. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Nastavitev glasu** — izberi spodnje možnosti in nato pritisni **Shrani**. Do takrat se nič ne spremeni.',
+  'voice.config.summary': 'Trenutna izbira: **{voice}** · mehanizem **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Jezik…',
+  'voice.config.pickVoice': 'Glas…',
+  'voice.config.pickEngine': 'Mehanizem…',
+  'voice.config.pickSpeed': 'Hitrost…',
+  'voice.config.more': '▼ Več jezikov',
+  'voice.config.engDefault': 'Privzeto (lokalno)',
+  'voice.config.save': 'Shrani',
+  'voice.config.cancel': 'Prekliči',
+  'voice.config.cancelled': 'Nastavitev preklicana — nič se ni spremenilo.',
+  'voice.config.expired': 'Plošča je potekla — za nadaljevanje znova zaženi `/voice config`.',
   'voice.listHeader': 'Razpoložljivi glasovi:',
   'voice.listEmpty': '(noben ni nameščen)',
   'voice.reset':

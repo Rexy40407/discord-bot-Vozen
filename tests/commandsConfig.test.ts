@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ChannelType } from 'discord.js';
+import { messageText } from './messagePayload';
 
 // Minimal @discordjs/voice mock — not used in /config, but the import resolves it.
 vi.mock('@discordjs/voice', () => ({
@@ -56,8 +57,8 @@ function makeConfigInteraction(opts: {
     replied: false,
     deferred: false,
     isRepliable: () => true,
-    reply: async (o: { content: string }) => {
-      replies.push(o.content);
+    reply: async (o: unknown) => {
+      replies.push(messageText(o));
     },
     member: {
       permissions: { has: () => true }, // admin by default

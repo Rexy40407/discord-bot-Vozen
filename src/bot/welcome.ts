@@ -1,5 +1,6 @@
-import { EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
+import { PermissionFlagsBits, ChannelType, type EmbedBuilder } from 'discord.js';
 import { t, DEFAULT_LOCALE } from '../i18n/index';
+import { brandEmbed } from '../ui/theme';
 
 /**
  * Welcome embed no guildCreate — beginner onboarding quando o Vozen entra num
@@ -79,8 +80,7 @@ export function buildWelcomeEmbed(locale: string = DEFAULT_LOCALE): EmbedBuilder
   // colidir com o footer da marca ('welcome.footer').
   const description = `${t('welcome.description', locale, { setup: '`/setup`', help: '`/help`' })}\n\n${t('welcome.tagline', locale)}`;
   return (
-    new EmbedBuilder()
-      .setColor(0x5865f2) // blurple — coerente com o embed do /help
+    brandEmbed()
       .setTitle(t('welcome.title', locale))
       .setDescription(description)
       // Field com o fluxo em 3 passos para os MEMBROS: a descricao fica com o

@@ -66,6 +66,20 @@ export default {
     'Швидкість має бути від 0.5 до 2.0 (1.0 — нормальна). Спробуйте `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Ваш голос тепер **{name}** зі швидкістю {speed}×. Напишіть `/tts привіт`, щоб почути його. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Налаштування голосу** — виберіть параметри нижче й натисніть **Зберегти**. До цього нічого не зміниться.',
+  'voice.config.summary': 'Поточний вибір: **{voice}** · рушій **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Мова…',
+  'voice.config.pickVoice': 'Голос…',
+  'voice.config.pickEngine': 'Рушій…',
+  'voice.config.pickSpeed': 'Швидкість…',
+  'voice.config.more': '▼ Більше мов',
+  'voice.config.engDefault': 'Типово (локальний)',
+  'voice.config.save': 'Зберегти',
+  'voice.config.cancel': 'Скасувати',
+  'voice.config.cancelled': 'Налаштування скасовано — нічого не змінилося.',
+  'voice.config.expired':
+    'Термін дії панелі минув — знову запустіть `/voice config`, щоб продовжити.',
   'voice.listHeader': 'Доступні голоси:',
   'voice.listEmpty': '(жодного не встановлено)',
   'voice.reset':

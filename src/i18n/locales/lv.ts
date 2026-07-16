@@ -65,6 +65,20 @@ export default {
     'Ātrumam jābūt no 0.5 līdz 2.0 (1.0 ir normāls). Pamēģini `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Tava balss tagad ir **{name}** ar ātrumu {speed}×. Pamēģini `/tts sveiki`, lai to dzirdētu. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Balss iestatīšana** — izvēlies opcijas zemāk un pēc tam nospied **Saglabāt**. Līdz tam nekas nemainīsies.',
+  'voice.config.summary': 'Pašreizējā izvēle: **{voice}** · dzinējs **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Valoda…',
+  'voice.config.pickVoice': 'Balss…',
+  'voice.config.pickEngine': 'Dzinējs…',
+  'voice.config.pickSpeed': 'Ātrums…',
+  'voice.config.more': '▼ Vairāk valodu',
+  'voice.config.engDefault': 'Noklusējums (lokāls)',
+  'voice.config.save': 'Saglabāt',
+  'voice.config.cancel': 'Atcelt',
+  'voice.config.cancelled': 'Iestatīšana atcelta — nekas netika mainīts.',
+  'voice.config.expired':
+    'Paneļa derīgums beidzies — palaid `/voice config` vēlreiz, lai turpinātu.',
   'voice.listHeader': 'Pieejamās balsis:',
   'voice.listEmpty': '(nav uzstādīta neviena)',
   'voice.reset':

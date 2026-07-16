@@ -24,6 +24,19 @@ export default {
     'Tốc độ phải nằm trong khoảng 0.5 đến 2.0 (1.0 là bình thường). Thử `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Giọng của bạn giờ là **{name}** ở tốc độ {speed}×. Thử `/tts hello` để nghe thử. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Thiết lập giọng nói** — chọn các tùy chọn bên dưới rồi nhấn **Lưu**. Sẽ không có gì thay đổi cho đến lúc đó.',
+  'voice.config.summary': 'Lựa chọn hiện tại: **{voice}** · bộ máy **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Ngôn ngữ…',
+  'voice.config.pickVoice': 'Giọng nói…',
+  'voice.config.pickEngine': 'Bộ máy…',
+  'voice.config.pickSpeed': 'Tốc độ…',
+  'voice.config.more': '▼ Thêm ngôn ngữ',
+  'voice.config.engDefault': 'Mặc định (cục bộ)',
+  'voice.config.save': 'Lưu',
+  'voice.config.cancel': 'Hủy',
+  'voice.config.cancelled': 'Đã hủy thiết lập — không có gì thay đổi.',
+  'voice.config.expired': 'Bảng điều khiển đã hết hạn — chạy lại `/voice config` để tiếp tục.',
   'voice.listHeader': 'Các giọng có sẵn:',
   'voice.listEmpty': '(chưa cài giọng nào)',
   'voice.reset':

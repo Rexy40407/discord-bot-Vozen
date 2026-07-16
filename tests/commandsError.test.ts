@@ -10,6 +10,7 @@ vi.mock('@discordjs/voice', () => ({
 
 import { handleInteraction } from '../src/commands/index';
 import type { BotDeps } from '../src/bot/deps';
+import { messageText } from './messagePayload';
 
 describe('handleInteraction — catch com interacao deferida', () => {
   it('usa editReply (nao reply) quando o /tts ja foi deferido e ocorre um erro', async () => {
@@ -53,14 +54,17 @@ describe('handleInteraction — catch com interacao deferida', () => {
 
   it('usa reply quando a interacao NAO foi deferida e ocorre um erro', async () => {
     const calls: string[] = [];
+    const replies: string[] = [];
     const i = {
       commandName: 'skip',
       guildId: 'g1',
+      locale: 'pt-BR',
       deferred: false,
       replied: false,
       isRepliable: () => true,
-      reply: vi.fn(async () => {
+      reply: vi.fn(async (payload: unknown) => {
         calls.push('reply');
+        replies.push(messageText(payload));
         i.replied = true;
       }),
       editReply: vi.fn(async () => {
@@ -82,5 +86,7 @@ describe('handleInteraction — catch com interacao deferida', () => {
     expect(i.reply).toHaveBeenCalledTimes(1);
     expect(i.editReply).not.toHaveBeenCalled();
     expect(calls).toEqual(['reply']);
+    expect(replies.join(' ')).toMatch(/ocorreu um erro|tenta outra vez/i);
+    expect(replies.join(' ')).not.toMatch(/something went wrong/i);
   });
 });

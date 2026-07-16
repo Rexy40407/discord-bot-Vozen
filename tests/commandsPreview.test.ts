@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Minimal mock of @discordjs/voice — not used in /voice preview, but the import
 // from index.ts resolves it.
@@ -50,7 +51,7 @@ function makePreviewInteraction(opts: { model?: string | null } = {}) {
     deferred: false,
     isRepliable: () => true,
     reply: async (o: { content: string }) => {
-      replies.push(o.content);
+      replies.push(messageText(o));
     },
     options: {
       getSubcommandGroup: (_required = false) => null,

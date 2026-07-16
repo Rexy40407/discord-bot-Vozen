@@ -66,6 +66,19 @@ export default {
     'Hastigheten måste vara mellan 0.5 och 2.0 (1.0 är normalt). Prova `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Din röst är nu **{name}** i {speed}×. Prova `/tts hej` för att höra den. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Röstinställning** — välj alternativen nedan och tryck sedan på **Spara**. Inget ändras förrän du gör det.',
+  'voice.config.summary': 'Aktuellt val: **{voice}** · motor **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Språk…',
+  'voice.config.pickVoice': 'Röst…',
+  'voice.config.pickEngine': 'Motor…',
+  'voice.config.pickSpeed': 'Hastighet…',
+  'voice.config.more': '▼ Fler språk',
+  'voice.config.engDefault': 'Standard (lokal)',
+  'voice.config.save': 'Spara',
+  'voice.config.cancel': 'Avbryt',
+  'voice.config.cancelled': 'Inställningen avbröts — inget ändrades.',
+  'voice.config.expired': 'Panelen har gått ut — kör `/voice config` igen för att fortsätta.',
   'voice.listHeader': 'Tillgängliga röster:',
   'voice.listEmpty': '(inga installerade)',
   'voice.reset':

@@ -67,6 +67,20 @@ export default {
     'De snelheid moet tussen 0.5 en 2.0 liggen (1.0 is normaal). Probeer `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Je stem is nu **{name}** op {speed}×. Probeer `/tts hallo` om het te horen. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Stem instellen** — kies hieronder je opties en druk daarna op **Opslaan**. Tot die tijd verandert er niets.',
+  'voice.config.summary': 'Huidige selectie: **{voice}** · engine **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Taal…',
+  'voice.config.pickVoice': 'Stem…',
+  'voice.config.pickEngine': 'Engine…',
+  'voice.config.pickSpeed': 'Snelheid…',
+  'voice.config.more': '▼ Meer talen',
+  'voice.config.engDefault': 'Standaard (lokaal)',
+  'voice.config.save': 'Opslaan',
+  'voice.config.cancel': 'Annuleren',
+  'voice.config.cancelled': 'Instellen geannuleerd — er is niets gewijzigd.',
+  'voice.config.expired':
+    'Het paneel is verlopen — voer `/voice config` opnieuw uit om door te gaan.',
   'voice.listHeader': 'Beschikbare stemmen:',
   'voice.listEmpty': '(geen geïnstalleerd)',
   'voice.reset':

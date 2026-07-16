@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Mock minimo de @discordjs/voice — nao e usado no caminho do /laugh (o player e
 // injectado nas deps), mas o import de index.ts precisa de resolver.
@@ -53,7 +54,7 @@ function makeLaughInteraction() {
       this.deferred = true;
     },
     editReply: async (o: string | { content: string }) => {
-      replies.push(typeof o === 'string' ? o : o.content);
+      replies.push(messageText(o));
     },
     options: {
       getSubcommandGroup: (_r = false) => null,

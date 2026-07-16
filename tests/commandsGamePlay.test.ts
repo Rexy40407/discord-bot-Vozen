@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Minimal mock of @discordjs/voice — /game play doesn't touch voice here (tictactoe is
 // needsVoice:false), but the commands module imports it at the top.
@@ -46,9 +47,9 @@ function makePlayInteraction(opts: { gameId?: string; channel?: unknown; calls?:
       calls.push('defer');
       self.deferred = true;
     },
-    editReply: async (content: string | { content: string }) => {
+    editReply: async (content: unknown) => {
       calls.push('edit');
-      edits.push(typeof content === 'string' ? content : content.content);
+      edits.push(messageText(content));
     },
     reply: async () => {
       calls.push('reply'); // the play branch must NOT use this after the fix

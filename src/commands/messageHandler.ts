@@ -25,6 +25,7 @@ import { isDetectionOn } from '../store/langDetect';
 import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { t } from '../i18n/index';
 import { log } from '../logging/logger';
+import { channelCard } from '../ui/messages';
 
 /**
  * Collects the MEDIA to announce from a message: URLs in the text (link/gif, via
@@ -416,10 +417,12 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       try {
         const ch = message.channel;
         if ('send' in ch && typeof (ch as { send?: unknown }).send === 'function') {
-          await (ch as { send: (c: unknown) => Promise<unknown> }).send({
-            content: t('streak.day', cfg.locale, { user: message.author.id, n: talk.streak }),
-            allowedMentions: { parse: [] },
-          });
+          await (ch as { send: (c: unknown) => Promise<unknown> }).send(
+            channelCard(t('streak.day', cfg.locale, { user: message.author.id, n: talk.streak }), {
+              tone: 'success',
+              allowedMentions: { parse: [] },
+            }),
+          );
         }
       } catch (err) {
         log.warn('[messageHandler] failed to announce the streak (ignored)', err);
@@ -441,10 +444,11 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
           'send' in ch &&
           typeof (ch as { send?: unknown }).send === 'function'
         ) {
-          await (ch as { send: (c: unknown) => Promise<unknown> }).send({
-            content: renderLeaderboard(rows, cfg.locale),
-            allowedMentions: { parse: [] },
-          });
+          await (ch as { send: (c: unknown) => Promise<unknown> }).send(
+            channelCard(renderLeaderboard(rows, cfg.locale), {
+              allowedMentions: { parse: [] },
+            }),
+          );
         }
       } catch (err) {
         log.warn('[messageHandler] failed to post the automatic leaderboard (ignored)', err);

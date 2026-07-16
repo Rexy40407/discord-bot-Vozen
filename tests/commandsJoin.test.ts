@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PermissionFlagsBits } from 'discord.js';
+import { messageText } from './messagePayload';
+import { ComponentType, MessageFlags, PermissionFlagsBits } from 'discord.js';
+import { COLORS } from '../src/ui/theme';
 
 // Mock de @discordjs/voice: joinVoiceChannel/getVoiceConnection sao spies para
 // podermos afirmar que NAO se tenta ligar quando faltam permissoes.
@@ -35,8 +37,10 @@ import type { BotDeps } from '../src/bot/deps';
 interface FakeInteraction {
   commandName: string;
   guildId: string;
+  locale?: string;
   replies: string[];
-  reply: (opts: { content: string }) => Promise<void>;
+  rawReplies: unknown[];
+  reply: (opts: unknown) => Promise<void>;
   isRepliable: () => boolean;
   replied: boolean;
   deferred: boolean;
@@ -44,17 +48,21 @@ interface FakeInteraction {
   guild: unknown;
 }
 
-function makeJoinInteraction(opts: { channel: unknown }): FakeInteraction {
+function makeJoinInteraction(opts: { channel: unknown; locale?: string }): FakeInteraction {
   const replies: string[] = [];
+  const rawReplies: unknown[] = [];
   return {
     commandName: 'join',
     guildId: 'g1',
+    locale: opts.locale,
     replies,
+    rawReplies,
     replied: false,
     deferred: false,
     isRepliable: () => true,
-    reply: async (o: { content: string }) => {
-      replies.push(o.content);
+    reply: async (o: unknown) => {
+      rawReplies.push(o);
+      replies.push(messageText(o));
     },
     member: { voice: { channel: opts.channel } },
     guild: { voiceAdapterCreator: {} },
@@ -82,7 +90,7 @@ describe('handleJoin — permissoes Connect/Speak', () => {
       name: 'Geral',
       permissionsFor: () => ({ has: () => false }),
     };
-    const i = makeJoinInteraction({ channel });
+    const i = makeJoinInteraction({ channel, locale: 'pt-BR' });
     const deps = makeDeps();
 
     await handleInteraction(i as any, deps);
@@ -101,7 +109,7 @@ describe('handleJoin — permissoes Connect/Speak', () => {
           flag === PermissionFlagsBits.Connect || flag === PermissionFlagsBits.Speak,
       }),
     };
-    const i = makeJoinInteraction({ channel });
+    const i = makeJoinInteraction({ channel, locale: 'pt-BR' });
     const deps = makeDeps();
     // Conexao falsa devolvida por joinVoiceChannel — so precisa de subscribe/on/destroy
     // porque o GuildVoicePlayer real e construido no handler.
@@ -115,15 +123,29 @@ describe('handleJoin — permissoes Connect/Speak', () => {
     await handleInteraction(i as any, deps);
 
     expect(joinVoiceChannel).toHaveBeenCalledTimes(1);
-    // Migrado PT->EN (P16.2): confirmacao de entrada menciona o canal.
+    // The public success message follows the invoking user's Discord locale, not
+    // the guild fallback. This is the exact regression reported from production.
     expect(i.replies.some((r) => /Geral/.test(r))).toBe(true);
     // A mensagem NAO deve prometer auto-leitura (so /setup a liga). Tem de sugerir
     // /setup (para auto-ler um canal) e /tts (para falar ja) — sem enganar o iniciante.
     const joinedText = i.replies.join(' ');
     expect(joinedText).toContain('/setup');
     expect(joinedText).toContain('/tts');
-    // Next-step beginner-friendly: convida a experimentar JA (mencao a "type"/"say").
-    expect(/type|say/i.test(joinedText)).toBe(true);
+    expect(joinedText).toMatch(/Entrei|Próximo passo|diz/i);
+    expect(joinedText).not.toMatch(/I'm in|Next step/i);
+
+    // Regression guard for the screenshot that prompted the redesign: /join must render
+    // as a green-accent Components V2 card, never regress to a loose one-line reply.
+    const payload = i.rawReplies[0] as {
+      flags?: unknown;
+      components?: Array<{ toJSON?: () => { type?: number; accent_color?: number } }>;
+    };
+    expect(Number(payload.flags) & MessageFlags.IsComponentsV2).toBeTruthy();
+    const container = payload.components?.[0]?.toJSON?.();
+    expect(container).toMatchObject({
+      type: ComponentType.Container,
+      accent_color: COLORS.success,
+    });
 
     // Limpeza: destruir o player criado para nao deixar timers pendurados.
     const player = deps.players.get('g1');
@@ -139,5 +161,14 @@ describe('handleJoin — permissoes Connect/Speak', () => {
     expect(joinVoiceChannel).not.toHaveBeenCalled();
     // Migrado PT->EN (P16.2): "Hop into a voice channel first, then run /join."
     expect(i.replies.some((r) => /voice channel/i.test(r))).toBe(true);
+  });
+
+  it('uses French when the invoking Discord client locale is French', async () => {
+    const i = makeJoinInteraction({ channel: null, locale: 'fr' });
+
+    await handleInteraction(i as any, makeDeps());
+
+    expect(i.replies.join(' ')).toMatch(/salon vocal/i);
+    expect(i.replies.join(' ')).not.toMatch(/voice channel/i);
   });
 });

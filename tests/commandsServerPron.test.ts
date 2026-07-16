@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { messageText } from './messagePayload';
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
@@ -40,7 +41,7 @@ function makeInteraction(opts: {
     deferred: false,
     isRepliable: () => true,
     reply: async (o: { content: string }) => {
-      replies.push(o.content);
+      replies.push(messageText(o));
     },
     member: { permissions: { has: () => opts.admin ?? true } },
     guild: null,

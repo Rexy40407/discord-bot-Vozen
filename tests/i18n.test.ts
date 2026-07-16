@@ -39,11 +39,6 @@ describe('i18n — t(key, locale, params)', () => {
     }
   });
 
-  it('falls back to EN when the key is missing in the requested locale', () => {
-    // help.title only has EN (pt partial); requesting in pt returns the EN value.
-    expect(t('help.title', 'pt')).toBe(t('help.title', 'en'));
-  });
-
   it('a nonexistent key returns the key itself (never crashes)', () => {
     expect(t('nao.existe.esta.chave', 'en')).toBe('nao.existe.esta.chave');
     expect(t('nao.existe.esta.chave', 'pt')).toBe('nao.existe.esta.chave');
@@ -156,11 +151,8 @@ describe('i18n — SUPPORTED_LOCALES + endonyms (35 voice languages)', () => {
   });
 });
 
-// Regression guard for SILENT locale drift — the class of bug that let a renamed key
-// fall back to EN forever (undetected), and a mangled {placeholder} break interpolation
-// at runtime. Non-brittle by design: it does NOT require every catalog key to be
-// translated (EN fallback is intentional), and it TOLERATES a value that OMITS a
-// placeholder (graceful degradation). It only flags actual corruption.
+// Regression guard for SILENT locale drift — the class of bug that let a renamed or
+// newly added key fall back to English forever without anyone noticing.
 describe('i18n — locale integrity (per-locale registry vs catalog)', () => {
   const catalogKeys = new Set(Object.keys(catalog));
   const codes = Object.keys(locales);
@@ -188,6 +180,22 @@ describe('i18n — locale integrity (per-locale registry vs catalog)', () => {
           offenders.push(`${code}:${key}`);
       }
     }
+    expect(offenders).toEqual([]);
+  });
+
+  it('every advertised interface locale translates every catalog key', () => {
+    const keys = Object.keys(catalog);
+    const offenders: string[] = [];
+
+    for (const key of keys) {
+      if (!catalog[key]?.pt) offenders.push(`pt:${key}`);
+    }
+    for (const code of Object.keys(locales)) {
+      for (const key of keys) {
+        if (!locales[code]?.[key]) offenders.push(`${code}:${key}`);
+      }
+    }
+
     expect(offenders).toEqual([]);
   });
 

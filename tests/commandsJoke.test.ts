@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
@@ -56,7 +57,7 @@ function makeJokeInteraction(opts: { idioma: string | null; risos: boolean | nul
       this.deferred = true;
     },
     editReply: async (o: string | { content: string }) => {
-      replies.push(typeof o === 'string' ? o : o.content);
+      replies.push(messageText(o));
     },
     options: {
       getSubcommandGroup: (_r = false) => null,

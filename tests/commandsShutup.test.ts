@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 // Mock minimo de @discordjs/voice — nao e usado no caminho do /shutup (o player e
 // injectado nas deps), mas o import de index.ts precisa de resolver.
@@ -28,7 +29,7 @@ function makeShutupInteraction() {
     deferred: false,
     isRepliable: () => true,
     reply: async (o: string | { content: string }) => {
-      replies.push(typeof o === 'string' ? o : o.content);
+      replies.push(messageText(o));
     },
   };
 }

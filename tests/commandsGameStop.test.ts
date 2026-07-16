@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
+import { messageText } from './messagePayload';
 import { handleGame } from '../src/commands/handlers/games';
 import type { BotDeps } from '../src/bot/deps';
 import { initDb } from '../src/store/db';
@@ -25,8 +26,8 @@ function makeStopInteraction(opts: { canManage: boolean }) {
     user: { id: USER },
     memberPermissions: { has: () => opts.canManage },
     options: { getSubcommand: () => 'stop' },
-    reply: vi.fn(async (o: { content: string }) => {
-      replies.push(o.content);
+    reply: vi.fn(async (o: unknown) => {
+      replies.push(messageText(o));
     }),
     replies,
   };

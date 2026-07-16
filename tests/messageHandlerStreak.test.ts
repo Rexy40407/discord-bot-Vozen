@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
+import { messageText } from './messagePayload';
 import { handleMessage } from '../src/commands/messageHandler';
 import type { BotDeps } from '../src/bot/deps';
 import { initDb } from '../src/store/db';
@@ -67,8 +68,8 @@ describe('handleMessage — streak notice 🔥 (F1)', () => {
     expect(say).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
     const payload = send.mock.calls[0][0];
-    expect(String(payload.content)).toContain(`<@${USER}>`);
-    expect(String(payload.content)).toContain('2');
+    expect(messageText(payload)).toContain(`<@${USER}>`);
+    expect(messageText(payload)).toContain('2');
     expect(payload.allowedMentions).toEqual({ parse: [] }); // mention visible but does NOT ping
   });
 

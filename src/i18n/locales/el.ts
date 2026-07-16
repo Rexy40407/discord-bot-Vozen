@@ -67,6 +67,19 @@ export default {
     'Η ταχύτητα πρέπει να είναι μεταξύ 0.5 και 2.0 (το 1.0 είναι κανονικό). Δοκίμασε `/voice set model:… speed:1.0`.',
   'voice.set':
     '✅ Η φωνή σου είναι τώρα **{name}** στα {speed}×. Δοκίμασε `/tts hello` για να την ακούσεις. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Ρύθμιση φωνής** — διάλεξε τις επιλογές παρακάτω και πάτησε **Αποθήκευση**. Τίποτα δεν αλλάζει μέχρι τότε.',
+  'voice.config.summary': 'Τρέχουσα επιλογή: **{voice}** · μηχανή **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Γλώσσα…',
+  'voice.config.pickVoice': 'Φωνή…',
+  'voice.config.pickEngine': 'Μηχανή…',
+  'voice.config.pickSpeed': 'Ταχύτητα…',
+  'voice.config.more': '▼ Περισσότερες γλώσσες',
+  'voice.config.engDefault': 'Προεπιλογή (τοπική)',
+  'voice.config.save': 'Αποθήκευση',
+  'voice.config.cancel': 'Ακύρωση',
+  'voice.config.cancelled': 'Η ρύθμιση ακυρώθηκε — δεν άλλαξε τίποτα.',
+  'voice.config.expired': 'Το πάνελ έληξε — εκτέλεσε ξανά το `/voice config` για να συνεχίσεις.',
   'voice.listHeader': 'Διαθέσιμες φωνές:',
   'voice.listEmpty': '(καμία εγκατεστημένη)',
   'voice.reset':

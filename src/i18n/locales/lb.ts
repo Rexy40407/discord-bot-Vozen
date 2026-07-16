@@ -24,6 +24,19 @@ export default {
     "D'Geschwindegkeet muss tëscht 0.5 an 2.0 leien (1.0 ass normal). Probéier `/voice set model:… speed:1.0`.",
   'voice.set':
     '✅ Deng Stëmm ass elo **{name}** mat {speed}×. Probéier `/tts hallo`, fir se ze héieren. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Stëmmastellung** — wiel d’Optiounen hei drënner a dréck dann op **Späicheren**. Bis dohi gëtt näischt geännert.',
+  'voice.config.summary': 'Aktuell Auswiel: **{voice}** · Motor **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Sprooch…',
+  'voice.config.pickVoice': 'Stëmm…',
+  'voice.config.pickEngine': 'Motor…',
+  'voice.config.pickSpeed': 'Geschwindegkeet…',
+  'voice.config.more': '▼ Méi Sproochen',
+  'voice.config.engDefault': 'Standard (lokal)',
+  'voice.config.save': 'Späicheren',
+  'voice.config.cancel': 'Ofbriechen',
+  'voice.config.cancelled': 'Astellung ofgebrach — näischt gouf geännert.',
+  'voice.config.expired': 'De Panel ass ofgelaf — féier `/voice config` nach eng Kéier aus.',
   'voice.listHeader': 'Verfügbar Stëmmen:',
   'voice.listEmpty': '(keng installéiert)',
   'voice.reset':

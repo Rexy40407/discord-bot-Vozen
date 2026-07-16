@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { PermissionFlagsBits, PermissionsBitField } from 'discord.js';
+import { messageText } from './messagePayload';
 
 // Minimal mock of @discordjs/voice — /invite doesn't touch voice, but the commands
 // module imports it at the top, so the import needs to resolve.
@@ -49,8 +50,8 @@ function makeInviteInteraction(): FakeInteraction {
     replied: false,
     deferred: false,
     isRepliable: () => true,
-    reply: async (o: { content: string; flags?: number }) => {
-      replies.push(o.content);
+    reply: async (o: unknown) => {
+      replies.push(messageText(o));
     },
   };
 }

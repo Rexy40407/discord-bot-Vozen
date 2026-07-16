@@ -67,6 +67,20 @@ export default {
     'Hız 0.5 ile 2.0 arasında olmalı (1.0 normaldir). `/voice set model:… speed:1.0` şeklinde dene.',
   'voice.set':
     '✅ Sesin artık **{name}**, {speed}× hızında. Duymak için `/tts merhaba` dene. (id: `{model}`)',
+  'voice.config.title':
+    '🎙️ **Ses ayarı** — aşağıdaki seçenekleri belirleyip **Kaydet** düğmesine bas. Bunu yapana kadar hiçbir şey değişmez.',
+  'voice.config.summary': 'Geçerli seçim: **{voice}** · motor **{engine}** · {speed}×',
+  'voice.config.pickLanguage': 'Dil…',
+  'voice.config.pickVoice': 'Ses…',
+  'voice.config.pickEngine': 'Motor…',
+  'voice.config.pickSpeed': 'Hız…',
+  'voice.config.more': '▼ Daha fazla dil',
+  'voice.config.engDefault': 'Varsayılan (yerel)',
+  'voice.config.save': 'Kaydet',
+  'voice.config.cancel': 'İptal',
+  'voice.config.cancelled': 'Ayar iptal edildi — hiçbir şey değişmedi.',
+  'voice.config.expired':
+    'Panelin süresi doldu — devam etmek için `/voice config` komutunu yeniden çalıştır.',
   'voice.listHeader': 'Mevcut sesler:',
   'voice.listEmpty': '(hiçbiri yüklü değil)',
   'voice.reset':

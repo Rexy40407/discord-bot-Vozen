@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { messageText } from './messagePayload';
 import { PermissionFlagsBits, ChannelType } from 'discord.js';
 
 // Mock of @discordjs/voice — /setup now JOINS voice (reuses the /join logic) when
@@ -128,7 +129,7 @@ function makeSetupInteraction(opts: {
     reply: async (o: { content?: string; embeds?: { data?: { description?: string } }[] }) => {
       // /setup now uses an embed — record text OR the embed's description.
       const fromEmbeds = (o.embeds ?? []).map((e) => e?.data?.description ?? '').join('\n');
-      replies.push(o.content ?? fromEmbeds);
+      replies.push(messageText(o) || fromEmbeds);
     },
     member: {
       permissions: { has: () => admin },

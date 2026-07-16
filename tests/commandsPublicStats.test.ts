@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { messageText } from './messagePayload';
 
 vi.mock('@discordjs/voice', () => ({
   joinVoiceChannel: () => ({}),
@@ -26,7 +27,7 @@ function makeInteraction(commandName: string) {
     }) => {
       // Records text OR the embed description (/botstats and /stats moved to embeds).
       const fromEmbeds = (o.embeds ?? []).map((e) => e?.data?.description ?? '').join('\n');
-      replies.push(o.content ?? fromEmbeds);
+      replies.push(messageText(o) || fromEmbeds);
     },
   };
 }

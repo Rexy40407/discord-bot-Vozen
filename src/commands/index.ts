@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, AutocompleteInteraction, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, AutocompleteInteraction } from 'discord.js';
 import type { BotDeps } from '../bot/deps';
 import { voiceDisplayName, makeLocalizedNamer } from '../language/voiceMap';
 import { JOKE_LANGUAGES } from '../content/jokes';
@@ -6,6 +6,7 @@ import { filterGameChoices, filterWordChainLanguages } from '../games/index';
 import { log } from '../logging/logger';
 import { t, SUPPORTED_LOCALES, LOCALE_DISPLAY_NAMES } from '../i18n/index';
 import { getUserPronunciations, getServerPronunciations } from '../store/pronunciation';
+import { editCard, replyCard } from '../ui/messages';
 
 // Handlers extracted by domain (plan 015): index.ts stays as a thin registry/dispatcher.
 import { handleJoin, handleLeave, handleTts, handleSkip, handleShutup } from './handlers/core';
@@ -40,7 +41,7 @@ import {
   handleRandomizer,
 } from './handlers/personal';
 import { handlePrivacy } from './handlers/privacy';
-import { localeFor } from './helpers';
+import { localeForUser } from './helpers';
 
 // Re-exports: keep the public import paths unchanged for anyone already importing from here.
 export { localeForUser, INVITE_PERMISSIONS, localePrefixOf, formatDuration } from './helpers';
@@ -338,16 +339,16 @@ export async function handleInteraction(
   } catch (err) {
     log.error('[command] error in', i.commandName, err);
     if (!i.isRepliable()) return;
-    // localeFor never throws (falls back to DEFAULT_LOCALE on failure/missing db), so
-    // it's safe in the catch — the error message never gets stuck on a config read.
-    const locale = localeFor(deps, i.guildId);
+    // localeForUser never throws, so even the generic error follows the invoking
+    // user's Discord client language without risking a second failure in this catch.
+    const locale = localeForUser(deps, i);
     const msg = t('error.generic', locale);
     if (i.deferred && !i.replied) {
       // Already deferred (the /tts case): editReply so the user receives the error
       // instead of being stuck at "thinking...".
-      await i.editReply({ content: msg }).catch(() => {});
+      await i.editReply(editCard(msg, { tone: 'danger' })).catch(() => {});
     } else if (!i.replied) {
-      await i.reply({ content: msg, flags: MessageFlags.Ephemeral }).catch(() => {});
+      await i.reply(replyCard(msg, { ephemeral: true, tone: 'danger' })).catch(() => {});
     }
   }
 }
