@@ -40,7 +40,7 @@ describe('operational security configuration', () => {
   });
 
   it('keeps every font URL in the site stylesheet resolvable', () => {
-    const css = source('site/css/main-v32.css');
+    const css = source('site/css/main-v33.css');
     const urls = [...css.matchAll(/url\("\.\.\/assets\/fonts\/([^"?]+)"\)/g)].map(
       (match) => match[1],
     );
@@ -51,7 +51,7 @@ describe('operational security configuration', () => {
   });
 
   it('keeps developer-facing accessibility labels in English', () => {
-    const script = source('site/js/main-v30.js');
+    const script = source('site/js/main-v31.js');
     expect(script).toContain('aria-label="Copy Discord ID"');
     expect(script).not.toContain('aria-label="Copiar Discord ID"');
   });
@@ -62,7 +62,7 @@ describe('operational security configuration', () => {
   // pass is activated here. Drop the checkbox and the acknowledgement silently disappears
   // while the refund policy still claims it was given, which is worse than never having it.
   it('gates pass activation behind an express consent checkbox', () => {
-    const script = source('site/js/main-v30.js');
+    const script = source('site/js/main-v31.js');
     expect(script).toContain('id="ppClaimConsent"');
     expect(script).toContain('claim.consent');
     // The guard must refuse when unticked — failing open would activate the pass with no
@@ -80,7 +80,7 @@ describe('operational security configuration', () => {
   // link" is not something a string match can honestly do — but the surgical instruction is
   // one literal token, and its absence is checkable in every language.
   it('no longer asks buyers to extract the code from the URL', () => {
-    const bundle = source('site/js/i18n-v27.js');
+    const bundle = source('site/js/i18n-v28.js');
     const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
       window: {},
     };
@@ -101,8 +101,46 @@ describe('operational security configuration', () => {
     }
   });
 
+  // Closing the receipt tab is not a dead end — Ko-fi emails the buyer a receipt — but the card
+  // never said so, which made it one in practice. The line has to name the email first (the copy
+  // every buyer has) and support second (the genuinely-stuck tail: guest, wrong or lost email).
+  //
+  // The `.js-support` wiring at the top of the file runs ONCE over the document at load, and the
+  // claim card is injected later, after OAuth. An anchor leaning on that wiring would render with
+  // no href at all — so the card must carry the URL itself. That is what the last two assertions
+  // pin: a silent hrefless link is exactly the failure this line exists to prevent.
+  it('offers a way back when the buyer no longer has the receipt', () => {
+    const script = source('site/js/main-v31.js');
+    const start = script.indexOf('function claimCard()');
+    expect(start, 'claimCard() exists').toBeGreaterThan(-1);
+    const rest = script.slice(start + 1);
+    // Comments stripped: the assertion below is about the markup this function RENDERS, and a
+    // comment explaining why the wiring is avoided must not read as using it.
+    const card = rest.slice(0, rest.indexOf('\n  function ')).replace(/^\s*\/\/.*$/gm, '');
+    expect(card).toContain('claim.lost');
+    expect(card).toContain('${SUPPORT_URL}');
+    expect(card, 'must not rely on the one-time .js-support wiring').not.toContain('js-support');
+  });
+
+  it('translates the recovery copy into every advertised site language', () => {
+    const bundle = source('site/js/i18n-v28.js');
+    const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
+      window: {},
+    };
+    new Function('window', bundle)(sandbox.window);
+    const all = sandbox.window.VOZEN_I18N ?? {};
+    const langs = Object.keys(all);
+    expect(langs.length).toBeGreaterThan(0);
+    for (const lang of langs) {
+      // Split in two on purpose: the sentence and the link label are separate keys so no
+      // translation has to carry markup through esc().
+      expect(all[lang]['claim.lost'], `${lang} claim.lost`).toBeTruthy();
+      expect(all[lang]['claim.lostHelp'], `${lang} claim.lostHelp`).toBeTruthy();
+    }
+  });
+
   it('translates the consent copy into every advertised site language', () => {
-    const bundle = source('site/js/i18n-v27.js');
+    const bundle = source('site/js/i18n-v28.js');
     const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
       window: {},
     };

@@ -1145,6 +1145,14 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
 .ppanel__claimmsg { margin: 10px 0 0; font-size: 12.8px; line-height: 1.45; }
 .ppanel__claimmsg.is-ok { color: var(--aqua); }
 .ppanel__claimmsg.is-err { color: rgba(255, 110, 169, 0.9); }
+/* Saida para quem ja nao tem o recibo. Separada por uma linha porque e um caminho
+   alternativo, nao um passo do fluxo — mas nao esbatida ao ponto de so a encontrar
+   quem ja sabe que existe. */
+.ppanel__claimlost { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--text-2); font-size: 12.2px; line-height: 1.5; }
+/* Sem nowrap: o rotulo e uma frase, nao uma palavra com seta. Em PT/DE/RU passa dos
+   350px e num cartao estreito (~262px no telemovel) saia para fora da caixa. */
+.ppanel__claimlost a { color: var(--aqua); text-decoration: none; }
+.ppanel__claimlost a:hover { text-decoration: underline; }
 .ppanel__none { display: flex; flex-direction: column; gap: 4px; }
 .ppanel__none b { color: var(--text-0); font-size: 15px; }
 .ppanel__anon { display: grid; gap: 10px; }

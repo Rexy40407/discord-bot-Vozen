@@ -498,6 +498,14 @@
       // depois de usarem o passe. O quando fica registado em kofi_pending.claimed_at.
       `<label class="ppanel__claimconsent"><input type="checkbox" id="ppClaimConsent"> <span>${t("claim.consent")}</span></label>` +
       `<p class="ppanel__claimmsg" id="ppClaimMsg" role="status" aria-live="polite" hidden></p>` +
+      // Sits AFTER the status message on purpose: "no purchase found" is the moment someone
+      // realises they no longer have the receipt, and the way out should be the next thing they
+      // read. Closing the receipt tab was never a dead end — Ko-fi emails every buyer a copy —
+      // but the card never said so, which made it one in practice.
+      // The href is written here rather than via class="js-support": that wiring runs once over
+      // the document at load and this card is injected later, after OAuth, so it would render
+      // with no href at all.
+      `<p class="ppanel__claimlost">${t("claim.lost")} <a href="${SUPPORT_URL}" target="_blank" rel="noopener">${t("claim.lostHelp")}</a></p>` +
       `</div>`
     );
   }
