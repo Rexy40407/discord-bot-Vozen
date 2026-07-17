@@ -71,27 +71,30 @@ describe('operational security configuration', () => {
     expect(script).toContain('claim.consentRequired');
   });
 
-  // The buyer's own words on 2026-07-17: "não ficou claro para o cliente como resgatar".
-  // He had just bought and could not find the code — the receipt has no field called one,
-  // and the copy told him to look for it there. The code only exists in the receipt's URL
-  // (ko-fi.com/summary/<code>), so the copy has to say exactly that, in every language, or
-  // a paying customer is stranded between paying and being served.
-  it('tells buyers in every language where the code actually is', () => {
-    const bundle = source('site/js/i18n-v25.js');
+  // The receipt has no field called "transaction code"; the code exists only inside the
+  // receipt's own URL — and Ko-fi uses TWO shapes for it:
+  //   Shop item (annual):  ko-fi.com/summary/<code>
+  //   Membership (monthly): ko-fi.com/home/coffeeshop?txid=<code>&mode=g
+  // A first cut of this copy named only /summary/, written off a single annual purchase.
+  // That stranded every monthly buyer. Both shapes have to be named, in every language.
+  it('names both Ko-fi receipt URL shapes in every language', () => {
+    const bundle = source('site/js/i18n-v26.js');
     const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
       window: {},
     };
     new Function('window', bundle)(sandbox.window);
     const all = sandbox.window.VOZEN_I18N ?? {};
+    expect(Object.keys(all).length).toBeGreaterThan(0);
     for (const lang of Object.keys(all)) {
-      for (const key of ['claim.hint', 'claim.placeholder', 'claim.useReceiptCode']) {
-        expect(all[lang][key], `${lang} ${key}`).toContain('ko-fi.com/summary/');
+      for (const key of ['claim.hint', 'claim.useReceiptCode', 'claim.notfound']) {
+        expect(all[lang][key], `${lang} ${key} names /summary/`).toContain('/summary/');
+        expect(all[lang][key], `${lang} ${key} names txid=`).toContain('txid=');
       }
     }
   });
 
   it('translates the consent copy into every advertised site language', () => {
-    const bundle = source('site/js/i18n-v25.js');
+    const bundle = source('site/js/i18n-v26.js');
     const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
       window: {},
     };
