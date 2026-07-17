@@ -165,9 +165,16 @@ hostil (`@everyone \`hack\` S-XYZ99`) chega ao Discord como texto inerte
 F1+F2: o modal no ar — guia o caminho que ativa e transforma o Ref numa mensagem de
 suporte pronta. F3 torna isso num clique. F4 fecha o funil do lado do Ko-fi.
 
-**Estado (2026-07-17):** F1–F3 feitas, deployadas e **provadas em produção** — um Ref
-de teste no modal gera a mensagem verde no site e a notificação no canal privado do
-Discord. Só falta a F4 (textos do Ko-fi), que é ação do Diogo.
+**Estado (2026-07-17):** F1–F3 feitas, deployadas e **provadas em produção**. Só falta
+a F4 (textos do Ko-fi), que é ação do Diogo.
+
+**F3+ (descoberta ao testar o painel real do Ko-fi):** a pesquisa de transações do
+Ko-fi só casa por **nome ou email**, não pelo Ref — logo o Ref era inútil para o dono
+o encontrar. O pedido de ajuda passou a levar o **email** que a pessoa usou no Ko-fi
+(que o dono cola na pesquisa e encontra a encomenda paga num passo). O email é pista
+de procura, não prova (plano 021 de pé); fica fora dos logs (PII); o endpoint recusa
+qualquer coisa sem um `@` limpo (400 bad_email), por isso um Ref ou um `@everyone`
+injetado nunca chega ao Discord. Deployado (`fe69e24`), provado e2e + browser.
 
 **Próxima ação concreta:** colar no Ko-fi o bloco de Terms corrigido — ainda diz
 "paste the transaction code" onde já devia dizer "paste the receipt link" + mencionar
