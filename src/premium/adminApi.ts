@@ -21,6 +21,7 @@ import {
   type AdminPassesView,
 } from '../store/adminPasses';
 import { listAllUnclaimedPending, type PendingGrant } from '../store/kofiPending';
+import { buildServerStats } from '../store/serverStats';
 import { signAdminSession, verifyAdminPassword, verifyAdminSession } from './adminAuth';
 import type { DiscordIdentity } from './statusApi';
 
@@ -37,6 +38,28 @@ export interface AdminApiDeps {
   logInfo: (m: string) => void;
   /** Session lifetime; default 8h. */
   sessionTtlSec?: number;
+  /** Live snapshot of the bot's guilds (from client.guilds.cache). Absent => the servers tab is
+   *  empty. Only id/name/icon/memberCount leave — the stats come from data already in the db. */
+  resolveGuilds?: () => AdminGuildBrief[];
+}
+
+/** What the bot's guild cache gives us for a server (no message content, just identity + size). */
+export interface AdminGuildBrief {
+  id: string;
+  name: string;
+  /** Full CDN URL of the server icon, or null. */
+  icon: string | null;
+  memberCount: number;
+}
+
+/** A server row for the admin console: identity + aggregate usage already stored (talk_stats). */
+export interface AdminGuildRow extends AdminGuildBrief {
+  /** Total messages Vozen has read in this server. */
+  messages: number;
+  /** People with at least one message read. */
+  speakers: number;
+  /** Top talkers (userId + count) — the same data as the public /topspeakers, per server. */
+  topSpeakers: { userId: string; count: number }[];
 }
 
 export type AdminGrantInput =
@@ -73,6 +96,8 @@ export interface AdminApi {
   /** Returns the owner id iff `sessionToken` is a valid session for the owner; else null. */
   authorize(sessionToken: string | null): string | null;
   listPasses(): AdminPassesResult;
+  /** The bot's servers with their aggregate usage, busiest first. Empty without resolveGuilds. */
+  listGuilds(): AdminGuildRow[];
   grant(input: AdminGrantInput): AdminGrantOk | AdminGrantErr;
   revoke(input: AdminRevokeInput): { ok: boolean };
 }
@@ -81,6 +106,8 @@ const SNOWFLAKE = /^\d{1,20}$/;
 /** ~10 years — a generous manual grant, still bounded so a typo can't set a century. */
 const MAX_DAYS = 3650;
 const MAX_SEATS = 100;
+/** Top talkers shown per server in the console. */
+const TOP_SPEAKERS = 5;
 
 const validId = (id: unknown): id is string => typeof id === 'string' && SNOWFLAKE.test(id);
 const validDays = (d: unknown): d is number =>
@@ -126,6 +153,28 @@ export function createAdminApi(deps: AdminApiDeps): AdminApi {
     return { ...listActivePremium(deps.db, now), pending: listAllUnclaimedPending(deps.db) };
   }
 
+  function listGuilds(): AdminGuildRow[] {
+    if (!deps.resolveGuilds) return [];
+    const now = new Date(deps.now());
+    return deps
+      .resolveGuilds()
+      .map((g) => {
+        // Stats come ONLY from talk_stats (already stored, already public via /topspeakers) — no
+        // new collection. buildServerStats is pure over the db.
+        const s = buildServerStats(deps.db, g.id, now, TOP_SPEAKERS);
+        return {
+          id: g.id,
+          name: g.name,
+          icon: g.icon,
+          memberCount: g.memberCount,
+          messages: s.totalMessages,
+          speakers: s.activeSpeakers,
+          topSpeakers: s.topSpeakers.map((t) => ({ userId: t.userId, count: t.count })),
+        };
+      })
+      .sort((a, b) => b.messages - a.messages);
+  }
+
   function grant(input: AdminGrantInput): AdminGrantOk | AdminGrantErr {
     if (!validId(input.id)) return { ok: false, error: 'bad_id' };
     if (!validDays(input.days)) return { ok: false, error: 'bad_days' };
@@ -150,5 +199,5 @@ export function createAdminApi(deps: AdminApiDeps): AdminApi {
     return { ok };
   }
 
-  return { enabled, login, authorize, listPasses, grant, revoke };
+  return { enabled, login, authorize, listPasses, listGuilds, grant, revoke };
 }

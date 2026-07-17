@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { initDb } from '../src/store/db';
 import { isUserPremium } from '../src/store/premium';
+import { bumpTalk } from '../src/store/talkStats';
 import { hashAdminPassword, signAdminSession } from '../src/premium/adminAuth';
 import { createAdminApi, type AdminApi } from '../src/premium/adminApi';
 
@@ -161,5 +162,69 @@ describe('adminApi — grant / revoke / list', () => {
     const view = api.listPasses();
     expect(view.plus.some((x) => x.userId === '111')).toBe(true);
     expect(Array.isArray(view.pending)).toBe(true);
+  });
+});
+
+describe('adminApi — listGuilds (servers tab)', () => {
+  let db: Database.Database;
+  beforeEach(() => (db = initDb(':memory:')));
+  afterEach(() => db.close());
+
+  it('is empty without a resolveGuilds source', () => {
+    expect(make(db).listGuilds()).toEqual([]);
+  });
+
+  it('returns each guild with its stored usage, busiest first, and top speakers', () => {
+    const now = new Date(NOW);
+    // Guild A: 3 messages read (u1 twice, u2 once). Guild B: 1 message (u3).
+    bumpTalk(db, 'A', 'u1', now);
+    bumpTalk(db, 'A', 'u1', now);
+    bumpTalk(db, 'A', 'u2', now);
+    bumpTalk(db, 'B', 'u3', now);
+
+    const api = make(db, {
+      resolveGuilds: () => [
+        { id: 'B', name: 'Beta', icon: null, memberCount: 5 },
+        {
+          id: 'A',
+          name: 'Alpha',
+          icon: 'https://cdn.discordapp.com/icons/A/x.png',
+          memberCount: 10,
+        },
+      ],
+    });
+    const rows = api.listGuilds();
+
+    // Busiest first: A (3 messages) before B (1) — regardless of resolveGuilds order.
+    expect(rows.map((r) => r.id)).toEqual(['A', 'B']);
+    expect(rows[0]).toMatchObject({
+      id: 'A',
+      name: 'Alpha',
+      icon: 'https://cdn.discordapp.com/icons/A/x.png',
+      memberCount: 10,
+      messages: 3,
+      speakers: 2,
+    });
+    // Stats come from talk_stats: u1 (2) is the top speaker of A.
+    expect(rows[0].topSpeakers[0]).toEqual({ userId: 'u1', count: 2 });
+    expect(rows[1]).toMatchObject({ id: 'B', messages: 1, speakers: 1 });
+  });
+
+  it('shows a guild the bot is in even with zero messages read yet', () => {
+    const api = make(db, {
+      resolveGuilds: () => [{ id: 'C', name: 'Gamma', icon: null, memberCount: 3 }],
+    });
+    const rows = api.listGuilds();
+    expect(rows).toEqual([
+      {
+        id: 'C',
+        name: 'Gamma',
+        icon: null,
+        memberCount: 3,
+        messages: 0,
+        speakers: 0,
+        topSpeakers: [],
+      },
+    ]);
   });
 });

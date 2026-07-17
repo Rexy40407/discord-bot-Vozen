@@ -357,6 +357,15 @@ async function main(): Promise<void> {
           adminSessionSecret: config.adminSessionSecret,
           ownerId: config.ownerId,
           logInfo: (m) => log.info(m),
+          // Live guild snapshot for the servers tab: id/name/icon/memberCount only. The usage
+          // stats come from talk_stats (already stored), never from a fresh read.
+          resolveGuilds: () =>
+            client.guilds.cache.map((g) => ({
+              id: g.id,
+              name: g.name,
+              icon: g.iconURL({ size: 64 }) ?? null,
+              memberCount: g.memberCount,
+            })),
         })
       : undefined;
     startKofiWebhook({

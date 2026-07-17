@@ -40,6 +40,7 @@ function makeAdmin(db: Database.Database, enabled = true) {
     adminSessionSecret: enabled ? SECRET : undefined,
     ownerId: OWNER,
     logInfo: () => {},
+    resolveGuilds: () => [{ id: 'G1', name: 'Test Server', icon: null, memberCount: 4 }],
   });
 }
 
@@ -160,6 +161,18 @@ describe('admin console — HTTP router', () => {
     const r = await post(`${base}/api/admin/revoke`, { kind: 'plus', id: '424242424242424242' }, h);
     expect(r.status).toBe(200);
     expect(isUserPremium(db, '424242424242424242', NOW)).toBe(false);
+  });
+
+  it('GET /api/admin/guilds returns the servers with a valid session, 403 without', async () => {
+    const base = await start();
+    // No session -> refused.
+    expect((await get(`${base}/api/admin/guilds`)).status).toBe(403);
+    // With a session -> the guild list (from resolveGuilds + talk_stats).
+    const session = signAdminSession(OWNER, SECRET, NOW);
+    const r = await get(`${base}/api/admin/guilds`, { authorization: `Bearer ${session}` });
+    expect(r.status).toBe(200);
+    const d = (await r.json()) as { guilds: Array<{ id: string; name: string }> };
+    expect(d.guilds.some((x) => x.id === 'G1' && x.name === 'Test Server')).toBe(true);
   });
 
   it('rejects a malformed grant with 400 (bad snowflake)', async () => {

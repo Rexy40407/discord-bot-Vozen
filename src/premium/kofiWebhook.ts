@@ -864,6 +864,11 @@ function handleAdminRequest(
     return;
   }
 
+  if (path === '/api/admin/guilds' && req.method === 'GET') {
+    json(200, { guilds: ctx.adminApi.listGuilds() });
+    return;
+  }
+
   if (path === '/api/admin/grant' && req.method === 'POST') {
     readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
       let parsed: { kind?: unknown; id?: unknown; days?: unknown; seats?: unknown };
