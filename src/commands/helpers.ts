@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import type { BotDeps } from '../bot/deps';
 import { getGuildConfig } from '../store/guildConfig';
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '../i18n/index';
+import { DEFAULT_LOCALE, normalizeLocale } from '../i18n/index';
 import { replyCard } from '../ui/messages';
 
 /**
@@ -45,13 +45,8 @@ export function localeForUser(
   deps: BotDeps,
   interaction: { locale?: string | null; guildId?: string | null },
 ): string {
-  const raw = interaction?.locale;
-  if (raw) {
-    const base = raw.split('-')[0].toLowerCase();
-    if ((SUPPORTED_LOCALES as readonly string[]).includes(base)) {
-      return base;
-    }
-  }
+  const base = normalizeLocale(interaction?.locale);
+  if (base) return base;
   // Unsupported / missing Discord language -> fall back to the guild (and default).
   return localeFor(deps, interaction?.guildId);
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PermissionFlagsBits, ChannelType } from 'discord.js';
-import { pickWelcomeChannel, buildWelcomeEmbed } from '../src/bot/welcome';
+import { pickWelcomeChannel, buildWelcomeEmbed, welcomeLocaleFor } from '../src/bot/welcome';
 
 // Testes das pecas PURAS/testaveis do welcome embed (guildCreate). NAO simulamos
 // o evento real do gateway — o handler em client.ts so liga estas funcoes.
@@ -149,5 +149,29 @@ describe('buildWelcomeEmbed', () => {
     const body = fields.map((f) => `${f.name}\n${f.value}`).join('\n');
     expect(body).toMatch(/\/join/);
     expect(body).toMatch(/voz/i); // passo 1 em pt
+  });
+});
+
+// The welcome is sent on guildCreate, where there is NO user interaction (no i.locale).
+// The best signal is the SERVER's own Discord language (guild.preferredLocale). So a
+// Portuguese/Russian server should get its welcome in its language, not always English.
+describe('welcomeLocaleFor (guild.preferredLocale -> welcome language)', () => {
+  it('maps the server Discord language to a supported base code', () => {
+    expect(welcomeLocaleFor('pt-BR')).toBe('pt');
+    expect(welcomeLocaleFor('ru')).toBe('ru');
+    expect(welcomeLocaleFor('fr')).toBe('fr');
+    expect(welcomeLocaleFor('zh-CN')).toBe('zh');
+  });
+
+  it('falls back to English for an unsupported language or when absent', () => {
+    expect(welcomeLocaleFor('ko')).toBe('en'); // Korean: not translated yet
+    expect(welcomeLocaleFor(null)).toBe('en');
+    expect(welcomeLocaleFor(undefined)).toBe('en');
+  });
+
+  it('actually renders the welcome in that language (pt server -> pt copy)', () => {
+    const en = buildWelcomeEmbed(welcomeLocaleFor('en-US')).toJSON().description ?? '';
+    const pt = buildWelcomeEmbed(welcomeLocaleFor('pt-BR')).toJSON().description ?? '';
+    expect(pt).not.toBe(en); // the Portuguese server does NOT get the English description
   });
 });

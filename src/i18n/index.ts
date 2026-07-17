@@ -56,6 +56,21 @@ export const SUPPORTED_LOCALES = [
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 /**
+ * Normalizes a raw Discord locale to the base code we key catalogs by, IF supported.
+ * Discord sends variants ('pt-BR', 'en-US', 'es-419', 'zh-CN'); we key by the base
+ * ('pt', 'en', 'es', 'zh'). One generic rule (part before '-', lowercased) covers ALL
+ * variants — no special cases. Returns the base SupportedLocale, or `null` when the raw
+ * value is missing or a language we don't translate yet (the caller decides the
+ * fallback). PURE — the shared normalization behind BOTH per-user resolution
+ * (localeForUser) and the guildCreate welcome (welcomeLocaleFor).
+ */
+export function normalizeLocale(raw: string | null | undefined): SupportedLocale | null {
+  if (!raw) return null;
+  const base = raw.split('-')[0].toLowerCase();
+  return (SUPPORTED_LOCALES as readonly string[]).includes(base) ? (base as SupportedLocale) : null;
+}
+
+/**
  * Nome legivel de cada locale, na PROPRIA lingua (endonimo). Usado no autocomplete
  * do `/config language` e na confirmacao. Tipado como `Record<SupportedLocale,
  * string>` (a uniao finita, nao `Record<string, string>`): assim, adicionar um

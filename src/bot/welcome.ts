@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, ChannelType, type EmbedBuilder } from 'discord.js';
-import { t, DEFAULT_LOCALE } from '../i18n/index';
+import { t, DEFAULT_LOCALE, normalizeLocale } from '../i18n/index';
 import { brandEmbed } from '../ui/theme';
 
 /**
@@ -90,4 +90,16 @@ export function buildWelcomeEmbed(locale: string = DEFAULT_LOCALE): EmbedBuilder
       .addFields({ name: t('welcome.stepsTitle', locale), value: t('welcome.stepsBody', locale) })
       .setFooter({ text: t('welcome.footer', locale) })
   );
+}
+
+/**
+ * INTERFACE locale for the guildCreate welcome. There is NO user interaction here (no
+ * `i.locale`), so the best signal is the SERVER's own Discord language,
+ * `guild.preferredLocale` (e.g. 'pt-BR'). Normalized to a supported base code, else
+ * DEFAULT_LOCALE ('en'). This is why a Portuguese/Russian/French server gets its welcome
+ * in its own language instead of always English. PURE (takes the raw string, not the
+ * guild) so client.ts stays a thin wire and the mapping is unit-tested here.
+ */
+export function welcomeLocaleFor(preferredLocale: string | null | undefined): string {
+  return normalizeLocale(preferredLocale) ?? DEFAULT_LOCALE;
 }

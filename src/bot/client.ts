@@ -19,8 +19,7 @@ import { sanitizeSpeakerName } from '../language/speakerName';
 import { buildGreeting, isJoinIntoChannel } from '../voice/greeting';
 import { getBirthday, isBirthdayToday } from '../store/birthday';
 import { buildPresence } from './presence';
-import { pickWelcomeChannel, buildWelcomeEmbed } from './welcome';
-import { DEFAULT_LOCALE } from '../i18n/index';
+import { pickWelcomeChannel, buildWelcomeEmbed, welcomeLocaleFor } from './welcome';
 import { createErrorReporter } from '../errorReporter';
 import { bindGatewayWatch } from './gatewayWatch';
 import { log } from '../logging/logger';
@@ -149,7 +148,10 @@ export function bindEvents(deps: BotDeps): void {
           guild as unknown as Parameters<typeof pickWelcomeChannel>[0],
         );
         if (!channel) return;
-        const embed = buildWelcomeEmbed(DEFAULT_LOCALE);
+        // Localize the welcome to the SERVER's own Discord language (preferredLocale),
+        // falling back to English. guildCreate has no user interaction, so this is the
+        // best signal — a Portuguese/Russian server no longer gets an English welcome.
+        const embed = buildWelcomeEmbed(welcomeLocaleFor(guild.preferredLocale));
         // The chosen channel is always a sendable GuildText (pickWelcomeChannel already
         // validated ViewChannel+SendMessages); we use the real instance from the cache.
         const sendable = guild.channels.cache.get(channel.id);
