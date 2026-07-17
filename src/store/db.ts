@@ -224,13 +224,19 @@ export function initDb(path: string): Database.Database {
       -- on the site using Discord login and the receipt transaction ID. email_hash supports
       -- orphaned renewals and may be NULL. claimed_at NULL means unclaimed. Old rows are purged.
       CREATE TABLE IF NOT EXISTS kofi_pending (
-        transaction_id TEXT PRIMARY KEY,
-        email_hash     TEXT,
-        plan           TEXT NOT NULL,
-        days           INTEGER NOT NULL,
-        seats          INTEGER NOT NULL,
-        created_at     INTEGER NOT NULL,
-        claimed_at     INTEGER
+        transaction_id  TEXT PRIMARY KEY,
+        email_hash      TEXT,
+        plan            TEXT NOT NULL,
+        days            INTEGER NOT NULL,
+        seats           INTEGER NOT NULL,
+        created_at      INTEGER NOT NULL,
+        claimed_at      INTEGER,
+        -- Plan 035. Decides two things at claim time: which OTHER pending rows on the same
+        -- email get applied along with this one, and whether claiming it may rebind
+        -- email->Discord (which is what routes renewals). Only subscriptions travel together
+        -- and only they may move the binding, so a gift bought on the buyer's own email
+        -- cannot hand the buyer's renewals to the recipient.
+        is_subscription INTEGER NOT NULL DEFAULT 0
       );
       CREATE INDEX IF NOT EXISTS idx_kofi_pending_email
         ON kofi_pending (email_hash);
@@ -293,6 +299,16 @@ export function initDb(path: string): Database.Database {
     if (!ucCols.some((c) => c.name === 'target_id')) {
       db.exec("ALTER TABLE user_clone ADD COLUMN target_id TEXT NOT NULL DEFAULT ''");
       db.exec("UPDATE user_clone SET target_id = user_id WHERE target_id = ''");
+    }
+    // Idempotent migration of `is_subscription` on kofi_pending (plan 035). DEFAULT 0 is the
+    // conservative backfill for rows already waiting: they stay standalone and cannot move the
+    // email binding. Every pending row that predates this is a Shop order or a first payment
+    // that nobody has claimed yet — treating those as "not a subscription" only ever narrows
+    // what a claim touches, so no existing pending purchase can be over-applied. No-op on new
+    // DBs (the CREATE above already has it).
+    const kpCols = db.pragma('table_info(kofi_pending)') as Array<{ name: string }>;
+    if (!kpCols.some((c) => c.name === 'is_subscription')) {
+      db.exec('ALTER TABLE kofi_pending ADD COLUMN is_subscription INTEGER NOT NULL DEFAULT 0');
     }
     // Migracao idempotente: kofi_supporter passou a indexar por HASH do email (minimizacao
     // de PII). A coluna antiga `email` (email em claro) renomeia-se para `email_hash`. Em DBs

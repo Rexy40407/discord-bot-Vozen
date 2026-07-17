@@ -18,6 +18,12 @@ export interface PendingGrant {
   createdAt: number;
   /** Unix ms when it was claimed, or null while unclaimed. */
   claimedAt: number | null;
+  /**
+   * true when this row is a membership payment (plan 035). Governs claim blast radius: only
+   * subscriptions are applied alongside a sibling on the same email, and only a subscription
+   * claim may rebind email->Discord. Keeps a gift from stealing the buyer renewals.
+   */
+  isSubscription: boolean;
 }
 
 export interface PendingGrantInput {
@@ -26,6 +32,8 @@ export interface PendingGrantInput {
   plan: string;
   days: number;
   seats: number;
+  /** Membership payment? Defaults to false — a Shop order is never a subscription. */
+  isSubscription?: boolean;
 }
 
 /**
@@ -41,10 +49,18 @@ export function recordPendingGrant(
   const res = db
     .prepare(
       `INSERT OR IGNORE INTO kofi_pending
-         (transaction_id, email_hash, plan, days, seats, created_at, claimed_at)
-       VALUES (?, ?, ?, ?, ?, ?, NULL)`,
+         (transaction_id, email_hash, plan, days, seats, created_at, claimed_at, is_subscription)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?)`,
     )
-    .run(input.transactionId, input.emailHash, input.plan, input.days, input.seats, now);
+    .run(
+      input.transactionId,
+      input.emailHash,
+      input.plan,
+      input.days,
+      input.seats,
+      now,
+      input.isSubscription ? 1 : 0,
+    );
   return res.changes > 0;
 }
 
@@ -56,6 +72,7 @@ function rowToPending(row: {
   seats: number;
   created_at: number;
   claimed_at: number | null;
+  is_subscription: number;
 }): PendingGrant {
   return {
     transactionId: row.transaction_id,
@@ -65,6 +82,7 @@ function rowToPending(row: {
     seats: row.seats,
     createdAt: row.created_at,
     claimedAt: row.claimed_at,
+    isSubscription: row.is_subscription === 1,
   };
 }
 

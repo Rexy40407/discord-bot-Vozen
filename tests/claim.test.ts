@@ -38,6 +38,53 @@ describe('claimPendingGrant — claim a pending purchase (code only, plan 021)',
     ...over,
   });
 
+  // ── Gift contamination (plan 035, risk #1) ─────────────────────────────────────────────────
+  // Once every new purchase pends, one email can hold several unclaimed rows at once — and a
+  // claim both (a) applies every pending row sharing that email and (b) rebinds the email to
+  // whoever claimed. A subscriber buying a gift on their own email would therefore hand their
+  // OWN renewals to the recipient's account. So: only subscriptions travel together, and only
+  // a subscription claim may move the binding.
+  it('a claimed subscription does not drag a pending Shop gift on the same email', () => {
+    recordPendingGrant(db, pend({ transactionId: 'sub-1', isSubscription: true }), now);
+    recordPendingGrant(db, pend({ transactionId: 'gift-1', isSubscription: false }), now);
+    const out = claimPendingGrant(db, DID, 'sub-1', now + 10);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.items).toHaveLength(1); // the subscription only
+    expect(findUnclaimedPendingByTx(db, 'gift-1')).not.toBeNull(); // gift still waiting
+  });
+
+  it('accumulated orphan renewals on one email are still applied together', () => {
+    recordPendingGrant(db, pend({ transactionId: 'sub-1', isSubscription: true }), now);
+    recordPendingGrant(db, pend({ transactionId: 'sub-2', isSubscription: true }), now + 100);
+    const out = claimPendingGrant(db, DID, 'sub-1', now + 200);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.items).toHaveLength(2);
+  });
+
+  // The mirror case, and the worse one: the recipient claims first and walks off with the
+  // buyer's own pending subscription.
+  it('a claimed Shop gift does not drag the buyer pending subscription', () => {
+    recordPendingGrant(db, pend({ transactionId: 'sub-1', isSubscription: true }), now);
+    recordPendingGrant(db, pend({ transactionId: 'gift-1', isSubscription: false }), now);
+    const out = claimPendingGrant(db, DID, 'gift-1', now + 10);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.items).toHaveLength(1); // the gift only
+    expect(findUnclaimedPendingByTx(db, 'sub-1')).not.toBeNull(); // buyer's sub untouched
+  });
+
+  it('claiming a Shop gift does NOT rebind the email (renewals stay with the buyer)', () => {
+    recordPendingGrant(db, pend({ transactionId: 'gift-1', isSubscription: false }), now);
+    const out = claimPendingGrant(db, DID, 'gift-1', now + 10);
+    expect(out.ok).toBe(true); // the recipient gets the gift...
+    expect(lookupKofiSupporter(db, EMAIL_HASH)).toBeNull(); // ...but the routing is untouched
+  });
+
+  it('claiming a subscription DOES bind the email (renewals resolve themselves after)', () => {
+    recordPendingGrant(db, pend({ transactionId: 'sub-1', isSubscription: true }), now);
+    claimPendingGrant(db, DID, 'sub-1', now + 10);
+    expect(lookupKofiSupporter(db, EMAIL_HASH)).toBe(DID);
+  });
+
   // ── What a buyer ACTUALLY pastes ───────────────────────────────────────────────────────────
   // The code has no field of its own on a Ko-fi receipt: it lives inside the receipt's URL, and
   // Ko-fi uses two shapes for it —
@@ -112,9 +159,12 @@ describe('claimPendingGrant — claim a pending purchase (code only, plan 021)',
   });
 
   // ── Secondary path: CODE (tx id) ──────────────────────────────────────────────────
+  // Orphan renewals of one membership piling up on the same email — applying them in one go is
+  // the point of matching by email. Marked as subscriptions since plan 035: that is what they
+  // always were, and only subscriptions travel together now.
   it('code (tx id) -> activates and matches by internal email (applies all for that email)', () => {
-    recordPendingGrant(db, pend({ transactionId: 'tx-1' }), now);
-    recordPendingGrant(db, pend({ transactionId: 'tx-2' }), now + 100);
+    recordPendingGrant(db, pend({ transactionId: 'tx-1', isSubscription: true }), now);
+    recordPendingGrant(db, pend({ transactionId: 'tx-2', isSubscription: true }), now + 100);
     const out = claimPendingGrant(db, DID, 'tx-1', now + 200);
     expect(out.ok).toBe(true);
     if (out.ok) expect(out.items).toHaveLength(2); // tx-1 + tx-2 (same email)
@@ -149,7 +199,7 @@ describe('claimPendingGrant — claim a pending purchase (code only, plan 021)',
   });
 
   it('code memorizes email->Discord ID (future renewals resolve themselves)', () => {
-    recordPendingGrant(db, pend(), now);
+    recordPendingGrant(db, pend({ isSubscription: true }), now);
     claimPendingGrant(db, DID, 'tx-1', now);
     expect(lookupKofiSupporter(db, EMAIL_HASH)).toBe(DID);
   });

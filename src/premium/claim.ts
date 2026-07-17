@@ -86,13 +86,25 @@ export function claimPendingGrant(
   if (raw.includes('@')) return { ok: false, reason: 'use_receipt_code' };
   const trimmed = extractReceiptCode(raw);
   const tx = db.transaction((): ClaimOutcome => {
-    // Via CODE (tx id): find the pending grant and, through it, all purchases of the same email.
+    // Via CODE (tx id): the claimed row always applies. What else rides along, and whether the
+    // email binding may move, both depend on WHAT was claimed (plan 035).
     const match = findUnclaimedPendingByTx(db, trimmed);
     if (!match) return { ok: false, reason: 'not_found' };
-    const targets: PendingGrant[] = match.emailHash
-      ? listUnclaimedPendingByEmailHash(db, match.emailHash)
-      : [match];
-    const emailHashForRemember: string | null = match.emailHash;
+    // Only subscriptions travel together, and only when a subscription is what was claimed.
+    // Renewals of one membership pile up unclaimed on the same email, and applying them in one
+    // go is the point. A Shop order must neither be dragged along nor drag anything: a
+    // subscriber who buys a gift on their own email would otherwise hand their OWN pending
+    // renewals to whoever claims the gift — a worse bug than the one this plan fixes.
+    const siblings: PendingGrant[] =
+      match.isSubscription && match.emailHash
+        ? listUnclaimedPendingByEmailHash(db, match.emailHash).filter(
+            (p) => p.isSubscription && p.transactionId !== match.transactionId,
+          )
+        : [];
+    const targets: PendingGrant[] = [match, ...siblings];
+    // The binding is what routes future renewals, so only a subscription claim may set it.
+    // Claiming a gift must leave the buyer's renewals pointed where they were.
+    const emailHashForRemember: string | null = match.isSubscription ? match.emailHash : null;
 
     const items: ClaimedItem[] = [];
     for (const p of targets) {

@@ -25,6 +25,15 @@ export interface KofiEvent {
   type: string; // Donation | Subscription | Shop Order | Commission
   message: string | null;
   isSubscriptionPayment: boolean;
+  /**
+   * true only on the FIRST payment of a membership. Plan 035 routes on this: a first payment
+   * pends and is claimed (the buyer picks the Discord account and consents to immediate
+   * delivery), while renewals keep applying themselves — a subscriber must not lose the
+   * service they pay for by forgetting to claim each month. Absent/anything-but-true reads as
+   * false, and the routing demands the email binding as well, so a Ko-fi payload that omits
+   * this degrades to "pending" rather than to "activate without consent".
+   */
+  isFirstSubscriptionPayment: boolean;
   tierName: string | null;
   /** Concatenated shop item names/codes, to match keywords (annual, plus…). */
   shopItemsText: string;
@@ -79,6 +88,7 @@ export function parseKofiPayload(raw: string): KofiEvent | null {
       type: String(o.type ?? ''),
       message: o.message == null ? null : String(o.message),
       isSubscriptionPayment: o.is_subscription_payment === true,
+      isFirstSubscriptionPayment: o.is_first_subscription_payment === true,
       tierName: o.tier_name == null ? null : String(o.tier_name),
       shopItemsText,
       shopItemCodes,

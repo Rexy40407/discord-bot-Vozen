@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Server } from 'node:http';
 import type Database from 'better-sqlite3';
 import { initDb } from '../src/store/db';
-import { getPremiumPass, isUserPremium, recordKofiTransaction } from '../src/store/premium';
+import {
+  getPremiumPass,
+  isUserPremium,
+  recordKofiTransaction,
+  rememberKofiSupporter,
+} from '../src/store/premium';
 import {
   parseKofiPayload,
   verifyKofiToken,
@@ -54,6 +59,26 @@ describe('kofi — payload parsing', () => {
       shop_items: [{ variation_name: 'Vozen Premium Annual', direct_link_code: 'abc' }],
     });
     expect(parseKofiPayload(raw)?.shopItemsText).toMatch(/Premium Annual/);
+  });
+
+  // Plan 035 needs to tell a subscription's FIRST payment from its renewals: the first one
+  // must pend and be claimed (the buyer picks the account and consents), renewals must keep
+  // applying themselves or a paying subscriber loses the service by forgetting to claim.
+  it('is_first_subscription_payment: true -> isFirstSubscriptionPayment true', () => {
+    const raw = kofiJson({ is_subscription_payment: true, is_first_subscription_payment: true });
+    expect(parseKofiPayload(raw)?.isFirstSubscriptionPayment).toBe(true);
+  });
+
+  it('is_first_subscription_payment: false (a renewal) -> false', () => {
+    const raw = kofiJson({ is_subscription_payment: true, is_first_subscription_payment: false });
+    expect(parseKofiPayload(raw)?.isFirstSubscriptionPayment).toBe(false);
+  });
+
+  // Absent must NOT read as "first". The routing treats "renewal" as the only auto-apply path
+  // and demands both signals, so an absent field degrades to pending — never to activating
+  // without consent.
+  it('field absent -> false (never guesses "first")', () => {
+    expect(parseKofiPayload(kofiJson({}))?.isFirstSubscriptionPayment).toBe(false);
   });
 });
 
@@ -547,7 +572,15 @@ describe('kofi — webhook idempotency (Ko-fi retries do not duplicate the grant
     expect(server).not.toBeNull();
     await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
 
-    const payload = kofiJson({ kofi_transaction_id: 'tx-dup-1' });
+    // Plan 035: renewal is the only path that still applies without a claim, so bind the
+    // email and send renewals. What is under test (idempotency, tx ids) is unchanged.
+    rememberKofiSupporter(db, hashKofiEmail('tok', EMAIL), DID, 1_000);
+    const payload = kofiJson({
+      message: null,
+      is_subscription_payment: true,
+      is_first_subscription_payment: false,
+      kofi_transaction_id: 'tx-dup-1',
+    });
     expect(await startAndPost(payload)).toBe(200);
     const passAfter1 = getPremiumPass(db, DID);
     expect(passAfter1).not.toBeNull();
@@ -569,9 +602,19 @@ describe('kofi — webhook idempotency (Ko-fi retries do not duplicate the grant
     });
     await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
 
-    expect(await startAndPost(kofiJson({ kofi_transaction_id: 'tx-r1' }))).toBe(200);
+    // Plan 035: renewal is the only path that still applies without a claim, so bind the
+    // email and send renewals. What is under test (idempotency, tx ids) is unchanged.
+    rememberKofiSupporter(db, hashKofiEmail('tok', EMAIL), DID, 1_000);
+    const renew = (tx: string): string =>
+      kofiJson({
+        message: null,
+        is_subscription_payment: true,
+        is_first_subscription_payment: false,
+        kofi_transaction_id: tx,
+      });
+    expect(await startAndPost(renew('tx-r1'))).toBe(200);
     const after1 = getPremiumPass(db, DID)!.expiresAt;
-    expect(await startAndPost(kofiJson({ kofi_transaction_id: 'tx-r2' }))).toBe(200);
+    expect(await startAndPost(renew('tx-r2'))).toBe(200);
     const after2 = getPremiumPass(db, DID)!.expiresAt;
     expect(after2).toBeGreaterThan(after1);
   });
@@ -587,7 +630,19 @@ describe('kofi — webhook idempotency (Ko-fi retries do not duplicate the grant
     });
     await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
 
-    expect(await startAndPost(kofiJson({ kofi_transaction_id: null }))).toBe(200);
+    // Plan 035: renewal is the only path that still applies without a claim, so bind the
+    // email and send renewals. What is under test (idempotency, tx ids) is unchanged.
+    rememberKofiSupporter(db, hashKofiEmail('tok', EMAIL), DID, 1_000);
+    expect(
+      await startAndPost(
+        kofiJson({
+          message: null,
+          is_subscription_payment: true,
+          is_first_subscription_payment: false,
+          kofi_transaction_id: null,
+        }),
+      ),
+    ).toBe(200);
     expect(getPremiumPass(db, DID)).not.toBeNull();
   });
 
@@ -660,6 +715,139 @@ describe('kofi — webhook idempotency (Ko-fi retries do not duplicate the grant
     expect(errors).toHaveLength(0);
   });
 
+  // ── Plan 035: new purchases pend, renewals stay automatic ──────────────────────────────────
+  // On 2026-07-17 02:03 a monthly membership was bought with an email already bound to a
+  // Discord account, and the webhook granted it on the spot: no claim, no choice of account,
+  // and — the part that matters — no 14-day consent, which is only collected at the claim step.
+  // These lock in the inversion.
+  const BOUND_EMAIL_HASH = () => hashKofiEmail('tok', EMAIL);
+
+  it('first membership payment with the email ALREADY bound -> PENDS (does not auto-apply)', async () => {
+    rememberKofiSupporter(db, BOUND_EMAIL_HASH(), DID, 1_000);
+    server = startKofiWebhook({
+      db,
+      token: 'tok',
+      port: 0,
+      now: () => 1_000_000,
+      logInfo: () => {},
+      logError: () => {},
+    });
+    await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
+
+    const status = await startAndPost(
+      kofiJson({
+        message: null, // the subscription checkout has no message box
+        is_subscription_payment: true,
+        is_first_subscription_payment: true,
+        kofi_transaction_id: 'tx-first-1',
+      }),
+    );
+    expect(status).toBe(200);
+    // Nothing applied; it waits to be claimed, flagged as a subscription.
+    expect(getPremiumPass(db, DID)).toBeNull();
+    const pending = findUnclaimedPendingByTx(db, 'tx-first-1');
+    expect(pending).not.toBeNull();
+    expect(pending?.isSubscription).toBe(true);
+  });
+
+  it('renewal with the email bound -> applies itself (subscriber never loses the service)', async () => {
+    rememberKofiSupporter(db, BOUND_EMAIL_HASH(), DID, 1_000);
+    server = startKofiWebhook({
+      db,
+      token: 'tok',
+      port: 0,
+      now: () => 1_000_000,
+      logInfo: () => {},
+      logError: () => {},
+    });
+    await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
+
+    const status = await startAndPost(
+      kofiJson({
+        message: null,
+        is_subscription_payment: true,
+        is_first_subscription_payment: false, // a renewal
+        kofi_transaction_id: 'tx-renew-1',
+      }),
+    );
+    expect(status).toBe(200);
+    expect(getPremiumPass(db, DID)).not.toBeNull(); // granted, no claim needed
+    expect(findUnclaimedPendingByTx(db, 'tx-renew-1')).toBeNull();
+  });
+
+  it('a Discord ID in the message no longer grants directly -> still PENDS', async () => {
+    server = startKofiWebhook({
+      db,
+      token: 'tok',
+      port: 0,
+      now: () => 1_000_000,
+      logInfo: () => {},
+      logError: () => {},
+    });
+    await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
+
+    // The message carries a valid Discord ID (kofiJson's default) — that path used to grant on
+    // the spot, skipping consent. It must pend like everything else new.
+    const status = await startAndPost(kofiJson({ kofi_transaction_id: 'tx-msg-1' }));
+    expect(status).toBe(200);
+    expect(getPremiumPass(db, DID)).toBeNull();
+    expect(findUnclaimedPendingByTx(db, 'tx-msg-1')).not.toBeNull();
+  });
+
+  it('Shop order with the email bound -> PENDS (annual passes are never auto-applied)', async () => {
+    rememberKofiSupporter(db, BOUND_EMAIL_HASH(), DID, 1_000);
+    server = startKofiWebhook({
+      db,
+      token: 'tok',
+      port: 0,
+      now: () => 1_000_000,
+      logInfo: () => {},
+      logError: () => {},
+      shopMap: parseShopMap('shopcode1:plus:365'),
+    });
+    await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
+
+    const status = await startAndPost(
+      kofiJson({
+        type: 'Shop Order',
+        tier_name: null,
+        message: null,
+        is_subscription_payment: false,
+        shop_items: [{ direct_link_code: 'shopcode1' }],
+        kofi_transaction_id: 'tx-shop-1',
+      }),
+    );
+    expect(status).toBe(200);
+    expect(isUserPremium(db, DID, 1_000_001)).toBe(false);
+    const pending = findUnclaimedPendingByTx(db, 'tx-shop-1');
+    expect(pending).not.toBeNull();
+    // A Shop order is never a subscription: it must not travel with, or rebind, anything.
+    expect(pending?.isSubscription).toBe(false);
+  });
+
+  it('renewal with the email NOT bound -> pends (nothing to resolve it to)', async () => {
+    server = startKofiWebhook({
+      db,
+      token: 'tok',
+      port: 0,
+      now: () => 1_000_000,
+      logInfo: () => {},
+      logError: () => {},
+    });
+    await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
+
+    const status = await startAndPost(
+      kofiJson({
+        message: null,
+        is_subscription_payment: true,
+        is_first_subscription_payment: false,
+        kofi_transaction_id: 'tx-renew-orphan',
+      }),
+    );
+    expect(status).toBe(200);
+    expect(findUnclaimedPendingByTx(db, 'tx-renew-orphan')?.isSubscription).toBe(true);
+  });
+
   it('POST error branches: wrong token 401 (no grant), garbage 400, body >64KB 413', async () => {
     server = startKofiWebhook({
       db,
@@ -686,8 +874,19 @@ describe('kofi — webhook idempotency (Ko-fi retries do not duplicate the grant
     );
     expect([413, 'reset']).toContain(oversized);
 
-    // And after the errors, a valid POST still works.
-    expect(await startAndPost(kofiJson({ kofi_transaction_id: 'tx-ok' }))).toBe(200);
+    // And after the errors, a valid POST still works. Uses a renewal: since plan 035 that is the
+    // only path that applies without a claim.
+    rememberKofiSupporter(db, hashKofiEmail('tok', EMAIL), DID, 1_000);
+    expect(
+      await startAndPost(
+        kofiJson({
+          message: null,
+          is_subscription_payment: true,
+          is_first_subscription_payment: false,
+          kofi_transaction_id: 'tx-ok',
+        }),
+      ),
+    ).toBe(200);
     expect(getPremiumPass(db, DID)).not.toBeNull();
   });
 
@@ -742,31 +941,25 @@ describe('kofi — webhook idempotency (Ko-fi retries do not duplicate the grant
     expect(getPremiumPass(db, DID)).toBeNull();
   });
 
-  it('purchase WITH Discord ID -> activates directly and does NOT create a pending', async () => {
-    server = startKofiWebhook({
-      db,
-      token: 'tok',
-      port: 0,
-      now: () => 1_000_000,
-      logInfo: () => {},
-      logError: () => {},
-    });
-    await new Promise<void>((resolve) => server!.once('listening', () => resolve()));
+  // Deliberately removed by plan 035: "purchase WITH Discord ID -> activates directly and does
+  // NOT create a pending" asserted the very behaviour this plan takes away — a Discord ID in the
+  // message granting on the spot, skipping the 14-day consent that only the claim step collects.
+  // Its replacement is "a Discord ID in the message no longer grants directly -> still PENDS"
+  // above. Kept as a note so the deletion reads as a decision, not an oversight.
 
-    // kofiJson carries "Discord: <DID>" in the message by default -> activates immediately.
-    expect(await startAndPost(kofiJson({ kofi_transaction_id: 'tx-direto' }))).toBe(200);
-    expect(getPremiumPass(db, DID)).not.toBeNull();
-    expect(findUnclaimedPendingByTx(db, 'tx-direto')).toBeNull(); // nothing pending
-  });
-
-  it('manual grant: does NOT log the buyer name (PII), only the tx id', async () => {
+  // This is about PII, not about log levels — so it watches BOTH channels. Plan 035 moved the
+  // pending line from error to info (pending is now the normal path for a new purchase); the
+  // buyer's name must be absent either way, and the tx id present either way.
+  it('a pending purchase does NOT log the buyer name (PII), only the tx id', async () => {
     const logs: string[] = [];
     server = startKofiWebhook({
       db,
       token: 'tok',
       port: 0,
       now: () => 1_000_000,
-      logInfo: () => {},
+      logInfo: (msg: string) => {
+        logs.push(msg);
+      },
       logError: (msg: string) => {
         logs.push(msg);
       },

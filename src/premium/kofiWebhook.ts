@@ -696,13 +696,23 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
           res.writeHead(200).end('ok');
           return;
         }
-        // Discord ID: from the message (1st purchase, memorized by email) or by email (renewal).
-        const resolved: KofiGrant = {
-          ...grant,
-          discordId: resolveKofiDiscordId(db, event, grant, now(), token),
-        };
         // HASH the email (never in plaintext) to index a possible pending grant — see hashKofiEmail.
         const emailHash = event.email && token ? hashKofiEmail(token, event.email) : null;
+        // Plan 035 — only a RENEWAL of an already-claimed subscription applies itself. Everything
+        // else (a first membership payment, any Shop order, even a payload carrying a Discord ID
+        // in the message) pends and gets claimed, because the claim step is where the buyer picks
+        // the Discord account and gives the 14-day consent that Ko-fi's checkout cannot collect.
+        //
+        // Renewals are the deliberate exception: that buyer already chose an account and already
+        // consented, so forcing a fresh claim every month would just make a paying subscriber
+        // silently lose the service they are still paying for.
+        //
+        // BOTH signals are required. If Ko-fi ever stops sending is_first_subscription_payment it
+        // reads as false, and the missing email binding still sends the event down the pending
+        // path — the failure mode is "claim it once", never "activate with no consent".
+        const isRenewal = event.isSubscriptionPayment && !event.isFirstSubscriptionPayment;
+        const boundDiscordId = isRenewal && emailHash ? lookupKofiSupporter(db, emailHash) : null;
+        const resolved: KofiGrant = { ...grant, discordId: boundDiscordId };
         // IDEMPOTENCY: Ko-fi redelivers on timeout/non-2xx. Recording the tx + the grant are
         // ONE transaction: on a duplicate we confirm 200 without re-applying (the grant accumulates
         // expiry — see kofi_transaction in db.ts); if the grant fails, the record reverts
@@ -728,6 +738,7 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
                   plan: grant.plan,
                   days: grant.days,
                   seats: grant.seats,
+                  isSubscription: event.isSubscriptionPayment,
                 },
                 now(),
               );
@@ -736,24 +747,34 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
           },
         )();
         if (applied.dup) {
-          logInfo(`[kofi] entrega DUPLICADA ignorada (tx=${event.transactionId}).`);
+          logInfo(`[kofi] duplicate delivery ignored (tx=${event.transactionId}).`);
           res.writeHead(200).end('ok');
           return;
         }
         const exp = applied.exp;
         if (exp == null) {
-          // Bought but didn't put the Discord ID (the norm on subscriptions): stays PENDING, the
-          // buyer claims it on the site; as a last resort it is resolved by hand with /vozengrant.
-          // PII minimization: we do NOT record the buyer's name; the tx id is enough to
-          // reconcile the purchase in the Ko-fi panel (where the name/email live).
-          logError(
-            `[kofi] purchase without a Discord ID; ${applied.pending ? 'PENDING (claimable on the site)' : 'MANUAL grant'}: ` +
-              `${grant.plan} ${grant.days}d, tx=${event.transactionId ?? '?'}`,
-            null,
-          );
+          // Since plan 035, pending IS the normal path for a new purchase — so it logs at info.
+          // Leaving it at error would cry wolf on every sale and bury the one case that really
+          // does need a human. PII minimization: we never record the buyer's name; the tx id is
+          // enough to reconcile against the Ko-fi panel, where the name and email live.
+          if (applied.pending) {
+            logInfo(
+              `[kofi] purchase pending, claimable on the site: ${grant.plan} ${grant.days}d, ` +
+                `tx=${event.transactionId}`,
+            );
+          } else {
+            // No tx id means no key for the buyer to claim with (atypical payload) — the purchase
+            // is stuck until it is granted by hand. That is the one that warrants shouting.
+            logError(
+              `[kofi] purchase with no transaction id — NOT claimable, needs a MANUAL grant: ` +
+                `${grant.plan} ${grant.days}d`,
+              null,
+            );
+          }
         } else {
           logInfo(
-            `[kofi] grant ${resolved.plan} ${resolved.days}d -> ${resolved.discordId} (fim ${new Date(exp).toISOString()}).`,
+            `[kofi] renewal applied: ${resolved.plan} ${resolved.days}d -> ${resolved.discordId} ` +
+              `(until ${new Date(exp).toISOString()}).`,
           );
         }
         res.writeHead(200).end('ok');
