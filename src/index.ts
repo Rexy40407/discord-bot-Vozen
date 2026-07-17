@@ -352,8 +352,6 @@ async function main(): Promise<void> {
           db,
           now: () => Date.now(),
           resolveIdentity: statusApi.resolveIdentity,
-          adminUser: config.adminUser,
-          adminPassHash: config.adminPassHash,
           adminSessionSecret: config.adminSessionSecret,
           ownerId: config.ownerId,
           logInfo: (m) => log.info(m),

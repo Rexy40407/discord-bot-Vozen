@@ -5,11 +5,12 @@
 // choices are unit-tested without a socket. This is the money surface AND, because the page and
 // code are public, the whole security boundary — every method fails closed.
 //
-// Auth model:
-//   login()     — password (scrypt) AND a Discord token whose identity == ownerId. Mints a signed
-//                 session. Returns {ok:false} indistinctly on ANY failure (no oracle of which half).
-//   authorize() — verifies the SIGNED SESSION only (never a Discord token) and re-checks == ownerId.
-//                 Every mutating route goes through this.
+// Auth model (Discord-owner only):
+//   login()     — a Discord OAuth token whose identity == ownerId. Only that one account may enter;
+//                 anyone else (even with the link) is refused. Mints a signed session. Same model as
+//                 the /account page and the Helper panel — the owner's Discord IS the gate.
+//   authorize() — verifies the SIGNED SESSION only (never a raw Discord token) and re-checks
+//                 == ownerId. Every mutating route goes through this.
 //   grant()/revoke() reuse the tested grantUserPremium/grantGuildPass and the adminPasses revokes.
 
 import type Database from 'better-sqlite3';
@@ -22,7 +23,7 @@ import {
 } from '../store/adminPasses';
 import { listAllUnclaimedPending, type PendingGrant } from '../store/kofiPending';
 import { buildServerStats } from '../store/serverStats';
-import { signAdminSession, verifyAdminPassword, verifyAdminSession } from './adminAuth';
+import { signAdminSession, verifyAdminSession } from './adminAuth';
 import type { DiscordIdentity } from './statusApi';
 
 export interface AdminApiDeps {
@@ -30,10 +31,9 @@ export interface AdminApiDeps {
   now: () => number;
   /** Reuse statusApi.resolveIdentity — validates a Discord token against /users/@me. */
   resolveIdentity: (token: string) => Promise<DiscordIdentity | null>;
-  adminUser?: string;
-  adminPassHash?: string;
+  /** HMAC key for the signed session. Absent => inert. */
   adminSessionSecret?: string;
-  /** Only this Discord identity may log in (reuses OWNER_ID). */
+  /** Only this Discord identity may log in (reuses OWNER_ID). Absent => inert. */
   ownerId?: string;
   logInfo: (m: string) => void;
   /** Session lifetime; default 8h. */
@@ -90,9 +90,10 @@ export interface AdminPassesResult extends AdminPassesView {
 }
 
 export interface AdminApi {
-  /** True iff all four secrets are configured; when false, EVERY method fails closed. */
+  /** True iff the session secret and owner id are configured; when false, EVERY method fails closed. */
   enabled: boolean;
-  login(user: string, pass: string, discordToken: string | null): Promise<AdminLoginOk | AdminFail>;
+  /** Logs in with a Discord OAuth token whose identity must equal the owner id. */
+  login(discordToken: string | null): Promise<AdminLoginOk | AdminFail>;
   /** Returns the owner id iff `sessionToken` is a valid session for the owner; else null. */
   authorize(sessionToken: string | null): string | null;
   listPasses(): AdminPassesResult;
@@ -116,21 +117,13 @@ const validSeats = (s: unknown): s is number =>
   typeof s === 'number' && Number.isInteger(s) && s >= 1 && s <= MAX_SEATS;
 
 export function createAdminApi(deps: AdminApiDeps): AdminApi {
-  const enabled = Boolean(
-    deps.adminUser && deps.adminPassHash && deps.adminSessionSecret && deps.ownerId,
-  );
+  const enabled = Boolean(deps.adminSessionSecret && deps.ownerId);
   const ttl = deps.sessionTtlSec ?? 8 * 3600;
 
-  async function login(
-    user: string,
-    pass: string,
-    discordToken: string | null,
-  ): Promise<AdminLoginOk | AdminFail> {
+  async function login(discordToken: string | null): Promise<AdminLoginOk | AdminFail> {
     // Destructure + guard so TS narrows the optionals to strings without non-null assertions.
-    const { adminUser, adminPassHash, adminSessionSecret, ownerId } = deps;
-    if (!adminUser || !adminPassHash || !adminSessionSecret || !ownerId) return { ok: false };
-    if (!verifyAdminPassword(user, pass, adminUser, adminPassHash)) return { ok: false };
-    if (!discordToken) return { ok: false };
+    const { adminSessionSecret, ownerId } = deps;
+    if (!adminSessionSecret || !ownerId || !discordToken) return { ok: false };
     const identity = await deps.resolveIdentity(discordToken);
     if (!identity || identity.id !== ownerId) return { ok: false };
     const now = deps.now();

@@ -9,12 +9,11 @@ import type Database from 'better-sqlite3';
 import { initDb } from '../src/store/db';
 import { startKofiWebhook } from '../src/premium/kofiWebhook';
 import { createAdminApi } from '../src/premium/adminApi';
-import { hashAdminPassword, signAdminSession } from '../src/premium/adminAuth';
+import { signAdminSession } from '../src/premium/adminAuth';
 import { isUserPremium } from '../src/store/premium';
 
 const OWNER = '1523489275155583056';
 const SECRET = 'router-sess-secret';
-const PASS_HASH = hashAdminPassword('pw', Buffer.from('0f0e0d0c0b0a09080706050403020100', 'hex'));
 const PANEL_ORIGIN = 'https://rexy40407.github.io';
 const NOW = 1_000_000;
 
@@ -35,8 +34,6 @@ function makeAdmin(db: Database.Database, enabled = true) {
     db,
     now: () => NOW,
     resolveIdentity,
-    adminUser: 'admin',
-    adminPassHash: PASS_HASH,
     adminSessionSecret: enabled ? SECRET : undefined,
     ownerId: OWNER,
     logInfo: () => {},
@@ -85,14 +82,12 @@ describe('admin console — HTTP router', () => {
     });
   const get = (url: string, headers: Record<string, string> = {}) => fetch(url, { headers });
 
-  it('login with correct password + owner token mints a session that unlocks /passes', async () => {
+  it('login with the owner Discord token mints a session that unlocks /passes', async () => {
     const base = await start();
     const login = await post(
       `${base}/api/admin/login`,
-      { user: 'admin', pass: 'pw' },
-      {
-        authorization: 'Bearer owner-token',
-      },
+      {},
+      { authorization: 'Bearer owner-token' },
     );
     expect(login.status).toBe(200);
     const { token } = (await login.json()) as { token: string };
@@ -102,28 +97,15 @@ describe('admin console — HTTP router', () => {
     expect(passes.status).toBe(200);
   });
 
-  it('login with a wrong password -> 403 (indistinct)', async () => {
+  it('login with a non-owner Discord identity -> 403 (indistinct)', async () => {
     const base = await start();
-    const res = await post(
-      `${base}/api/admin/login`,
-      { user: 'admin', pass: 'WRONG' },
-      {
-        authorization: 'Bearer owner-token',
-      },
-    );
+    const res = await post(`${base}/api/admin/login`, {}, { authorization: 'Bearer other-token' });
     expect(res.status).toBe(403);
   });
 
-  it('login with a valid password but non-owner Discord identity -> 403', async () => {
+  it('login with no token -> 403', async () => {
     const base = await start();
-    const res = await post(
-      `${base}/api/admin/login`,
-      { user: 'admin', pass: 'pw' },
-      {
-        authorization: 'Bearer other-token',
-      },
-    );
-    expect(res.status).toBe(403);
+    expect((await post(`${base}/api/admin/login`, {})).status).toBe(403);
   });
 
   it('a bare Discord token is NOT a session — /passes refuses it', async () => {
@@ -141,7 +123,7 @@ describe('admin console — HTTP router', () => {
 
   it('is inert (404) on every admin route when unconfigured', async () => {
     const base = await start(false); // adminApi.enabled === false
-    expect((await post(`${base}/api/admin/login`, { user: 'admin', pass: 'pw' })).status).toBe(404);
+    expect((await post(`${base}/api/admin/login`, {})).status).toBe(404);
     expect((await get(`${base}/api/admin/passes`)).status).toBe(404);
   });
 
@@ -202,14 +184,8 @@ describe('admin console — HTTP router', () => {
   it('login has its own tight bucket — the 7th attempt in the window is rate-limited', async () => {
     const base = await start();
     const attempt = () =>
-      post(
-        `${base}/api/admin/login`,
-        { user: 'admin', pass: 'WRONG' },
-        {
-          authorization: 'Bearer owner-token',
-        },
-      );
-    // 6 allowed (all 403), the 7th trips the limiter (429).
+      post(`${base}/api/admin/login`, {}, { authorization: 'Bearer other-token' });
+    // 6 allowed (all 403 — non-owner), the 7th trips the limiter (429).
     for (let i = 0; i < 6; i += 1) {
       const r = await attempt();
       expect(r.status).toBe(403);

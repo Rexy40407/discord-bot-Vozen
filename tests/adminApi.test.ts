@@ -3,17 +3,15 @@ import type Database from 'better-sqlite3';
 import { initDb } from '../src/store/db';
 import { isUserPremium } from '../src/store/premium';
 import { bumpTalk } from '../src/store/talkStats';
-import { hashAdminPassword, signAdminSession } from '../src/premium/adminAuth';
+import { signAdminSession } from '../src/premium/adminAuth';
 import { createAdminApi, type AdminApi } from '../src/premium/adminApi';
 
 // The admin console logic (plan 037). This is the money surface AND the whole security boundary
-// (public repos), so the tests pin the exact ways it must refuse: wrong credentials, a non-owner
-// identity, a bare Discord token where a session is required, and inert-by-default when unconfigured.
+// (public repos), so the tests pin the exact ways it must refuse: a non-owner identity, a bare
+// Discord token where a session is required, and inert-by-default when unconfigured.
 
 const OWNER = '1523489275155583056';
 const SECRET = 'sess-secret';
-// Built at runtime so the test never hardcodes a scrypt digest.
-const PASS_HASH = hashAdminPassword('pw', Buffer.from('00112233445566778899aabbccddeeff', 'hex'));
 
 const NOW = 1_700_000_000_000;
 
@@ -32,8 +30,6 @@ function make(
     db,
     now: () => NOW,
     resolveIdentity,
-    adminUser: 'admin',
-    adminPassHash: PASS_HASH,
     adminSessionSecret: SECRET,
     ownerId: OWNER,
     logInfo: () => {},
@@ -46,17 +42,15 @@ describe('adminApi — enabled / inert', () => {
   beforeEach(() => (db = initDb(':memory:')));
   afterEach(() => db.close());
 
-  it('is enabled only when user, hash, secret and ownerId are all present', () => {
+  it('is enabled only when the session secret and ownerId are present', () => {
     expect(make(db).enabled).toBe(true);
-    expect(make(db, { adminUser: undefined }).enabled).toBe(false);
-    expect(make(db, { adminPassHash: undefined }).enabled).toBe(false);
     expect(make(db, { adminSessionSecret: undefined }).enabled).toBe(false);
     expect(make(db, { ownerId: undefined }).enabled).toBe(false);
   });
 
   it('when disabled, login and authorize always refuse', async () => {
     const api = make(db, { adminSessionSecret: undefined });
-    expect(await api.login('admin', 'pw', 'owner-token')).toEqual({ ok: false });
+    expect(await api.login('owner-token')).toEqual({ ok: false });
     expect(api.authorize('anything')).toBeNull();
   });
 });
@@ -66,9 +60,9 @@ describe('adminApi — login', () => {
   beforeEach(() => (db = initDb(':memory:')));
   afterEach(() => db.close());
 
-  it('accepts correct password + owner Discord token, and mints a session authorize() accepts', async () => {
+  it('accepts the owner Discord token and mints a session authorize() accepts', async () => {
     const api = make(db);
-    const res = await api.login('admin', 'pw', 'owner-token');
+    const res = await api.login('owner-token');
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(api.authorize(res.token)).toBe(OWNER);
@@ -76,21 +70,13 @@ describe('adminApi — login', () => {
     }
   });
 
-  it('rejects a wrong password (even with the owner token)', async () => {
-    expect(await make(db).login('admin', 'WRONG', 'owner-token')).toEqual({ ok: false });
-  });
-
-  it('rejects a wrong username', async () => {
-    expect(await make(db).login('root', 'pw', 'owner-token')).toEqual({ ok: false });
-  });
-
-  it('rejects a valid password when the Discord identity is NOT the owner', async () => {
-    expect(await make(db).login('admin', 'pw', 'other-token')).toEqual({ ok: false });
+  it('rejects a Discord identity that is NOT the owner', async () => {
+    expect(await make(db).login('other-token')).toEqual({ ok: false });
   });
 
   it('rejects when the Discord token is missing or invalid', async () => {
-    expect(await make(db).login('admin', 'pw', null)).toEqual({ ok: false });
-    expect(await make(db).login('admin', 'pw', 'garbage')).toEqual({ ok: false });
+    expect(await make(db).login(null)).toEqual({ ok: false });
+    expect(await make(db).login('garbage')).toEqual({ ok: false });
   });
 });
 

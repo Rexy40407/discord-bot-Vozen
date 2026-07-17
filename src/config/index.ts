@@ -133,16 +133,12 @@ export interface AppConfig {
   // allowed in CORS (only it can call the API from the browser). Without enable => inert.
   premiumApiEnabled: boolean;
   premiumApiOrigin: string;
-  // Admin console (plan 037): the /api/admin/* routes on the SAME HTTP server. Three env vars,
-  // ALL required, or every admin route 404s (inert — this is what keeps the public repo safe):
-  //   ADMIN_USER            the console username
-  //   ADMIN_PASS_HASH       scrypt hash `<saltHex>:<hashHex>` from tools/hash-admin-pass.mjs
-  //   ADMIN_SESSION_SECRET  HMAC key for the signed admin session
-  // The owner check reuses OWNER_ID (only that Discord identity may log in). ADMIN_PANEL_ORIGIN
-  // is the site origin allowed in CORS on the admin routes ONLY (the panel lives on the
-  // Vozen-helper Pages site, a different origin than the Premium panel).
-  adminUser?: string;
-  adminPassHash?: string;
+  // Admin console (plan 037): the /api/admin/* routes on the SAME HTTP server. Gated by the
+  // operator's Discord identity — only OWNER_ID may log in. Requires ADMIN_SESSION_SECRET (the HMAC
+  // key for the signed session) AND OWNER_ID, or every admin route 404s (inert — this is what keeps
+  // the public repo safe). ADMIN_PANEL_ORIGIN is the site origin allowed in CORS on the admin
+  // routes ONLY (the panel lives on the Vozen-helper Pages site, a different origin than the
+  // Premium panel).
   adminSessionSecret?: string;
   adminPanelOrigin?: string;
 }
@@ -422,10 +418,8 @@ export function loadConfig(): AppConfig {
     // Production must set PREMIUM_API_ORIGIN in .env; the default follows the current domain.
     premiumApiEnabled: boolEnvDefaultOff('PREMIUM_API_ENABLED'),
     premiumApiOrigin: strEnv('PREMIUM_API_ORIGIN', 'https://vozen.org'),
-    // Admin console (plan 037). All three empty => inert (no admin routes). The owner check
-    // reuses OWNER_ID. ADMIN_PANEL_ORIGIN defaults to the Vozen-helper Pages origin.
-    adminUser: strEnv('ADMIN_USER', '') || undefined,
-    adminPassHash: strEnv('ADMIN_PASS_HASH', '') || undefined,
+    // Admin console (plan 037). Empty ADMIN_SESSION_SECRET or OWNER_ID => inert (no admin routes).
+    // The owner check reuses OWNER_ID. ADMIN_PANEL_ORIGIN defaults to the Vozen-helper Pages origin.
     adminSessionSecret: strEnv('ADMIN_SESSION_SECRET', '') || undefined,
     adminPanelOrigin: strEnv('ADMIN_PANEL_ORIGIN', 'https://rexy40407.github.io') || undefined,
   };

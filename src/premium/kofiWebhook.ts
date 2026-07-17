@@ -785,7 +785,8 @@ function handleAdminRequest(
   const bearer =
     typeof auth === 'string' && auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
 
-  // ── LOGIN: mints a session, so it takes the DISCORD token (not a session) + its own tight bucket.
+  // ── LOGIN: mints a session from the DISCORD token (owner-only) + its own tight bucket. No body:
+  // the only input is the Bearer OAuth token, and the server checks its identity == ownerId.
   if (path === '/api/admin/login') {
     if (req.method !== 'POST') {
       json(405, { error: 'method_not_allowed' });
@@ -804,37 +805,25 @@ function handleAdminRequest(
       json(429, { error: 'rate_limited' });
       return;
     }
-    readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
-      let user = '';
-      let pass = '';
-      try {
-        const p = JSON.parse(raw || '{}') as { user?: unknown; pass?: unknown };
-        if (typeof p.user === 'string') user = p.user;
-        if (typeof p.pass === 'string') pass = p.pass;
-      } catch {
-        json(400, { error: 'bad_request' });
-        return;
-      }
-      ctx.adminApi
-        .login(user, pass, bearer)
-        .then((r) => {
-          // One indistinct 403 on ANY failure (bad password, non-owner, missing token): no oracle.
-          if (!r.ok) {
-            json(403, { error: 'denied' });
-            return;
-          }
-          ctx.logInfo('[admin] owner logged in to the console');
-          json(200, { token: r.token, expiresAt: r.expiresAt });
-        })
-        .catch((err) => {
-          ctx.logError('[admin] login failed', err);
-          try {
-            json(500, { error: 'internal' });
-          } catch {
-            /* response already sent */
-          }
-        });
-    });
+    ctx.adminApi
+      .login(bearer)
+      .then((r) => {
+        // One indistinct 403 on ANY failure (non-owner, missing/invalid token): no oracle.
+        if (!r.ok) {
+          json(403, { error: 'denied' });
+          return;
+        }
+        ctx.logInfo('[admin] owner logged in to the console');
+        json(200, { token: r.token, expiresAt: r.expiresAt });
+      })
+      .catch((err) => {
+        ctx.logError('[admin] login failed', err);
+        try {
+          json(500, { error: 'internal' });
+        } catch {
+          /* response already sent */
+        }
+      });
     return;
   }
 
