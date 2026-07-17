@@ -1,19 +1,21 @@
 // src/premium/claimHelp.ts
 //
-// The buyer asks us to activate a purchase by hand (plan 036 F3).
+// The buyer asks us to activate a purchase by hand (plan 036).
 //
-// WHY THIS IS NOT AN AUTOMATIC ACTIVATION, and cannot be: the Ko-fi email receipt prints
-// `Ref: S-M1X823C9FW`, which is the only code-looking string in the whole email — but Ko-fi does
-// NOT send that Ref in the webhook payload (see KofiEvent in ./kofi.ts). No pending row carries
-// it, so nothing can ever match it. What the Ref CAN do is identify the order in the Ko-fi seller
-// panel, where the owner reads the buyer's email, finds the transaction, and grants by hand.
-// This module turns (Discord ID, Ref) into that notification and nothing more.
+// WHY IT CARRIES THE EMAIL, and why this is not an automatic activation: when a buyer cannot
+// activate, the owner has to find the order in the Ko-fi seller panel and grant by hand — Ko-fi
+// offers no API to look an order up (webhook-only), so this is inherently manual. The receipt's
+// `Ref: S-…` looked like the handle, but Ko-fi's transaction search matches only by NAME or EMAIL
+// (verified 2026-07-17 against the live seller panel), so the Ref is useless to the owner. The
+// email the buyer used is what the owner can paste into that search and find the order with.
 //
-// The Discord identity arrives already validated by OAuth (the endpoint calls
-// statusApi.resolveIdentity first), so `discordId` is trusted here. No IO beyond the webhook POST.
+// The email is NOT proof of ownership (that path was rejected in plan 021 — the email is not a
+// secret). It is a LOOKUP HINT for a human: the owner still opens Ko-fi, confirms the paid order,
+// and grants manually. Nothing here activates anything. Only (Discord ID, email) leaves — no pass,
+// no product, nothing else we hold. The Discord identity arrives already validated by OAuth.
 
 /** Personal data leaving this module: the Discord ID (the buyer just authenticated with it) and
- *  the Ref they typed. Deliberately NOT the email, the pass, or anything else we hold. */
+ *  the Ko-fi email they typed. Deliberately nothing else. */
 export interface ClaimHelpDeps {
   /** Discord webhook to notify. EMPTY => inert (opt-in, same shape as the error reporter). */
   webhookUrl: string;
@@ -21,30 +23,31 @@ export interface ClaimHelpDeps {
   logError: (m: string, err: unknown) => void;
 }
 
-/** Longest Ref we will repeat back. A real one is ~12 chars; this is slack, not a target. */
-const MAX_REF = 40;
+/** RFC-max local+domain length; this is a guard against a wall of text, not a target. */
+const MAX_EMAIL = 254;
 /** One person asking about the SAME purchase again inside this window is the same request. */
 const DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
-/** Distinct (user, ref) pairs remembered before the map is cleared (unbounded growth guard). */
+/** Distinct (user, email) pairs remembered before the map is cleared (unbounded growth guard). */
 const DEDUPE_CAP = 1000;
 /** A slow webhook must not hold an HTTP handler open. */
 const WEBHOOK_TIMEOUT_MS = 5_000;
 
 /**
- * Strips a buyer-typed Ref down to what is safe to put in a message we send. Everything that is
- * not alphanumeric or a dash goes: backticks and asterisks (markdown), '@' (mentions), '/' and ':'
- * (links), newlines (a fake second message). A real Ko-fi Ref is unaffected — it is
- * `S-` plus alphanumerics — so this only ever costs the attacker.
+ * Strips a buyer-typed email down to what is safe to put in a message we send. Keeps only the
+ * characters a real address can contain (`[A-Za-z0-9._%+@-]`); backticks and asterisks (markdown),
+ * spaces and newlines (a fake second message) all go. A real address is unaffected, so this only
+ * ever costs an attacker. `allowed_mentions: { parse: [] }` on the POST is the backstop for the `@`
+ * that a real address legitimately contains.
  */
-export function sanitizeRef(raw: string): string {
+export function sanitizeEmail(raw: string): string {
   return raw
     .trim()
-    .replace(/[^A-Za-z0-9-]/g, '')
-    .slice(0, MAX_REF);
+    .replace(/[^A-Za-z0-9._%+@-]/g, '')
+    .slice(0, MAX_EMAIL);
 }
 
 /**
- * True when this help request should actually be sent. Keyed by user+ref: pressing the button
+ * True when this help request should actually be sent. Keyed by user+email: pressing the button
  * five times must not page the owner five times, but the same person asking about a DIFFERENT
  * purchase is a genuine second request. After the window it passes again — the owner may simply
  * have missed the first one, and a buyer who paid should not be silenced by our bookkeeping.
@@ -52,10 +55,10 @@ export function sanitizeRef(raw: string): string {
 export function shouldSendClaimHelp(
   seen: Map<string, number>,
   discordId: string,
-  ref: string,
+  email: string,
   now: number,
 ): boolean {
-  const key = `${discordId}:${ref}`;
+  const key = `${discordId}:${email}`;
   const last = seen.get(key);
   if (last !== undefined && now - last < DEDUPE_WINDOW_MS) return false;
   if (seen.size >= DEDUPE_CAP) seen.clear();
@@ -64,15 +67,14 @@ export function shouldSendClaimHelp(
 }
 
 /** The message the owner reads. Written to still be actionable months later, when the context of
- *  why a Ref is not a code is long gone. */
-export function buildClaimHelpMessage(discordId: string, ref: string): string {
+ *  why this is manual is long gone. */
+export function buildClaimHelpMessage(discordId: string, email: string): string {
   return [
     '🆘 **Activation help requested**',
     `Discord ID: \`${discordId}\``,
-    `Ko-fi order Ref: \`${ref}\``,
+    `Ko-fi email: \`${email}\``,
     '',
-    'The Ref is not something the bot can match (Ko-fi never sends it in the webhook).',
-    'Find the order by this Ref in the Ko-fi seller panel, then activate it with',
+    'Search this email in your Ko-fi transactions, confirm the paid order, then activate it with',
     '`/premium grant` for that Discord ID.',
   ].join('\n');
 }
@@ -85,7 +87,7 @@ export function buildClaimHelpMessage(discordId: string, ref: string): string {
 export async function sendClaimHelp(
   deps: ClaimHelpDeps,
   discordId: string,
-  ref: string,
+  email: string,
 ): Promise<boolean> {
   if (!deps.webhookUrl) return false;
   try {
@@ -93,8 +95,8 @@ export async function sendClaimHelp(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        content: buildClaimHelpMessage(discordId, ref),
-        // Belt and braces with sanitizeRef: even if a mention survived, Discord must not ping.
+        content: buildClaimHelpMessage(discordId, email),
+        // Belt and braces with sanitizeEmail: even if a mention survived, Discord must not ping.
         allowed_mentions: { parse: [] },
       }),
       signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),

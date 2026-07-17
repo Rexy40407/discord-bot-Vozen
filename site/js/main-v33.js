@@ -516,14 +516,15 @@
 
   // Modal de ajuda (plano 036). Existe por causa de uma armadilha do recibo do Ko-fi: o email
   // mostra `Ref: S-M1X823C9FW` — a unica coisa com ar de codigo no email inteiro — e o Ref NUNCA
-  // pode activar nada, porque o webhook do Ko-fi nao no-lo envia (ver KofiEvent em
-  // src/premium/kofi.ts). Quem procura um codigo encontra aquilo, cola, e leva um 404 seco por
-  // uma compra que fez mesmo.
+  // pode activar nada, porque o webhook do Ko-fi nao no-lo envia. Quem procura um codigo encontra
+  // aquilo, cola na caixa de cima, e leva um 404 seco por uma compra que fez mesmo.
   //
   // Passo 1 leva ao caminho que ACTIVA (o botao do email -> endereco da pagina -> caixa de cima).
-  // Passo 2 da ao Ref o unico uso que ele pode ter: chave do caminho humano — um clique manda
-  // (Discord ID, Ref) para o dono, que encontra a encomenda no painel do Ko-fi e faz o grant.
-  // O suporte fica no rodape, um passo mais dentro, e nao como primeira resposta.
+  // Passo 2 pede o EMAIL que a pessoa usou no Ko-fi — nao o Ref. Porque? A pesquisa de transacoes
+  // do Ko-fi so casa por nome ou email (confirmado no painel real, 2026-07-17); o Ref nao e
+  // procuravel. Um clique manda (Discord ID, email) para o dono, que cola o email na pesquisa do
+  // Ko-fi, confirma a encomenda paga e faz o grant. O email e pista de procura, nao prova (plano
+  // 021 continua de pe). O suporte fica no rodape, um passo mais dentro.
   //
   // O href do suporte vai inline e nao por class="js-support": essa ligacao corre UMA vez sobre o
   // documento no arranque e isto e injectado depois do OAuth — sairia sem href nenhum.
@@ -537,7 +538,7 @@
       `<p class="ppmodal__step"><span class="ppmodal__num">1</span> ${t("claim.help.step1")}</p>` +
       `<p class="ppmodal__step"><span class="ppmodal__num">2</span> ${t("claim.help.step2")}</p>` +
       `<form class="ppanel__claimform" id="ppClaimHelpForm">` +
-      `<input type="text" id="ppClaimHelpRef" class="ppanel__claiminput" placeholder="${esc(t("claim.help.refPlaceholder"))}" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="60">` +
+      `<input type="email" id="ppClaimHelpEmail" class="ppanel__claiminput" placeholder="${esc(t("claim.help.emailPlaceholder"))}" autocomplete="email" autocapitalize="off" inputmode="email" spellcheck="false" maxlength="254">` +
       `<button type="submit" class="ppanel__claimbtn" id="ppClaimHelpSend">${t("claim.help.send")}</button>` +
       `</form>` +
       `<p class="ppanel__claimmsg" id="ppClaimHelpMsg" role="status" aria-live="polite" hidden></p>` +
@@ -616,12 +617,12 @@
       return;
     }
     // O Ref do recibo (`Ref: S-M1X823C9FW`) e a unica coisa com ar de codigo no email do Ko-fi, e
-    // nunca casa com nada: o webhook do Ko-fi nao envia esse campo, portanto nenhuma linha
-    // pendente o tem. Deixa-lo ir ao servidor da um 404 que a pessoa nao consegue accionar — e ela
-    // pagou mesmo. Apanha-se aqui, ANTES do fetch, e abre-se a ajuda com o Ref ja preenchido.
+    // nunca casa com nada: o webhook do Ko-fi nao envia esse campo. Deixa-lo ir ao servidor da um
+    // 404 que a pessoa nao consegue accionar — e ela pagou mesmo. Apanha-se aqui, ANTES do fetch,
+    // e abre-se a ajuda — que agora pede o EMAIL (o Ref nao serve para ninguem procurar).
     if (REF_RE.test(code)) {
       setMsg(t("claim.help.refPasted"), "err");
-      openClaimHelp(code);
+      openClaimHelp();
       return;
     }
     // Sem consentimento nao se entrega. Se falhassemos ABERTO aqui, activavamos o passe sem a
@@ -703,16 +704,15 @@
     document.getElementById("ppClaimHelpForm")?.addEventListener("submit", sendClaimHelp);
   }
 
-  function openClaimHelp(prefillRef) {
+  function openClaimHelp() {
     const modal = document.getElementById("ppClaimHelp");
     if (!modal) return;
     claimHelpOpener = document.activeElement;
     modal.hidden = false;
     document.body.classList.add("is-modal-open");
-    const ref = document.getElementById("ppClaimHelpRef");
-    if (ref && prefillRef) ref.value = prefillRef;
     // O foco entra na caixa (nao no input): quem usa leitor de ecra ouve o titulo e os dois
-    // passos antes do campo, que e a ordem que explica o campo.
+    // passos antes do campo, que e a ordem que explica o campo. Nao se pre-preenche nada — o campo
+    // e o EMAIL do Ko-fi, e o que a pessoa possa ter colado antes (um Ref) nao e um email.
     document.getElementById("ppClaimHelpBox")?.focus();
   }
 
@@ -731,46 +731,56 @@
     if (ev.key === "Escape") closeClaimHelp();
   });
 
+  // Um UUID em qualquer forma (codigo solto, ou dentro de um link de recibo). Se aparecer no campo
+  // de email, a pessoa colou o codigo/link no sitio errado — e ativa-se na mesma pela caixa
+  // principal, sem ela ter de perceber a diferenca.
+  const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
   // Quando a notificacao nao sai (API em baixo, webhook por configurar), a pessoa nao pode ficar
-  // sem saida: mostra-se a mensagem ja pronta para ela colar no suporte, com o Ref la dentro. E o
-  // mesmo trabalho, feito a mao — mas ela sai daqui com alguma coisa.
-  function showClaimHelpFallback(setMsg, ref) {
+  // sem saida: mostra-se a mensagem ja pronta para ela colar no suporte, com o email la dentro. E
+  // o mesmo trabalho, feito a mao — mas ela sai daqui com alguma coisa.
+  function showClaimHelpFallback(setMsg, email) {
     setMsg(t("claim.help.sendError"), "err");
     const box = document.getElementById("ppClaimHelpMsg");
     if (!box) return;
     const pre = document.createElement("pre");
     pre.className = "ppmodal__copy";
-    pre.textContent = `Vozen: I can't activate my purchase. Ko-fi Ref: ${ref}`;
+    pre.textContent = `Vozen: I can't activate my purchase. Ko-fi email: ${email}`;
     box.appendChild(pre);
   }
 
-  // Envia (Discord ID via token, Ref) para o dono activar a mao. O Ref NAO activa nada sozinho —
-  // ver claimHelpModal. Se o endpoint ainda nao existir ou falhar, mostra uma mensagem pronta a
+  // Envia (Discord ID via token, email do Ko-fi) para o dono activar a mao. O email e pista de
+  // procura, NAO prova (ver claimHelpModal). Se o endpoint falhar, mostra uma mensagem pronta a
   // copiar: a pessoa nunca fica sem saida por a nossa API estar em baixo.
   async function sendClaimHelp(ev) {
     ev.preventDefault();
-    const input = document.getElementById("ppClaimHelpRef");
+    const input = document.getElementById("ppClaimHelpEmail");
     const btn = document.getElementById("ppClaimHelpSend");
     const msg = document.getElementById("ppClaimHelpMsg");
     if (!input || !btn) return;
-    const ref = (input.value || "").trim();
+    const value = (input.value || "").trim();
     const setMsg = (text, kind) => {
       if (!msg) return;
       msg.hidden = false;
       msg.textContent = text;
       msg.className = "ppanel__claimmsg" + (kind ? " is-" + kind : "");
     };
-    if (!ref) return;
-    // Quem colar aqui o codigo verdadeiro (ou o link do recibo) e activado na mesma. A pessoa nao
-    // tem de perceber a diferenca entre o Ref e o codigo — essa distincao e problema nosso.
-    if (!REF_RE.test(ref)) {
+    if (!value) return;
+    // Colou aqui o codigo verdadeiro (ou o link do recibo)? Manda-se de volta para a caixa
+    // principal e ativa-se — a pessoa nao tem de saber a diferenca.
+    if (UUID_RE.test(value)) {
       const main = document.getElementById("ppClaimCode");
       if (main) {
-        main.value = ref;
+        main.value = value;
         closeClaimHelp();
         main.focus();
         return;
       }
+    }
+    // Nao e um email? Diz-lho antes de enviar — o dono nao pode ficar com um ping inutil.
+    if (!/^[^@\s]+@[^@\s]+$/.test(value)) {
+      setMsg(t("claim.help.notEmail"), "err");
+      return;
     }
     const tok = storedToken();
     if (!tok) {
@@ -785,7 +795,7 @@
       const res = await fetch(PREMIUM_API_BASE + "/api/claim-help", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok },
-        body: JSON.stringify({ ref }),
+        body: JSON.stringify({ email: value }),
       });
       if (res.ok) {
         setMsg(t("claim.help.sent"), "ok");
@@ -799,9 +809,9 @@
         setMsg(t("claim.ratelimited"), "err");
         return;
       }
-      showClaimHelpFallback(setMsg, ref);
+      showClaimHelpFallback(setMsg, value);
     } catch {
-      showClaimHelpFallback(setMsg, ref);
+      showClaimHelpFallback(setMsg, value);
     } finally {
       btn.disabled = false;
       input.disabled = false;

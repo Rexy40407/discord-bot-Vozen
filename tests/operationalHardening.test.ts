@@ -8,8 +8,8 @@ const source = (path: string): string =>
 
 // The site's assets are cache-busted by FILENAME (never a query string), so every rename churns
 // these tests too. One constant each: the rename is then a one-line edit here, not a hunt.
-const SITE_JS = 'site/js/main-v32.js';
-const SITE_I18N = 'site/js/i18n-v29.js';
+const SITE_JS = 'site/js/main-v33.js';
+const SITE_I18N = 'site/js/i18n-v30.js';
 const SITE_CSS = 'site/css/main-v34.css';
 
 /** Body of a top-level function in the site bundle, comments stripped. Comments are dropped
@@ -181,6 +181,20 @@ describe('operational security configuration', () => {
     expect(script).toContain('ppClaimHelpBackdrop'); // click-outside
   });
 
+  // The help request carries the EMAIL, not the Ref: Ko-fi's transaction search matches by email,
+  // so the Ref is useless to the owner (verified against the live seller panel, 2026-07-17). The
+  // email is a lookup hint, not proof — the owner still confirms the paid order and grants by hand.
+  it('collects the Ko-fi email in the help modal and posts it, not the Ref', () => {
+    const modal = helpModalSource();
+    expect(modal).toContain('id="ppClaimHelpEmail"');
+    expect(modal).toContain('type="email"');
+    expect(modal).toContain('claim.help.emailPlaceholder');
+    const script = source(SITE_JS);
+    // The POST body must send { email: ... } — a lingering { ref } would reach the endpoint's
+    // bad_email guard and the buyer would get nothing.
+    expect(script).toMatch(/body:\s*JSON\.stringify\(\{\s*email:/);
+  });
+
   it('translates the recovery and help copy into every advertised site language', () => {
     const all = i18nBundle();
     const langs = Object.keys(all);
@@ -193,9 +207,10 @@ describe('operational security configuration', () => {
         'claim.help.title',
         'claim.help.step1',
         'claim.help.step2',
-        'claim.help.refPlaceholder',
+        'claim.help.emailPlaceholder',
         'claim.help.send',
         'claim.help.refPasted',
+        'claim.help.notEmail',
         'claim.help.sent',
         'claim.help.stillStuck',
       ]) {

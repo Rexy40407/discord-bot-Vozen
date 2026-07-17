@@ -16,7 +16,7 @@ import {
 } from '../store/premium';
 import { recordPendingGrant } from '../store/kofiPending';
 import { claimPendingGrant } from './claim';
-import { sanitizeRef, sendClaimHelp, shouldSendClaimHelp } from './claimHelp';
+import { sanitizeEmail, sendClaimHelp, shouldSendClaimHelp } from './claimHelp';
 import {
   parseKofiPayload,
   verifyKofiToken,
@@ -78,9 +78,9 @@ const CLAIM_RATE_MAX = 5;
 const CLAIM_RATE_WINDOW_MS = 10 * 60 * 1000;
 
 // Help request (POST /api/claim-help): every accepted call pings the owner's Discord, so the limit
-// protects a HUMAN's attention, not a secret — there is nothing to brute-force here (the Ref is
-// not a key). Slightly looser than the claim: someone genuinely stuck may fumble the Ref a couple
-// of times, and the per-(user, ref) dedupe in claimHelp.ts already absorbs the repeats.
+// protects a HUMAN's attention, not a secret — there is nothing to brute-force here (the email is
+// a lookup hint, not a key). Slightly looser than the claim: someone genuinely stuck may fumble the
+// email a couple of times, and the per-(user, email) dedupe in claimHelp.ts already absorbs repeats.
 const CLAIM_HELP_RATE_MAX = 8;
 const CLAIM_HELP_RATE_WINDOW_MS = 10 * 60 * 1000;
 
@@ -398,10 +398,11 @@ interface ClaimHelpCtx {
 }
 
 /**
- * Handles POST /api/claim-help: the buyer could not activate and sends the Ko-fi order Ref so the
- * owner can grant by hand. This is NOT an activation path and can never be one — Ko-fi does not
- * send the Ref in the webhook, so nothing here could match it against a purchase (see
- * ./claimHelp.ts). The identity is validated on Discord first; only (Discord ID, Ref) leaves.
+ * Handles POST /api/claim-help: the buyer could not activate and sends the email they used on
+ * Ko-fi so the owner can find the order (Ko-fi's transaction search matches by email, not by the
+ * receipt Ref) and grant by hand. This is NOT an activation path and can never be one — the email
+ * is a lookup hint, not proof of ownership (plan 021), and nothing here grants anything. The
+ * identity is validated on Discord first; only (Discord ID, email) leaves.
  */
 function handleClaimHelpRequest(
   req: import('node:http').IncomingMessage,
@@ -465,10 +466,10 @@ function handleClaimHelpRequest(
         .writeHead(code, { ...cors, 'Content-Type': 'application/json' })
         .end(JSON.stringify(payload));
     };
-    let rawRef: string | null = null;
+    let rawEmail: string | null = null;
     try {
-      const parsed = JSON.parse(body || '{}') as { ref?: unknown };
-      if (typeof parsed.ref === 'string') rawRef = parsed.ref;
+      const parsed = JSON.parse(body || '{}') as { email?: unknown };
+      if (typeof parsed.email === 'string') rawEmail = parsed.email;
     } catch {
       respond(400, { error: 'bad_request' });
       return;
@@ -477,9 +478,11 @@ function handleClaimHelpRequest(
       respond(401, { error: 'no_token' });
       return;
     }
-    const ref = rawRef ? sanitizeRef(rawRef) : '';
-    if (!ref) {
-      respond(400, { error: 'bad_request' });
+    const email = rawEmail ? sanitizeEmail(rawEmail) : '';
+    // Minimal shape check: an address has an '@' with something on each side. Not full RFC
+    // validation — just enough to reject a Ref or blank so the owner never gets a useless ping.
+    if (!/^[^@\s]+@[^@\s]+$/.test(email)) {
+      respond(400, { error: 'bad_email' });
       return;
     }
     ctx.statusApi
@@ -491,7 +494,7 @@ function handleClaimHelpRequest(
         }
         // A repeat inside the window is answered 200 without pinging again: the buyer did their
         // part, and telling them "already sent" would only make them try harder.
-        if (!shouldSendClaimHelp(ctx.claimHelpSeen, identity.id, ref, ctx.now())) {
+        if (!shouldSendClaimHelp(ctx.claimHelpSeen, identity.id, email, ctx.now())) {
           respond(200, { ok: true, deduped: true });
           return;
         }
@@ -502,19 +505,17 @@ function handleClaimHelpRequest(
             logError: ctx.logError,
           },
           identity.id,
-          ref,
+          email,
         );
         if (!sent) {
           // The site shows a copyable message + the support link on this. Log loudly: a buyer who
-          // paid is now waiting on a notification that never arrived.
-          ctx.logError(
-            `[claim-help] could not notify — buyer ${identity.id} is waiting, ref=${ref}`,
-            null,
-          );
+          // paid is now waiting on a notification that never arrived. The email is the buyer's PII,
+          // so it stays OUT of the log line — only the Discord ID is recorded.
+          ctx.logError(`[claim-help] could not notify — buyer ${identity.id} is waiting`, null);
           respond(503, { error: 'not_sent' });
           return;
         }
-        ctx.logInfo(`[claim-help] activation help requested by ${identity.id} (ref=${ref})`);
+        ctx.logInfo(`[claim-help] activation help requested by ${identity.id}`);
         respond(200, { ok: true });
       })
       .catch((err) => {
