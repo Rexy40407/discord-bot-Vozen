@@ -28,6 +28,7 @@ import {
 } from './kofi';
 import type { StatusApi } from './statusApi';
 import type { DashboardApi } from './dashboardApi';
+import type { AdminApi, AdminGrantInput } from './adminApi';
 import { handleVoteWebhook } from '../vote';
 
 export interface KofiWebhookDeps {
@@ -44,6 +45,11 @@ export interface KofiWebhookDeps {
   // Web config dashboard (optional): /api/dashboard/* routes on the SAME server, same CORS.
   // Absent => no dashboard. Also requires `apiOrigin`.
   dashboardApi?: DashboardApi;
+  // Admin console (plan 037): /api/admin/* routes on the SAME server. CORS restricted to
+  // `adminPanelOrigin` (a DIFFERENT origin than the Premium panel — the console lives on the
+  // Vozen-helper Pages site). Absent OR adminApi.enabled=false => every /api/admin/* route 404s.
+  adminApi?: AdminApi;
+  adminPanelOrigin?: string;
   // Discord webhook notified when a buyer asks for manual activation (POST /api/claim-help).
   // EMPTY/absent => the endpoint answers 503 and the site falls back to its copy-to-support
   // message; nothing breaks, the buyer just does one more step by hand.
@@ -686,6 +692,237 @@ function handleDashboardRequest(
   json(404, { error: 'not_found' });
 }
 
+interface AdminCtx {
+  adminApi: AdminApi;
+  adminPanelOrigin: string;
+  now: () => number;
+  /** General bucket for the authenticated admin routes. */
+  rate: Map<string, RateState>;
+  /** SEPARATE tight bucket for the login route — it is password brute-force, not a read. */
+  loginRate: Map<string, RateState>;
+  rateMaxEntries: number;
+  logInfo: (m: string) => void;
+  logError: (m: string, err: unknown) => void;
+}
+
+// Login is the one admin route that takes a password, so it gets the claim-grade limit (a few
+// tries per 10 min) on its OWN bucket — the authenticated routes must not spend its budget.
+const ADMIN_LOGIN_RATE_MAX = 6;
+const ADMIN_LOGIN_RATE_WINDOW_MS = 10 * 60 * 1000;
+const MAX_ADMIN_BODY = 4_000; // a login / grant / revoke payload is tiny
+
+/** Collects a bounded request body and calls `done` with it; 413s (and never calls done) if it
+ *  grows past `maxLen`. Shared by the admin POST routes — same shape as the other handlers inline. */
+function readBody(
+  req: import('node:http').IncomingMessage,
+  res: import('node:http').ServerResponse,
+  cors: Record<string, string>,
+  maxLen: number,
+  logError: (m: string, err: unknown) => void,
+  tag: string,
+  done: (body: string) => void,
+): void {
+  let body = '';
+  let aborted = false;
+  req.on('data', (chunk) => {
+    if (aborted) return;
+    body += chunk;
+    if (body.length > maxLen) {
+      aborted = true;
+      res.writeHead(413, cors).end('too large');
+      req.destroy();
+    }
+  });
+  req.on('end', () => {
+    if (!aborted) done(body);
+  });
+  req.on('error', (err) => logError(`${tag} request error`, err));
+}
+
+/**
+ * Admin console routes (plan 037), CORS restricted to `adminPanelOrigin`:
+ *   POST /api/admin/login   {user,pass} + Bearer <Discord token>  -> mints a session (tight bucket)
+ *   GET  /api/admin/passes                Bearer <session>        -> active passes + pending
+ *   POST /api/admin/grant   {kind,id,days,seats?}  Bearer <session> -> grant Plus/Premium
+ *   POST /api/admin/revoke  {kind,id}     Bearer <session>        -> revoke
+ * SECURITY: `login` is the ONLY route that accepts a Discord token; every other route requires a
+ * signed SESSION for the owner (adminApi.authorize) — a bare Discord token is refused. When the
+ * console is unconfigured (adminApi.enabled=false) every route 404s. 403 stays indistinct.
+ */
+function handleAdminRequest(
+  req: import('node:http').IncomingMessage,
+  res: import('node:http').ServerResponse,
+  ctx: AdminCtx,
+): void {
+  // Inert-by-default: an unconfigured console reveals nothing (the page and code are public).
+  if (!ctx.adminApi.enabled) {
+    res.writeHead(404).end('not found');
+    return;
+  }
+  const cors: Record<string, string> = {
+    'Access-Control-Allow-Origin': ctx.adminPanelOrigin,
+    Vary: 'Origin',
+    ...API_SECURITY_HEADERS,
+  };
+  const path = (req.url ?? '').split('?')[0];
+  const json = (code: number, body: unknown): void => {
+    res.writeHead(code, { ...cors, 'Content-Type': 'application/json' }).end(JSON.stringify(body));
+  };
+
+  if (req.method === 'OPTIONS') {
+    res
+      .writeHead(204, {
+        ...cors,
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+        'Access-Control-Max-Age': '600',
+      })
+      .end();
+    return;
+  }
+
+  const auth = req.headers['authorization'];
+  const bearer =
+    typeof auth === 'string' && auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
+
+  // ── LOGIN: mints a session, so it takes the DISCORD token (not a session) + its own tight bucket.
+  if (path === '/api/admin/login') {
+    if (req.method !== 'POST') {
+      json(405, { error: 'method_not_allowed' });
+      return;
+    }
+    if (
+      isRateLimited(
+        ctx.loginRate,
+        clientIp(req),
+        ctx.now(),
+        ctx.rateMaxEntries,
+        ADMIN_LOGIN_RATE_MAX,
+        ADMIN_LOGIN_RATE_WINDOW_MS,
+      )
+    ) {
+      json(429, { error: 'rate_limited' });
+      return;
+    }
+    readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
+      let user = '';
+      let pass = '';
+      try {
+        const p = JSON.parse(raw || '{}') as { user?: unknown; pass?: unknown };
+        if (typeof p.user === 'string') user = p.user;
+        if (typeof p.pass === 'string') pass = p.pass;
+      } catch {
+        json(400, { error: 'bad_request' });
+        return;
+      }
+      ctx.adminApi
+        .login(user, pass, bearer)
+        .then((r) => {
+          // One indistinct 403 on ANY failure (bad password, non-owner, missing token): no oracle.
+          if (!r.ok) {
+            json(403, { error: 'denied' });
+            return;
+          }
+          ctx.logInfo('[admin] owner logged in to the console');
+          json(200, { token: r.token, expiresAt: r.expiresAt });
+        })
+        .catch((err) => {
+          ctx.logError('[admin] login failed', err);
+          try {
+            json(500, { error: 'internal' });
+          } catch {
+            /* response already sent */
+          }
+        });
+    });
+    return;
+  }
+
+  // ── Every other admin route: general rate-limit, then a VALID SESSION for the owner. A bare
+  // Discord token is NOT a session and is refused here (authorize verifies the HMAC only).
+  if (
+    isRateLimited(
+      ctx.rate,
+      clientIp(req),
+      ctx.now(),
+      ctx.rateMaxEntries,
+      API_RATE_MAX,
+      API_RATE_WINDOW_MS,
+    )
+  ) {
+    json(429, { error: 'rate_limited' });
+    return;
+  }
+  const owner = ctx.adminApi.authorize(bearer);
+  if (!owner) {
+    json(403, { error: 'forbidden' });
+    return;
+  }
+
+  if (path === '/api/admin/passes' && req.method === 'GET') {
+    json(200, ctx.adminApi.listPasses());
+    return;
+  }
+
+  if (path === '/api/admin/grant' && req.method === 'POST') {
+    readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
+      let parsed: { kind?: unknown; id?: unknown; days?: unknown; seats?: unknown };
+      try {
+        parsed = JSON.parse(raw || '{}');
+      } catch {
+        json(400, { error: 'bad_request' });
+        return;
+      }
+      if (parsed.kind !== 'plus' && parsed.kind !== 'premium') {
+        json(400, { error: 'bad_kind' });
+        return;
+      }
+      if (typeof parsed.id !== 'string' || typeof parsed.days !== 'number') {
+        json(400, { error: 'bad_request' });
+        return;
+      }
+      const input: AdminGrantInput =
+        parsed.kind === 'plus'
+          ? { kind: 'plus', id: parsed.id, days: parsed.days }
+          : {
+              kind: 'premium',
+              id: parsed.id,
+              days: parsed.days,
+              // A missing/invalid seats becomes NaN -> adminApi rejects with bad_seats.
+              seats: typeof parsed.seats === 'number' ? parsed.seats : Number.NaN,
+            };
+      const r = ctx.adminApi.grant(input);
+      if (!r.ok) {
+        json(400, { error: r.error });
+        return;
+      }
+      json(200, { ok: true, expiresAt: r.expiresAt });
+    });
+    return;
+  }
+
+  if (path === '/api/admin/revoke' && req.method === 'POST') {
+    readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
+      let parsed: { kind?: unknown; id?: unknown };
+      try {
+        parsed = JSON.parse(raw || '{}');
+      } catch {
+        json(400, { error: 'bad_request' });
+        return;
+      }
+      if ((parsed.kind !== 'plus' && parsed.kind !== 'premium') || typeof parsed.id !== 'string') {
+        json(400, { error: 'bad_request' });
+        return;
+      }
+      const r = ctx.adminApi.revoke({ kind: parsed.kind, id: parsed.id });
+      json(200, { ok: r.ok });
+    });
+    return;
+  }
+
+  json(404, { error: 'not_found' });
+}
+
 interface TopggCtx {
   secret: string;
   onUpvote?: (userId: string) => void;
@@ -743,7 +980,7 @@ function handleTopggRequest(
 export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
   const { db, token, port, now, logInfo, logError, statusApi, apiOrigin, dashboardApi } = deps;
   const { topggWebhookSecret, onUpvote } = deps;
-  if (!token && !statusApi && !topggWebhookSecret) {
+  if (!token && !statusApi && !topggWebhookSecret && !deps.adminApi) {
     logInfo(
       '[premium] HTTP server disabled (no Ko-fi webhook, dashboard API, or top.gg endpoint).',
     );
@@ -755,6 +992,9 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
   // asked for help is exactly the person about to try activating again.
   const claimHelpRate = new Map<string, RateState>();
   const claimHelpSeen = new Map<string, number>();
+  // Admin console (plan 037): own general bucket + a SEPARATE tight bucket for the password login.
+  const adminRate = new Map<string, RateState>();
+  const adminLoginRate = new Map<string, RateState>();
   const rateMaxEntries = Math.max(1, Math.floor(deps.apiRateMaxEntries ?? API_RATE_MAX_ENTRIES));
 
   const server = createServer((req, res) => {
@@ -808,6 +1048,24 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         now,
         rate,
         rateMaxEntries,
+        logError,
+      });
+      return;
+    }
+
+    // ── Admin console: /api/admin/* ────────────────────────────────────────────────
+    // Gated only on the path prefix so an unconfigured console returns a clean 404 (inside the
+    // handler) instead of falling through to the Ko-fi catch-all. CORS uses adminPanelOrigin —
+    // a DIFFERENT origin than the Premium panel, and applied ONLY to these routes.
+    if (deps.adminApi && path.startsWith('/api/admin/')) {
+      handleAdminRequest(req, res, {
+        adminApi: deps.adminApi,
+        adminPanelOrigin: deps.adminPanelOrigin ?? '',
+        now,
+        rate: adminRate,
+        loginRate: adminLoginRate,
+        rateMaxEntries,
+        logInfo,
         logError,
       });
       return;

@@ -115,6 +115,19 @@ export function listUnclaimedPendingByEmailHash(
 }
 
 /**
+ * ALL unclaimed pendings, newest first, capped. For the admin console overview (plan 037): the
+ * owner sees the purchases still waiting for a buyer to claim them, to reconcile against Ko-fi.
+ * The email is never here in cleartext (only its hash), so this leaks nothing the owner cannot
+ * already see in their own seller panel.
+ */
+export function listAllUnclaimedPending(db: Database.Database, cap = 500): PendingGrant[] {
+  const rows = db
+    .prepare('SELECT * FROM kofi_pending WHERE claimed_at IS NULL ORDER BY created_at DESC LIMIT ?')
+    .all(cap) as Parameters<typeof rowToPending>[0][];
+  return rows.map(rowToPending);
+}
+
+/**
  * Marks the pending as claimed. Idempotent: only affects rows still unclaimed
  * (claimed_at IS NULL), so a 2nd claim of the same tx returns false without re-applying.
  */

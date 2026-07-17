@@ -54,6 +54,7 @@ import { startKofiWebhook } from './premium/kofiWebhook';
 import { parseShopMap } from './premium/kofi';
 import { createStatusApi } from './premium/statusApi';
 import { createDashboardApi } from './premium/dashboardApi';
+import { createAdminApi } from './premium/adminApi';
 import { startVoteWebhookServer } from './vote';
 
 function discoverModels(modelsDir: string): string[] {
@@ -342,6 +343,22 @@ async function main(): Promise<void> {
           logError: (m, err) => log.error(m, err),
         })
       : undefined;
+    // Admin console (plan 037): reuses statusApi.resolveIdentity to validate the owner's Discord
+    // token. Only built when the panel API exists (same OAuth infrastructure). createAdminApi
+    // computes enabled=false when the ADMIN_* env vars are absent, so the routes stay inert (404)
+    // until configured — this is what keeps the public repo safe.
+    const adminApi = statusApi
+      ? createAdminApi({
+          db,
+          now: () => Date.now(),
+          resolveIdentity: statusApi.resolveIdentity,
+          adminUser: config.adminUser,
+          adminPassHash: config.adminPassHash,
+          adminSessionSecret: config.adminSessionSecret,
+          ownerId: config.ownerId,
+          logInfo: (m) => log.info(m),
+        })
+      : undefined;
     startKofiWebhook({
       db,
       token: config.kofiWebhookToken,
@@ -354,6 +371,8 @@ async function main(): Promise<void> {
       logError: (m, err) => log.error(m, err),
       statusApi,
       dashboardApi,
+      adminApi,
+      adminPanelOrigin: config.adminPanelOrigin,
       apiOrigin: config.premiumApiEnabled ? config.premiumApiOrigin : undefined,
       // Vote reward on the SAME public port (POST /webhook/topgg) — no dedicated Caddy
       // needed. Only enabled with TOPGG_WEBHOOK_SECRET (without its own port).
