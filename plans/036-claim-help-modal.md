@@ -161,5 +161,10 @@ hostil (`@everyone \`hack\` S-XYZ99`) chega ao Discord como texto inerte
 F1+F2: o modal no ar — guia o caminho que ativa e transforma o Ref numa mensagem de
 suporte pronta. F3 torna isso num clique. F4 fecha o funil do lado do Ko-fi.
 
-**Próxima ação concreta:** reescrever os 2 testes acoplados em
-`tests/operationalHardening.test.ts` e vê-los falhar por conteúdo (RED).
+**Estado (2026-07-17):** F1–F3 feitas e deployadas (`a5c3a79`). O endpoint responde em
+produção (`POST /api/claim-help` → 401 sem token, OPTIONS → 204). Falta a prova humana
+(F3 done-criterion) e a F4.
+
+**Próxima ação concreta:** submeter um Ref real no modal em vozen.org/account e
+confirmar que a notificação chega ao Discord (canal do `ERROR_WEBHOOK_URL`, por
+fallback).
