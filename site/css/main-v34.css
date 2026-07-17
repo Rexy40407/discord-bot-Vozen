@@ -446,7 +446,10 @@ code { font-family: var(--f-mono); font-size: 0.9em; color: var(--aqua); }
    header e punha-o ao MESMO nível do .hero (z-index 2) — como o .hero vem depois no
    DOM, pintava por cima do menu mobile aberto (dropdown sem fundo visível) e ainda
    anulava o `position: sticky` do nav. Com o :not(.nav), o header mantém sticky+100. */
-body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
+/* O :not(.ppmodal) e a mesma historia outra vez: esta regra (0,3,1) e mais especifica que
+   `.ppmodal` (0,1,0), por isso ganhava-lhe o `position: fixed` e punha o modal no fluxo da
+   pagina — aparecia como uma caixa la em baixo em vez de cobrir o ecra. */
+body > *:not(.grain):not(.orbs):not(.nav):not(.ppmodal) { position: relative; z-index: 2; }
 
 /* ── equalizer mark ─────────────────────────────────────── */
 .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 18px; }
@@ -1153,6 +1156,41 @@ body > *:not(.grain):not(.orbs):not(.nav) { position: relative; z-index: 2; }
    350px e num cartao estreito (~262px no telemovel) saia para fora da caixa. */
 .ppanel__claimlost a { color: var(--aqua); text-decoration: none; }
 .ppanel__claimlost a:hover { text-decoration: underline; }
+/* Abre o modal de ajuda. E um <button> porque e uma accao, nao navegacao — mas parece o
+   link que era antes, que e o que a pessoa reconhece. */
+.ppanel__claimlostbtn {
+  display: inline; padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--aqua); font: inherit; text-align: left;
+}
+.ppanel__claimlostbtn:hover { text-decoration: underline; }
+
+/* ── Modal de ajuda da activacao (plano 036) ──────────────────────────── */
+.ppmodal { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; }
+.ppmodal[hidden] { display: none; }
+.ppmodal__backdrop { position: absolute; inset: 0; background: rgba(4, 6, 12, 0.72); backdrop-filter: blur(6px); }
+.ppmodal__box {
+  position: relative; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto;
+  padding: 22px; border-radius: var(--radius); border: 1px solid var(--line-2);
+  background: var(--panel-2, #12141c); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.ppmodal__box:focus { outline: none; }
+/* 40px de alvo: um X pequeno num telemovel e a diferenca entre fechar e ficar preso. */
+.ppmodal__x {
+  position: absolute; top: 8px; inset-inline-end: 8px; width: 40px; height: 40px;
+  border: 0; border-radius: 50%; background: none; color: var(--text-2);
+  font-size: 24px; line-height: 1; cursor: pointer;
+}
+.ppmodal__x:hover { color: var(--text-0); background: rgba(255, 255, 255, 0.06); }
+.ppmodal__title { margin: 0 40px 14px 0; font-family: var(--f-display); font-size: 17px; color: var(--text-0); }
+.ppmodal__step { margin: 0 0 12px; color: var(--text-2); font-size: 12.8px; line-height: 1.55; }
+.ppmodal__num {
+  display: inline-grid; place-items: center; width: 18px; height: 18px; margin-inline-end: 6px;
+  border-radius: 50%; background: var(--aqua); color: #04060c; font-size: 11px; font-weight: 700;
+}
+.ppmodal__foot { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12.2px; }
+.ppmodal__foot a { color: var(--text-2); text-decoration: none; }
+.ppmodal__foot a:hover { color: var(--aqua); text-decoration: underline; }
+body.is-modal-open { overflow: hidden; }
 .ppanel__none { display: flex; flex-direction: column; gap: 4px; }
 .ppanel__none b { color: var(--text-0); font-size: 15px; }
 .ppanel__anon { display: grid; gap: 10px; }

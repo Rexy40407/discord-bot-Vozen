@@ -6,6 +6,34 @@ import { describe, expect, it } from 'vitest';
 const source = (path: string): string =>
   readFileSync(resolve(process.cwd(), path), { encoding: 'utf8' });
 
+// The site's assets are cache-busted by FILENAME (never a query string), so every rename churns
+// these tests too. One constant each: the rename is then a one-line edit here, not a hunt.
+const SITE_JS = 'site/js/main-v32.js';
+const SITE_I18N = 'site/js/i18n-v29.js';
+const SITE_CSS = 'site/css/main-v34.css';
+
+/** Body of a top-level function in the site bundle, comments stripped. Comments are dropped
+ *  because these assertions are about the markup a function RENDERS — a comment explaining why
+ *  some wiring is avoided must not read as using it. */
+const fnSource = (script: string, signature: string): string => {
+  const start = script.indexOf(signature);
+  if (start < 0) throw new Error(`not found in site bundle: ${signature}`);
+  const rest = script.slice(start + 1);
+  const end = rest.indexOf('\n  function ');
+  return (end < 0 ? rest : rest.slice(0, end)).replace(/^\s*\/\/.*$/gm, '');
+};
+
+const claimCardSource = (): string => fnSource(source(SITE_JS), 'function claimCard()');
+const helpModalSource = (): string => fnSource(source(SITE_JS), 'function claimHelpModal()');
+
+const i18nBundle = (): Record<string, Record<string, string>> => {
+  const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
+    window: {},
+  };
+  new Function('window', source(SITE_I18N))(sandbox.window);
+  return sandbox.window.VOZEN_I18N ?? {};
+};
+
 describe('operational security configuration', () => {
   it('keeps the Cloudflare CSP aligned with the self-hosted-font privacy promise', () => {
     const script = source('tools/cf-security-headers.mjs');
@@ -40,7 +68,7 @@ describe('operational security configuration', () => {
   });
 
   it('keeps every font URL in the site stylesheet resolvable', () => {
-    const css = source('site/css/main-v33.css');
+    const css = source(SITE_CSS);
     const urls = [...css.matchAll(/url\("\.\.\/assets\/fonts\/([^"?]+)"\)/g)].map(
       (match) => match[1],
     );
@@ -51,7 +79,7 @@ describe('operational security configuration', () => {
   });
 
   it('keeps developer-facing accessibility labels in English', () => {
-    const script = source('site/js/main-v31.js');
+    const script = source(SITE_JS);
     expect(script).toContain('aria-label="Copy Discord ID"');
     expect(script).not.toContain('aria-label="Copiar Discord ID"');
   });
@@ -62,7 +90,7 @@ describe('operational security configuration', () => {
   // pass is activated here. Drop the checkbox and the acknowledgement silently disappears
   // while the refund policy still claims it was given, which is worse than never having it.
   it('gates pass activation behind an express consent checkbox', () => {
-    const script = source('site/js/main-v31.js');
+    const script = source(SITE_JS);
     expect(script).toContain('id="ppClaimConsent"');
     expect(script).toContain('claim.consent');
     // The guard must refuse when unticked — failing open would activate the pass with no
@@ -80,7 +108,7 @@ describe('operational security configuration', () => {
   // link" is not something a string match can honestly do — but the surgical instruction is
   // one literal token, and its absence is checkable in every language.
   it('no longer asks buyers to extract the code from the URL', () => {
-    const bundle = source('site/js/i18n-v28.js');
+    const bundle = source(SITE_I18N);
     const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
       window: {},
     };
@@ -103,44 +131,81 @@ describe('operational security configuration', () => {
 
   // Closing the receipt tab is not a dead end — Ko-fi emails the buyer a receipt — but the card
   // never said so, which made it one in practice. The line has to name the email first (the copy
-  // every buyer has) and support second (the genuinely-stuck tail: guest, wrong or lost email).
-  //
-  // The `.js-support` wiring at the top of the file runs ONCE over the document at load, and the
-  // claim card is injected later, after OAuth. An anchor leaning on that wiring would render with
-  // no href at all — so the card must carry the URL itself. That is what the last two assertions
-  // pin: a silent hrefless link is exactly the failure this line exists to prevent.
+  // every buyer has), and hand the genuinely-stuck tail to the help modal (plan 036) rather than
+  // dumping them straight on support.
   it('offers a way back when the buyer no longer has the receipt', () => {
-    const script = source('site/js/main-v31.js');
-    const start = script.indexOf('function claimCard()');
-    expect(start, 'claimCard() exists').toBeGreaterThan(-1);
-    const rest = script.slice(start + 1);
-    // Comments stripped: the assertion below is about the markup this function RENDERS, and a
-    // comment explaining why the wiring is avoided must not read as using it.
-    const card = rest.slice(0, rest.indexOf('\n  function ')).replace(/^\s*\/\/.*$/gm, '');
+    const card = claimCardSource();
     expect(card).toContain('claim.lost');
-    expect(card).toContain('${SUPPORT_URL}');
-    expect(card, 'must not rely on the one-time .js-support wiring').not.toContain('js-support');
+    expect(card).toContain('claim.lostHelp');
+    // The modal is the escape hatch now; support lives inside it, one step further in.
+    expect(card).toContain('ppClaimHelpOpen');
   });
 
-  it('translates the recovery copy into every advertised site language', () => {
-    const bundle = source('site/js/i18n-v28.js');
-    const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
-      window: {},
-    };
-    new Function('window', bundle)(sandbox.window);
-    const all = sandbox.window.VOZEN_I18N ?? {};
+  // The `.js-support` wiring at the top of the file runs ONCE over the document at load, and both
+  // the claim card and the help modal are injected later, after OAuth. An anchor leaning on that
+  // wiring would render with no href at all — so the markup must carry the URL itself. A silent
+  // hrefless link is exactly the failure the recovery path exists to prevent.
+  it('renders the support link with a real href, not the one-time wiring', () => {
+    const modal = helpModalSource();
+    expect(modal).toContain('${SUPPORT_URL}');
+    expect(modal, 'must not rely on the one-time .js-support wiring').not.toContain('js-support');
+  });
+
+  // The Ko-fi email receipt shows `Ref: S-M1X823C9FW` — the only code-looking string in the whole
+  // email, and one we can NEVER accept: the webhook payload has no such field, so no pending row
+  // carries it. Someone hunting for a code finds that, pastes it, and gets a flat "no purchase
+  // found" for a purchase they really made. Catch the shape before the request leaves the browser
+  // and send them somewhere useful instead.
+  it('catches the Ko-fi order Ref before it reaches the server', () => {
+    const script = source(SITE_JS);
+    expect(script).toMatch(/REF_RE\s*=/);
+    const claim = fnSource(script, 'async function doClaim(');
+    expect(claim).toContain('REF_RE');
+    expect(claim).toContain('claim.help.refPasted');
+    // Must be decided BEFORE the fetch: reaching the server means a 404 the buyer cannot act on.
+    const refAt = claim.indexOf('REF_RE');
+    const fetchAt = claim.indexOf('fetch(');
+    expect(refAt, 'Ref check must precede the fetch').toBeLessThan(fetchAt);
+  });
+
+  // Every dismissal a modal can offer, because someone who cannot close it is trapped on the one
+  // page they went to for help. Esc is the one most often forgotten.
+  it('makes the help modal dismissable and announced', () => {
+    const modal = helpModalSource();
+    expect(modal).toContain('role="dialog"');
+    expect(modal).toContain('aria-modal="true"');
+    expect(modal).toContain('aria-labelledby');
+    const script = source(SITE_JS);
+    expect(script).toContain('ppClaimHelpClose'); // the X
+    expect(script).toMatch(/Escape/); // keyboard
+    expect(script).toContain('ppClaimHelpBackdrop'); // click-outside
+  });
+
+  it('translates the recovery and help copy into every advertised site language', () => {
+    const all = i18nBundle();
     const langs = Object.keys(all);
     expect(langs.length).toBeGreaterThan(0);
     for (const lang of langs) {
-      // Split in two on purpose: the sentence and the link label are separate keys so no
-      // translation has to carry markup through esc().
-      expect(all[lang]['claim.lost'], `${lang} claim.lost`).toBeTruthy();
-      expect(all[lang]['claim.lostHelp'], `${lang} claim.lostHelp`).toBeTruthy();
+      // Split into separate keys on purpose: no translation has to carry markup through esc().
+      for (const key of [
+        'claim.lost',
+        'claim.lostHelp',
+        'claim.help.title',
+        'claim.help.step1',
+        'claim.help.step2',
+        'claim.help.refPlaceholder',
+        'claim.help.send',
+        'claim.help.refPasted',
+        'claim.help.sent',
+        'claim.help.stillStuck',
+      ]) {
+        expect(all[lang][key], `${lang} ${key}`).toBeTruthy();
+      }
     }
   });
 
   it('translates the consent copy into every advertised site language', () => {
-    const bundle = source('site/js/i18n-v28.js');
+    const bundle = source(SITE_I18N);
     const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
       window: {},
     };

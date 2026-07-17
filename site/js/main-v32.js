@@ -21,6 +21,13 @@
   const TOPGG_URL =
     CLIENT_ID && CLIENT_ID !== "YOUR_CLIENT_ID" ? `https://top.gg/bot/${CLIENT_ID}/vote` : "#";
 
+  // Forma do Ref de encomenda do Ko-fi, como aparece no recibo por email: `Ref: S-M1X823C9FW`.
+  // Nao e um codigo que possamos aceitar — o webhook do Ko-fi nao envia este campo — mas e a unica
+  // coisa com ar de codigo no email, por isso e o que a pessoa cola. Reconhece-se para a mandar
+  // para a ajuda em vez de um 404 seco. Nao ha risco de apanhar um tx id verdadeiro: esses sao
+  // UUIDs, e nenhum UUID comeca por "S-".
+  const REF_RE = /^S-[A-Za-z0-9]{6,16}$/;
+
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -502,10 +509,40 @@
       // realises they no longer have the receipt, and the way out should be the next thing they
       // read. Closing the receipt tab was never a dead end — Ko-fi emails every buyer a copy —
       // but the card never said so, which made it one in practice.
-      // The href is written here rather than via class="js-support": that wiring runs once over
-      // the document at load and this card is injected later, after OAuth, so it would render
-      // with no href at all.
-      `<p class="ppanel__claimlost">${t("claim.lost")} <a href="${SUPPORT_URL}" target="_blank" rel="noopener">${t("claim.lostHelp")}</a></p>` +
+      `<p class="ppanel__claimlost">${t("claim.lost")} <button type="button" class="ppanel__claimlostbtn" id="ppClaimHelpOpen">${t("claim.lostHelp")}</button></p>` +
+      `</div>`
+    );
+  }
+
+  // Modal de ajuda (plano 036). Existe por causa de uma armadilha do recibo do Ko-fi: o email
+  // mostra `Ref: S-M1X823C9FW` — a unica coisa com ar de codigo no email inteiro — e o Ref NUNCA
+  // pode activar nada, porque o webhook do Ko-fi nao no-lo envia (ver KofiEvent em
+  // src/premium/kofi.ts). Quem procura um codigo encontra aquilo, cola, e leva um 404 seco por
+  // uma compra que fez mesmo.
+  //
+  // Passo 1 leva ao caminho que ACTIVA (o botao do email -> endereco da pagina -> caixa de cima).
+  // Passo 2 da ao Ref o unico uso que ele pode ter: chave do caminho humano — um clique manda
+  // (Discord ID, Ref) para o dono, que encontra a encomenda no painel do Ko-fi e faz o grant.
+  // O suporte fica no rodape, um passo mais dentro, e nao como primeira resposta.
+  //
+  // O href do suporte vai inline e nao por class="js-support": essa ligacao corre UMA vez sobre o
+  // documento no arranque e isto e injectado depois do OAuth — sairia sem href nenhum.
+  function claimHelpModal() {
+    return (
+      `<div class="ppmodal" id="ppClaimHelp" hidden>` +
+      `<div class="ppmodal__backdrop" id="ppClaimHelpBackdrop"></div>` +
+      `<div class="ppmodal__box" role="dialog" aria-modal="true" aria-labelledby="ppClaimHelpTitle" tabindex="-1" id="ppClaimHelpBox">` +
+      `<button type="button" class="ppmodal__x" id="ppClaimHelpClose" aria-label="${esc(t("claim.help.close"))}">&times;</button>` +
+      `<h2 class="ppmodal__title" id="ppClaimHelpTitle">${t("claim.help.title")}</h2>` +
+      `<p class="ppmodal__step"><span class="ppmodal__num">1</span> ${t("claim.help.step1")}</p>` +
+      `<p class="ppmodal__step"><span class="ppmodal__num">2</span> ${t("claim.help.step2")}</p>` +
+      `<form class="ppanel__claimform" id="ppClaimHelpForm">` +
+      `<input type="text" id="ppClaimHelpRef" class="ppanel__claiminput" placeholder="${esc(t("claim.help.refPlaceholder"))}" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="60">` +
+      `<button type="submit" class="ppanel__claimbtn" id="ppClaimHelpSend">${t("claim.help.send")}</button>` +
+      `</form>` +
+      `<p class="ppanel__claimmsg" id="ppClaimHelpMsg" role="status" aria-live="polite" hidden></p>` +
+      `<p class="ppmodal__foot"><a href="${SUPPORT_URL}" target="_blank" rel="noopener">${t("claim.help.stillStuck")}</a></p>` +
+      `</div>` +
       `</div>`
     );
   }
@@ -578,6 +615,15 @@
       setMsg(t("claim.notfound"), "err");
       return;
     }
+    // O Ref do recibo (`Ref: S-M1X823C9FW`) e a unica coisa com ar de codigo no email do Ko-fi, e
+    // nunca casa com nada: o webhook do Ko-fi nao envia esse campo, portanto nenhuma linha
+    // pendente o tem. Deixa-lo ir ao servidor da um 404 que a pessoa nao consegue accionar — e ela
+    // pagou mesmo. Apanha-se aqui, ANTES do fetch, e abre-se a ajuda com o Ref ja preenchido.
+    if (REF_RE.test(code)) {
+      setMsg(t("claim.help.refPasted"), "err");
+      openClaimHelp(code);
+      return;
+    }
     // Sem consentimento nao se entrega. Se falhassemos ABERTO aqui, activavamos o passe sem a
     // pessoa ter reconhecido nada — e o direito de retratacao ficava de pe, que e exactamente o
     // que isto existe para evitar.
@@ -635,6 +681,121 @@
     }
   }
 
+  // Quem abriu o modal, para lhe devolver o foco ao fechar. Sem isto, quem navega por teclado
+  // volta ao topo do documento e tem de refazer o caminho todo ate ao cartao.
+  let claimHelpOpener = null;
+
+  // O modal vive no <body>, NAO dentro do #premiumPanel que o desenha. Nao e preferencia: o
+  // .premium-panel tem `transform` e `backdrop-filter`, e qualquer um deles faz do painel o
+  // containing block dos descendentes `position: fixed`. La dentro, o modal ficava preso ao
+  // painel — media 836px de largura no meio da pagina em vez de cobrir o ecra, e o blur so tapava
+  // o proprio painel. Verificado no browser; nenhum teste de string apanha isto.
+  //
+  // renderPanel reescreve o innerHTML do painel a cada loadPanel, por isso o modal e re-montado
+  // aqui a seguir: substitui-se o anterior para nao acumular copias no body, e os handlers
+  // ligam-se por document.getElementById (o modal ja nao esta dentro de `el`).
+  function mountClaimHelp(el) {
+    document.getElementById("ppClaimHelp")?.remove();
+    if (!el.querySelector("#ppClaimHelpOpen")) return; // sem cartao de activacao, sem modal
+    document.body.insertAdjacentHTML("beforeend", claimHelpModal());
+    document.getElementById("ppClaimHelpClose")?.addEventListener("click", closeClaimHelp);
+    document.getElementById("ppClaimHelpBackdrop")?.addEventListener("click", closeClaimHelp);
+    document.getElementById("ppClaimHelpForm")?.addEventListener("submit", sendClaimHelp);
+  }
+
+  function openClaimHelp(prefillRef) {
+    const modal = document.getElementById("ppClaimHelp");
+    if (!modal) return;
+    claimHelpOpener = document.activeElement;
+    modal.hidden = false;
+    document.body.classList.add("is-modal-open");
+    const ref = document.getElementById("ppClaimHelpRef");
+    if (ref && prefillRef) ref.value = prefillRef;
+    // O foco entra na caixa (nao no input): quem usa leitor de ecra ouve o titulo e os dois
+    // passos antes do campo, que e a ordem que explica o campo.
+    document.getElementById("ppClaimHelpBox")?.focus();
+  }
+
+  function closeClaimHelp() {
+    const modal = document.getElementById("ppClaimHelp");
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    document.body.classList.remove("is-modal-open");
+    if (claimHelpOpener && typeof claimHelpOpener.focus === "function") claimHelpOpener.focus();
+    claimHelpOpener = null;
+  }
+
+  // Esc fecha. Registado UMA vez no documento (nao por render) — o painel volta a desenhar-se a
+  // cada loadPanel e um listener por render acumulava-se em silencio.
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape") closeClaimHelp();
+  });
+
+  // Envia (Discord ID via token, Ref) para o dono activar a mao. O Ref NAO activa nada sozinho —
+  // ver claimHelpModal. Se o endpoint ainda nao existir ou falhar, mostra uma mensagem pronta a
+  // copiar: a pessoa nunca fica sem saida por a nossa API estar em baixo.
+  async function sendClaimHelp(ev) {
+    ev.preventDefault();
+    const input = document.getElementById("ppClaimHelpRef");
+    const btn = document.getElementById("ppClaimHelpSend");
+    const msg = document.getElementById("ppClaimHelpMsg");
+    if (!input || !btn) return;
+    const ref = (input.value || "").trim();
+    const setMsg = (text, kind) => {
+      if (!msg) return;
+      msg.hidden = false;
+      msg.textContent = text;
+      msg.className = "ppanel__claimmsg" + (kind ? " is-" + kind : "");
+    };
+    if (!ref) return;
+    // Quem colar aqui o codigo verdadeiro (ou o link do recibo) e activado na mesma. A pessoa nao
+    // tem de perceber a diferenca entre o Ref e o codigo — essa distincao e problema nosso.
+    if (!REF_RE.test(ref)) {
+      const main = document.getElementById("ppClaimCode");
+      if (main) {
+        main.value = ref;
+        closeClaimHelp();
+        main.focus();
+        return;
+      }
+    }
+    const tok = storedToken();
+    if (!tok) {
+      login();
+      return;
+    }
+    const prev = btn.textContent;
+    btn.disabled = true;
+    input.disabled = true;
+    btn.textContent = t("claim.working");
+    try {
+      const res = await fetch(PREMIUM_API_BASE + "/api/claim-help", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok },
+        body: JSON.stringify({ ref }),
+      });
+      if (res.ok) {
+        setMsg(t("claim.help.sent"), "ok");
+        return;
+      }
+      if (res.status === 401) {
+        login();
+        return;
+      }
+      if (res.status === 429) {
+        setMsg(t("claim.ratelimited"), "err");
+        return;
+      }
+      setMsg(t("claim.help.sendError"), "err");
+    } catch {
+      setMsg(t("claim.help.sendError"), "err");
+    } finally {
+      btn.disabled = false;
+      input.disabled = false;
+      btn.textContent = prev;
+    }
+  }
+
   function renderPanel() {
     const el = document.getElementById("premiumPanel");
     if (!el) return;
@@ -667,6 +828,8 @@
     byId("ppLogout")?.addEventListener("click", logout);
     byId("ppRetry")?.addEventListener("click", loadPanel);
     byId("ppClaimForm")?.addEventListener("submit", doClaim);
+    byId("ppClaimHelpOpen")?.addEventListener("click", () => openClaimHelp(""));
+    mountClaimHelp(el);
     el.querySelector(".ppanel__id")?.addEventListener("click", async (ev) => {
       const btn = ev.currentTarget;
       const id = btn.dataset.id || "";
