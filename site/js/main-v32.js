@@ -731,6 +731,19 @@
     if (ev.key === "Escape") closeClaimHelp();
   });
 
+  // Quando a notificacao nao sai (API em baixo, webhook por configurar), a pessoa nao pode ficar
+  // sem saida: mostra-se a mensagem ja pronta para ela colar no suporte, com o Ref la dentro. E o
+  // mesmo trabalho, feito a mao — mas ela sai daqui com alguma coisa.
+  function showClaimHelpFallback(setMsg, ref) {
+    setMsg(t("claim.help.sendError"), "err");
+    const box = document.getElementById("ppClaimHelpMsg");
+    if (!box) return;
+    const pre = document.createElement("pre");
+    pre.className = "ppmodal__copy";
+    pre.textContent = `Vozen: I can't activate my purchase. Ko-fi Ref: ${ref}`;
+    box.appendChild(pre);
+  }
+
   // Envia (Discord ID via token, Ref) para o dono activar a mao. O Ref NAO activa nada sozinho —
   // ver claimHelpModal. Se o endpoint ainda nao existir ou falhar, mostra uma mensagem pronta a
   // copiar: a pessoa nunca fica sem saida por a nossa API estar em baixo.
@@ -786,9 +799,9 @@
         setMsg(t("claim.ratelimited"), "err");
         return;
       }
-      setMsg(t("claim.help.sendError"), "err");
+      showClaimHelpFallback(setMsg, ref);
     } catch {
-      setMsg(t("claim.help.sendError"), "err");
+      showClaimHelpFallback(setMsg, ref);
     } finally {
       btn.disabled = false;
       input.disabled = false;

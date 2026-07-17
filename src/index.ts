@@ -359,6 +359,7 @@ async function main(): Promise<void> {
       // needed. Only enabled with TOPGG_WEBHOOK_SECRET (without its own port).
       topggWebhookSecret: config.topggWebhookSecret,
       onUpvote: rewardVote,
+      claimHelpWebhookUrl: config.claimHelpWebhookUrl,
     });
   } catch (err) {
     log.error('[index] failed to start the Premium HTTP server (ignored)', err);

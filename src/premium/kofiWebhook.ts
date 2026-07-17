@@ -16,6 +16,7 @@ import {
 } from '../store/premium';
 import { recordPendingGrant } from '../store/kofiPending';
 import { claimPendingGrant } from './claim';
+import { sanitizeRef, sendClaimHelp, shouldSendClaimHelp } from './claimHelp';
 import {
   parseKofiPayload,
   verifyKofiToken,
@@ -43,6 +44,10 @@ export interface KofiWebhookDeps {
   // Web config dashboard (optional): /api/dashboard/* routes on the SAME server, same CORS.
   // Absent => no dashboard. Also requires `apiOrigin`.
   dashboardApi?: DashboardApi;
+  // Discord webhook notified when a buyer asks for manual activation (POST /api/claim-help).
+  // EMPTY/absent => the endpoint answers 503 and the site falls back to its copy-to-support
+  // message; nothing breaks, the buyer just does one more step by hand.
+  claimHelpWebhookUrl?: string;
   /** Defensive limit of the API rate-limit map. Default 2048. */
   apiRateMaxEntries?: number;
   /**
@@ -71,6 +76,13 @@ const API_RATE_MAX_ENTRIES = 2048;
 // impractical to brute-force a tx id (UUID).
 const CLAIM_RATE_MAX = 5;
 const CLAIM_RATE_WINDOW_MS = 10 * 60 * 1000;
+
+// Help request (POST /api/claim-help): every accepted call pings the owner's Discord, so the limit
+// protects a HUMAN's attention, not a secret — there is nothing to brute-force here (the Ref is
+// not a key). Slightly looser than the claim: someone genuinely stuck may fumble the Ref a couple
+// of times, and the per-(user, ref) dedupe in claimHelp.ts already absorbs the repeats.
+const CLAIM_HELP_RATE_MAX = 8;
+const CLAIM_HELP_RATE_WINDOW_MS = 10 * 60 * 1000;
 
 interface RateState {
   count: number;
@@ -370,6 +382,153 @@ function handleClaimRequest(
   req.on('error', (err) => ctx.logError('[claim] request error', err));
 }
 
+interface ClaimHelpCtx {
+  statusApi: StatusApi;
+  apiOrigin: string;
+  now: () => number;
+  rate: Map<string, RateState>;
+  rateMaxEntries: number;
+  /** Discord webhook that receives the help request. EMPTY => the endpoint answers 503 and the
+   *  site falls back to its copy-this-to-support message. */
+  claimHelpWebhookUrl: string;
+  /** (user, ref) -> last sent. Lives for the process; see shouldSendClaimHelp. */
+  claimHelpSeen: Map<string, number>;
+  logInfo: (m: string) => void;
+  logError: (m: string, err: unknown) => void;
+}
+
+/**
+ * Handles POST /api/claim-help: the buyer could not activate and sends the Ko-fi order Ref so the
+ * owner can grant by hand. This is NOT an activation path and can never be one — Ko-fi does not
+ * send the Ref in the webhook, so nothing here could match it against a purchase (see
+ * ./claimHelp.ts). The identity is validated on Discord first; only (Discord ID, Ref) leaves.
+ */
+function handleClaimHelpRequest(
+  req: import('node:http').IncomingMessage,
+  res: import('node:http').ServerResponse,
+  ctx: ClaimHelpCtx,
+): void {
+  const cors: Record<string, string> = {
+    'Access-Control-Allow-Origin': ctx.apiOrigin,
+    Vary: 'Origin',
+    ...API_SECURITY_HEADERS,
+  };
+  if (req.method === 'OPTIONS') {
+    res
+      .writeHead(204, {
+        ...cors,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+        'Access-Control-Max-Age': '600',
+      })
+      .end();
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.writeHead(405, cors).end('method not allowed');
+    return;
+  }
+  if (
+    isRateLimited(
+      ctx.rate,
+      clientIp(req),
+      ctx.now(),
+      ctx.rateMaxEntries,
+      CLAIM_HELP_RATE_MAX,
+      CLAIM_HELP_RATE_WINDOW_MS,
+    )
+  ) {
+    res
+      .writeHead(429, { ...cors, 'Content-Type': 'application/json' })
+      .end('{"error":"rate_limited"}');
+    return;
+  }
+  const auth = req.headers['authorization'];
+  const bearer =
+    typeof auth === 'string' && auth.startsWith('Bearer ') ? auth.slice(7).trim() : null;
+
+  let body = '';
+  let aborted = false;
+  req.on('data', (chunk) => {
+    if (aborted) return;
+    body += chunk;
+    if (body.length > 4_000) {
+      aborted = true;
+      res.writeHead(413, cors).end('too large');
+      req.destroy();
+    }
+  });
+  req.on('end', () => {
+    if (aborted) return;
+    const respond = (code: number, payload: unknown): void => {
+      res
+        .writeHead(code, { ...cors, 'Content-Type': 'application/json' })
+        .end(JSON.stringify(payload));
+    };
+    let rawRef: string | null = null;
+    try {
+      const parsed = JSON.parse(body || '{}') as { ref?: unknown };
+      if (typeof parsed.ref === 'string') rawRef = parsed.ref;
+    } catch {
+      respond(400, { error: 'bad_request' });
+      return;
+    }
+    if (!bearer) {
+      respond(401, { error: 'no_token' });
+      return;
+    }
+    const ref = rawRef ? sanitizeRef(rawRef) : '';
+    if (!ref) {
+      respond(400, { error: 'bad_request' });
+      return;
+    }
+    ctx.statusApi
+      .resolveIdentity(bearer)
+      .then(async (identity) => {
+        if (!identity) {
+          respond(401, { error: 'invalid_token' });
+          return;
+        }
+        // A repeat inside the window is answered 200 without pinging again: the buyer did their
+        // part, and telling them "already sent" would only make them try harder.
+        if (!shouldSendClaimHelp(ctx.claimHelpSeen, identity.id, ref, ctx.now())) {
+          respond(200, { ok: true, deduped: true });
+          return;
+        }
+        const sent = await sendClaimHelp(
+          {
+            webhookUrl: ctx.claimHelpWebhookUrl,
+            fetchImpl: fetch,
+            logError: ctx.logError,
+          },
+          identity.id,
+          ref,
+        );
+        if (!sent) {
+          // The site shows a copyable message + the support link on this. Log loudly: a buyer who
+          // paid is now waiting on a notification that never arrived.
+          ctx.logError(
+            `[claim-help] could not notify — buyer ${identity.id} is waiting, ref=${ref}`,
+            null,
+          );
+          respond(503, { error: 'not_sent' });
+          return;
+        }
+        ctx.logInfo(`[claim-help] activation help requested by ${identity.id} (ref=${ref})`);
+        respond(200, { ok: true });
+      })
+      .catch((err) => {
+        ctx.logError('[claim-help] failed to process request', err);
+        try {
+          respond(500, { error: 'internal' });
+        } catch {
+          /* response already sent */
+        }
+      });
+  });
+  req.on('error', (err) => ctx.logError('[claim-help] request error', err));
+}
+
 interface DashboardCtx {
   dashboardApi: DashboardApi;
   apiOrigin: string;
@@ -591,6 +750,10 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
   }
   const rate = new Map<string, RateState>();
   const claimRate = new Map<string, RateState>(); // SEPARATE bucket for the claim (tight limit)
+  // Own bucket too: help requests must not eat the claim's 5-per-10-min budget. Someone who just
+  // asked for help is exactly the person about to try activating again.
+  const claimHelpRate = new Map<string, RateState>();
+  const claimHelpSeen = new Map<string, number>();
   const rateMaxEntries = Math.max(1, Math.floor(deps.apiRateMaxEntries ?? API_RATE_MAX_ENTRIES));
 
   const server = createServer((req, res) => {
@@ -611,6 +774,22 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
         now,
         rate: claimRate,
         rateMaxEntries,
+        logError,
+      });
+      return;
+    }
+
+    // ── Manual activation help: POST/OPTIONS /api/claim-help ───────────────────────
+    if (statusApi && apiOrigin && path === '/api/claim-help') {
+      handleClaimHelpRequest(req, res, {
+        statusApi,
+        apiOrigin,
+        now,
+        rate: claimHelpRate,
+        rateMaxEntries,
+        claimHelpWebhookUrl: deps.claimHelpWebhookUrl ?? '',
+        claimHelpSeen,
+        logInfo,
         logError,
       });
       return;

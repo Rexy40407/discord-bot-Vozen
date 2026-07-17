@@ -91,17 +91,30 @@ por código. O que o modal PODE fazer, e este plano faz:
 - [ ] Push; Pages verde; live check (v29 → 200, v28 → 404, copy nova servida).
 - [ ] **Done:** MVP no ar — modal guia + Ref gera mensagem de suporte pronta.
 
-### F3 — `POST /api/claim-help` (TDD) + notificação
+### F3 — `POST /api/claim-help` (TDD) + notificação ✅
 
-- [ ] Ler router/statusApi + o envio do `ERROR_WEBHOOK_URL`; decidir canal (reusar
+- [x] Ler router/statusApi + o envio do `ERROR_WEBHOOK_URL`; decidir canal (reusar
       vs. env novo) e registar a decisão no plano.
-- [ ] TDD: validação, sanitização, rate-limit, dedupe, respostas ok/erro; nenhum
+- [x] TDD: validação, sanitização, rate-limit, dedupe, respostas ok/erro; nenhum
       dado além de (Discord ID, Ref, timestamp) sai para o webhook.
-- [ ] Wiring no modal: sucesso → "Recebido! Ativamos manualmente em breve — vais
+- [x] Wiring no modal: sucesso → "Recebido! Ativamos manualmente em breve — vais
       ver o passe nesta página."; falha → fallback da F2.
-- [ ] Deploy do bot (auto via `deploy-bot.yml`); teste real: submeter um Ref e ver a
-      notificação chegar ao Discord.
-- [ ] **Done:** um clique no modal chega ao Diogo com (Discord ID, Ref).
+- [x] Deploy do bot (auto via `deploy-bot.yml`).
+- [ ] **Done [needs Diogo]:** submeter um Ref no site e ver a notificação chegar ao
+      Discord. É o único passo que nenhum teste substitui.
+
+**Decisão do canal, tomada a ler o código:** `CLAIM_HELP_WEBHOOK_URL` próprio, **com
+fallback para `ERROR_WEBHOOK_URL`**. Reusar o `errorReporter` inteiro seria errado —
+faz dedup por hash de stack e redação de segredos, e nenhuma das duas coisas se aplica
+a "um comprador precisa de ajuda", que não é um erro. Mas o URL já existe e já é
+vigiado, por isso o fallback faz a coisa funcionar sem tocar no VPS; separar depois é
+só definir a variável nova.
+
+Verificado ponta-a-ponta contra o servidor real (não só a lógica pura): 401 sem token
+e com token inválido, 400 sem Ref, 200 no válido, 200 `deduped:true` no repetido (o
+webhook recebeu 2 mensagens e não 3), OPTIONS 204 com o CORS certo, GET 405. Um Ref
+hostil (`@everyone \`hack\` S-XYZ99`) chega ao Discord como texto inerte
+`everyonehackS-XYZ99`, com `allowed_mentions: {parse: []}` por cima.
 
 ### F4 — Ko-fi e VPS [needs Diogo]
 

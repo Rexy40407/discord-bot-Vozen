@@ -50,6 +50,12 @@ export interface AppConfig {
   // Wave 3 — Discord webhook to send UNEXPECTED errors to (monitoring at
   // scale). URL absent => no sending (opt-in). See src/errorReporter.ts.
   errorWebhookUrl?: string;
+  // Plan 036 — Discord webhook notified when a buyer asks for manual activation
+  // (POST /api/claim-help). Falls back to ERROR_WEBHOOK_URL so the feature works
+  // without new VPS setup; set this to route help requests to their own channel.
+  // Both absent => the endpoint answers 503 and the site falls back to its
+  // copy-this-to-support message. See src/premium/claimHelp.ts.
+  claimHelpWebhookUrl?: string;
   // Per-segment multilingual synthesis (default ON). When ON, texts with more than
   // one language are synthesized PER-SEGMENT (the right voice per language) and the
   // WAVs concatenated — Vozen mixes voices like a real person. Can be FORCED OFF
@@ -350,6 +356,8 @@ export function loadConfig(): AppConfig {
     topggWebhookAllowInsecure: boolEnvDefaultOff('TOPGG_WEBHOOK_ALLOW_INSECURE'),
     topggToken: strEnv('TOPGG_TOKEN', '') || undefined,
     errorWebhookUrl: strEnv('ERROR_WEBHOOK_URL', '') || undefined,
+    claimHelpWebhookUrl:
+      strEnv('CLAIM_HELP_WEBHOOK_URL', '') || strEnv('ERROR_WEBHOOK_URL', '') || undefined,
     // Per-segment multilingual synthesis — ON by default: without this env (or with
     // any value != 'false'), Vozen mixes voices per language. Global kill-switch:
     // MULTILINGUAL_SEGMENTS=false forces a single voice per sentence.

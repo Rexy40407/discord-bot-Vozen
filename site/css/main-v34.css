@@ -1187,6 +1187,13 @@ body > *:not(.grain):not(.orbs):not(.nav):not(.ppmodal) { position: relative; z-
   display: inline-grid; place-items: center; width: 18px; height: 18px; margin-inline-end: 6px;
   border-radius: 50%; background: var(--aqua); color: #04060c; font-size: 11px; font-weight: 700;
 }
+/* Mensagem pronta a colar quando a notificacao nao sai. Selecionavel e monospace: e para
+   ser copiada, e o comprador ja esta a ter um mau dia. */
+.ppmodal__copy {
+  margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2);
+  background: rgba(255, 255, 255, 0.04); color: var(--text-1); font-family: var(--f-mono);
+  font-size: 11.5px; white-space: pre-wrap; word-break: break-word; user-select: all;
+}
 .ppmodal__foot { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12.2px; }
 .ppmodal__foot a { color: var(--text-2); text-decoration: none; }
 .ppmodal__foot a:hover { color: var(--aqua); text-decoration: underline; }
