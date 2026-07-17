@@ -51,7 +51,7 @@ describe('operational security configuration', () => {
   });
 
   it('keeps developer-facing accessibility labels in English', () => {
-    const script = source('site/js/main-v28.js');
+    const script = source('site/js/main-v29.js');
     expect(script).toContain('aria-label="Copy Discord ID"');
     expect(script).not.toContain('aria-label="Copiar Discord ID"');
   });

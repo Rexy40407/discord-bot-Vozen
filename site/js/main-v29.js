@@ -201,6 +201,7 @@
       const annual = b.dataset.bill === "year";
       if (pricingGrid) pricingGrid.classList.toggle("is-annual", annual);
       $$(".bill-toggle__btn").forEach((x) => x.classList.toggle("is-active", x === b));
+      syncKofiLinks();
     }),
   );
 
@@ -212,8 +213,32 @@
     b.addEventListener("click", () => {
       if (proCard) proCard.classList.toggle("is-10", b.dataset.seats === "10");
       $$(".seat-toggle__btn").forEach((x) => x.classList.toggle("is-active", x === b));
+      syncKofiLinks();
     }),
   );
+
+  /* ── link de compra do Ko-fi por estado dos toggles ───────
+     As memberships do Ko-fi só cobram ao MES, por isso os passes anuais sao produtos da
+     Shop, cada um com o seu link proprio. Os toggles acima so trocam uma classe e deixam o
+     CSS mostrar o preco certo — mas um href nao e algo que o CSS mude. Sem isto, quem
+     escolhe "anual" ve €18.99 e aterra na pagina generica, onde esse produto nao existe.
+     Os codigos tem de bater certo com o KOFI_SHOP_MAP do bot: e o direct_link_code que diz
+     ao webhook o que foi comprado (o Ko-fi nao envia o nome do produto). */
+  const KOFI_PAGE = "https://ko-fi.com/rexy00";
+  const KOFI_ANNUAL_PLUS = "https://ko-fi.com/s/e1a8ba4ca5";
+  const KOFI_ANNUAL_PRO_3 = "https://ko-fi.com/s/64240758ef";
+  const KOFI_ANNUAL_PRO_8 = "https://ko-fi.com/s/8f72543ad0";
+  const plusBuy = $(".price-card__buy.js-kofi:not(.price-card__buy--pro)");
+  const proBuy = $(".price-card__buy--pro");
+  function syncKofiLinks() {
+    const annual = !!pricingGrid && pricingGrid.classList.contains("is-annual");
+    if (plusBuy) plusBuy.href = annual ? KOFI_ANNUAL_PLUS : KOFI_PAGE;
+    if (proBuy) {
+      const eight = !!proCard && proCard.classList.contains("is-10");
+      proBuy.href = !annual ? KOFI_PAGE : eight ? KOFI_ANNUAL_PRO_8 : KOFI_ANNUAL_PRO_3;
+    }
+  }
+  syncKofiLinks();
 
   /* ── Painel Premium (login com Discord + estado da conta) ─────────────
      OAuth2 implicit (scope identify): 100% client-side, sem segredo. O token vem no
