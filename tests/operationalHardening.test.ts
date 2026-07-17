@@ -71,8 +71,27 @@ describe('operational security configuration', () => {
     expect(script).toContain('claim.consentRequired');
   });
 
+  // The buyer's own words on 2026-07-17: "não ficou claro para o cliente como resgatar".
+  // He had just bought and could not find the code — the receipt has no field called one,
+  // and the copy told him to look for it there. The code only exists in the receipt's URL
+  // (ko-fi.com/summary/<code>), so the copy has to say exactly that, in every language, or
+  // a paying customer is stranded between paying and being served.
+  it('tells buyers in every language where the code actually is', () => {
+    const bundle = source('site/js/i18n-v25.js');
+    const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
+      window: {},
+    };
+    new Function('window', bundle)(sandbox.window);
+    const all = sandbox.window.VOZEN_I18N ?? {};
+    for (const lang of Object.keys(all)) {
+      for (const key of ['claim.hint', 'claim.placeholder', 'claim.useReceiptCode']) {
+        expect(all[lang][key], `${lang} ${key}`).toContain('ko-fi.com/summary/');
+      }
+    }
+  });
+
   it('translates the consent copy into every advertised site language', () => {
-    const bundle = source('site/js/i18n-v24.js');
+    const bundle = source('site/js/i18n-v25.js');
     const sandbox: { window: { VOZEN_I18N?: Record<string, Record<string, string>> } } = {
       window: {},
     };
