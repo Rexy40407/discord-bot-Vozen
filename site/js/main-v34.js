@@ -503,7 +503,12 @@
       // acontece la: acontece AQUI, no momento em que o passe e ativado. Por isso e aqui que a
       // caixa tem de estar, antes do POST /api/link. Sem ela, o direito mantem-se intacto mesmo
       // depois de usarem o passe. O quando fica registado em kofi_pending.claimed_at.
-      `<label class="ppanel__claimconsent"><input type="checkbox" id="ppClaimConsent"> <span>${t("claim.consent")}</span></label>` +
+      // O reconhecimento dos 14 dias (art. 16(m)) e OBRIGATORIO e fica intacto — o link dos termos
+      // vem A SEGUIR, nao no lugar dele. Um "concordo com os termos" generico nao cumpriria a lei:
+      // exige-se o reconhecimento EXPRESSO de que a ativacao faz perder o direito de retratacao.
+      // O <a> e conteudo interativo, por isso clicar nele abre os termos sem marcar a checkbox
+      // (comportamento do <label> no HTML) — confirmado no browser.
+      `<label class="ppanel__claimconsent"><input type="checkbox" id="ppClaimConsent"> <span>${t("claim.consent")} <a href="/terms" target="_blank" rel="noopener">${t("claim.consentTerms")}</a></span></label>` +
       `<p class="ppanel__claimmsg" id="ppClaimMsg" role="status" aria-live="polite" hidden></p>` +
       // Sits AFTER the status message on purpose: "no purchase found" is the moment someone
       // realises they no longer have the receipt, and the way out should be the next thing they

@@ -8,8 +8,8 @@ const source = (path: string): string =>
 
 // The site's assets are cache-busted by FILENAME (never a query string), so every rename churns
 // these tests too. One constant each: the rename is then a one-line edit here, not a hunt.
-const SITE_JS = 'site/js/main-v33.js';
-const SITE_I18N = 'site/js/i18n-v30.js';
+const SITE_JS = 'site/js/main-v34.js';
+const SITE_I18N = 'site/js/i18n-v31.js';
 const SITE_CSS = 'site/css/main-v34.css';
 
 /** Body of a top-level function in the site bundle, comments stripped. Comments are dropped
@@ -97,6 +97,17 @@ describe('operational security configuration', () => {
     // acknowledgement at all.
     expect(script).toMatch(/if \(!consent \|\| !consent\.checked\)/);
     expect(script).toContain('claim.consentRequired');
+  });
+
+  // A terms link sits BESIDE the 14-day acknowledgement, never in place of it: art. 16(m) needs the
+  // express "I lose my withdrawal right" wording (guarded by the "14" check below), and a generic
+  // "I agree to the terms" would not satisfy it. The link must be a real <a href="/terms"> in the
+  // consent label, not the one-time .js-support wiring, so it renders after the OAuth-time inject.
+  it('links to the terms from the consent line without replacing the acknowledgement', () => {
+    const card = fnSource(source(SITE_JS), 'function claimCard()');
+    expect(card).toContain('claim.consent'); // acknowledgement kept
+    expect(card).toContain('claim.consentTerms'); // link label
+    expect(card).toMatch(/<a href="\/terms"/);
   });
 
   // The claim field takes the whole receipt URL now (extractReceiptCode, src/premium/claim.ts),
@@ -233,6 +244,7 @@ describe('operational security configuration', () => {
       // are waiving has not knowingly waived it.
       expect(all[lang]['claim.consent'], `${lang} claim.consent`).toBeTruthy();
       expect(all[lang]['claim.consentRequired'], `${lang} claim.consentRequired`).toBeTruthy();
+      expect(all[lang]['claim.consentTerms'], `${lang} claim.consentTerms`).toBeTruthy();
       expect(all[lang]['claim.consent'], `${lang} mentions the 14 days`).toContain('14');
     }
   });
