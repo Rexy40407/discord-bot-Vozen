@@ -473,11 +473,13 @@ body > *:not(.grain):not(.orbs):not(.nav):not(.ppmodal) { position: relative; z-
 .btn--sm { padding: 9px 18px; font-size: 15px; }
 .btn--lg { padding: 19px 44px; font-size: 19px; }
 .btn--primary {
-  /* Full blue->teal gradient: no background-size crop. A 160% size at position 0% 0%
-     showed only the top-left (blue) ~62% of the gradient, so the button read as flat
-     blue and never reached the teal end — nothing animated the position to justify it. */
-  color: #fff; background: var(--grad-brand);
-  box-shadow: 0 10px 34px -8px rgba(102, 114, 255, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  /* Login/CTA gradient: clean sky-blue -> teal. The brand blurple (#6672ff) muddied the
+     transition and read as an off "bad blue" on the left; a sky-blue start flows clean
+     into the teal by ~62%. Dark teal text/icon for contrast on the light fill; teal glow.
+     The logged-in account chip (.nav__login--account) overrides bg+color, so it is
+     unaffected. --grad-brand stays as-is for the rest of the site (text, avatars, glows). */
+  color: #04241f; background: linear-gradient(115deg, #2ea6ff 0%, #2ee6c8 62%);
+  box-shadow: 0 10px 34px -8px rgba(46, 230, 200, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 /* moving sheen */
 .btn--primary::after {
