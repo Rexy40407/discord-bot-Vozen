@@ -25,7 +25,6 @@ import { pcmToWavFile } from '../../voice/recorder';
 import { hasSttConsent, grantSttConsent, revokeSttConsent } from '../../store/sttConsent';
 import { isGuildPremium } from '../../store/premium';
 import { evaluateTranscribeStart, shouldAutoStop, resolveTranscribeLang } from '../transcribeGate';
-import { isCloneRecording } from '../../voice/exclusivity';
 import { sanitizeSpeakerName } from '../../language/speakerName';
 import { localeFor, localeForUser, reply } from '../helpers';
 import { t } from '../../i18n/index';
@@ -101,10 +100,6 @@ export async function handleTranscribe(
     sidecarAvailable: cmd !== null,
     botInVoice: connection !== null,
     alreadyRunning: activeSessions.has(guildId) || startingGuilds.has(guildId),
-    // One microphone per call: a clone recording ALWAYS re-deafens the bot when it ends,
-    // which would silently kill the session we are about to start (it would keep running
-    // and hear nothing). Take turns instead — see voice/exclusivity.ts.
-    cloneRecording: isCloneRecording(guildId),
     // Peek WITHOUT reserving (synchronous, no IO — evaluateTranscribeStart must stay pure).
     // The real reservation (tryAcquire) only happens after the gate says 'ok', further below.
     atCapacity: globalSttSemaphore.available <= 0,
@@ -116,7 +111,6 @@ export async function handleTranscribe(
       unavailable: 'stt.unavailable',
       notInVoice: 'stt.notInVoice',
       alreadyRunning: 'stt.alreadyRunning',
-      busyClone: 'stt.busyClone',
       atCapacity: 'stt.atCapacity',
     }[verdict];
     await reply(i, t(key, locale));
@@ -132,8 +126,8 @@ export async function handleTranscribe(
     return;
   }
   // Reserve the guild NOW (before any await) — two nearly simultaneous /transcribe start
-  // both passed the gate above and duplicated listeners (same pattern as the
-  // activeCloneRecordings guard in clone). The finally covers EVERY early-return below
+  // both passed the gate above and duplicated listeners without this reservation. The
+  // finally covers EVERY early-return below
   // (noChannel, notInVoice) and the happy path — as soon as activeSessions.set runs,
   // that entry becomes enough to count as "already running".
   startingGuilds.add(guildId);
@@ -310,20 +304,6 @@ export async function handleTranscribe(
  * -effort and idempotent (no-op if there was no session) — does NOT attempt `rejoin` (the connection
  * has already died at that point) nor announce in the channel, unlike stopSession.
  */
-/**
- * Is this guild transcribing (or about to)? The counterpart of `isCloneRecording`: the bot
- * has ONE microphone, so /voice clone record must refuse while a session holds it —
- * otherwise the clone's finally re-deafens the bot and the session goes deaf without
- * noticing. `startingGuilds` is included so the window between "start accepted" and
- * `activeSessions.set` is covered too.
- *
- * Read from the session state that already exists rather than mirroring it into
- * voice/exclusivity.ts — two copies of the same truth would eventually disagree.
- */
-export function isTranscribing(guildId: string): boolean {
-  return activeSessions.has(guildId) || startingGuilds.has(guildId);
-}
-
 export function stopTranscriptionForGuild(guildId: string): void {
   const a = activeSessions.get(guildId);
   if (!a) return;

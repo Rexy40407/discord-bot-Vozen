@@ -210,46 +210,6 @@ export default {
   'voice.effect.set':
     '✅ 语音效果已设为 **{effect}**——你的消息现在会带着该效果播放。用 `/voice effect none` 关闭它。',
   'voice.effect.cleared': '✅ 已移除语音效果——恢复干净的声音。',
-  'clone.locked': '🔒 语音克隆是 Premium 功能（它需要真实的算力）。查看 `/premium`。',
-  'clone.notInVoice': '你需要 **和我在同一个** 语音频道里才能录制。请先使用 `/join`。',
-  'clone.alreadyRecording': '你已经在录制样本了——先完成它（或按 **⏹️ 停止**）再开始新的。',
-  'clone.recording':
-    '🎙️ **正在录制你的声音**——请一直说话直到它自动停止（约 {target} 秒的语音，停顿不计），或在你说完时按 **⏹️ 停止**。我只会保留你自己的音频。',
-  'clone.recordingOther':
-    '🎙️ **正在录制 {who}**——对方应一直说话直到它自动停止（约 {target} 秒的语音，停顿不计），或按 **⏹️ 停止** 完成。',
-  'clone.recordingProgress': '🔴 录制中…… 已捕获 **{got}s / {target}s** 的语音。继续！',
-  'clone.consentRequest':
-    '🎙️ {invoker} 想录制 **你的声音**（{target} 秒的语音），以创建一个可以用来说话的语音克隆。你允许吗？*（60 秒后过期）*',
-  'clone.consentAllow': '允许',
-  'clone.consentDeny': '拒绝',
-  'clone.consentNotYou': '只有被录制的人才能回答。',
-  'clone.consentGranted': '✅ {who} 已同意——开始录制。',
-  'clone.consentRefused': '✖️ {who} 拒绝了。录制已取消——没有捕获任何音频。',
-  'clone.consentTimeout': '⌛ {who} 未及时回答。录制已取消。',
-  'clone.consentWaiting': '⏳ 正在等待 {who} 在频道中接受……',
-  'clone.targetNotInVoice':
-    '{who} 需要 **和我在同一个** 语音频道里才能被录制。请让对方先使用 `/join`。',
-  'clone.pickFromList': '从建议列表中选择一个人（只有在通话中的人才能被录制）。留空则录制你自己。',
-  'clone.stopBtn': '停止',
-  'clone.stopNotYours': '只有正在录制的人才能停止它。',
-  'clone.tooShort':
-    '我只捕获了 {seconds} 秒的语音——要克隆得好，我至少需要约 {min} 秒（目标是 {target} 秒）。请用 `/voice clone record` 再试一次。',
-  'clone.saved':
-    '✅ 语音样本已保存（{seconds} 秒的语音）。用 `/voice clone use active:true` 开启它。只有你自己能使用你的克隆；随时可用 `/voice clone delete` 删除它。',
-  'clone.savedOther':
-    '✅ 已将 {who} 的 {seconds} 秒语音保存为你自己的克隆。用 `/voice clone use active:true` 开启它；随时可用 `/voice clone delete` 删除它。',
-  'clone.failed': '录制失败——请再试一次。如果一直发生，请重新加入语音频道。',
-  'clone.none': '你还没有语音克隆。用 `/voice clone record` 录制一个（Premium）。',
-  'clone.deleted': '🗑️ 语音克隆已删除——样本和同意记录已移除，不留痕迹。',
-  'clone.revoked': '🛑 已撤回同意——移除了他人用你的声音制作的 {count} 个语音克隆。',
-  'clone.status': '🧬 语音克隆：样本录制于 {date} · 当前 **{state}**。',
-  'clone.stateOn': '已开启',
-  'clone.stateOff': '已关闭',
-  'clone.noSample': '你需要先有一个样本——用 `/voice clone record` 录制一个。',
-  'clone.enabled':
-    '✅ 你的消息现在会用 **你的克隆声音** 朗读。随时可用 `/voice clone use active:false` 关闭。',
-  'clone.enabledNoEngine': '✅ 已保存——但本实例尚未安装克隆引擎，所以你暂时会听到普通声音。',
-  'clone.disabled': '✅ 克隆声音已关闭——恢复为你的普通声音。',
   'voice.effect.locked':
     '🔒 **{effect}** 是 Premium 效果。免费效果：🤖 机器人和 🔊 回声。用 Vozen Premium 解锁全部——查看 `/premium`。',
   'voice.engine.gcloudLocked':
@@ -591,8 +551,4 @@ export default {
   'rand.speak': '我选择……{winner}！',
   'rand.notInVoice': '_（和我一起加入语音频道，下次我就会大声念出来）_',
   'rand.timeout': '⏰ 什么都没选——准备好后再次运行 `/randomizer`。',
-  'stt.busyClone':
-    '⏳ 现在有人正在此通话中录制语音克隆。我只有一个麦克风——等结束后再试一次（几秒钟）。',
-  'clone.busyStt':
-    '⏳ 此通话正在进行转录，而我只有一个麦克风。请先运行 `/transcribe stop`，然后再录制你的克隆。',
 };

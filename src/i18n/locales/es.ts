@@ -234,54 +234,6 @@ export default {
   'voice.effect.set':
     '✅ Efecto de voz configurado como **{effect}**: tus mensajes ahora se reproducen con ese efecto. Usa `/voice effect none` para desactivarlo.',
   'voice.effect.cleared': '✅ Efecto de voz eliminado: voz limpia de nuevo.',
-  'clone.locked':
-    '🔒 La clonación de voz es una función Premium (consume cómputo real). Consulta `/premium`.',
-  'clone.notInVoice':
-    'Tienes que estar en el canal de voz **conmigo** para grabar. Usa `/join` primero.',
-  'clone.alreadyRecording':
-    'Ya estás grabando una muestra: termínala (o pulsa **⏹️ Detener**) antes de empezar otra.',
-  'clone.recording':
-    '🎙️ **Grabando tu voz**: sigue hablando hasta que se detenga solo (~{target}s de habla, las pausas no cuentan), o pulsa **⏹️ Detener** cuando termines. Solo guardo TU audio.',
-  'clone.recordingOther':
-    '🎙️ **Grabando a {who}**: debe seguir hablando hasta que se detenga solo (~{target}s de habla, las pausas no cuentan), o pulsar **⏹️ Detener** para terminar.',
-  'clone.recordingProgress': '🔴 Grabando… **{got}s / {target}s** de habla captados. ¡Sigue!',
-  'clone.consentRequest':
-    '🎙️ {invoker} quiere grabar **tu voz** ({target}s de habla) para crear un clon de voz con el que poder hablar. ¿Lo permites? *(caduca en 60s)*',
-  'clone.consentAllow': 'Permitir',
-  'clone.consentDeny': 'No',
-  'clone.consentNotYou': 'Solo la persona que se va a grabar puede responder a esto.',
-  'clone.consentGranted': '✅ {who} aceptó: empezando la grabación.',
-  'clone.consentRefused': '✖️ {who} rechazó. Grabación cancelada: no se captó ningún audio.',
-  'clone.consentTimeout': '⌛ {who} no respondió a tiempo. Grabación cancelada.',
-  'clone.consentWaiting': '⏳ Esperando a que {who} acepte en el canal…',
-  'clone.targetNotInVoice':
-    '{who} tiene que estar en el canal de voz **conmigo** para ser grabado. Pídele que use `/join` primero.',
-  'clone.pickFromList':
-    'Elige a una persona de la lista de sugerencias (solo se puede grabar a quien esté en la llamada). Déjalo vacío para grabarte a ti mismo.',
-  'clone.stopBtn': 'Detener',
-  'clone.stopNotYours': 'Solo quien está grabando puede detenerlo.',
-  'clone.tooShort':
-    'Solo capté {seconds}s de habla: necesito al menos ~{min}s (el objetivo era {target}s) para clonar bien. Inténtalo de nuevo con `/voice clone record`.',
-  'clone.saved':
-    '✅ Muestra de voz guardada ({seconds}s de habla). Actívala con `/voice clone use active:true`. Solo TÚ puedes usar tu clon; bórralo cuando quieras con `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Guardados {seconds}s de la voz de {who} como TU clon. Actívalo con `/voice clone use active:true`; bórralo cuando quieras con `/voice clone delete`.',
-  'clone.failed':
-    'La grabación falló: inténtalo de nuevo. Si sigue pasando, vuelve a entrar en el canal de voz.',
-  'clone.none': 'Aún no tienes un clon de voz. Graba uno con `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Clon de voz eliminado: muestra y registro de consentimiento eliminados, sin dejar rastro.',
-  'clone.revoked':
-    '🛑 Consentimiento retirado: eliminé {count} clon(es) de voz que otras personas habían hecho de tu voz.',
-  'clone.status': '🧬 Clon de voz: muestra grabada el {date} · actualmente **{state}**.',
-  'clone.stateOn': 'ACTIVADO',
-  'clone.stateOff': 'desactivado',
-  'clone.noSample': 'Primero necesitas una muestra: graba una con `/voice clone record`.',
-  'clone.enabled':
-    '✅ Tus mensajes se leerán a partir de ahora con **tu voz clonada**. Desactívalo cuando quieras con `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Guardado, pero el motor de clonación aún no está instalado en esta instancia, así que por ahora oirás la voz normal.',
-  'clone.disabled': '✅ Voz clonada desactivada: de vuelta a tu voz normal.',
   'voice.effect.locked':
     '🔒 **{effect}** es un efecto Premium. Efectos gratis: 🤖 Robot y 🔊 Echo. Desbloquéalos todos con Vozen Premium: consulta `/premium`.',
   'voice.engine.gcloudLocked':
@@ -663,8 +615,4 @@ export default {
   'rand.speak': 'Elijo… ¡{winner}!',
   'rand.notInVoice': '_(únete a un canal de voz conmigo y la próxima vez lo diré en voz alta)_',
   'rand.timeout': '⏰ Nada elegido: ejecuta `/randomizer` de nuevo cuando quieras.',
-  'stt.busyClone':
-    '⏳ Alguien está grabando un clon de voz en esta llamada ahora mismo. Solo tengo un micrófono: inténtalo otra vez cuando termine (unos segundos).',
-  'clone.busyStt':
-    '⏳ La transcripción está activa en esta llamada y solo tengo un micrófono. Ejecuta `/transcribe stop` primero y luego graba tu clon.',
 };

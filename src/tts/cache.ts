@@ -1,6 +1,5 @@
 // src/tts/cache.ts
 import { createHash } from 'node:crypto';
-import { basename } from 'node:path';
 import {
   existsSync,
   mkdirSync,
@@ -18,21 +17,18 @@ import { metrics } from '../metrics';
 const DEFAULT_MAX_FILES = 500;
 
 /**
- * Namespaces da cache de áudio que podem conter voz CLONADA sintetizada. 'clone' é o
- * óbvio (CloneEngine escreve aqui); 'fx' também, porque o EffectEngine ENVOLVE o
- * CloneEngine — áudio clone+efeito de um utilizador fica cacheado em audio-cache/fx/.
- * ('q'/prosódia NÃO entra: o clone corre a 24k e o ProsodyEngine devolve a base sem
- * cachear nesse sample rate.) As chaves são hashes irreversíveis, por isso não dá para
- * apagar só as de uma pessoa — o direito ao apagamento (RGPD) purga o namespace inteiro.
- * É cache regenerável (re-sintetiza quando preciso).
+ * Audio-cache namespaces produced by a voice EFFECT. 'fx' is where the EffectEngine writes
+ * (robot/echo/deep…). The keys are irreversible hashes, so a single person's entries cannot
+ * be deleted selectively — a full-namespace purge is the only option. It is a regenerable
+ * cache (re-synthesized when needed). ('q'/prosody does NOT belong here: the ProsodyEngine
+ * returns the base without caching at that sample rate.)
  */
-export const CLONE_DERIVED_NAMESPACES = ['clone', 'fx'] as const;
+export const CLONE_DERIVED_NAMESPACES = ['fx'] as const;
 
 /**
- * Apaga do disco todos os namespaces de cache que podem conter voz clonada, dado o
- * diretório raiz da cache (ex.: `<dbDir>/audio-cache`). best-effort — uma pasta em falta
- * ou bloqueada não é fatal (a cache é regenerável). Usado por /voice clone delete e por
- * /privacy erase para não deixar áudio biométrico derivado para trás.
+ * Deletes from disk every effect-derived cache namespace, given the cache root directory
+ * (e.g. `<dbDir>/audio-cache`). best-effort — a missing or locked folder is not fatal (the
+ * cache is regenerable). The keys are hashes, so a whole namespace is cleared at once.
  */
 export function purgeCloneDerivedAudio(cacheRoot: string): void {
   for (const ns of CLONE_DERIVED_NAMESPACES) {
@@ -62,14 +58,6 @@ export function cacheKey(req: SynthRequest): string {
   // isso TEM de separar, senão serviria áudio gtts a quem pediu Google HD (e vice-versa).
   if (req.engine === 'piper' || req.engine === 'kokoro' || req.engine === 'gcloud')
     full = `${full} ${req.engine}`;
-  // CLONE na chave: APPEND-only e SO quando há voz clonada (cloneRef). Assim o caminho
-  // normal (undefined) dá a MESMA chave das requests antigas (caches base/gtts/piper
-  // intactas), e uma voz clonada fica num espaço de chaves SEPARADO — crítico por dois
-  // motivos: (1) re-gravar muda o basename versionado -> chave nova -> não serve a voz
-  // velha; (2) evita que o áudio clonado de um user seja servido a outro (o EffectEngine,
-  // que envolve o CloneEngine, keia por esta função). O prefixo 'clone:' não colide com
-  // 'piper'.
-  if (req.cloneRef) full = `${full} clone:${basename(req.cloneRef)}`;
   return createHash('sha1').update(full, 'utf8').digest('hex');
 }
 
@@ -151,8 +139,8 @@ export class AudioCache {
     // Isto também evita o rename SOBRE um ficheiro aberto (que no Windows pode dar
     // EPERM): só renomeamos para um destino que ainda não existe.
     if (existsSync(dest)) return dest;
-    // A pasta pode ter sido REMOVIDA em runtime (ex.: o purge de privacidade do
-    // /voice clone delete apaga audio-cache/clone/ inteira). Detecao BARATA: so
+    // A pasta pode ter sido REMOVIDA em runtime (ex.: apagada por fora do processo).
+    // Detecao BARATA: so
     // recria (e ZERA o contador — a pasta nova esta vazia) se realmente sumiu; num
     // dir existente o mkdirSync recursivo era um no-op, por isso saltamo-lo.
     if (!existsSync(this.dir)) {

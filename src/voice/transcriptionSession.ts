@@ -116,8 +116,8 @@ const STT_ORPHAN_MIN_AGE_MS = 5 * 60_000;
  * Startup reconciliation (DATA-hygiene): deletes STT temporary WAVs that were left
  * ORPHANED in the tmpdir. handleUtterance deletes each WAV in the `finally`, but a SIGKILL
  * (OOM/deploy) between `toWav` and the `finally`, or an `rmSync` blocked on Windows, leaves
- * consented recording on disk beyond the "deleted immediately" promised in PRIVACY §2.4 — the
- * same class of failure the clone sweep (voiceCloneSweep) covers and this one did not.
+ * consented recording on disk beyond the "deleted immediately" promised in PRIVACY §2.3 —
+ * which this startup sweep reconciles.
  *
  * Safe for two reasons: (1) the `vozen-stt-` prefix is the bot's own; (2) the age guard
  * (>5 min) never catches a live WAV, even if another Vozen process shares the tmpdir.

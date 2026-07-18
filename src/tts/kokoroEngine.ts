@@ -3,9 +3,9 @@
 // KOKORO TTS engine (kokoro-onnx, ONNX/CPU) via a persistent Python sidecar
 // (tools/kokoro_server.py). It is a LEAF engine: when it fails (sidecar down, timeout,
 // unmapped language) it THROWS — on purpose, so the RouterEngine that wraps it falls
-// back to gTTS. It does NOT do an internal fallback (unlike CloneEngine, which wraps the
-// normal voice). Process management mirrored from cloneEngine, but SERIAL (the sidecar
-// reads stdin one line at a time), without GPU serialization.
+// back to gTTS. It does NOT do an internal fallback — it is a pure LEAF, unlike the
+// decorator engines that wrap a fallback. Process management uses a persistent sidecar,
+// but SERIAL (the sidecar reads stdin one line at a time), without GPU serialization.
 //
 // Own cache (namespace 'kokoro'): the same phrase/voice is reused; the LRU cleans it.
 
@@ -16,7 +16,6 @@ import { tmpdir } from 'node:os';
 import { AudioCache, cacheKey } from './cache';
 import { lowerAllCapsRuns } from './deCaps';
 import type { SynthRequest, TTSEngine } from './engine';
-import { parseCommand } from './cloneEngine';
 import { langKeyOfModel } from '../language/spokenPhrases';
 import { log } from '../logging/logger';
 
@@ -41,6 +40,16 @@ export const KOKORO_VOICES: Record<string, { lang: string; voice: string }> = {
   pt: { lang: 'pt-br', voice: 'pf_dora' },
   ja: { lang: 'ja', voice: 'jf_alpha' },
 };
+
+/**
+ * Splits a command "python.exe script.py --flag" into [exe, ...args] respecting path
+ * quotes (Windows: "C:\Program Files\..."). PURE.
+ */
+export function parseCommand(cmd: string): { exe: string; args: string[] } {
+  const parts = cmd.match(/"[^"]+"|\S+/g) ?? [];
+  const clean = parts.map((p) => (p.startsWith('"') && p.endsWith('"') ? p.slice(1, -1) : p));
+  return { exe: clean[0] ?? '', args: clean.slice(1) };
+}
 
 /**
  * Resolves the sidecar command: uses KOKORO_CMD if given, otherwise AUTO-DETECTS the

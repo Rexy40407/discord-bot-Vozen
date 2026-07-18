@@ -101,55 +101,6 @@ export default {
   'voice.effect.set':
     '✅ Stemeffect ingesteld op **{effect}** — je berichten worden nu met dat effect afgespeeld. Gebruik `/voice effect none` om het uit te zetten.',
   'voice.effect.cleared': '✅ Stemeffect verwijderd — weer een schone stem.',
-  'clone.locked':
-    '🔒 Stemklonen is een Premium-functie (het kost echte rekenkracht). Bekijk `/premium`.',
-  'clone.notInVoice':
-    'Je moet **samen met mij** in het spraakkanaal zitten om op te nemen. Gebruik eerst `/join`.',
-  'clone.alreadyRecording':
-    'Je bent al een fragment aan het opnemen — maak het af (of druk op **⏹️ Stop**) voordat je een nieuwe start.',
-  'clone.recording':
-    '🎙️ **Je stem wordt opgenomen** — blijf praten tot het vanzelf stopt (~{target}s spraak, pauzes tellen niet mee), of druk op **⏹️ Stop** wanneer je klaar bent. Ik bewaar alleen JOUW audio.',
-  'clone.recordingOther':
-    '🎙️ **{who} wordt opgenomen** — die moet blijven praten tot het vanzelf stopt (~{target}s spraak, pauzes tellen niet mee), of op **⏹️ Stop** drukken om te stoppen.',
-  'clone.recordingProgress':
-    '🔴 Aan het opnemen… **{got}s / {target}s** spraak vastgelegd. Ga zo door!',
-  'clone.consentRequest':
-    '🎙️ {invoker} wil **jouw stem** opnemen ({target}s spraak) om er een stemkloon mee te bouwen om mee te praten. Sta je dat toe? *(verloopt over 60s)*',
-  'clone.consentAllow': 'Toestaan',
-  'clone.consentDeny': 'Nee',
-  'clone.consentNotYou': 'Alleen de persoon die wordt opgenomen kan hierop antwoorden.',
-  'clone.consentGranted': '✅ {who} ging akkoord — de opname begint.',
-  'clone.consentRefused': '✖️ {who} weigerde. Opname geannuleerd — er is geen audio vastgelegd.',
-  'clone.consentTimeout': '⌛ {who} antwoordde niet op tijd. Opname geannuleerd.',
-  'clone.consentWaiting': '⏳ Wachten tot {who} in het kanaal accepteert…',
-  'clone.targetNotInVoice':
-    '{who} moet **samen met mij** in het spraakkanaal zitten om opgenomen te worden. Vraag ze om eerst `/join` te gebruiken.',
-  'clone.pickFromList':
-    'Kies een persoon uit de lijst met suggesties (alleen mensen in de call kunnen worden opgenomen). Laat het leeg om jezelf op te nemen.',
-  'clone.stopBtn': 'Stop',
-  'clone.stopNotYours': 'Alleen degene die opneemt kan het stoppen.',
-  'clone.tooShort':
-    'Ik heb maar {seconds}s spraak opgevangen — ik heb minstens ~{min}s nodig (het doel was {target}s) om goed te klonen. Probeer het opnieuw met `/voice clone record`.',
-  'clone.saved':
-    '✅ Stemfragment opgeslagen ({seconds}s spraak). Zet het aan met `/voice clone use active:true`. Alleen JIJ kunt je kloon gebruiken; verwijder hem altijd met `/voice clone delete`.',
-  'clone.savedOther':
-    "✅ {seconds}s van {who}'s stem opgeslagen als JOUW kloon. Zet het aan met `/voice clone use active:true`; verwijder hem altijd met `/voice clone delete`.",
-  'clone.failed':
-    'De opname is mislukt — probeer het opnieuw. Als het blijft gebeuren, sluit je opnieuw bij het spraakkanaal aan.',
-  'clone.none': 'Je hebt nog geen stemkloon. Neem er een op met `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Stemkloon verwijderd — fragment en toestemmingsregistratie verwijderd, geen spoor bewaard.',
-  'clone.revoked':
-    '🛑 Toestemming ingetrokken — {count} stemkloon/-klonen verwijderd die anderen van jouw stem hadden gemaakt.',
-  'clone.status': '🧬 Stemkloon: fragment opgenomen op {date} · momenteel **{state}**.',
-  'clone.stateOn': 'AAN',
-  'clone.stateOff': 'uit',
-  'clone.noSample': 'Je hebt eerst een fragment nodig — neem er een op met `/voice clone record`.',
-  'clone.enabled':
-    '✅ Je berichten worden nu voorgelezen met **je gekloonde stem**. Zet het altijd uit met `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Opgeslagen — maar de kloonengine is nog niet op deze instantie geïnstalleerd, dus voorlopig hoor je de normale stem.',
-  'clone.disabled': '✅ Gekloonde stem uit — terug naar je normale stem.',
   'voice.effect.locked':
     '🔒 **{effect}** is een Premium-effect. Gratis effecten: 🤖 Robot en 🔊 Echo. Ontgrendel ze allemaal met Vozen Premium — bekijk `/premium`.',
   'voice.engine.gcloudLocked':
@@ -666,8 +617,4 @@ export default {
   'rand.notInVoice':
     '_(sluit je bij een spraakkanaal aan samen met mij en dan zeg ik het de volgende keer hardop)_',
   'rand.timeout': '⏰ Niets gekozen — gebruik `/randomizer` opnieuw wanneer je klaar bent.',
-  'stt.busyClone':
-    '⏳ Iemand neemt op dit moment een stemkloon op in dit gesprek. Ik heb maar één microfoon — probeer het opnieuw zodra het klaar is (een paar seconden).',
-  'clone.busyStt':
-    '⏳ De transcriptie loopt in dit gesprek en ik heb maar één microfoon. Voer eerst `/transcribe stop` uit en neem daarna je kloon op.',
 };

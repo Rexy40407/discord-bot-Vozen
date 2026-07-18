@@ -98,54 +98,6 @@ export default {
   'voice.effect.set':
     '✅ Balss efekts iestatīts uz **{effect}** — tavas ziņas tagad tiek atskaņotas ar šo efektu. Izmanto `/voice effect none`, lai to izslēgtu.',
   'voice.effect.cleared': '✅ Balss efekts noņemts — atkal tīra balss.',
-  'clone.locked':
-    '🔒 Balss klonēšana ir Premium funkcija (tā maksā reālu skaitļošanas jaudu). Skati `/premium`.',
-  'clone.notInVoice':
-    'Lai ierakstītu, tev jābūt balss kanālā **kopā ar mani**. Vispirms izmanto `/join`.',
-  'clone.alreadyRecording':
-    'Tu jau ieraksti paraugu — pabeidz to (vai nospied **⏹️ Apturēt**), pirms sāc citu.',
-  'clone.recording':
-    '🎙️ **Ierakstu tavu balsi** — turpini runāt, līdz tas apstājas pats (~{target}s runas, pauzes neskaitās), vai nospied **⏹️ Apturēt**, kad esi pabeidzis. Es saglabāju tikai TAVU audio.',
-  'clone.recordingOther':
-    '🎙️ **Ierakstu {who}** — viņam jāturpina runāt, līdz tas apstājas pats (~{target}s runas, pauzes neskaitās), vai jānospiež **⏹️ Apturēt**, lai pabeigtu.',
-  'clone.recordingProgress': '🔴 Ierakstu… uztverti **{got}s / {target}s** runas. Turpini!',
-  'clone.consentRequest':
-    '🎙️ {invoker} vēlas ierakstīt **tavu balsi** ({target}s runas), lai izveidotu balss klonu, ar ko runāt. Vai atļauj? *(beidzas pēc 60s)*',
-  'clone.consentAllow': 'Atļaut',
-  'clone.consentDeny': 'Nē',
-  'clone.consentNotYou': 'Uz to var atbildēt tikai ierakstāmā persona.',
-  'clone.consentGranted': '✅ {who} piekrita — sāku ierakstu.',
-  'clone.consentRefused': '✖️ {who} atteicās. Ieraksts atcelts — nekāds audio netika uztverts.',
-  'clone.consentTimeout': '⌛ {who} neatbildēja laikā. Ieraksts atcelts.',
-  'clone.consentWaiting': '⏳ Gaidu, kamēr {who} piekritīs kanālā…',
-  'clone.targetNotInVoice':
-    '{who} jābūt balss kanālā **kopā ar mani**, lai varētu ierakstīt. Palūdz viņam vispirms izmantot `/join`.',
-  'clone.pickFromList':
-    'Izvēlies personu no ieteikumu saraksta (ierakstīt var tikai tos, kas ir sarunā). Atstāj tukšu, lai ierakstītu sevi.',
-  'clone.stopBtn': 'Apturēt',
-  'clone.stopNotYours': 'Apturēt var tikai tas, kurš ieraksta.',
-  'clone.tooShort':
-    'Es uztvēru tikai {seconds}s runas — labai klonēšanai vajag vismaz ~{min}s (mērķis bija {target}s). Mēģini vēlreiz ar `/voice clone record`.',
-  'clone.saved':
-    '✅ Balss paraugs saglabāts ({seconds}s runas). Ieslēdz to ar `/voice clone use active:true`. Tikai TU vari izmantot savu klonu; izdzēs to jebkurā laikā ar `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Saglabāti {seconds}s no {who} balss kā TAVS klons. Ieslēdz to ar `/voice clone use active:true`; izdzēs jebkurā laikā ar `/voice clone delete`.',
-  'clone.failed':
-    'Ieraksts neizdevās — mēģini vēlreiz. Ja tas atkārtojas, pievienojies balss kanālam no jauna.',
-  'clone.none': 'Tev vēl nav balss klona. Ieraksti to ar `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Balss klons izdzēsts — paraugs un piekrišanas ieraksts noņemti, nekādu pēdu.',
-  'clone.revoked':
-    '🛑 Piekrišana atsaukta — noņēmu {count} balss klonu(s), ko citi bija izveidojuši no tavas balss.',
-  'clone.status': '🧬 Balss klons: paraugs ierakstīts {date} · pašlaik **{state}**.',
-  'clone.stateOn': 'IESLĒGTS',
-  'clone.stateOff': 'izslēgts',
-  'clone.noSample': 'Vispirms tev vajag paraugu — ieraksti to ar `/voice clone record`.',
-  'clone.enabled':
-    '✅ Tavas ziņas tagad tiks nolasītas ar **tavu klonēto balsi**. Izslēdz jebkurā laikā ar `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Saglabāts — bet klonēšanas dzinis šajā instancē vēl nav uzstādīts, tāpēc pagaidām dzirdēsi parasto balsi.',
-  'clone.disabled': '✅ Klonētā balss izslēgta — atpakaļ pie tavas parastās balss.',
   'voice.effect.locked':
     '🔒 **{effect}** ir Premium efekts. Bezmaksas efekti: 🤖 Robot un 🔊 Echo. Atbloķē visus ar Vozen Premium — skati `/premium`.',
   'voice.engine.gcloudLocked':
@@ -655,8 +607,4 @@ export default {
   'rand.notInVoice':
     '_(pievienojies balss kanālam kopā ar mani, un nākamreiz es to pateikšu skaļi)_',
   'rand.timeout': '⏰ Nekas nav izvēlēts — palaid `/randomizer` vēlreiz, kad būsi gatavs.',
-  'stt.busyClone':
-    '⏳ Kāds šobrīd šajā zvanā ieraksta balss klonu. Man ir tikai viens mikrofons — mēģini vēlreiz, kad būs pabeigts (dažas sekundes).',
-  'clone.busyStt':
-    '⏳ Šajā zvanā darbojas transkripcija, un man ir tikai viens mikrofons. Vispirms palaid `/transcribe stop`, tad ieraksti savu klonu.',
 };

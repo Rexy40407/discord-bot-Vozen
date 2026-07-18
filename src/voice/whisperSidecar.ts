@@ -5,7 +5,7 @@
 // anything is missing it returns null (=> STT stays INERT; the transcription command
 // replies "unavailable" instead of crashing). The sidecar (tools/whisper_sidecar.py) is a
 // PERSISTENT process that loads the faster-whisper model ONCE and transcribes N requests
-// (clone/kokoro pattern).
+// (kokoro sidecar pattern).
 //
 // Spike (docs/SPIKE-STT.md): faster-whisper `base` int8 on the VPS = ~2.2s per ~13.6s of
 // speech, well below the 5s threshold. `base` is the default (best accuracy; latency to spare).

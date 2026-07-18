@@ -6,9 +6,8 @@
 // Pre-speech silence is ignored; blips that are too short (< `minUtteranceMs` of SPEECH) are
 // discarded (noise rejection). PURE/testable (fed with buffers), no IO nor network.
 //
-// Differs from the recorder's VoicedCollector (which discards silence to gather a 15s clone
-// sample): here we preserve the INTERNAL silence of the utterance (natural boundaries for
-// Whisper) and emit per-utterance instead of a single buffer.
+// This collector preserves the INTERNAL silence of the utterance (natural boundaries for
+// Whisper) and emits per-utterance instead of a single buffer.
 
 export interface Utterance {
   /** PCM of the utterance (from the 1st voiced frame to the gap that closed it). */

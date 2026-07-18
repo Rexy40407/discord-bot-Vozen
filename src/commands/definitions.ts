@@ -307,55 +307,6 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
             .addChoices(...EFFECT_CHOICES),
         ),
     )
-    // /voice clone — clones YOUR OWN voice (consent-first: you only record yourself, only you
-    // use your clone, deletable at any time). 💎 Premium.
-    .addSubcommandGroup((g) =>
-      g
-        .setName('clone')
-        .setDescription('Clone a voice (💎 Premium, consent-first)')
-        .addSubcommand((s) =>
-          s
-            .setName('record')
-            .setDescription(
-              'Record a voice in the call to build your clone (yours, or someone who agrees)',
-            )
-            // STRING + autocomplete (not addUserOption): Discord's native user
-            // selector only shows cached/recent members. Here we list EXACTLY who is
-            // in the call with you — the only valid targets (recording requires being in the bot's channel).
-            .addStringOption((o) =>
-              o
-                .setName('user')
-                .setDescription(
-                  'Whose voice to clone — pick someone in the call (empty = yourself). They must agree.',
-                )
-                .setRequired(false)
-                .setAutocomplete(true),
-            )
-            .addIntegerOption((o) =>
-              o
-                .setName('seconds')
-                .setDescription('Seconds of speech to capture (5–30, default 15)')
-                .setMinValue(5)
-                .setMaxValue(30)
-                .setRequired(false),
-            ),
-        )
-        .addSubcommand((s) =>
-          s
-            .setName('use')
-            .setDescription('Speak with your cloned voice on/off')
-            .addBooleanOption((o) =>
-              o
-                .setName('active')
-                .setDescription('true = your messages use your cloned voice')
-                .setRequired(true),
-            ),
-        )
-        .addSubcommand((s) => s.setName('status').setDescription('Your voice-clone status'))
-        .addSubcommand((s) =>
-          s.setName('delete').setDescription('Delete your voice sample and clone'),
-        ),
-    )
     .toJSON(),
   new SlashCommandBuilder()
     .setName('config')
@@ -731,38 +682,11 @@ const DM_CAPABLE_COMMANDS = new Set(['invite', 'vote', 'help', 'uptime', 'botsta
 // Guild context makes Discord HIDE them in DM. Centralized by name (instead of repeating
 // .setContexts() in ~10 builders) so no new command is forgotten. Also covers
 // the "Speak" context-menu (needs a voice channel).
-/**
- * Removes the `clone` subcommand group from /voice. The clone engine (Chatterbox)
- * needs GPU/RAM the hosted bot doesn't have — it doesn't even load on the VPS (see
- * docs/SPIKE-CLONE.md). Showing the command would expose a feature that only returns the normal voice.
- * Anyone who already recorded a sample can still delete it via /privacy erase (eraseUser
- * deletes user_clone + the .wav), so hiding the group is compliance-safe. PURE.
- */
-export function withoutCloneGroup(
-  defs: RESTPostAPIApplicationCommandsJSONBody[],
-): RESTPostAPIApplicationCommandsJSONBody[] {
-  return defs.map((def) => {
-    const options = (def as { options?: Array<{ name?: string }> }).options;
-    if (def.name !== 'voice' || !Array.isArray(options)) return def;
-    // Cast on the return: we only filtered options (without changing their shape), the structure stays.
-    return {
-      ...def,
-      options: options.filter((o) => o.name !== 'clone'),
-    } as RESTPostAPIApplicationCommandsJSONBody;
-  });
-}
-
-// The clone only appears where the engine can run: CLONE_ENABLED=1 (a REAL environment
-// variable, e.g. on a machine with a GPU). On the hosted bot it's off by default -> group hidden.
-const CLONE_ENABLED = process.env.CLONE_ENABLED === '1';
-
 const commandDefsWithContext: RESTPostAPIApplicationCommandsJSONBody[] = commandDefsRaw.map(
   (def) =>
     DM_CAPABLE_COMMANDS.has(def.name) ? def : { ...def, contexts: [InteractionContextType.Guild] },
 );
-export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = CLONE_ENABLED
-  ? commandDefsWithContext
-  : withoutCloneGroup(commandDefsWithContext);
+export const commandDefs: RESTPostAPIApplicationCommandsJSONBody[] = commandDefsWithContext;
 
 // OWNER-ONLY commands. They do NOT go into commandDefs (global): they're registered separately, as
 // GUILD commands, only in OWNER_GUILD_ID (registerOwnerCommands). This way the public doesn't even

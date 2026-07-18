@@ -99,54 +99,6 @@ export default {
   'voice.effect.set':
     '✅ Ääniefektiksi asetettu **{effect}** — viestisi toistetaan nyt tällä efektillä. Käytä `/voice effect none` poistaaksesi sen käytöstä.',
   'voice.effect.cleared': '✅ Ääniefekti poistettu — taas puhdas ääni.',
-  'clone.locked':
-    '🔒 Äänen kloonaus on Premium-ominaisuus (se maksaa oikeaa laskentatehoa). Katso `/premium`.',
-  'clone.notInVoice':
-    'Sinun täytyy olla puhekanavalla **kanssani** äänittääksesi. Käytä ensin `/join`.',
-  'clone.alreadyRecording':
-    'Äänität jo näytettä — lopeta se (tai paina **⏹️ Pysäytä**) ennen kuin aloitat uuden.',
-  'clone.recording':
-    '🎙️ **Äänitän ääntäsi** — jatka puhumista kunnes se pysähtyy itsestään (~{target}s puhetta, tauot eivät lasketa), tai paina **⏹️ Pysäytä** kun olet valmis. Säilytän vain SINUN äänesi.',
-  'clone.recordingOther':
-    '🎙️ **Äänitän: {who}** — hänen tulisi jatkaa puhumista kunnes se pysähtyy itsestään (~{target}s puhetta, tauot eivät lasketa), tai painaa **⏹️ Pysäytä** lopettaakseen.',
-  'clone.recordingProgress': '🔴 Äänitetään… **{got}s / {target}s** puhetta napattu. Jatka!',
-  'clone.consentRequest':
-    '🎙️ {invoker} haluaa äänittää **sinun äänesi** ({target}s puhetta) rakentaakseen äänikloonin, jolla voi puhua. Sallitko sen? *(vanhenee 60s kuluttua)*',
-  'clone.consentAllow': 'Salli',
-  'clone.consentDeny': 'Ei',
-  'clone.consentNotYou': 'Vain äänitettävä henkilö voi vastata tähän.',
-  'clone.consentGranted': '✅ {who} suostui — aloitetaan äänitys.',
-  'clone.consentRefused': '✖️ {who} kieltäytyi. Äänitys peruutettu — ääntä ei napattu.',
-  'clone.consentTimeout': '⌛ {who} ei vastannut ajoissa. Äänitys peruutettu.',
-  'clone.consentWaiting': '⏳ Odotetaan, että {who} hyväksyy kanavalla…',
-  'clone.targetNotInVoice':
-    '{who} täytyy olla puhekanavalla **kanssani**, jotta hänet voidaan äänittää. Pyydä häntä käyttämään `/join` ensin.',
-  'clone.pickFromList':
-    'Valitse henkilö ehdotuslistasta (vain puhelussa olevat voidaan äänittää). Jätä tyhjäksi äänittääksesi itsesi.',
-  'clone.stopBtn': 'Pysäytä',
-  'clone.stopNotYours': 'Vain äänittävä henkilö voi pysäyttää sen.',
-  'clone.tooShort':
-    'Sain vain {seconds}s puhetta — tarvitsen vähintään ~{min}s (tavoite oli {target}s) kloonatakseni hyvin. Yritä uudelleen komennolla `/voice clone record`.',
-  'clone.saved':
-    '✅ Ääninäyte tallennettu ({seconds}s puhetta). Ota se käyttöön komennolla `/voice clone use active:true`. Vain SINÄ voit käyttää klooniasi; poista se milloin tahansa komennolla `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Tallennettu {seconds}s henkilön {who} ääntä SINUN kloonaksesi. Ota se käyttöön komennolla `/voice clone use active:true`; poista se milloin tahansa komennolla `/voice clone delete`.',
-  'clone.failed':
-    'Äänitys epäonnistui — yritä uudelleen. Jos ongelma toistuu, liity uudelleen puhekanavalle.',
-  'clone.none':
-    'Sinulla ei ole vielä äänikloonia. Äänitä sellainen komennolla `/voice clone record` (Premium).',
-  'clone.deleted': '🗑️ Äänikloni poistettu — näyte ja suostumustietue poistettu, jälkiä ei jäänyt.',
-  'clone.revoked':
-    '🛑 Suostumus peruutettu — poistin {count} äänikloonia, jotka muut olivat tehneet äänestäsi.',
-  'clone.status': '🧬 Äänikloni: näyte äänitetty {date} · tällä hetkellä **{state}**.',
-  'clone.stateOn': 'PÄÄLLÄ',
-  'clone.stateOff': 'pois päältä',
-  'clone.noSample': 'Tarvitset ensin näytteen — äänitä sellainen komennolla `/voice clone record`.',
-  'clone.enabled':
-    '✅ Viestisi luetaan nyt **kloonatulla äänelläsi**. Poista käytöstä milloin tahansa komennolla `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Tallennettu — mutta kloonausmoottoria ei ole vielä asennettu tähän instanssiin, joten kuulet toistaiseksi normaalin äänen.',
-  'clone.disabled': '✅ Kloonattu ääni pois päältä — takaisin normaaliin ääneesi.',
   'voice.effect.locked':
     '🔒 **{effect}** on Premium-efekti. Ilmaiset efektit: 🤖 Robot ja 🔊 Echo. Avaa kaikki Vozen Premiumilla — katso `/premium`.',
   'voice.engine.gcloudLocked':
@@ -660,8 +612,4 @@ export default {
   'rand.speak': 'Valitsen… {winner}!',
   'rand.notInVoice': '_(liity puhekanavalle kanssani niin sanon sen ääneen ensi kerralla)_',
   'rand.timeout': '⏰ Mitään ei valittu — suorita `/randomizer` uudelleen kun olet valmis.',
-  'stt.busyClone':
-    '⏳ Joku nauhoittaa juuri nyt äänikloonia tässä puhelussa. Minulla on vain yksi mikrofoni — yritä uudelleen, kun se on valmis (muutama sekunti).',
-  'clone.busyStt':
-    '⏳ Litterointi on käynnissä tässä puhelussa, ja minulla on vain yksi mikrofoni. Aja ensin `/transcribe stop` ja nauhoita sitten kloonisi.',
 };

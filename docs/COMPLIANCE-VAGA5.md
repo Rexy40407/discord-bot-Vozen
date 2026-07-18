@@ -63,7 +63,7 @@
 
 | Item | Estado do portão |
 |---|---|
-| Consentimento | **Explícito e prévio por-locutor** (padrão consent-first do clone: botão que só o próprio carrega, `consent_at`). (Art. 1–3.) |
+| Consentimento | **Explícito e prévio por-locutor** (padrão consent-first: botão que só o próprio carrega, `consent_at`). (Art. 1–3.) |
 | Transparência | Anúncio no canal ao **arrancar/parar** + auto-stop quando não resta consentido; o des-deafen do bot é parte do indicador. |
 | Áudio | **Nunca persistido** (memória). Whisper **local** = sem partilha com terceiros, sem treino de IA. (Art. 15/20/21.) |
 | Transcrições | **FICAM persistidas como mensagens do Discord** (fora do `/privacy erase`) → disclosure honesta em `PRIVACY.md` + política de revogação definida no spec. |

@@ -65,14 +65,6 @@ export interface BotDeps {
    */
   games?: GameManager;
   /**
-   * Is a voice-clone engine ACTUALLY available in this instance? Reflects
-   * `CloneEngine.available` (which includes the AUTO-DETECTION of the venv in
-   * tools/clone-venv), NOT just the CLONE_CMD env. Without this, the UI only looked at
-   * config.cloneCmd and said "engine not installed" even with the venv detected.
-   * Optional: tests fall back to the env.
-   */
-  cloneAvailable?: boolean;
-  /**
    * IDs of the bot OWNER(S), resolved at ClientReady via client.application (User or Team
    * members) + OWNER_ID. Source of truth for the /vozengrant gate (owner-only) — not
    * spoofable via env. Empty/absent => no grant is authorized.

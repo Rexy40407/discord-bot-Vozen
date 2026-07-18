@@ -101,55 +101,6 @@ export default {
   'voice.effect.set':
     '✅ Efecte de veu establert a **{effect}**: els teus missatges ara es reprodueixen amb aquest efecte. Fes servir `/voice effect none` per desactivar-lo.',
   'voice.effect.cleared': '✅ Efecte de veu eliminat: veu neta de nou.',
-  'clone.locked':
-    '🔒 El clonatge de veu és una funció Premium (consumeix còmput real). Consulta `/premium`.',
-  'clone.notInVoice':
-    "Has d'estar al canal de veu **amb mi** per gravar. Fes servir `/join` primer.",
-  'clone.alreadyRecording':
-    'Ja estàs gravant una mostra: acaba-la (o prem **⏹️ Atura**) abans de començar-ne una altra.',
-  'clone.recording':
-    "🎙️ **Gravant la teva veu**: continua parlant fins que s'aturi tot sol (~{target}s de parla, les pauses no compten), o prem **⏹️ Atura** quan hagis acabat. Només conservo el TEU àudio.",
-  'clone.recordingOther':
-    "🎙️ **Gravant {who}**: hauria de continuar parlant fins que s'aturi tot sol (~{target}s de parla, les pauses no compten), o prémer **⏹️ Atura** per acabar.",
-  'clone.recordingProgress': '🔴 Gravant… **{got}s / {target}s** de parla captats. Continua!',
-  'clone.consentRequest':
-    '🎙️ {invoker} vol gravar **la teva veu** ({target}s de parla) per crear un clon de veu amb què poder parlar. Ho permets? *(caduca en 60s)*',
-  'clone.consentAllow': 'Permet',
-  'clone.consentDeny': 'No',
-  'clone.consentNotYou': "Només la persona que s'està gravant pot respondre a això.",
-  'clone.consentGranted': '✅ {who} ha acceptat: començo la gravació.',
-  'clone.consentRefused':
-    "✖️ {who} ho ha rebutjat. Gravació cancel·lada: no s'ha captat cap àudio.",
-  'clone.consentTimeout': '⌛ {who} no ha respost a temps. Gravació cancel·lada.',
-  'clone.consentWaiting': '⏳ Esperant que {who} accepti al canal…',
-  'clone.targetNotInVoice':
-    "{who} ha d'estar al canal de veu **amb mi** per ser gravat. Demana-li que faci `/join` primer.",
-  'clone.pickFromList':
-    'Tria una persona de la llista de suggeriments (només es pot gravar qui és a la trucada). Deixa-ho buit per gravar-te a tu mateix.',
-  'clone.stopBtn': 'Atura',
-  'clone.stopNotYours': 'Només qui està gravant ho pot aturar.',
-  'clone.tooShort':
-    "Només he captat {seconds}s de parla: en necessito com a mínim ~{min}s (l'objectiu era {target}s) per clonar bé. Torna-ho a provar amb `/voice clone record`.",
-  'clone.saved':
-    "✅ Mostra de veu desada ({seconds}s de parla). Activa-la amb `/voice clone use active:true`. Només TU pots fer servir el teu clon; esborra'l quan vulguis amb `/voice clone delete`.",
-  'clone.savedOther':
-    "✅ Desats {seconds}s de la veu de {who} com el TEU clon. Activa'l amb `/voice clone use active:true`; esborra'l quan vulguis amb `/voice clone delete`.",
-  'clone.failed':
-    'La gravació ha fallat: torna-ho a provar. Si continua passant, torna a entrar al canal de veu.',
-  'clone.none': "Encara no tens cap clon de veu. Grava'n un amb `/voice clone record` (Premium).",
-  'clone.deleted':
-    '🗑️ Clon de veu esborrat: mostra i registre de consentiment eliminats, sense deixar rastre.',
-  'clone.revoked':
-    '🛑 Consentiment retirat: he eliminat {count} clon(s) de veu que altres persones havien fet de la teva veu.',
-  'clone.status': '🧬 Clon de veu: mostra gravada el {date} · actualment **{state}**.',
-  'clone.stateOn': 'ACTIVAT',
-  'clone.stateOff': 'desactivat',
-  'clone.noSample': "Primer necessites una mostra: grava'n una amb `/voice clone record`.",
-  'clone.enabled':
-    '✅ Els teus missatges ara es llegiran amb **la teva veu clonada**. Desactiva-la quan vulguis amb `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Desat, però el motor de clonatge encara no està instal·lat en aquesta instància, així que de moment sentiràs la veu normal.',
-  'clone.disabled': '✅ Veu clonada desactivada: de tornada a la teva veu normal.',
   'voice.effect.locked':
     "🔒 **{effect}** és un efecte Premium. Efectes gratuïts: 🤖 Robot i 🔊 Echo. Desbloqueja'ls tots amb Vozen Premium: consulta `/premium`.",
   'voice.engine.gcloudLocked':
@@ -669,8 +620,4 @@ export default {
   'rand.speak': 'Trio… {winner}!',
   'rand.notInVoice': '_(entra en un canal de veu amb mi i la propera vegada ho diré en veu alta)_',
   'rand.timeout': "⏰ No s'ha triat res: torna a executar `/randomizer` quan vulguis.",
-  'stt.busyClone':
-    '⏳ Algú està gravant un clon de veu en aquesta trucada ara mateix. Només tinc un micròfon: torna-ho a provar quan acabi (uns segons).',
-  'clone.busyStt':
-    '⏳ La transcripció està activa en aquesta trucada i només tinc un micròfon. Executa `/transcribe stop` primer i després grava el teu clon.',
 };

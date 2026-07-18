@@ -59,17 +59,6 @@ export const catalog: Record<string, Entry> = {
     en: 'Too many transcriptions are running right now across all servers. Please try again shortly.',
     pt: 'Há demasiadas transcrições a correr agora em todos os servidores. Tenta outra vez daqui a pouco.',
   },
-  // The bot has one microphone per call: a voice clone is being recorded right now, and
-  // that recording always re-deafens the bot when it ends — which would silently kill a
-  // transcription started meanwhile. So they take turns (see voice/exclusivity.ts).
-  'stt.busyClone': {
-    en: "⏳ Someone is recording a voice clone in this call right now. I only have one microphone — try again once it's done (a few seconds).",
-    pt: '⏳ Alguém está a gravar um clone de voz nesta call neste momento. Só tenho um microfone — tenta outra vez quando terminar (poucos segundos).',
-  },
-  'clone.busyStt': {
-    en: '⏳ Transcription is running in this call, and I only have one microphone. Run `/transcribe stop` first, then record your clone.',
-    pt: '⏳ A transcrição está a correr nesta call e eu só tenho um microfone. Corre `/transcribe stop` primeiro e depois grava o teu clone.',
-  },
   'stt.noChannel': {
     en: "I can't post transcripts in this channel. Try running the command from a normal text channel.",
     pt: 'Não consigo postar transcrições neste canal. Tenta correr o comando de um canal de texto normal.',
@@ -117,8 +106,8 @@ export const catalog: Record<string, Entry> = {
 
   // ── /privacy erase (direito ao esquecimento) ────────────────────────────────
   'privacy.eraseConfirm': {
-    en: '⚠️ This permanently deletes **all** your Vozen data across every server: voice settings, spoken nickname, personal abbreviations and pronunciations, saved birthday, game scores, talk stats, opt-out, and any voice clone (including recordings of your voice made by others). **This cannot be undone.** Are you sure?',
-    pt: '⚠️ Isto apaga PERMANENTEMENTE **todos** os teus dados do Vozen em todos os servidores: definições de voz, apelido falado, abreviaturas e pronúncias pessoais, aniversário guardado, pontuações de jogos, estatísticas de fala, opt-out, e qualquer clone de voz (incluindo gravações da tua voz feitas por outros). **Isto não pode ser desfeito.** Tens a certeza?',
+    en: '⚠️ This permanently deletes **all** your Vozen data across every server: voice settings, spoken nickname, personal abbreviations and pronunciations, saved birthday, game scores, talk stats, and opt-out. **This cannot be undone.** Are you sure?',
+    pt: '⚠️ Isto apaga PERMANENTEMENTE **todos** os teus dados do Vozen em todos os servidores: definições de voz, apelido falado, abreviaturas e pronúncias pessoais, aniversário guardado, pontuações de jogos, estatísticas de fala, e opt-out. **Isto não pode ser desfeito.** Tens a certeza?',
   },
   'privacy.erasePremiumNote': {
     en: '_Note: your paid Premium/Plus and its purchase history are kept — they belong to you and to legally-required financial records. To stop Premium, let it expire or contact support._',
@@ -347,124 +336,6 @@ export const catalog: Record<string, Entry> = {
     en: '✅ Voice effect removed — clean voice again.',
     pt: '✅ Efeito de voz removido — voz limpa outra vez.',
   },
-  // ── /voice clone (clone da PRÓPRIA voz, consent-first, 💎 Premium) ─────────
-  'clone.locked': {
-    en: '🔒 Voice cloning is a Premium feature (it costs real compute). See `/premium`.',
-    pt: '🔒 O clone de voz é uma funcionalidade Premium (custa computação a sério). Vê `/premium`.',
-  },
-  'clone.notInVoice': {
-    en: 'You need to be in the voice channel **with me** to record. Use `/join` first.',
-    pt: 'Tens de estar no canal de voz **comigo** para gravar. Usa `/join` primeiro.',
-  },
-  'clone.alreadyRecording': {
-    en: "You're already recording a sample — finish it (or press **⏹️ Stop**) before starting another.",
-    pt: 'Já estás a gravar uma amostra — termina-a (ou carrega em **⏹️ Parar**) antes de começar outra.',
-  },
-  'clone.recording': {
-    en: "🎙️ **Recording your voice** — keep talking until it stops on its own (~{target}s of speech, pauses don't count), or press **⏹️ Stop** whenever you're done. I only keep YOUR audio.",
-    pt: '🎙️ **A gravar a tua voz** — continua a falar até parar sozinho (~{target}s de fala, as pausas não contam), ou carrega em **⏹️ Parar** quando quiseres. Só guardo o TEU áudio.',
-  },
-  'clone.recordingOther': {
-    en: "🎙️ **Recording {who}** — they should keep talking until it stops on its own (~{target}s of speech, pauses don't count), or press **⏹️ Stop** to finish.",
-    pt: '🎙️ **A gravar {who}** — deve continuar a falar até parar sozinho (~{target}s de fala, as pausas não contam), ou carrega em **⏹️ Parar** para terminar.',
-  },
-  'clone.recordingProgress': {
-    en: '🔴 Recording… **{got}s / {target}s** of speech captured. Keep going!',
-    pt: '🔴 A gravar… **{got}s / {target}s** de fala apanhados. Continua!',
-  },
-  'clone.consentRequest': {
-    en: '🎙️ {invoker} wants to record **your voice** ({target}s of speech) to build a voice clone they can speak with. Do you allow it? *(expires in 60s)*',
-    pt: '🎙️ {invoker} quer gravar **a tua voz** ({target}s de fala) para criar um clone de voz com que possa falar. Permites? *(expira em 60s)*',
-  },
-  'clone.consentAllow': { en: 'Allow', pt: 'Permitir' },
-  'clone.consentDeny': { en: 'No', pt: 'Não' },
-  'clone.consentNotYou': {
-    en: 'Only the person being recorded can answer this.',
-    pt: 'Só a pessoa a ser gravada pode responder a isto.',
-  },
-  'clone.consentGranted': {
-    en: '✅ {who} agreed — starting the recording.',
-    pt: '✅ {who} aceitou — a começar a gravação.',
-  },
-  'clone.consentRefused': {
-    en: '✖️ {who} declined. Recording cancelled — no audio was captured.',
-    pt: '✖️ {who} recusou. Gravação cancelada — nenhum áudio foi apanhado.',
-  },
-  'clone.consentTimeout': {
-    en: "⌛ {who} didn't answer in time. Recording cancelled.",
-    pt: '⌛ {who} não respondeu a tempo. Gravação cancelada.',
-  },
-  'clone.consentWaiting': {
-    en: '⏳ Waiting for {who} to accept in the channel…',
-    pt: '⏳ À espera que {who} aceite no canal…',
-  },
-  'clone.targetNotInVoice': {
-    en: '{who} needs to be in the voice channel **with me** to be recorded. Ask them to `/join` first.',
-    pt: '{who} tem de estar no canal de voz **comigo** para ser gravado. Pede-lhe para usar `/join` primeiro.',
-  },
-  'clone.pickFromList': {
-    en: 'Pick a person from the suggestions list (only people in the call can be recorded). Leave it empty to record yourself.',
-    pt: 'Escolhe uma pessoa da lista de sugestões (só quem está na call pode ser gravado). Deixa vazio para te gravares a ti.',
-  },
-  'clone.stopBtn': {
-    en: 'Stop',
-    pt: 'Parar',
-  },
-  'clone.stopNotYours': {
-    en: 'Only the person recording can stop it.',
-    pt: 'Só quem está a gravar pode parar.',
-  },
-  'clone.tooShort': {
-    en: 'I only caught {seconds}s of speech — I need at least ~{min}s (target was {target}s) to clone well. Try again with `/voice clone record`.',
-    pt: 'Só apanhei {seconds}s de fala — preciso de pelo menos ~{min}s (o alvo era {target}s) para clonar bem. Tenta outra vez com `/voice clone record`.',
-  },
-  'clone.saved': {
-    en: '✅ Voice sample saved ({seconds}s of speech). Turn it on with `/voice clone use active:true`. Only YOU can use your clone; delete it anytime with `/voice clone delete`.',
-    pt: '✅ Amostra de voz guardada ({seconds}s de fala). Liga com `/voice clone use active:true`. Só TU podes usar o teu clone; apaga-o quando quiseres com `/voice clone delete`.',
-  },
-  'clone.savedOther': {
-    en: "✅ Saved {seconds}s of {who}'s voice as YOUR clone. Turn it on with `/voice clone use active:true`; delete it anytime with `/voice clone delete`.",
-    pt: '✅ Guardados {seconds}s da voz de {who} como o TEU clone. Liga com `/voice clone use active:true`; apaga quando quiseres com `/voice clone delete`.',
-  },
-  'clone.failed': {
-    en: 'The recording failed — try again. If it keeps happening, rejoin the voice channel.',
-    pt: 'A gravação falhou — tenta outra vez. Se continuar, volta a entrar no canal de voz.',
-  },
-  'clone.none': {
-    en: "You don't have a voice clone yet. Record one with `/voice clone record` (Premium).",
-    pt: 'Ainda não tens um clone de voz. Grava um com `/voice clone record` (Premium).',
-  },
-  'clone.deleted': {
-    en: '🗑️ Voice clone deleted — sample and consent record removed, no trace kept.',
-    pt: '🗑️ Clone de voz apagado — amostra e registo de consentimento removidos, sem rasto.',
-  },
-  // Revogação pela pessoa gravada: apagou clones que OUTROS tinham feito da voz dela.
-  'clone.revoked': {
-    en: '🛑 Consent withdrawn — removed {count} voice clone(s) other people had made from your voice.',
-    pt: '🛑 Consentimento retirado — removi {count} clone(s) que outras pessoas tinham feito da tua voz.',
-  },
-  'clone.status': {
-    en: '🧬 Voice clone: sample recorded {date} · currently **{state}**.',
-    pt: '🧬 Clone de voz: amostra gravada {date} · neste momento **{state}**.',
-  },
-  'clone.stateOn': { en: 'ON', pt: 'LIGADO' },
-  'clone.stateOff': { en: 'off', pt: 'desligado' },
-  'clone.noSample': {
-    en: 'You need a sample first — record one with `/voice clone record`.',
-    pt: 'Primeiro precisas de uma amostra — grava com `/voice clone record`.',
-  },
-  'clone.enabled': {
-    en: '✅ Your messages will now be read in **your cloned voice**. Turn off anytime with `/voice clone use active:false`.',
-    pt: '✅ As tuas mensagens passam a ser lidas com a **tua voz clonada**. Desliga quando quiseres com `/voice clone use active:false`.',
-  },
-  'clone.enabledNoEngine': {
-    en: "✅ Saved — but the clone engine isn't installed on this instance yet, so you'll hear the normal voice for now.",
-    pt: '✅ Guardado — mas o motor de clone ainda não está instalado nesta instância, por isso para já ouves a voz normal.',
-  },
-  'clone.disabled': {
-    en: '✅ Cloned voice off — back to your normal voice.',
-    pt: '✅ Voz clonada desligada — de volta à tua voz normal.',
-  },
   'voice.effect.locked': {
     en: '🔒 **{effect}** is a Premium effect. Free effects: 🤖 Robot and 🔊 Echo. Unlock all with Vozen Premium — see `/premium`.',
     pt: '🔒 **{effect}** é um efeito Premium. Efeitos grátis: 🤖 Robot e 🔊 Echo. Desbloqueia todos com o Vozen Premium — vê `/premium`.',
@@ -675,8 +546,8 @@ export const catalog: Record<string, Entry> = {
     pt: '👤 **Tu (Plus):** inativo',
   },
   'premium.getHint': {
-    en: 'Everything you use today stays free. Premium adds all 8 voice effects, voice cloning, 24/7 in-call, 50 personal pronunciations, /rizz and the premium games. Support: https://ko-fi.com/',
-    pt: 'Tudo o que já usas continua grátis. O Premium acrescenta os 8 efeitos de voz, clone de voz, 24/7 na call, 50 pronúncias pessoais, /rizz e os jogos premium. Apoio: https://ko-fi.com/',
+    en: 'Everything you use today stays free. Premium adds all 8 voice effects, 24/7 in-call, 50 personal pronunciations, /rizz and the premium games. Support: https://ko-fi.com/',
+    pt: 'Tudo o que já usas continua grátis. O Premium acrescenta os 8 efeitos de voz, 24/7 na call, 50 pronúncias pessoais, /rizz e os jogos premium. Apoio: https://ko-fi.com/',
   },
   // Passe (compra de Premium): linha de estado + montra + fluxo activate/deactivate.
   'premium.linePass': {
@@ -688,8 +559,8 @@ export const catalog: Record<string, Entry> = {
     pt: '↳ Em uso em: {servers}',
   },
   'premium.pitch': {
-    en: "You don't have Premium yet. **Vozen Premium** (€3.99/mo for 3 servers, or €7.99/mo for 8) unlocks for the whole server: all 8 voice effects, voice cloning, 24/7 in-call, 50 personal pronunciations (vs 3), the /rizz command and the premium games (Word Chain, Wordle, Chess). **Vozen Plus** (€1.99/mo) gives you those perks personally, on any server.",
-    pt: 'Ainda não tens Premium. O **Vozen Premium** (€3,99/mês para 3 servidores, ou €7,99/mês para 8) desbloqueia para o servidor inteiro: os 8 efeitos de voz, clone de voz, 24/7 na call, 50 pronúncias pessoais (vs 3), o comando /rizz e os jogos premium (Cadeia de Palavras, Termo, Xadrez). O **Vozen Plus** (€1,99/mês) dá-te essas perks só para ti, em qualquer servidor.',
+    en: "You don't have Premium yet. **Vozen Premium** (€3.99/mo for 3 servers, or €7.99/mo for 8) unlocks for the whole server: all 8 voice effects, 24/7 in-call, 50 personal pronunciations (vs 3), the /rizz command and the premium games (Word Chain, Wordle, Chess). **Vozen Plus** (€1.99/mo) gives you those perks personally, on any server.",
+    pt: 'Ainda não tens Premium. O **Vozen Premium** (€3,99/mês para 3 servidores, ou €7,99/mês para 8) desbloqueia para o servidor inteiro: os 8 efeitos de voz, 24/7 na call, 50 pronúncias pessoais (vs 3), o comando /rizz e os jogos premium (Cadeia de Palavras, Termo, Xadrez). O **Vozen Plus** (€1,99/mês) dá-te essas perks só para ti, em qualquer servidor.',
   },
   'premium.buyHint': {
     en: '▶ **Get Premium:** {link}\nAfter buying, run `/premium activate` on the server you want.',
@@ -1374,7 +1245,6 @@ export const catalog: Record<string, Entry> = {
       '• /voice preview — hear a sample of your voice\n' +
       '• /voice reset — go back to the default voice\n' +
       '• /voice effect <effect> — voice effect (robot, echo… 💎 more with Premium)\n' +
-      '• /voice clone record — clone YOUR OWN voice (💎 Premium, consent-first)\n' +
       '• /voice optout · /voice optin — turn auto-read off / on for you',
     pt:
       '• /voice set <model> — escolhe a tua voz · ex. /voice set pt_PT-tugao-medium\n' +
@@ -1382,7 +1252,6 @@ export const catalog: Record<string, Entry> = {
       '• /voice preview — ouve uma amostra da tua voz\n' +
       '• /voice reset — volta a voz por defeito\n' +
       '• /voice effect <efeito> — efeito de voz (robot, echo… 💎 mais com Premium)\n' +
-      '• /voice clone record — clona a TUA voz (💎 Premium, com consentimento)\n' +
       '• /voice optout · /voice optin — desliga / liga a leitura automatica para ti',
   },
   'help.groupFun': {

@@ -98,53 +98,6 @@ export default {
   'voice.effect.set':
     '✅ Rösteffekt satt till **{effect}** — dina meddelanden spelas nu upp med den effekten. Använd `/voice effect none` för att stänga av.',
   'voice.effect.cleared': '✅ Rösteffekt borttagen — ren röst igen.',
-  'clone.locked':
-    '🔒 Röstkloning är en Premium-funktion (det kostar riktig beräkningskraft). Se `/premium`.',
-  'clone.notInVoice':
-    'Du måste vara i röstkanalen **med mig** för att spela in. Använd `/join` först.',
-  'clone.alreadyRecording':
-    'Du spelar redan in ett prov — avsluta det (eller tryck på **⏹️ Stopp**) innan du börjar ett nytt.',
-  'clone.recording':
-    '🎙️ **Spelar in din röst** — fortsätt prata tills det stoppar av sig självt (~{target}s tal, pauser räknas inte), eller tryck på **⏹️ Stopp** när du är klar. Jag behåller bara DITT ljud.',
-  'clone.recordingOther':
-    '🎙️ **Spelar in {who}** — de bör fortsätta prata tills det stoppar av sig självt (~{target}s tal, pauser räknas inte), eller trycka på **⏹️ Stopp** för att avsluta.',
-  'clone.recordingProgress': '🔴 Spelar in… **{got}s / {target}s** tal fångat. Fortsätt!',
-  'clone.consentRequest':
-    '🎙️ {invoker} vill spela in **din röst** ({target}s tal) för att bygga en röstklon som de kan prata med. Tillåter du det? *(går ut om 60s)*',
-  'clone.consentAllow': 'Tillåt',
-  'clone.consentDeny': 'Nej',
-  'clone.consentNotYou': 'Bara personen som spelas in kan svara på detta.',
-  'clone.consentGranted': '✅ {who} gick med på det — startar inspelningen.',
-  'clone.consentRefused': '✖️ {who} tackade nej. Inspelning avbruten — inget ljud fångades.',
-  'clone.consentTimeout': '⌛ {who} svarade inte i tid. Inspelning avbruten.',
-  'clone.consentWaiting': '⏳ Väntar på att {who} ska acceptera i kanalen…',
-  'clone.targetNotInVoice':
-    '{who} måste vara i röstkanalen **med mig** för att kunna spelas in. Be dem köra `/join` först.',
-  'clone.pickFromList':
-    'Välj en person från förslagslistan (bara de som är med i samtalet kan spelas in). Lämna tomt för att spela in dig själv.',
-  'clone.stopBtn': 'Stopp',
-  'clone.stopNotYours': 'Bara den som spelar in kan stoppa det.',
-  'clone.tooShort':
-    'Jag fångade bara {seconds}s tal — jag behöver minst ~{min}s (målet var {target}s) för att klona bra. Försök igen med `/voice clone record`.',
-  'clone.saved':
-    '✅ Röstprov sparat ({seconds}s tal). Slå på det med `/voice clone use active:true`. Bara DU kan använda din klon; radera den när som helst med `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Sparade {seconds}s av {who}s röst som DIN klon. Slå på den med `/voice clone use active:true`; radera den när som helst med `/voice clone delete`.',
-  'clone.failed':
-    'Inspelningen misslyckades — försök igen. Om det fortsätter, gå med i röstkanalen på nytt.',
-  'clone.none': 'Du har ingen röstklon än. Spela in en med `/voice clone record` (Premium).',
-  'clone.deleted': '🗑️ Röstklon raderad — prov och samtyckesuppgift borttagna, inga spår kvar.',
-  'clone.revoked':
-    '🛑 Samtycke återkallat — tog bort {count} röstklon(er) som andra hade gjort av din röst.',
-  'clone.status': '🧬 Röstklon: prov inspelat {date} · just nu **{state}**.',
-  'clone.stateOn': 'PÅ',
-  'clone.stateOff': 'av',
-  'clone.noSample': 'Du behöver ett prov först — spela in ett med `/voice clone record`.',
-  'clone.enabled':
-    '✅ Dina meddelanden läses nu upp med **din klonade röst**. Stäng av när som helst med `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Sparat — men klonmotorn är inte installerad på den här instansen än, så du hör den vanliga rösten tills vidare.',
-  'clone.disabled': '✅ Klonad röst av — tillbaka till din vanliga röst.',
   'voice.effect.locked':
     '🔒 **{effect}** är en Premium-effekt. Gratiseffekter: 🤖 Robot och 🔊 Echo. Lås upp alla med Vozen Premium — se `/premium`.',
   'voice.engine.gcloudLocked':
@@ -651,8 +604,4 @@ export default {
   'rand.speak': 'Jag väljer… {winner}!',
   'rand.notInVoice': '_(gå med i en röstkanal med mig så säger jag det högt nästa gång)_',
   'rand.timeout': '⏰ Inget valt — kör `/randomizer` igen när du är redo.',
-  'stt.busyClone':
-    '⏳ Någon spelar in en röstklon i det här samtalet just nu. Jag har bara en mikrofon — försök igen när det är klart (några sekunder).',
-  'clone.busyStt':
-    '⏳ Transkribering pågår i det här samtalet och jag har bara en mikrofon. Kör `/transcribe stop` först och spela sedan in din klon.',
 };

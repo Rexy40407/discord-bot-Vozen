@@ -100,53 +100,6 @@ export default {
   'voice.effect.set':
     '✅ Ses efekti **{effect}** olarak ayarlandı — mesajların artık bu efektle çalıyor. Kapatmak için `/voice effect none` kullan.',
   'voice.effect.cleared': '✅ Ses efekti kaldırıldı — yine temiz ses.',
-  'clone.locked':
-    '🔒 Ses klonlama bir Premium özelliğidir (gerçek işlem gücü tüketir). `/premium` komutuna bak.',
-  'clone.notInVoice':
-    'Kayıt yapmak için **benimle** aynı ses kanalında olmalısın. Önce `/join` kullan.',
-  'clone.alreadyRecording':
-    "Zaten bir örnek kaydediyorsun — yenisine başlamadan önce onu bitir (veya **⏹️ Durdur**'a bas).",
-  'clone.recording':
-    "🎙️ **Sesin kaydediliyor** — kendiliğinden durana kadar konuşmaya devam et (~{target}sn konuşma, duraklamalar sayılmaz) veya bittiğinde **⏹️ Durdur**'a bas. Yalnızca SENİN sesini saklarım.",
-  'clone.recordingOther':
-    "🎙️ **{who} kaydediliyor** — kendiliğinden durana kadar konuşmaya devam etmeli (~{target}sn konuşma, duraklamalar sayılmaz) veya bitirmek için **⏹️ Durdur**'a bassın.",
-  'clone.recordingProgress':
-    '🔴 Kaydediliyor… **{got}sn / {target}sn** konuşma yakalandı. Devam et!',
-  'clone.consentRequest':
-    '🎙️ {invoker}, konuşabileceği bir ses klonu oluşturmak için **senin sesini** ({target}sn konuşma) kaydetmek istiyor. İzin veriyor musun? *(60sn içinde sona erer)*',
-  'clone.consentAllow': 'İzin ver',
-  'clone.consentDeny': 'Hayır',
-  'clone.consentNotYou': 'Buna yalnızca kaydedilen kişi yanıt verebilir.',
-  'clone.consentGranted': '✅ {who} kabul etti — kayıt başlıyor.',
-  'clone.consentRefused': '✖️ {who} reddetti. Kayıt iptal edildi — hiçbir ses yakalanmadı.',
-  'clone.consentTimeout': '⌛ {who} zamanında yanıt vermedi. Kayıt iptal edildi.',
-  'clone.consentWaiting': '⏳ {who} kişisinin kanalda kabul etmesi bekleniyor…',
-  'clone.targetNotInVoice':
-    '{who} kaydedilmek için **benimle** aynı ses kanalında olmalı. Önce `/join` yapmasını iste.',
-  'clone.pickFromList':
-    'Öneri listesinden bir kişi seç (yalnızca çağrıdaki kişiler kaydedilebilir). Kendini kaydetmek için boş bırak.',
-  'clone.stopBtn': 'Durdur',
-  'clone.stopNotYours': 'Yalnızca kaydı yapan kişi durdurabilir.',
-  'clone.tooShort':
-    'Yalnızca {seconds}sn konuşma yakaladım — iyi klonlamak için en az ~{min}sn gerekiyor (hedef {target}sn idi). `/voice clone record` ile tekrar dene.',
-  'clone.saved':
-    '✅ Ses örneği kaydedildi ({seconds}sn konuşma). `/voice clone use active:true` ile aç. Klonunu yalnızca SEN kullanabilirsin; istediğin zaman `/voice clone delete` ile sil.',
-  'clone.savedOther':
-    '✅ {who} kişisinin sesinden {seconds}sn, SENİN klonun olarak kaydedildi. `/voice clone use active:true` ile aç; istediğin zaman `/voice clone delete` ile sil.',
-  'clone.failed': 'Kayıt başarısız oldu — tekrar dene. Devam ederse ses kanalına yeniden katıl.',
-  'clone.none': 'Henüz bir ses klonun yok. `/voice clone record` ile bir tane kaydet (Premium).',
-  'clone.deleted': '🗑️ Ses klonu silindi — örnek ve onay kaydı kaldırıldı, hiçbir iz bırakılmadı.',
-  'clone.revoked':
-    '🛑 Onay geri çekildi — başkalarının senin sesinden yaptığı {count} ses klonu kaldırıldı.',
-  'clone.status': '🧬 Ses klonu: örnek {date} tarihinde kaydedildi · şu anda **{state}**.',
-  'clone.stateOn': 'AÇIK',
-  'clone.stateOff': 'kapalı',
-  'clone.noSample': 'Önce bir örneğe ihtiyacın var — `/voice clone record` ile bir tane kaydet.',
-  'clone.enabled':
-    '✅ Mesajların artık **klonlanmış sesinle** okunacak. İstediğin zaman `/voice clone use active:false` ile kapat.',
-  'clone.enabledNoEngine':
-    '✅ Kaydedildi — ama klon motoru bu örnekte henüz yüklü değil, bu yüzden şimdilik normal sesi duyacaksın.',
-  'clone.disabled': '✅ Klonlanmış ses kapalı — normal sesine geri dönüldü.',
   'voice.effect.locked':
     '🔒 **{effect}** bir Premium efektidir. Ücretsiz efektler: 🤖 Robot ve 🔊 Echo. Hepsini Vozen Premium ile aç — `/premium` komutuna bak.',
   'voice.engine.gcloudLocked':
@@ -658,8 +611,4 @@ export default {
   'rand.notInVoice': '_(benimle bir ses kanalına katıl, bir dahaki sefere sesli söyleyeyim)_',
   'rand.timeout':
     '⏰ Hiçbir şey seçilmedi — hazır olduğunda `/randomizer` komutunu tekrar çalıştır.',
-  'stt.busyClone':
-    '⏳ Şu anda bu aramada biri ses klonu kaydediyor. Yalnızca bir mikrofonum var — bittiğinde tekrar dene (birkaç saniye).',
-  'clone.busyStt':
-    '⏳ Bu aramada transkripsiyon çalışıyor ve yalnızca bir mikrofonum var. Önce `/transcribe stop` çalıştır, sonra klonunu kaydet.',
 };

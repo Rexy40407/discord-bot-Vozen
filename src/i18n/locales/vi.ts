@@ -230,54 +230,6 @@ export default {
   'voice.effect.set':
     '✅ Đã đặt hiệu ứng giọng thành **{effect}** — các tin nhắn của bạn giờ sẽ phát với hiệu ứng đó. Dùng `/voice effect none` để tắt.',
   'voice.effect.cleared': '✅ Đã gỡ hiệu ứng giọng — giọng sạch trở lại.',
-  'clone.locked':
-    '🔒 Nhân bản giọng là tính năng Premium (tốn tài nguyên tính toán thật sự). Xem `/premium`.',
-  'clone.notInVoice': 'Bạn cần ở trong kênh thoại **cùng tôi** để ghi âm. Hãy dùng `/join` trước.',
-  'clone.alreadyRecording':
-    'Bạn đang ghi một mẫu rồi — hãy hoàn tất (hoặc nhấn **⏹️ Dừng**) trước khi bắt đầu mẫu khác.',
-  'clone.recording':
-    '🎙️ **Đang ghi giọng của bạn** — hãy tiếp tục nói cho đến khi nó tự dừng (~{target}s lời nói, các khoảng lặng không tính), hoặc nhấn **⏹️ Dừng** khi bạn xong. Tôi chỉ giữ âm thanh CỦA BẠN.',
-  'clone.recordingOther':
-    '🎙️ **Đang ghi {who}** — họ nên tiếp tục nói cho đến khi nó tự dừng (~{target}s lời nói, các khoảng lặng không tính), hoặc nhấn **⏹️ Dừng** để kết thúc.',
-  'clone.recordingProgress':
-    '🔴 Đang ghi… đã thu được **{got}s / {target}s** lời nói. Tiếp tục nào!',
-  'clone.consentRequest':
-    '🎙️ {invoker} muốn ghi **giọng của bạn** ({target}s lời nói) để tạo một giọng nhân bản mà họ có thể dùng để nói. Bạn có cho phép không? *(hết hạn sau 60s)*',
-  'clone.consentAllow': 'Cho phép',
-  'clone.consentDeny': 'Không',
-  'clone.consentNotYou': 'Chỉ người được ghi mới có thể trả lời việc này.',
-  'clone.consentGranted': '✅ {who} đã đồng ý — bắt đầu ghi âm.',
-  'clone.consentRefused': '✖️ {who} đã từ chối. Đã hủy ghi âm — không thu được âm thanh nào.',
-  'clone.consentTimeout': '⌛ {who} không trả lời kịp. Đã hủy ghi âm.',
-  'clone.consentWaiting': '⏳ Đang chờ {who} chấp nhận trong kênh…',
-  'clone.targetNotInVoice':
-    '{who} cần ở trong kênh thoại **cùng tôi** để được ghi. Hãy bảo họ `/join` trước.',
-  'clone.pickFromList':
-    'Hãy chọn một người từ danh sách gợi ý (chỉ những người trong cuộc gọi mới có thể được ghi). Để trống để tự ghi chính bạn.',
-  'clone.stopBtn': 'Dừng',
-  'clone.stopNotYours': 'Chỉ người đang ghi mới có thể dừng.',
-  'clone.tooShort':
-    'Tôi chỉ thu được {seconds}s lời nói — tôi cần ít nhất ~{min}s (mục tiêu là {target}s) để nhân bản tốt. Hãy thử lại với `/voice clone record`.',
-  'clone.saved':
-    '✅ Đã lưu mẫu giọng ({seconds}s lời nói). Bật nó với `/voice clone use active:true`. Chỉ MÌNH BẠN có thể dùng giọng nhân bản của bạn; xóa bất cứ lúc nào với `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Đã lưu {seconds}s giọng của {who} làm giọng nhân bản CỦA BẠN. Bật nó với `/voice clone use active:true`; xóa bất cứ lúc nào với `/voice clone delete`.',
-  'clone.failed': 'Ghi âm thất bại — hãy thử lại. Nếu vẫn tiếp diễn, hãy vào lại kênh thoại.',
-  'clone.none':
-    'Bạn chưa có giọng nhân bản nào. Hãy ghi một giọng với `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Đã xóa giọng nhân bản — mẫu giọng và bản ghi đồng ý đã bị xóa, không giữ lại dấu vết.',
-  'clone.revoked':
-    '🛑 Đã rút lại đồng ý — đã xóa {count} giọng nhân bản mà người khác đã tạo từ giọng của bạn.',
-  'clone.status': '🧬 Giọng nhân bản: mẫu được ghi vào {date} · hiện đang **{state}**.',
-  'clone.stateOn': 'BẬT',
-  'clone.stateOff': 'tắt',
-  'clone.noSample': 'Bạn cần một mẫu trước — hãy ghi một mẫu với `/voice clone record`.',
-  'clone.enabled':
-    '✅ Các tin nhắn của bạn giờ sẽ được đọc bằng **giọng nhân bản của bạn**. Tắt bất cứ lúc nào với `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Đã lưu — nhưng bộ máy nhân bản chưa được cài trên phiên bản này, nên tạm thời bạn sẽ nghe giọng thường.',
-  'clone.disabled': '✅ Đã tắt giọng nhân bản — trở về giọng thường của bạn.',
   'voice.effect.locked':
     '🔒 **{effect}** là hiệu ứng Premium. Hiệu ứng miễn phí: 🤖 Robot và 🔊 Echo. Mở khóa tất cả với Vozen Premium — xem `/premium`.',
   'voice.engine.gcloudLocked':
@@ -650,8 +602,4 @@ export default {
   'rand.speak': 'Tôi chọn… {winner}!',
   'rand.notInVoice': '_(hãy vào một kênh thoại cùng tôi và lần sau tôi sẽ đọc to nó)_',
   'rand.timeout': '⏰ Chưa chọn gì — hãy chạy `/randomizer` lại khi sẵn sàng.',
-  'stt.busyClone':
-    '⏳ Ngay lúc này có người đang ghi âm bản sao giọng nói trong cuộc gọi. Tôi chỉ có một micro — hãy thử lại khi xong (vài giây).',
-  'clone.busyStt':
-    '⏳ Cuộc gọi này đang chạy phiên ghi lời và tôi chỉ có một micro. Hãy chạy `/transcribe stop` trước, rồi ghi bản sao giọng của bạn.',
 };

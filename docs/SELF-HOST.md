@@ -329,7 +329,6 @@ hides or disables the matching feature when it is absent.
 | -------------------------------- | --------------------------- | -------------------------------- | ---------------------------------------------------------------------- |
 | Kokoro (`kokoro-onnx`, ONNX/CPU) | `/voice set engine:Kokoro`  | `tools/setup-kokoro.ps1`         | No PyTorch. Opt-in per user.                                           |
 | faster-whisper                   | `/transcribe` (voice→text)  | `tools/setup-whisper.{sh,ps1}`   | Model `base` runs on a small VPS (~2.2s per 13.6s of speech).          |
-| Chatterbox (voice clone)         | `/voice clone`              | `tools/setup-clone.ps1`          | Needs GPU/RAM; hidden unless `CLONE_ENABLED=1`. See `docs/SPIKE-CLONE.md`. |
 
 ---
 

@@ -186,7 +186,7 @@ export function chunkText(text: string, max: number): string[] {
  * legitimate acronyms ("NASA") become read as a word, but in chat ALL-CAPS is almost
  * always emphasis/shouting, not an acronym. PURE.
  *
- * The transform itself lives in deCaps.ts (shared with Kokoro/Clone/Neural, which have the
+ * The transform itself lives in deCaps.ts (shared with Kokoro/Neural, which have the
  * same problem); here we keep only the wrapper with the historical name and the gTTS note.
  */
 export function deCapsForGoogle(text: string): string {

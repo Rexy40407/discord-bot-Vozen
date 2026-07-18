@@ -11,11 +11,8 @@ import {
   ButtonStyle,
   ComponentType,
 } from 'discord.js';
-import { unlink } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
 import type { BotDeps } from '../../bot/deps';
 import { eraseUser } from '../../store/dataLifecycle';
-import { purgeCloneDerivedAudio } from '../../tts/cache';
 import { isUserPremium, isGuildPremium } from '../../store/premium';
 import { t } from '../../i18n/index';
 import { localeForUser } from '../helpers';
@@ -64,23 +61,12 @@ async function handleErase(i: ChatInputCommandInteraction, deps: BotDeps): Promi
     return;
   }
 
-  let removedSamplePaths: string[];
   try {
-    ({ removedSamplePaths } = eraseUser(deps.db, i.user.id));
+    eraseUser(deps.db, i.user.id);
   } catch (err) {
     log.error('[privacy] failed to erase user data', err);
     await btn.update(updateCard(t('error.generic', locale), { tone: 'danger' })).catch(() => {});
     return;
-  }
-  // Delete the clone .wav files from disk (best-effort — the DB row is already gone).
-  for (const p of removedSamplePaths) {
-    await unlink(p).catch(() => {});
-  }
-  // If the person had a cloned voice, also purge the generated cloned AUDIO (audio-cache/
-  // clone/ and /fx/) — otherwise it would survive the biometric erasure until evicted by LRU.
-  // The keys are hashes, so the entire namespace is cleared (regenerable).
-  if (removedSamplePaths.length > 0) {
-    purgeCloneDerivedAudio(join(dirname(deps.config.dbPath), 'audio-cache'));
   }
   await btn.update(updateCard(t('privacy.eraseDone', locale), { tone: 'success' })).catch(() => {});
 }

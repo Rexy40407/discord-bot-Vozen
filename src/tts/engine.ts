@@ -46,11 +46,6 @@ export interface SynthRequest {
   // Absent/'none' => clean voice. Does NOT enter the cacheKey (the EffectEngine has its own
   // cache keyed by cacheKey+effect), so the clean audio remains shared between users.
   effect?: string;
-  // Voice CLONE (premium): path of the reference WAV of the author's OWN voice. When
-  // present, the CloneEngine synthesizes `text` in that voice (Python sidecar) instead of
-  // the normal engine; any failure falls back to the normal voice. Outside the cacheKey
-  // (its own 'clone' cache).
-  cloneRef?: string;
   // Fixed audio ASSET: path of an ALREADY-ready WAV on disk (e.g. the sound effect of
   // /rizz). When present, the player plays it DIRECTLY — no engine, no cache, no effects
   // (none of that applies to a fixed clip). `text` is ignored for synthesis (but the

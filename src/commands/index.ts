@@ -197,24 +197,6 @@ function computeAutocompleteChoices(
     }
     return [];
   }
-  // /voice clone record `user`: lists who is in the call WITH the bot (the only valid
-  // targets — recording requires being in the bot's channel). Outside a call, empty list.
-  if (focused.name === 'user') {
-    const botChannel = i.guild?.members.me?.voice?.channel ?? null;
-    const q = focused.value.trim().toLowerCase();
-    return botChannel
-      ? [...botChannel.members.values()]
-          .filter((m) => !m.user.bot)
-          .filter(
-            (m) =>
-              !q ||
-              m.displayName.toLowerCase().includes(q) ||
-              m.user.username.toLowerCase().includes(q),
-          )
-          .slice(0, 25)
-          .map((m) => ({ name: m.displayName, value: m.id }))
-      : [];
-  }
   return [];
 }
 

@@ -18,7 +18,6 @@ import { getGuildConfig } from '../../store/guildConfig';
 import { getBlocklist } from '../../store/blocklist';
 import { getUserPronunciations, getServerPronunciations } from '../../store/pronunciation';
 import { getVoiceEffect } from '../../store/voiceEffect';
-import { getClone } from '../../store/voiceClone';
 import { forgetVoicePresence } from '../../store/voicePresence';
 import { cleanText, collectUrlMedia, collectMarkdownMedia } from '../../textCleaning/clean';
 import { prepareSpeech, redactRequest, hasReadableText } from '../prepareSpeech';
@@ -191,8 +190,6 @@ export async function speakRawText(
   if (!readable) return { status: 'blocked' };
   const outReq = redacted;
   outReq.effect = getVoiceEffect(deps.db, guildId, userId); // voice effect (premium)
-  const cloneRow = getClone(deps.db, userId); // voice clone (premium)
-  if (cloneRow?.enabled) outReq.cloneRef = cloneRow.samplePath;
   if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
   const queued = await player.say(outReq);
   return { status: queued ? 'queued' : 'busy' };

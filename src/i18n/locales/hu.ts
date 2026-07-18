@@ -243,57 +243,6 @@ export default {
   'voice.effect.set':
     '✅ Hangeffekt beállítva: **{effect}** — az üzeneteid mostantól ezzel az effekttel szólalnak meg. Kikapcsolás: `/voice effect none`.',
   'voice.effect.cleared': '✅ Hangeffekt eltávolítva — újra tiszta hang.',
-  'clone.locked':
-    '🔒 A hangklónozás Premium funkció (valódi számítási kapacitást igényel). Nézd meg a `/premium` parancsot.',
-  'clone.notInVoice':
-    'A rögzítéshez **velem együtt** kell lenned a hangcsatornában. Előbb használd a `/join` parancsot.',
-  'clone.alreadyRecording':
-    'Már rögzítesz egy mintát — fejezd be (vagy nyomd meg a **⏹️ Leállítás** gombot), mielőtt újat kezdenél.',
-  'clone.recording':
-    '🎙️ **A hangod rögzítése** — beszélj tovább, amíg magától le nem áll (~{target} mp beszéd, a szünetek nem számítanak), vagy nyomd meg a **⏹️ Leállítás** gombot, amikor végeztél. Csak a TE hangodat őrzöm meg.',
-  'clone.recordingOther':
-    '🎙️ **{who} rögzítése** — beszéljen tovább, amíg magától le nem áll (~{target} mp beszéd, a szünetek nem számítanak), vagy nyomja meg a **⏹️ Leállítás** gombot a befejezéshez.',
-  'clone.recordingProgress':
-    '🔴 Rögzítés… **{got} mp / {target} mp** beszéd rögzítve. Csak így tovább!',
-  'clone.consentRequest':
-    '🎙️ {invoker} rögzíteni szeretné **a hangodat** ({target} mp beszéd), hogy hangklónt készítsen, amivel beszélhet. Engedélyezed? *(60 mp múlva lejár)*',
-  'clone.consentAllow': 'Engedélyezés',
-  'clone.consentDeny': 'Nem',
-  'clone.consentNotYou': 'Erre csak a rögzített személy válaszolhat.',
-  'clone.consentGranted': '✅ {who} beleegyezett — a rögzítés indul.',
-  'clone.consentRefused':
-    '✖️ {who} elutasította. A rögzítés megszakítva — nem készült hangfelvétel.',
-  'clone.consentTimeout': '⌛ {who} nem válaszolt időben. A rögzítés megszakítva.',
-  'clone.consentWaiting': '⏳ Várakozás, hogy {who} elfogadja a csatornában…',
-  'clone.targetNotInVoice':
-    '{who} rögzítéséhez **velem együtt** kell lennie a hangcsatornában. Kérd meg, hogy előbb futtassa a `/join` parancsot.',
-  'clone.pickFromList':
-    'Válassz egy személyt a javaslatok listájából (csak a hívásban lévők rögzíthetők). Hagyd üresen, ha magadat szeretnéd rögzíteni.',
-  'clone.stopBtn': 'Leállítás',
-  'clone.stopNotYours': 'Csak a rögzítő személy állíthatja le.',
-  'clone.tooShort':
-    'Csak {seconds} mp beszédet sikerült rögzítenem — legalább ~{min} mp kell (a cél {target} mp volt) a jó klónozáshoz. Próbáld újra a `/voice clone record` paranccsal.',
-  'clone.saved':
-    '✅ Hangminta mentve ({seconds} mp beszéd). Kapcsold be a `/voice clone use active:true` paranccsal. Csak TE használhatod a klónodat; bármikor törölheted a `/voice clone delete` paranccsal.',
-  'clone.savedOther':
-    '✅ Elmentettem {seconds} mp-t {who} hangjából a TE klónodként. Kapcsold be a `/voice clone use active:true` paranccsal; bármikor törölheted a `/voice clone delete` paranccsal.',
-  'clone.failed':
-    'A rögzítés meghiúsult — próbáld újra. Ha továbbra is előfordul, csatlakozz újra a hangcsatornához.',
-  'clone.none': 'Még nincs hangklónod. Készíts egyet a `/voice clone record` paranccsal (Premium).',
-  'clone.deleted':
-    '🗑️ Hangklón törölve — a minta és a hozzájárulási bejegyzés eltávolítva, nem maradt nyoma.',
-  'clone.revoked':
-    '🛑 Hozzájárulás visszavonva — eltávolítottam {count} hangklónt, amelyeket mások készítettek a hangodból.',
-  'clone.status': '🧬 Hangklón: minta rögzítve {date} · jelenleg **{state}**.',
-  'clone.stateOn': 'BE',
-  'clone.stateOff': 'ki',
-  'clone.noSample':
-    'Előbb szükséged van egy mintára — készíts egyet a `/voice clone record` paranccsal.',
-  'clone.enabled':
-    '✅ Az üzeneteidet mostantól **a klónozott hangodon** olvasom fel. Bármikor kikapcsolhatod a `/voice clone use active:false` paranccsal.',
-  'clone.enabledNoEngine':
-    '✅ Mentve — de a klónmotor még nincs telepítve ezen a példányon, ezért egyelőre a normál hangot hallod.',
-  'clone.disabled': '✅ Klónozott hang kikapcsolva — vissza a normál hangodhoz.',
   'voice.effect.locked':
     '🔒 A(z) **{effect}** Premium effekt. Ingyenes effektek: 🤖 Robot és 🔊 Echo. Oldd fel az összeset a Vozen Premiummal — nézd meg a `/premium` parancsot.',
   'voice.engine.gcloudLocked':
@@ -679,8 +628,4 @@ export default {
     '_(csatlakozz velem egy hangcsatornához, és legközelebb hangosan is kimondom)_',
   'rand.timeout':
     '⏰ Semmi sem lett kiválasztva — futtasd újra a `/randomizer` parancsot, amikor készen állsz.',
-  'stt.busyClone':
-    '⏳ Valaki éppen hangklónt rögzít ebben a hívásban. Csak egy mikrofonom van — próbáld újra, ha végzett (pár másodperc).',
-  'clone.busyStt':
-    '⏳ Ebben a hívásban átirat készül, és csak egy mikrofonom van. Futtasd előbb a `/transcribe stop` parancsot, aztán vedd fel a klónodat.',
 };

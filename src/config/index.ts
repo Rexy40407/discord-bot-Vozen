@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import { log } from '../logging/logger';
 import { PIPER_DEFAULT_SYNTH_PARAMS } from '../tts/calibration';
-import { deriveCloneKey } from '../tts/cloneCrypto';
 
 export type TtsEngineKind = 'piper' | 'neural' | 'gtts' | 'router';
 
@@ -79,16 +78,6 @@ export interface AppConfig {
   // into ≤200 chars). Default 3; 1 reproduces the old serial behavior. High
   // concurrency multiplies the instantaneous request rate (more 429 risk). Env: GTTS_CHUNK_CONCURRENCY.
   gttsChunkConcurrency: number;
-  // Voice clone (/voice clone): command that launches the Python sidecar of the
-  // cloning engine (e.g. "C:\\...\\venv\\Scripts\\python.exe C:\\...\\tools\\clone_server.py").
-  // ABSENT => sample recording/management works, but cloned synthesis is
-  // disabled (fallback to the normal voice) until the operator installs the engine (setup in
-  // Wave 2). Env: CLONE_CMD.
-  cloneCmd?: string;
-  // (Derived) key to encrypt the clone samples (.wav) AT REST — biometric data
-  // (ToS §5(c) + GDPR). Env CLONE_KEY (passphrase); absent => no encryption (in the clear,
-  // backward-compatible with self-hosters who do not set it). See tts/cloneCrypto.
-  cloneKey?: Buffer;
   // Kokoro (OPT-IN neural engine, /voice set engine:Kokoro): Python sidecar command
   // (auto-detects tools/kokoro-venv + model if absent). WITHOUT a sidecar => choosing Kokoro
   // serves gTTS (never silence). Env: KOKORO_CMD.
@@ -381,13 +370,6 @@ export function loadConfig(): AppConfig {
     gttsBreakerThreshold: numEnvPositive('GTTS_BREAKER_THRESHOLD', 3, { integer: true }),
     gttsBreakerCooldownMs: numEnvPositive('GTTS_BREAKER_COOLDOWN_MS', 60_000, { integer: true }),
     gttsChunkConcurrency: numEnvPositive('GTTS_CHUNK_CONCURRENCY', 3, { integer: true }),
-    // Voice clone: Python sidecar command (absent => cloned synthesis disabled;
-    // sample recording/management still works).
-    cloneCmd: process.env.CLONE_CMD?.trim() || undefined,
-    cloneKey: (() => {
-      const s = process.env.CLONE_KEY?.trim();
-      return s ? deriveCloneKey(s) : undefined;
-    })(),
     // Kokoro: sidecar command (absent => auto-detects tools/kokoro-venv).
     kokoroCmd: process.env.KOKORO_CMD?.trim() || undefined,
     // Kokoro languages: csv KOKORO_LANGS (prefixes), or those validated in the spike by default.

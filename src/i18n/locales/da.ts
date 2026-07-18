@@ -97,54 +97,6 @@ export default {
   'voice.effect.set':
     '✅ Stemmeeffekt sat til **{effect}** — dine beskeder afspilles nu med den effekt. Brug `/voice effect none` for at slå den fra.',
   'voice.effect.cleared': '✅ Stemmeeffekt fjernet — ren stemme igen.',
-  'clone.locked':
-    '🔒 Stemmekloning er en Premium-funktion (det koster reel computerkraft). Se `/premium`.',
-  'clone.notInVoice':
-    'Du skal være i talekanalen **sammen med mig** for at optage. Brug `/join` først.',
-  'clone.alreadyRecording':
-    'Du er allerede i gang med at optage en prøve — afslut den (eller tryk på **⏹️ Stop**), før du starter en ny.',
-  'clone.recording':
-    '🎙️ **Optager din stemme** — bliv ved med at tale, indtil det stopper af sig selv (~{target}s tale, pauser tæller ikke), eller tryk på **⏹️ Stop**, når du er færdig. Jeg beholder kun DIN lyd.',
-  'clone.recordingOther':
-    '🎙️ **Optager {who}** — de skal blive ved med at tale, indtil det stopper af sig selv (~{target}s tale, pauser tæller ikke), eller trykke på **⏹️ Stop** for at afslutte.',
-  'clone.recordingProgress': '🔴 Optager… **{got}s / {target}s** tale fanget. Fortsæt!',
-  'clone.consentRequest':
-    '🎙️ {invoker} vil optage **din stemme** ({target}s tale) for at bygge en stemmeklon, de kan tale med. Tillader du det? *(udløber om 60s)*',
-  'clone.consentAllow': 'Tillad',
-  'clone.consentDeny': 'Nej',
-  'clone.consentNotYou': 'Kun den person, der optages, kan svare på dette.',
-  'clone.consentGranted': '✅ {who} sagde ja — starter optagelsen.',
-  'clone.consentRefused': '✖️ {who} sagde nej. Optagelse annulleret — ingen lyd blev fanget.',
-  'clone.consentTimeout': '⌛ {who} svarede ikke i tide. Optagelse annulleret.',
-  'clone.consentWaiting': '⏳ Venter på, at {who} accepterer i kanalen…',
-  'clone.targetNotInVoice':
-    '{who} skal være i talekanalen **sammen med mig** for at blive optaget. Bed dem om at køre `/join` først.',
-  'clone.pickFromList':
-    'Vælg en person fra forslagslisten (kun personer i opkaldet kan optages). Lad den stå tom for at optage dig selv.',
-  'clone.stopBtn': 'Stop',
-  'clone.stopNotYours': 'Kun den, der optager, kan stoppe det.',
-  'clone.tooShort':
-    'Jeg fangede kun {seconds}s tale — jeg skal bruge mindst ~{min}s (målet var {target}s) for at klone godt. Prøv igen med `/voice clone record`.',
-  'clone.saved':
-    '✅ Stemmeprøve gemt ({seconds}s tale). Slå den til med `/voice clone use active:true`. Kun DU kan bruge din klon; slet den når som helst med `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Gemte {seconds}s af {who}s stemme som DIN klon. Slå den til med `/voice clone use active:true`; slet den når som helst med `/voice clone delete`.',
-  'clone.failed':
-    'Optagelsen mislykkedes — prøv igen. Hvis det bliver ved, så gå ind i talekanalen igen.',
-  'clone.none': 'Du har ikke en stemmeklon endnu. Optag en med `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Stemmeklon slettet — prøve og samtykkeregistrering fjernet, intet spor bevaret.',
-  'clone.revoked':
-    '🛑 Samtykke trukket tilbage — fjernede {count} stemmeklon(er), som andre havde lavet af din stemme.',
-  'clone.status': '🧬 Stemmeklon: prøve optaget {date} · i øjeblikket **{state}**.',
-  'clone.stateOn': 'TIL',
-  'clone.stateOff': 'fra',
-  'clone.noSample': 'Du skal have en prøve først — optag en med `/voice clone record`.',
-  'clone.enabled':
-    '✅ Dine beskeder bliver nu læst med **din klonede stemme**. Slå fra når som helst med `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Gemt — men klon-motoren er ikke installeret på denne instans endnu, så du hører den normale stemme indtil videre.',
-  'clone.disabled': '✅ Klonet stemme fra — tilbage til din normale stemme.',
   'voice.effect.locked':
     '🔒 **{effect}** er en Premium-effekt. Gratis effekter: 🤖 Robot og 🔊 Echo. Lås alle op med Vozen Premium — se `/premium`.',
   'voice.engine.gcloudLocked':
@@ -653,8 +605,4 @@ export default {
   'rand.speak': 'Jeg vælger… {winner}!',
   'rand.notInVoice': '_(gå ind i en talekanal med mig, så siger jeg det højt næste gang)_',
   'rand.timeout': '⏰ Intet valgt — kør `/randomizer` igen, når du er klar.',
-  'stt.busyClone':
-    '⏳ Nogen optager en stemmeklon i dette opkald lige nu. Jeg har kun én mikrofon — prøv igen, når det er færdigt (få sekunder).',
-  'clone.busyStt':
-    '⏳ Transskription kører i dette opkald, og jeg har kun én mikrofon. Kør `/transcribe stop` først, og optag så din klon.',
 };

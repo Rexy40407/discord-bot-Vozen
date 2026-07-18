@@ -4,26 +4,25 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { purgeCloneDerivedAudio, CLONE_DERIVED_NAMESPACES } from '../src/tts/cache';
 
-describe('purgeCloneDerivedAudio — deletion of cloned-voice audio (GDPR)', () => {
+describe('purgeCloneDerivedAudio — deletion of effect-derived audio (GDPR)', () => {
   let root: string;
   beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), 'vozen-cache-'));
-    for (const ns of ['clone', 'fx', 'q', 'piper']) {
+    for (const ns of ['fx', 'q', 'piper']) {
       mkdirSync(join(root, ns), { recursive: true });
       writeFileSync(join(root, ns, 'a.wav'), 'x');
     }
   });
   afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-  it('covers clone AND fx (the EffectEngine wraps the CloneEngine)', () => {
-    expect([...CLONE_DERIVED_NAMESPACES].sort()).toEqual(['clone', 'fx']);
+  it('covers the fx (voice-effect) namespace', () => {
+    expect([...CLONE_DERIVED_NAMESPACES].sort()).toEqual(['fx']);
   });
 
-  it('purges the clone-derived namespaces and preserves the others', () => {
+  it('purges the effect-derived namespaces and preserves the others', () => {
     purgeCloneDerivedAudio(root);
-    expect(existsSync(join(root, 'clone'))).toBe(false);
     expect(existsSync(join(root, 'fx'))).toBe(false);
-    expect(existsSync(join(root, 'q'))).toBe(true); // prosody: does not store clone (24k -> base uncached)
+    expect(existsSync(join(root, 'q'))).toBe(true); // prosody: not effect-derived, untouched
     expect(existsSync(join(root, 'piper'))).toBe(true); // normal engine: untouched
   });
 

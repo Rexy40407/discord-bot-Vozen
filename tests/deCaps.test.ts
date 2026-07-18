@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { lowerAllCapsRuns } from '../src/tts/deCaps';
 
-// The primitive shared by gTTS (deCapsForGoogle) and applied in Kokoro/Clone/Neural,
+// The primitive shared by gTTS (deCapsForGoogle) and applied in Kokoro/Neural,
 // so an ALL-CAPS "shout" is not SPELLED OUT. The gTTS-specific tests are
 // in gtts.test.ts (deCapsForGoogle delegates here).
 describe('lowerAllCapsRuns — lowercases runs of 2+ CAPITALS', () => {

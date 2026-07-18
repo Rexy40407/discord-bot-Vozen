@@ -154,7 +154,7 @@ describe('eraseUser', () => {
     }
   });
 
-  it('deletes the user personal data in ALL servers, retains the financial, returns the WAVs', () => {
+  it('deletes the user personal data in ALL servers, retains the financial', () => {
     const db = initDb(':memory:');
     try {
       // U has data in 2 servers.
@@ -197,22 +197,13 @@ describe('eraseUser', () => {
       db.prepare(
         'INSERT INTO premium_pass (user_id, seats, expires_at, source) VALUES (?,?,?,?)',
       ).run('U', 3, 9_999_999_999_999, 'kofi');
-      // Own clone (self-clone) + clone of U's voice recorded by ANOTHER (U's biometric).
-      db.prepare(
-        'INSERT INTO user_clone (user_id, sample_path, consent_at, enabled, target_id) VALUES (?,?,?,?,?)',
-      ).run('U', '/data/clones/U.wav', 1, 1, 'U');
-      db.prepare(
-        'INSERT INTO user_clone (user_id, sample_path, consent_at, enabled, target_id) VALUES (?,?,?,?,?)',
-      ).run('OWNER', '/data/clones/OWNER-of-U.wav', 1, 1, 'U');
 
-      const res = eraseUser(db, 'U');
+      eraseUser(db, 'U');
 
       // Erase tables: zero rows of U (in any server).
       for (const t of USER_ERASE_TABLES) {
         expect(count(db, t, 'user_id', 'U')).toBe(0);
       }
-      // The clone of U's voice recorded by another (target_id = U) was also revoked.
-      expect(count(db, 'user_clone', 'target_id', 'U')).toBe(0);
       // Bespoke: U's Ko-fi link (discord_id) and personal usage (key) were deleted;
       // the SERVER usage (guild scope) stays retained (not U's personal data).
       expect(count(db, 'kofi_supporter', 'discord_id', 'U')).toBe(0);
@@ -221,10 +212,6 @@ describe('eraseUser', () => {
       // Retained: intact.
       expect(count(db, 'premium_user', 'user_id', 'U')).toBe(1);
       expect(count(db, 'premium_pass', 'user_id', 'U')).toBe(1);
-      // Returns the WAV paths for the caller to delete (the own one + the one recorded by another).
-      expect(res.removedSamplePaths.sort()).toEqual(
-        ['/data/clones/OWNER-of-U.wav', '/data/clones/U.wav'].sort(),
-      );
     } finally {
       db.close();
     }

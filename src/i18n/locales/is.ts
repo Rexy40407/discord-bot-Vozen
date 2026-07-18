@@ -97,54 +97,6 @@ export default {
   'voice.effect.set':
     '✅ Raddáhrif stillt á **{effect}** — skilaboð þín spilast nú með þeim áhrifum. Notaðu `/voice effect none` til að slökkva á því.',
   'voice.effect.cleared': '✅ Raddáhrif fjarlægð — hrein rödd aftur.',
-  'clone.locked':
-    '🔒 Raddklónun er Premium eiginleiki (hún kostar raunverulega reiknivinnu). Sjáðu `/premium`.',
-  'clone.notInVoice':
-    'Þú þarft að vera í talrásinni **með mér** til að taka upp. Notaðu `/join` fyrst.',
-  'clone.alreadyRecording':
-    'Þú ert þegar að taka upp sýnishorn — kláraðu það (eða ýttu á **⏹️ Stöðva**) áður en þú byrjar annað.',
-  'clone.recording':
-    '🎙️ **Tek upp rödd þína** — haltu áfram að tala þar til það stöðvast sjálft (~{target}s af tali, þagnir telja ekki), eða ýttu á **⏹️ Stöðva** hvenær sem þú ert búinn. Ég geymi aðeins ÞITT hljóð.',
-  'clone.recordingOther':
-    '🎙️ **Tek upp {who}** — hann ætti að halda áfram að tala þar til það stöðvast sjálft (~{target}s af tali, þagnir telja ekki), eða ýta á **⏹️ Stöðva** til að klára.',
-  'clone.recordingProgress': '🔴 Tek upp… **{got}s / {target}s** af tali náð. Haltu áfram!',
-  'clone.consentRequest':
-    '🎙️ {invoker} vill taka upp **rödd þína** ({target}s af tali) til að búa til raddklón sem hann getur talað með. Leyfir þú það? *(rennur út eftir 60s)*',
-  'clone.consentAllow': 'Leyfa',
-  'clone.consentDeny': 'Nei',
-  'clone.consentNotYou': 'Aðeins sá sem verið er að taka upp getur svarað þessu.',
-  'clone.consentGranted': '✅ {who} samþykkti — byrja upptökuna.',
-  'clone.consentRefused': '✖️ {who} hafnaði. Upptaka hætt við — ekkert hljóð var náð.',
-  'clone.consentTimeout': '⌛ {who} svaraði ekki í tæka tíð. Upptaka hætt við.',
-  'clone.consentWaiting': '⏳ Bíð eftir að {who} samþykki í rásinni…',
-  'clone.targetNotInVoice':
-    '{who} þarf að vera í talrásinni **með mér** til að vera tekinn upp. Biddu hann að nota `/join` fyrst.',
-  'clone.pickFromList':
-    'Veldu manneskju af tillögulistanum (aðeins hægt að taka upp þá sem eru í símtalinu). Skildu eftir tómt til að taka upp sjálfan þig.',
-  'clone.stopBtn': 'Stöðva',
-  'clone.stopNotYours': 'Aðeins sá sem er að taka upp getur stöðvað það.',
-  'clone.tooShort':
-    'Ég náði aðeins {seconds}s af tali — ég þarf að minnsta kosti ~{min}s (markmiðið var {target}s) til að klóna vel. Reyndu aftur með `/voice clone record`.',
-  'clone.saved':
-    '✅ Raddsýnishorn vistað ({seconds}s af tali). Kveiktu á því með `/voice clone use active:true`. Aðeins ÞÚ getur notað klónið þitt; eyddu því hvenær sem er með `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Vistaði {seconds}s af rödd {who} sem ÞITT klón. Kveiktu á því með `/voice clone use active:true`; eyddu því hvenær sem er með `/voice clone delete`.',
-  'clone.failed':
-    'Upptakan mistókst — reyndu aftur. Ef það heldur áfram, farðu aftur inn í talrásina.',
-  'clone.none': 'Þú ert ekki enn með raddklón. Taktu eitt upp með `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Raddklóni eytt — sýnishorn og samþykkisskráning fjarlægð, ekkert spor geymt.',
-  'clone.revoked':
-    '🛑 Samþykki dregið til baka — fjarlægði {count} raddklón sem aðrir höfðu gert af rödd þinni.',
-  'clone.status': '🧬 Raddklón: sýnishorn tekið upp {date} · núna **{state}**.',
-  'clone.stateOn': 'KVEIKT',
-  'clone.stateOff': 'slökkt',
-  'clone.noSample': 'Þú þarft sýnishorn fyrst — taktu eitt upp með `/voice clone record`.',
-  'clone.enabled':
-    '✅ Skilaboð þín verða nú lesin í **klónuðu röddinni þinni**. Slökktu hvenær sem er með `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Vistað — en klónvélin er ekki enn uppsett á þessari uppsetningu, svo þú heyrir venjulegu röddina í bili.',
-  'clone.disabled': '✅ Klónuð rödd slökkt — aftur í venjulegu röddina þína.',
   'voice.effect.locked':
     '🔒 **{effect}** er Premium áhrif. Ókeypis áhrif: 🤖 Robot og 🔊 Echo. Opnaðu öll með Vozen Premium — sjáðu `/premium`.',
   'voice.engine.gcloudLocked':
@@ -653,8 +605,4 @@ export default {
   'rand.speak': 'Ég vel… {winner}!',
   'rand.notInVoice': '_(farðu inn í talrás með mér og ég segi það upphátt næst)_',
   'rand.timeout': '⏰ Ekkert valið — keyrðu `/randomizer` aftur þegar þú ert tilbúinn.',
-  'stt.busyClone':
-    '⏳ Einhver er að taka upp raddklón í þessu símtali núna. Ég er bara með einn hljóðnema — reyndu aftur þegar því lýkur (nokkrar sekúndur).',
-  'clone.busyStt':
-    '⏳ Umritun er í gangi í þessu símtali og ég er bara með einn hljóðnema. Keyrðu `/transcribe stop` fyrst og taktu svo upp klóninn þinn.',
 };

@@ -1,4 +1,4 @@
-import { readdirSync, existsSync } from 'node:fs';
+import { readdirSync, existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { getVoiceConnection } from '@discordjs/voice';
 import { Events, Routes, PermissionFlagsBits } from 'discord.js';
@@ -9,7 +9,6 @@ import { initDb } from './store/db';
 import { startDepartedPurgeJob } from './store/guildDeparted';
 import { startPendingPurgeJob } from './store/kofiPending';
 import { purgeOldGcloudUsage, monthKeyUTC } from './store/gcloudUsage';
-import { sweepOrphanClones } from './store/voiceCloneSweep';
 import { sweepOrphanSttTemps } from './voice/transcriptionSession';
 import { AudioCache } from './tts/cache';
 import {
@@ -21,7 +20,6 @@ import {
 import { syntheticGttsModels } from './language/voiceMap';
 import { EffectEngine } from './tts/effects';
 import { ProsodyEngine } from './tts/prosody';
-import { CloneEngine, resolveCloneCmd } from './tts/cloneEngine';
 import { GuildVoicePlayer } from './voice/player';
 import { AloneWatcher } from './voice/aloneWatcher';
 import { GreetCooldown } from './voice/greetCooldown';
@@ -132,42 +130,15 @@ async function main(): Promise<void> {
       ? createEngine(config, cache)
       : createPerUserEngine(config, cache, db); // db => persistent Google HD counters
   // External decorators, from inside out:
-  //   selectEngine (multi-segment) -> CloneEngine (cloned voice) -> ProsodyEngine
-  //   (question intonation) -> EffectEngine (voice effect)
-  // CloneEngine replaces the SYNTHESIS when req.cloneRef is present (the person's voice);
-  // EffectEngine applies the effect ON TOP of the result. Both fall back to the normal/clean
-  // voice on failure and have their own cache. The clone sidecar is auto-detected (tools/clone-venv)
-  // or comes from CLONE_CMD; absent => inert clone (always serves the normal voice).
-  const cloneCmd = resolveCloneCmd(config.cloneCmd);
-  const cloneEngine = new CloneEngine(
+  //   selectEngine (multi-segment) -> ProsodyEngine (question intonation) -> EffectEngine
+  //   (voice effect). ProsodyEngine sits OUTSIDE the multiseg (applies to the FINAL WAV of the
+  //   utterance) and INSIDE the effect (a voice effect comes on top). EffectEngine applies the
+  //   effect ON TOP of the result; both fall back to the clean voice on failure and keep their
+  //   own cache. ProsodyEngine only runs when the utterance ends in `?` (own cache 'q').
+  const prosodyEngine = new ProsodyEngine(
     selectEngine(baseEngine, config, availableModels, cache),
-    cache.withNamespace('clone'),
-    cloneCmd,
-    undefined, // spawnImpl (default)
-    undefined, // readyTimeoutMs (default)
-    config.cloneKey, // encryption at rest of the samples (no-op without CLONE_KEY)
+    cache.withNamespace('q'),
   );
-  log.info(
-    `[index] voice clone: ${cloneEngine.available ? 'engine detected' : 'no engine (normal voice)'}`,
-  );
-  // Plan 024 (SECRET-02) — genuine fail-open: with the clone engine available
-  // but WITHOUT CLONE_KEY, the samples (biometric data, ToS §5(c) + GDPR) are
-  // stored/read in the clear (see src/tts/cloneEngine.ts) with no signal to the
-  // operator. It only warns (does not change behavior — the missing encryption is a
-  // deferred decision, not fixed here).
-  if (cloneEngine.available && config.cloneKey === undefined) {
-    log.warn(
-      '[index] CLONE_KEY is not set while the clone engine is active; cloned voice samples ' +
-        '(biometric data) will be stored without encryption at rest. Set CLONE_KEY in .env.',
-    );
-  }
-  // Pre-warms the clone model at startup (~35s of GPU), so the 1st cloned message
-  // does not pay the cold-load. No-op without an engine; failure falls back to the normal voice.
-  cloneEngine.prewarm();
-  // ProsodyEngine: QUESTION INTONATION (raises the pitch at the end of utterances with `?`). It sits
-  // OUTSIDE the clone/multiseg (applies to the FINAL WAV of the utterance) and INSIDE the effect (a
-  // voice effect comes on top). Own cache 'q'; only runs when the utterance ends in `?`.
-  const prosodyEngine = new ProsodyEngine(cloneEngine, cache.withNamespace('q'));
   const engine = new EffectEngine(prosodyEngine, cache.withNamespace('fx'));
   log.info(
     `[index] motor TTS ativo: ${config.ttsEngine === 'neural' ? 'neural' : 'per-user (google+piper)'}`,
@@ -195,9 +166,6 @@ async function main(): Promise<void> {
     // Duplicate tracker for the reading anti-spam (opt-in per guild).
     dupTracker: new DuplicateTracker(),
     countGate: new CountGate(),
-    // REAL clone availability (includes venv auto-detection), so the UI does not say
-    // "engine not installed" when the sidecar was detected without CLONE_CMD in the env.
-    cloneAvailable: cloneEngine.available,
   };
 
   // Leave rule: Vozen only leaves the call when it becomes ALONE (zero humans in its
@@ -466,27 +434,19 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] failed to start the pending Ko-fi purchase purge job (ignored)', err);
     }
-    // DATA-06: reconciliation sweep of ORPHANED .wav in voice-clones/ — the safety
-    // net for the best-effort unlinks of eraseUser/`/voice clone delete` (if the process
-    // dies between deleting the row and deleting the file, or the unlink blows up, the
-    // biometric sample is left with no `user_clone` row referencing it). Runs ONLY ONCE at
-    // startup (`once(ClientReady...)`), never on an interval — orphans only accumulate on a
-    // crash, not continuously. The match is against the REAL `sample_path` in the DB, never by
-    // a name heuristic (see voiceCloneSweep.ts). Best-effort: never prevents startup.
+    // Removed voice-clone feature: purge the legacy voice-clones/ sample directory (biometric
+    // .wav files) the deleted /voice clone feature stored on disk. Runs ONLY ONCE at startup
+    // (`once(ClientReady...)`). Idempotent and best-effort — harmless when the directory is
+    // already absent (rmSync force). Never prevents startup. The matching DB records are dropped
+    // by the DROP TABLE user_clone migration in store/db.ts.
     try {
       const voiceClonesDir = path.join(path.dirname(config.dbPath), 'voice-clones');
-      const sweep = sweepOrphanClones(db, voiceClonesDir);
-      if (sweep.removed.length > 0 || sweep.failed.length > 0) {
-        log.info(
-          `[retencao] sweep de clones órfãos: ${sweep.removed.length} apagado(s) de ` +
-            `${sweep.scanned} .wav varrido(s)${sweep.failed.length ? `, ${sweep.failed.length} falhou/falharam a apagar` : ''}.`,
-        );
-      }
+      rmSync(voiceClonesDir, { recursive: true, force: true });
     } catch (err) {
-      log.error('[index] orphaned clone sweep failed (ignored)', err);
+      log.error('[index] legacy voice-clones directory cleanup failed (ignored)', err);
     }
     // Sweep of orphaned STT temporary WAVs in the tmpdir (crash between toWav and the rmSync in
-    // finally). Same class as the clone sweep; runs only at startup, before any
+    // finally). Startup-only reconciliation; runs only at startup, before any
     // STT session. Best-effort — never prevents startup.
     try {
       const removed = sweepOrphanSttTemps();

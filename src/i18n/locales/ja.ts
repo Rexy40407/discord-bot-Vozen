@@ -236,56 +236,6 @@ export default {
   'voice.effect.set':
     '✅ ボイスエフェクトを **{effect}** に設定しました。あなたのメッセージはそのエフェクトで再生されます。オフにするには `/voice effect none` を使ってください。',
   'voice.effect.cleared': '✅ ボイスエフェクトを解除しました。またクリアな声に戻ります。',
-  'clone.locked':
-    '🔒 声のクローンは Premium 機能です（実際の計算リソースがかかります）。`/premium` を確認してください。',
-  'clone.notInVoice':
-    '録音するには**私と一緒に**ボイスチャンネルにいる必要があります。先に `/join` を使ってください。',
-  'clone.alreadyRecording':
-    'すでにサンプルを録音中です。別のを始める前に、それを終える（または **⏹️ 停止** を押す）してください。',
-  'clone.recording':
-    '🎙️ **あなたの声を録音中** — 自動で止まるまで話し続けてください（発話約{target}秒、無音はカウントされません）。終わったらいつでも **⏹️ 停止** を押してください。保存するのはあなたの音声だけです。',
-  'clone.recordingOther':
-    '🎙️ **{who} を録音中** — 自動で止まるまで話し続けてもらってください（発話約{target}秒、無音はカウントされません）。または **⏹️ 停止** を押して終了します。',
-  'clone.recordingProgress': '🔴 録音中… 発話 **{got}秒 / {target}秒** を取得しました。その調子！',
-  'clone.consentRequest':
-    '🎙️ {invoker} が、声のクローンを作って話すために**あなたの声**（発話{target}秒）を録音したがっています。許可しますか？ *(60秒で期限切れ)*',
-  'clone.consentAllow': '許可する',
-  'clone.consentDeny': 'いいえ',
-  'clone.consentNotYou': 'これに答えられるのは録音される本人だけです。',
-  'clone.consentGranted': '✅ {who} が同意しました。録音を開始します。',
-  'clone.consentRefused':
-    '✖️ {who} が拒否しました。録音をキャンセルしました。音声は取得されていません。',
-  'clone.consentTimeout': '⌛ {who} が時間内に応答しませんでした。録音をキャンセルしました。',
-  'clone.consentWaiting': '⏳ {who} がチャンネルで承諾するのを待っています…',
-  'clone.targetNotInVoice':
-    '{who} が録音されるには**私と一緒に**ボイスチャンネルにいる必要があります。先に `/join` を実行するよう頼んでください。',
-  'clone.pickFromList':
-    '候補リストから人を選んでください（録音できるのは通話にいる人だけです）。自分を録音するには空のままにしてください。',
-  'clone.stopBtn': '停止',
-  'clone.stopNotYours': '停止できるのは録音している本人だけです。',
-  'clone.tooShort':
-    '発話を{seconds}秒しか取得できませんでした。うまくクローンするには少なくとも約{min}秒必要です（目標は{target}秒でした）。`/voice clone record` でもう一度お試しください。',
-  'clone.saved':
-    '✅ 声のサンプルを保存しました（発話{seconds}秒）。`/voice clone use active:true` でオンにできます。あなたのクローンを使えるのはあなただけです。いつでも `/voice clone delete` で削除できます。',
-  'clone.savedOther':
-    '✅ {who} の声{seconds}秒をあなたのクローンとして保存しました。`/voice clone use active:true` でオンにできます。いつでも `/voice clone delete` で削除できます。',
-  'clone.failed':
-    '録音に失敗しました。もう一度お試しください。続くようであれば、ボイスチャンネルに入り直してください。',
-  'clone.none':
-    'まだ声のクローンがありません。`/voice clone record` で録音してください（Premium）。',
-  'clone.deleted':
-    '🗑️ 声のクローンを削除しました。サンプルと同意の記録を削除し、痕跡は残していません。',
-  'clone.revoked':
-    '🛑 同意を撤回しました。他の人があなたの声から作成した声のクローンを {count} 件削除しました。',
-  'clone.status': '🧬 声のクローン：サンプル録音日 {date} · 現在 **{state}**。',
-  'clone.stateOn': 'オン',
-  'clone.stateOff': 'オフ',
-  'clone.noSample': 'まずサンプルが必要です。`/voice clone record` で録音してください。',
-  'clone.enabled':
-    '✅ 今後、あなたのメッセージは**あなたのクローン音声**で読み上げられます。いつでも `/voice clone use active:false` でオフにできます。',
-  'clone.enabledNoEngine':
-    '✅ 保存しました。ただし、このインスタンスにはまだクローンエンジンがインストールされていないため、当面は通常の声が聞こえます。',
-  'clone.disabled': '✅ クローン音声をオフにしました。通常の声に戻ります。',
   'voice.effect.locked':
     '🔒 **{effect}** は Premium エフェクトです。無料エフェクト：🤖 Robot と 🔊 Echo。Vozen Premium ですべて解除できます。`/premium` を確認してください。',
   'voice.engine.gcloudLocked':
@@ -665,8 +615,4 @@ export default {
   'rand.notInVoice': '_（私と一緒にボイスチャンネルに参加すれば、次回は声に出して言います）_',
   'rand.timeout':
     '⏰ 何も選ばれませんでした — 準備ができたら `/randomizer` をもう一度実行してください。',
-  'stt.busyClone':
-    '⏳ 今このコールで誰かが音声クローンを録音しています。マイクは1つしかないので、終わってからもう一度お試しください（数秒です）。',
-  'clone.busyStt':
-    '⏳ このコールでは文字起こしが動作中で、マイクは1つしかありません。先に `/transcribe stop` を実行してから、クローンを録音してください。',
 };

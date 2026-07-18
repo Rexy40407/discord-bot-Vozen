@@ -23,7 +23,7 @@ Guidance for AI coding agents working on Vozen (Discord TTS bot).
   - Any user-facing data the bot stores must be disclosed in PRIVACY.md AND have
     a user-accessible deletion path (command).
   - Anything acting on/about a user (recording, DMs, account changes) requires
-    that user's explicit prior consent (see voice clone: consent-first pattern).
+    that user's explicit prior consent (see /transcribe: consent-first pattern).
   - No unsolicited DMs, ever. No contacting users outside Discord with API data.
   - Paid features must support Discord Premium Apps purchase with price parity
     (≤ other channels) wherever Discord monetization is available to the app.
@@ -62,13 +62,6 @@ Guidance for AI coding agents working on Vozen (Discord TTS bot).
 
 - Read `docs/ARCHITECTURE.md` — it reflects the code in `src/`. The historical
   design spec under `docs/superpowers/specs/` may diverge; the code wins.
-- Optional voice-clone sidecar (Chatterbox, Python): installed by
-  `tools/setup-clone.ps1` into `tools/clone-venv/` (gitignored). The bot
-  auto-detects it (`resolveCloneCmd`: `Scripts/python.exe` on Windows OR
-  `bin/python` on Linux). **Needs GPU/RAM** — it does not even load on the
-  hosted VPS (2 vCPU, 3.7 GB; OOMs at ~3.3 GB — see `docs/SPIKE-CLONE.md`).
-  So the `/voice clone` command group is **hidden by default**; set
-  `CLONE_ENABLED=1` (a real env var) only on a capable machine to show it.
 - Optional Kokoro TTS sidecar (`kokoro-onnx`, ONNX/CPU, no PyTorch): installed by
   `tools/setup-kokoro.ps1` into `tools/kokoro-venv/` (gitignored) + model/voices.
   Auto-detected. It is an **opt-in** per-user engine (`/voice set engine:Kokoro`);

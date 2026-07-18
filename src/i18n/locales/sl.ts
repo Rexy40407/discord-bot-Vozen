@@ -98,54 +98,6 @@ export default {
   'voice.effect.set':
     '✅ Glasovni učinek nastavljen na **{effect}** — tvoja sporočila se odslej predvajajo s tem učinkom. Uporabi `/voice effect none`, da ga izklopiš.',
   'voice.effect.cleared': '✅ Glasovni učinek odstranjen — spet čist glas.',
-  'clone.locked':
-    '🔒 Kloniranje glasu je funkcija Premium (stane pravo računsko moč). Poglej `/premium`.',
-  'clone.notInVoice':
-    'Za snemanje moraš biti v glasovnem kanalu **z mano**. Najprej uporabi `/join`.',
-  'clone.alreadyRecording':
-    'Vzorec že snemaš — najprej ga dokončaj (ali pritisni **⏹️ Ustavi**), preden začneš novega.',
-  'clone.recording':
-    '🎙️ **Snemam tvoj glas** — govori naprej, dokler se ne ustavi samo (~{target}s govora, premori se ne štejejo), ali pritisni **⏹️ Ustavi**, ko končaš. Obdržim samo TVOJ zvok.',
-  'clone.recordingOther':
-    '🎙️ **Snemam {who}** — naj govori naprej, dokler se ne ustavi samo (~{target}s govora, premori se ne štejejo), ali pritisne **⏹️ Ustavi**, da konča.',
-  'clone.recordingProgress': '🔴 Snemam … zajetega **{got}s / {target}s** govora. Kar naprej!',
-  'clone.consentRequest':
-    '🎙️ {invoker} želi posneti **tvoj glas** ({target}s govora), da ustvari glasovni klon, s katerim bo lahko govoril. Dovoliš? *(poteče čez 60s)*',
-  'clone.consentAllow': 'Dovoli',
-  'clone.consentDeny': 'Ne',
-  'clone.consentNotYou': 'Na to lahko odgovori samo oseba, ki se snema.',
-  'clone.consentGranted': '✅ {who} se je strinjal — začenjam snemanje.',
-  'clone.consentRefused': '✖️ {who} je zavrnil. Snemanje preklicano — noben zvok ni bil zajet.',
-  'clone.consentTimeout': '⌛ {who} ni odgovoril pravočasno. Snemanje preklicano.',
-  'clone.consentWaiting': '⏳ Čakam, da {who} sprejme v kanalu …',
-  'clone.targetNotInVoice':
-    '{who} mora biti v glasovnem kanalu **z mano**, da ga posnamem. Prosi ga, naj najprej uporabi `/join`.',
-  'clone.pickFromList':
-    'Izberi osebo s seznama predlogov (posnamem lahko samo osebe v klicu). Pusti prazno, da posnameš sebe.',
-  'clone.stopBtn': 'Ustavi',
-  'clone.stopNotYours': 'Ustavi lahko samo oseba, ki snema.',
-  'clone.tooShort':
-    'Ujel sem le {seconds}s govora — za dober klon potrebujem vsaj ~{min}s (cilj je bil {target}s). Poskusi znova z `/voice clone record`.',
-  'clone.saved':
-    '✅ Glasovni vzorec shranjen ({seconds}s govora). Vklopi ga z `/voice clone use active:true`. Svoj klon lahko uporabljaš samo TI; kadar koli ga izbriši z `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Shranil sem {seconds}s glasu osebe {who} kot TVOJ klon. Vklopi ga z `/voice clone use active:true`; kadar koli ga izbriši z `/voice clone delete`.',
-  'clone.failed':
-    'Snemanje ni uspelo — poskusi znova. Če se ponavlja, se znova pridruži glasovnemu kanalu.',
-  'clone.none': 'Še nimaš glasovnega klona. Posnemi ga z `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Glasovni klon izbrisan — vzorec in zapis privolitve odstranjena, brez sledi.',
-  'clone.revoked':
-    '🛑 Privolitev preklicana — odstranil sem {count} glasovnih klonov, ki so jih drugi naredili iz tvojega glasu.',
-  'clone.status': '🧬 Glasovni klon: vzorec posnet {date} · trenutno **{state}**.',
-  'clone.stateOn': 'VKLOPLJEN',
-  'clone.stateOff': 'izklopljen',
-  'clone.noSample': 'Najprej potrebuješ vzorec — posnemi ga z `/voice clone record`.',
-  'clone.enabled':
-    '✅ Tvoja sporočila bodo odslej prebrana s **tvojim kloniranim glasom**. Kadar koli izklopi z `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Shranjeno — a pogon za kloniranje na tej instanci še ni nameščen, zato boš zaenkrat slišal običajni glas.',
-  'clone.disabled': '✅ Klonirani glas izklopljen — nazaj na tvoj običajni glas.',
   'voice.effect.locked':
     '🔒 **{effect}** je učinek Premium. Brezplačna učinka: 🤖 Robot in 🔊 Echo. Odkleni vse z Vozen Premium — poglej `/premium`.',
   'voice.engine.gcloudLocked':
@@ -657,8 +609,4 @@ export default {
   'rand.notInVoice':
     '_(pridruži se glasovnemu kanalu z mano in naslednjič bom to povedal na glas)_',
   'rand.timeout': '⏰ Nič ni bilo izbrano — ko boš pripravljen, znova zaženi `/randomizer`.',
-  'stt.busyClone':
-    '⏳ Nekdo prav zdaj v tem klicu snema glasovni klon. Imam samo en mikrofon — poskusi znova, ko konča (nekaj sekund).',
-  'clone.busyStt':
-    '⏳ V tem klicu teče prepis, jaz pa imam samo en mikrofon. Najprej zaženi `/transcribe stop`, nato posnemi svoj klon.',
 };

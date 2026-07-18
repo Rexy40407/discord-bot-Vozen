@@ -100,57 +100,6 @@ export default {
   'voice.effect.set':
     "✅ Effetto voce impostato su **{effect}** — i tuoi messaggi ora vengono riprodotti con quell'effetto. Usa `/voice effect none` per disattivarlo.",
   'voice.effect.cleared': '✅ Effetto voce rimosso — di nuovo voce pulita.',
-  'clone.locked':
-    '🔒 Il clone vocale è una funzione Premium (costa potenza di calcolo vera). Vedi `/premium`.',
-  'clone.notInVoice':
-    'Devi essere nel canale vocale **insieme a me** per registrare. Usa prima `/join`.',
-  'clone.alreadyRecording':
-    'Stai già registrando un campione — finiscilo (o premi **⏹️ Ferma**) prima di iniziarne un altro.',
-  'clone.recording':
-    '🎙️ **Sto registrando la tua voce** — continua a parlare finché non si ferma da solo (~{target}s di parlato, le pause non contano), oppure premi **⏹️ Ferma** quando hai finito. Conservo solo il TUO audio.',
-  'clone.recordingOther':
-    '🎙️ **Sto registrando {who}** — deve continuare a parlare finché non si ferma da solo (~{target}s di parlato, le pause non contano), oppure premere **⏹️ Ferma** per terminare.',
-  'clone.recordingProgress':
-    '🔴 Registrazione… **{got}s / {target}s** di parlato catturati. Continua!',
-  'clone.consentRequest':
-    '🎙️ {invoker} vuole registrare **la tua voce** ({target}s di parlato) per creare un clone vocale con cui parlare. Lo permetti? *(scade tra 60s)*',
-  'clone.consentAllow': 'Permetti',
-  'clone.consentDeny': 'No',
-  'clone.consentNotYou': 'Solo la persona che viene registrata può rispondere a questo.',
-  'clone.consentGranted': '✅ {who} ha acconsentito — avvio la registrazione.',
-  'clone.consentRefused':
-    '✖️ {who} ha rifiutato. Registrazione annullata — non è stato catturato alcun audio.',
-  'clone.consentTimeout': '⌛ {who} non ha risposto in tempo. Registrazione annullata.',
-  'clone.consentWaiting': '⏳ In attesa che {who} accetti nel canale…',
-  'clone.targetNotInVoice':
-    '{who} deve essere nel canale vocale **insieme a me** per essere registrato. Chiedigli di usare prima `/join`.',
-  'clone.pickFromList':
-    'Scegli una persona dalla lista dei suggerimenti (si possono registrare solo le persone in chiamata). Lascia vuoto per registrare te stesso.',
-  'clone.stopBtn': 'Ferma',
-  'clone.stopNotYours': 'Solo chi sta registrando può fermarla.',
-  'clone.tooShort':
-    "Ho catturato solo {seconds}s di parlato — me ne servono almeno ~{min}s (l'obiettivo era {target}s) per clonare bene. Riprova con `/voice clone record`.",
-  'clone.saved':
-    '✅ Campione vocale salvato ({seconds}s di parlato). Attivalo con `/voice clone use active:true`. Solo TU puoi usare il tuo clone; eliminalo quando vuoi con `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Salvati {seconds}s della voce di {who} come TUO clone. Attivalo con `/voice clone use active:true`; eliminalo quando vuoi con `/voice clone delete`.',
-  'clone.failed':
-    'La registrazione è fallita — riprova. Se continua a succedere, rientra nel canale vocale.',
-  'clone.none':
-    'Non hai ancora un clone vocale. Registrane uno con `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Clone vocale eliminato — campione e registro del consenso rimossi, nessuna traccia conservata.',
-  'clone.revoked':
-    '🛑 Consenso ritirato — rimossi {count} clone vocali che altre persone avevano creato dalla tua voce.',
-  'clone.status': '🧬 Clone vocale: campione registrato il {date} · attualmente **{state}**.',
-  'clone.stateOn': 'ATTIVO',
-  'clone.stateOff': 'disattivato',
-  'clone.noSample': 'Prima ti serve un campione — registrane uno con `/voice clone record`.',
-  'clone.enabled':
-    '✅ I tuoi messaggi ora verranno letti con **la tua voce clonata**. Disattivala quando vuoi con `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Salvato — ma il motore di clonazione non è ancora installato su questa istanza, quindi per ora sentirai la voce normale.',
-  'clone.disabled': '✅ Voce clonata disattivata — di nuovo alla tua voce normale.',
   'voice.effect.locked':
     '🔒 **{effect}** è un effetto Premium. Effetti gratuiti: 🤖 Robot ed 🔊 Echo. Sbloccali tutti con Vozen Premium — vedi `/premium`.',
   'voice.engine.gcloudLocked':
@@ -665,8 +614,4 @@ export default {
   'rand.notInVoice':
     '_(entra in un canale vocale con me e la prossima volta lo dirò ad alta voce)_',
   'rand.timeout': '⏰ Niente scelto — esegui di nuovo `/randomizer` quando sei pronto.',
-  'stt.busyClone':
-    '⏳ Qualcuno sta registrando un clone vocale in questa chiamata proprio ora. Ho un solo microfono: riprova quando ha finito (pochi secondi).',
-  'clone.busyStt':
-    '⏳ La trascrizione è attiva in questa chiamata e ho un solo microfono. Esegui prima `/transcribe stop`, poi registra il tuo clone.',
 };

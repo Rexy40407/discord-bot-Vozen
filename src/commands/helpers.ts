@@ -72,7 +72,7 @@ export const INVITE_PERMISSIONS: string = new PermissionsBitField([
   // is split by shape, not by accident:
   //   - conversational replies (confirmations, errors, panels) -> ui/messages.ts CARDS;
   //   - rich multi-line LISTS (/stats, /help, /game list|leaderboard|stats, /voice list,
-  //     /setup, clone status) stay EMBEDS — they are long, scannable and field-like.
+  //     /setup) stay EMBEDS — they are long, scannable and field-like.
   // Without this permission Discord does NOT render those embeds in channels where
   // @everyone lacks it. Reactions/attachments do NOT apply: the code uses neither
   // .react() nor sends files (audited).

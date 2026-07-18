@@ -200,7 +200,7 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
   const locale = localeForUser(deps, i);
 
   // 💎 GATE: /rizz is Premium (user's own Plus OR the server's Premium). Same pattern as
-  // /voice clone, /voice effect and the Premium games. Checked early — doesn't even generate the line.
+  // /voice effect and the Premium games. Checked early — doesn't even generate the line.
   const now = Date.now();
   const premium =
     isUserPremium(deps.db, i.user.id, now) || isGuildPremium(deps.db, i.guildId!, now);

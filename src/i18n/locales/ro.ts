@@ -100,54 +100,6 @@ export default {
   'voice.effect.set':
     '✅ Efect de voce setat la **{effect}** — mesajele tale se redau acum cu acel efect. Folosește `/voice effect none` ca să-l oprești.',
   'voice.effect.cleared': '✅ Efect de voce eliminat — voce curată din nou.',
-  'clone.locked':
-    '🔒 Clonarea vocii este o funcție Premium (costă putere de calcul reală). Vezi `/premium`.',
-  'clone.notInVoice':
-    'Trebuie să fii în canalul de voce **cu mine** ca să înregistrez. Folosește mai întâi `/join`.',
-  'clone.alreadyRecording':
-    'Deja înregistrezi o mostră — termin-o (sau apasă **⏹️ Stop**) înainte de a începe alta.',
-  'clone.recording':
-    '🎙️ **Îți înregistrez vocea** — continuă să vorbești până se oprește singur (~{target}s de vorbire, pauzele nu contează), sau apasă **⏹️ Stop** când ai terminat. Păstrez doar audioul TĂU.',
-  'clone.recordingOther':
-    '🎙️ **Îl înregistrez pe {who}** — ar trebui să continue să vorbească până se oprește singur (~{target}s de vorbire, pauzele nu contează), sau să apese **⏹️ Stop** ca să termine.',
-  'clone.recordingProgress': '🔴 Înregistrez… **{got}s / {target}s** de vorbire captată. Continuă!',
-  'clone.consentRequest':
-    '🎙️ {invoker} vrea să-ți înregistreze **vocea** ({target}s de vorbire) ca să creeze o clonă de voce cu care să poată vorbi. Permiți? *(expiră în 60s)*',
-  'clone.consentAllow': 'Permit',
-  'clone.consentDeny': 'Nu',
-  'clone.consentNotYou': 'Doar persoana înregistrată poate răspunde la asta.',
-  'clone.consentGranted': '✅ {who} a acceptat — încep înregistrarea.',
-  'clone.consentRefused': '✖️ {who} a refuzat. Înregistrare anulată — nu s-a captat niciun audio.',
-  'clone.consentTimeout': '⌛ {who} nu a răspuns la timp. Înregistrare anulată.',
-  'clone.consentWaiting': '⏳ Aștept ca {who} să accepte în canal…',
-  'clone.targetNotInVoice':
-    '{who} trebuie să fie în canalul de voce **cu mine** ca să fie înregistrat. Cere-i să ruleze mai întâi `/join`.',
-  'clone.pickFromList':
-    'Alege o persoană din lista de sugestii (pot fi înregistrați doar cei din apel). Lasă gol ca să te înregistrezi pe tine.',
-  'clone.stopBtn': 'Stop',
-  'clone.stopNotYours': 'Doar persoana care înregistrează o poate opri.',
-  'clone.tooShort':
-    'Am prins doar {seconds}s de vorbire — am nevoie de cel puțin ~{min}s (ținta era {target}s) ca să clonez bine. Încearcă din nou cu `/voice clone record`.',
-  'clone.saved':
-    '✅ Mostră de voce salvată ({seconds}s de vorbire). Activeaz-o cu `/voice clone use active:true`. Doar TU îți poți folosi clona; șterge-o oricând cu `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Am salvat {seconds}s din vocea lui {who} ca clona TA. Activeaz-o cu `/voice clone use active:true`; șterge-o oricând cu `/voice clone delete`.',
-  'clone.failed':
-    'Înregistrarea a eșuat — încearcă din nou. Dacă tot se întâmplă, reintră în canalul de voce.',
-  'clone.none': 'Încă nu ai o clonă de voce. Înregistrează una cu `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Clonă de voce ștearsă — mostra și evidența consimțământului au fost eliminate, fără urmă.',
-  'clone.revoked':
-    '🛑 Consimțământ retras — am eliminat {count} clonă/clone de voce pe care alții le făcuseră din vocea ta.',
-  'clone.status': '🧬 Clonă de voce: mostră înregistrată {date} · momentan **{state}**.',
-  'clone.stateOn': 'ACTIVĂ',
-  'clone.stateOff': 'oprită',
-  'clone.noSample': 'Ai nevoie mai întâi de o mostră — înregistrează una cu `/voice clone record`.',
-  'clone.enabled':
-    '✅ Mesajele tale vor fi de acum citite cu **vocea ta clonată**. Oprește oricând cu `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Salvat — dar motorul de clonare nu este încă instalat pe această instanță, așa că deocamdată vei auzi vocea normală.',
-  'clone.disabled': '✅ Voce clonată oprită — înapoi la vocea ta normală.',
   'voice.effect.locked':
     '🔒 **{effect}** este un efect Premium. Efecte gratuite: 🤖 Robot și 🔊 Echo. Deblochează-le pe toate cu Vozen Premium — vezi `/premium`.',
   'voice.engine.gcloudLocked':
@@ -665,8 +617,4 @@ export default {
   'rand.speak': 'Aleg… {winner}!',
   'rand.notInVoice': '_(intră într-un canal de voce cu mine și data viitoare o spun cu voce tare)_',
   'rand.timeout': '⏰ Nimic ales — rulează `/randomizer` din nou când ești gata.',
-  'stt.busyClone':
-    '⏳ Cineva înregistrează chiar acum o clonă vocală în acest apel. Am un singur microfon — încearcă din nou când termină (câteva secunde).',
-  'clone.busyStt':
-    '⏳ Transcrierea rulează în acest apel și am un singur microfon. Rulează întâi `/transcribe stop`, apoi înregistrează-ți clona.',
 };

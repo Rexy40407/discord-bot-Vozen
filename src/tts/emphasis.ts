@@ -28,7 +28,7 @@ const GAIN_STRONG = 1.5; // strong emphasis (!! or more, or uppercase + `!`)
 /**
  * Volume gain for a speech utterance, from its text. 1.0 = normal (no gain).
  * >1.0 = louder. Pure and deterministic (testable in isolation). Engine-agnostic:
- * the player applies it at playback, so it works for gTTS, Piper and clone.
+ * the player applies it at playback, so it works regardless of the TTS engine.
  */
 export function emphasisGain(text: string): number {
   if (!text) return GAIN_NONE;

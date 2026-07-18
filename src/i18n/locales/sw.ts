@@ -100,54 +100,6 @@ export default {
   'voice.effect.set':
     '✅ Athari ya sauti imewekwa kuwa **{effect}** — jumbe zako sasa zinachezwa kwa athari hiyo. Tumia `/voice effect none` ili kuizima.',
   'voice.effect.cleared': '✅ Athari ya sauti imeondolewa — sauti safi tena.',
-  'clone.locked':
-    '🔒 Kunakili sauti ni kipengele cha Premium (kinagharimu uchakataji halisi). Angalia `/premium`.',
-  'clone.notInVoice':
-    'Unahitaji kuwa kwenye kituo cha sauti **pamoja nami** ili kurekodi. Tumia `/join` kwanza.',
-  'clone.alreadyRecording':
-    'Tayari unarekodi sampuli — imalize (au bofya **⏹️ Simamisha**) kabla ya kuanza nyingine.',
-  'clone.recording':
-    '🎙️ **Ninarekodi sauti yako** — endelea kuzungumza hadi isimame yenyewe (~{target}s za maneno, pumziko hazihesabiwi), au bofya **⏹️ Simamisha** wakati wowote ukimaliza. Ninahifadhi sauti YAKO pekee.',
-  'clone.recordingOther':
-    '🎙️ **Ninamrekodi {who}** — anapaswa kuendelea kuzungumza hadi isimame yenyewe (~{target}s za maneno, pumziko hazihesabiwi), au bofya **⏹️ Simamisha** ili kumaliza.',
-  'clone.recordingProgress': '🔴 Ninarekodi… **{got}s / {target}s** za maneno zimenaswa. Endelea!',
-  'clone.consentRequest':
-    '🎙️ {invoker} anataka kurekodi **sauti yako** ({target}s za maneno) ili kutengeneza clone ya sauti anayoweza kuzungumza nayo. Unaruhusu? *(inaisha baada ya 60s)*',
-  'clone.consentAllow': 'Ruhusu',
-  'clone.consentDeny': 'Hapana',
-  'clone.consentNotYou': 'Ni mtu anayerekodiwa pekee anayeweza kujibu hili.',
-  'clone.consentGranted': '✅ {who} amekubali — ninaanza kurekodi.',
-  'clone.consentRefused': '✖️ {who} amekataa. Kurekodi kumeghairiwa — hakuna sauti iliyonaswa.',
-  'clone.consentTimeout': '⌛ {who} hakujibu kwa wakati. Kurekodi kumeghairiwa.',
-  'clone.consentWaiting': '⏳ Ninasubiri {who} akubali kwenye kituo…',
-  'clone.targetNotInVoice':
-    '{who} anahitaji kuwa kwenye kituo cha sauti **pamoja nami** ili arekodiwe. Muombe aendeshe `/join` kwanza.',
-  'clone.pickFromList':
-    'Chagua mtu kutoka kwenye orodha ya mapendekezo (ni watu walio kwenye simu pekee wanaoweza kurekodiwa). Iache tupu ili ujirekodi mwenyewe.',
-  'clone.stopBtn': 'Simamisha',
-  'clone.stopNotYours': 'Ni mtu anayerekodi pekee anayeweza kuisimamisha.',
-  'clone.tooShort':
-    'Nimenasa {seconds}s za maneno pekee — ninahitaji angalau ~{min}s (lengo lilikuwa {target}s) ili kunakili vizuri. Jaribu tena kwa `/voice clone record`.',
-  'clone.saved':
-    '✅ Sampuli ya sauti imehifadhiwa ({seconds}s za maneno). Iwashe kwa `/voice clone use active:true`. Ni WEWE pekee unayeweza kutumia clone yako; ifute wakati wowote kwa `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Nimehifadhi {seconds}s za sauti ya {who} kama clone YAKO. Iwashe kwa `/voice clone use active:true`; ifute wakati wowote kwa `/voice clone delete`.',
-  'clone.failed':
-    'Kurekodi kumeshindikana — jaribu tena. Ikiendelea kutokea, rejea kwenye kituo cha sauti.',
-  'clone.none': 'Bado huna clone ya sauti. Rekodi moja kwa `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Clone ya sauti imefutwa — sampuli na rekodi ya kibali zimeondolewa, hakuna alama iliyobaki.',
-  'clone.revoked':
-    '🛑 Kibali kimeondolewa — nimeondoa clone {count} za sauti ambazo watu wengine walikuwa wametengeneza kutoka sauti yako.',
-  'clone.status': '🧬 Clone ya sauti: sampuli ilirekodiwa {date} · kwa sasa **{state}**.',
-  'clone.stateOn': 'IMEWASHWA',
-  'clone.stateOff': 'imezimwa',
-  'clone.noSample': 'Kwanza unahitaji sampuli — rekodi moja kwa `/voice clone record`.',
-  'clone.enabled':
-    '✅ Jumbe zako sasa zitasomwa kwa **sauti yako iliyonakiliwa**. Zima wakati wowote kwa `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Imehifadhiwa — lakini injini ya clone bado haijasakinishwa katika mfano huu, kwa hivyo utasikia sauti ya kawaida kwa sasa.',
-  'clone.disabled': '✅ Sauti iliyonakiliwa imezimwa — umerudi kwenye sauti yako ya kawaida.',
   'voice.effect.locked':
     '🔒 **{effect}** ni athari ya Premium. Athari za bure: 🤖 Robot na 🔊 Echo. Fungua zote kwa Vozen Premium — angalia `/premium`.',
   'voice.engine.gcloudLocked':
@@ -663,8 +615,4 @@ export default {
   'rand.notInVoice':
     '_(jiunge na kituo cha sauti pamoja nami nami nitakisema kwa sauti wakati ujao)_',
   'rand.timeout': '⏰ Hakuna kilichochaguliwa — endesha `/randomizer` tena ukiwa tayari.',
-  'stt.busyClone':
-    '⏳ Kuna mtu anarekodi kloni ya sauti kwenye simu hii sasa hivi. Nina maikrofoni moja tu — jaribu tena itakapomalizika (sekunde chache).',
-  'clone.busyStt':
-    '⏳ Unukuzi unaendelea kwenye simu hii, na nina maikrofoni moja tu. Endesha `/transcribe stop` kwanza, kisha rekodi kloni yako.',
 };

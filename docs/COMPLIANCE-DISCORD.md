@@ -47,24 +47,12 @@ SKUs com **preço ≤ Ko-fi** quando se formalizar o negócio (ou naturalmente a
 aos ~75 servidores). O `.env` já documenta `PREMIUM_GUILD_SKU_ID`/`PREMIUM_USER_SKU_ID`.
 
 ### 2.2 Transparência dos dados — FECHADO na Fase 1
-`PRIVACY.md` estava desatualizado (faltavam tabelas, em especial o **clone de voz**).
-Corrigido: todas as tabelas documentadas, secção 2.3 dedicada ao clone (WAVs, consentimento,
-`/voice clone delete`), contacto do operador preenchido, idade 13+.
+`PRIVACY.md` estava desatualizado (faltavam tabelas). Corrigido: todas as tabelas
+documentadas, contacto do operador preenchido, idade 13+.
 
 ### 2.3 Canal de denúncia — FECHADO na Fase 1
 Existe servidor de suporte (`discord.gg/V6PZYZmhcQ`). Ligado ao `/help` (env `SUPPORT_URL`),
 à Privacidade e aos Termos.
-
-### 2.4 Voice clone — FECHADO (Fases 1 e 2)
-O consent flow é sólido (botão Permitir/Recusar que só o alvo carrega; grava só o SSRC do
-alvo; `consent_at`). A amostra fica atribuída a quem correu o comando. Amostras de voz podem
-ser "dados sensíveis/biométricos" (RGPD, regra 16).
-- **Fase 1 (feito):** documentado com verdade em toda a política (a antiga dizia "só a
-  própria voz" — falso).
-- **Fase 2 (feito):** coluna `target_id` em `user_clone` (migração idempotente, backfill =
-  auto-clone); `deleteClonesByTarget()`; `/voice clone delete` agora **também revoga** todos
-  os clones que outras pessoas fizeram a partir da voz de quem corre o comando — a pessoa
-  gravada pode sempre retirar o consentimento (RGPD, direito ao apagamento).
 
 ## 3. Notas
 
@@ -88,10 +76,10 @@ Re-auditados os 3 documentos (ToS de Desenvolvedor, Política, Termos do SDK Soc
 violações ativas. Plano completo em `docs/PLAN-DISCORD-COMPLIANCE.md`. Deltas fechados:
 
 - **Direito ao esquecimento — `/privacy erase` (NOVO).** Um comando apaga TODOS os dados
-  pessoais do utilizador em qualquer servidor, com confirmação por botão. Revoga também os
-  clones da voz dele feitos por outros. Retém o premium pago + histórico financeiro (exceção
-  de contrato/retenção legal). `store/dataLifecycle.ts::eraseUser` (testado). Antes a
-  eliminação estava espalhada por vários comandos; agora há o "apagar tudo".
+  pessoais do utilizador em qualquer servidor, com confirmação por botão. Retém o premium
+  pago + histórico financeiro (exceção de contrato/retenção legal).
+  `store/dataLifecycle.ts::eraseUser` (testado). Antes a eliminação estava espalhada por
+  vários comandos; agora há o "apagar tudo".
 - **Retenção limitada — purga de servidores saídos (NOVO).** Os dados de um servidor que
   remove o bot são apagados 30 dias depois se não houver re-convite (`store/guildDeparted.ts`,
   marcado no `GuildDelete` REAL — o guard de outage já existia). Fecha o ToS §5(b)
@@ -99,13 +87,10 @@ violações ativas. Plano completo em `docs/PLAN-DISCORD-COMPLIANCE.md`. Deltas 
 - **Rot-guard de conformidade (NOVO).** As tabelas apagadas por purga/erase são listas
   explícitas com um teste (`tests/dataLifecycle.test.ts`) que FALHA se uma tabela nova com
   `guild_id`/`user_id` não for categorizada — mantém a purga/erase completas no futuro.
-- **Encriptação em repouso (ToS §5(c)) — clones CIFRADOS; BD em defer.** Os `.wav` de clone
-  (dado biométrico, o mais sensível) passam a ser cifrados em repouso com AES-256-GCM
-  (`tts/cloneCrypto`, testado); `CLONE_KEY` ativo em produção (verificado por round-trip).
-  Retrocompatível. **Ainda em claro:** a BD SQLite (Discord IDs, prefs, hashes de email) —
-  cifrá-la via SQLCipher é o passo mais arriscado do plano e fica em **defer deliberado**
-  (spike + backup + aprovação numa sessão dedicada). O disco do VPS não é cifrado ao nível
-  do volume (ext4 puro, verificado). Caveat: a `CLONE_KEY` vive no `.env` na mesma máquina.
+- **Encriptação em repouso (ToS §5(c)) — BD em defer.** **Ainda em claro:** a BD SQLite
+  (Discord IDs, prefs, hashes de email) — cifrá-la via SQLCipher é o passo mais arriscado do
+  plano e fica em **defer deliberado** (spike + backup + aprovação numa sessão dedicada). O
+  disco do VPS não é cifrado ao nível do volume (ext4 puro, verificado).
 - **Regra permanente (NOVO).** `CLAUDE.md` tem uma secção "Discord compliance is mandatory"
   que toda a feature futura respeita.
 - **Portal (pendente do Diogo):** preencher Privacy/ToS URL; confirmar elegibilidade de

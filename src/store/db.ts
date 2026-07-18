@@ -151,17 +151,6 @@ export function initDb(path: string): Database.Database {
         PRIMARY KEY (guild_id, user_id)
       );
 
-      -- Global per-user voice clone. user_id owns and uses the clone; target_id identifies
-      -- the recorded speaker. consent_at records consent. The owner may delete the clone,
-      -- and the recorded speaker may always revoke every clone made from their voice.
-      CREATE TABLE IF NOT EXISTS user_clone (
-        user_id     TEXT PRIMARY KEY,
-        sample_path TEXT NOT NULL,
-        consent_at  INTEGER NOT NULL,
-        enabled     INTEGER NOT NULL DEFAULT 0,
-        target_id   TEXT NOT NULL DEFAULT ''
-      );
-
       -- Per-guild speech-to-text consent. A row exists only after explicit consent;
       -- hasSttConsent gates receiver input. Revocation deletes the row. No audio is stored
       -- here, only the consent fact and timestamp.
@@ -273,6 +262,12 @@ export function initDb(path: string): Database.Database {
       );
     `);
 
+    // Removed voice-clone feature: purge the biometric consent records (sample_path +
+    // consent_at) the /voice clone feature stored. Idempotent — DROP IF EXISTS is a no-op on
+    // fresh databases that never had the table and on already-purged ones. The on-disk .wav
+    // samples are removed separately at startup (see src/index.ts).
+    db.exec('DROP TABLE IF EXISTS user_clone');
+
     // Migracoes idempotentes de guild_config GUIADAS PELO DESCRITOR
     // (GUILD_CONFIG_COLUMNS em ./guildConfig): qualquer coluna do descritor que falte
     // numa DB antiga e adicionada com o MESMO tipo/default do CREATE TABLE — o ALTER com
@@ -290,15 +285,6 @@ export function initDb(path: string): Database.Database {
     const uvCols = db.pragma('table_info(user_voice)') as Array<{ name: string }>;
     if (!uvCols.some((c) => c.name === 'engine')) {
       db.exec("ALTER TABLE user_voice ADD COLUMN engine TEXT NOT NULL DEFAULT 'google'");
-    }
-    // Migracao idempotente do `target_id` no user_clone (Fase 2 de compliance): a pessoa
-    // cuja voz foi gravada pode revogar o clone. Nas linhas ANTIGAS nao sabiamos o alvo,
-    // por isso o backfill assume auto-clone (target_id = user_id) — o dono continua a poder
-    // apagar, e como target == dono a revogacao coincide. No-op em DBs novas (CREATE ja tem).
-    const ucCols = db.pragma('table_info(user_clone)') as Array<{ name: string }>;
-    if (!ucCols.some((c) => c.name === 'target_id')) {
-      db.exec("ALTER TABLE user_clone ADD COLUMN target_id TEXT NOT NULL DEFAULT ''");
-      db.exec("UPDATE user_clone SET target_id = user_id WHERE target_id = ''");
     }
     // Idempotent migration of `is_subscription` on kofi_pending (plan 035). DEFAULT 0 is the
     // conservative backfill for rows already waiting: they stay standalone and cannot move the

@@ -236,54 +236,6 @@ export default {
   'voice.effect.set':
     '✅ Stëmmeffekt op **{effect}** gesat — deng Messagen spillen elo mat dësem Effekt. Benotz `/voice effect none`, fir en auszemaachen.',
   'voice.effect.cleared': '✅ Stëmmeffekt ewechgeholl — rëm eng propper Stëmm.',
-  'clone.locked':
-    '🔒 Stëmmklonen ass eng Premium-Funktioun (et kascht richteg Rechepower). Kuck `/premium`.',
-  'clone.notInVoice':
-    "Du muss am Sproochkanal **mat mir** sinn, fir opzehuelen. Benotz fir d'éischt `/join`.",
-  'clone.alreadyRecording':
-    'Du hëls scho eng Prouf op — maach se fäerdeg (oder dréck **⏹️ Stop**), ier s du eng aner ufänks.',
-  'clone.recording':
-    '🎙️ **Hëllt deng Stëmm op** — schwätz weider, bis et vun eleng ophält (~{target}s Ried, Pause zielen net), oder dréck **⏹️ Stop**, wann s du fäerdeg bass. Ech behalen nëmmen DÄIN Audio.',
-  'clone.recordingOther':
-    '🎙️ **Hëllt {who} op** — si sollten weiderschwätzen, bis et vun eleng ophält (~{target}s Ried, Pause zielen net), oder **⏹️ Stop** drécken, fir opzehalen.',
-  'clone.recordingProgress': '🔴 Hëlt op… **{got}s / {target}s** Ried opgeholl. Maach weider!',
-  'clone.consentRequest':
-    '🎙️ {invoker} wëll **deng Stëmm** ophuelen ({target}s Ried), fir e Stëmmklon ze bauen, mat deem si schwätze kënnen. Erlaabs du et? *(leeft an 60s of)*',
-  'clone.consentAllow': 'Erlaben',
-  'clone.consentDeny': 'Nee',
-  'clone.consentNotYou': "Nëmmen d'Persoun, déi opgeholl gëtt, kann dorop äntweren.",
-  'clone.consentGranted': "✅ {who} ass averstanen — d'Opnam fänkt un.",
-  'clone.consentRefused': '✖️ {who} huet ofgeleent. Opnam ofgebrach — et gouf keen Audio opgeholl.',
-  'clone.consentTimeout': '⌛ {who} huet net rechtzäiteg geäntwert. Opnam ofgebrach.',
-  'clone.consentWaiting': '⏳ Waarden drop, datt {who} am Kanal akzeptéiert…',
-  'clone.targetNotInVoice':
-    "{who} muss am Sproochkanal **mat mir** sinn, fir opgeholl ze ginn. Frot si, fir d'éischt `/join` ze lafen.",
-  'clone.pickFromList':
-    'Wiel eng Persoun aus der Virschléilëscht (nëmme Leit an der Call kënnen opgeholl ginn). Looss et eidel, fir dech selwer opzehuelen.',
-  'clone.stopBtn': 'Stop',
-  'clone.stopNotYours': "Nëmmen d'Persoun, déi ophëlt, kann et stoppen.",
-  'clone.tooShort':
-    'Ech hu nëmmen {seconds}s Ried opgeholl — ech brauch mindestens ~{min}s (den Zil war {target}s), fir gutt ze klonen. Probéier nach eng Kéier mat `/voice clone record`.',
-  'clone.saved':
-    '✅ Stëmmprouf gespäichert ({seconds}s Ried). Maach se un mat `/voice clone use active:true`. Nëmmen DU kanns däi Klon benotzen; läsch en jidderzäit mat `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ {seconds}s vun {who} senger Stëmm als DÄI Klon gespäichert. Maach en un mat `/voice clone use active:true`; läsch en jidderzäit mat `/voice clone delete`.',
-  'clone.failed':
-    "D'Opnam ass feelgeschloen — probéier nach eng Kéier. Wann et ëmmer erëm passéiert, géi rëm an de Sproochkanal.",
-  'clone.none': 'Du hues nach kee Stëmmklon. Hëll ee mat `/voice clone record` op (Premium).',
-  'clone.deleted':
-    '🗑️ Stëmmklon geläscht — Prouf a Zoustëmmungsrekord ewechgeholl, kee Spuer behalen.',
-  'clone.revoked':
-    '🛑 Zoustëmmung zréckgezunn — {count} Stëmmklon(en), déi aner Leit vun denger Stëmm gemaach haten, ewechgeholl.',
-  'clone.status': '🧬 Stëmmklon: Prouf opgeholl {date} · am Moment **{state}**.',
-  'clone.stateOn': 'AN',
-  'clone.stateOff': 'aus',
-  'clone.noSample': "Du brauchs fir d'éischt eng Prouf — hëll eng mat `/voice clone record` op.",
-  'clone.enabled':
-    '✅ Deng Messagen ginn elo an **denger geklonter Stëmm** virgelies. Maach jidderzäit aus mat `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Gespäichert — awer de Klon-Motor ass op dëser Instanz nach net installéiert, dofir héiers du fir de Moment déi normal Stëmm.',
-  'clone.disabled': '✅ Geklont Stëmm aus — zréck bei deng normal Stëmm.',
   'voice.effect.locked':
     '🔒 **{effect}** ass e Premium-Effekt. Gratis Effekter: 🤖 Robot an 🔊 Echo. Schalt all fräi mam Vozen Premium — kuck `/premium`.',
   'voice.engine.gcloudLocked':
@@ -668,8 +620,4 @@ export default {
   'rand.speak': 'Ech wielen… {winner}!',
   'rand.notInVoice': '_(géi mat mir an ee Sproochkanal an ech soen et déi nächst Kéier haart)_',
   'rand.timeout': '⏰ Näischt gewielt — laf `/randomizer` nach eng Kéier, wann s du prett bass.',
-  'stt.busyClone':
-    '⏳ Elo grad hëlt een an dësem Uruff e Stëmmklon op. Ech hunn nëmmen ee Mikro — probéier et nach eng Kéier, wann et fäerdeg ass (e puer Sekonnen).',
-  'clone.busyStt':
-    '⏳ An dësem Uruff leeft d’Transkriptioun, an ech hunn nëmmen ee Mikro. Maach fir d’éischt `/transcribe stop` an huel dann däi Klon op.',
 };

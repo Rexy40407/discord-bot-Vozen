@@ -10,7 +10,6 @@
 // schema (a financial table has `user_id` all the same), so it is explicit and hand-reviewed.
 import type Database from 'better-sqlite3';
 import { invalidateGuild, invalidateUser } from './cache';
-import { deleteClone, deleteClonesByTarget } from './voiceClone';
 import { deleteUserGcloudUsage } from './gcloudUsage';
 
 // ── Tables with guild_id ─────────────────────────────────────────────────────
@@ -40,7 +39,7 @@ export const GUILD_PURGE_TABLES = [
 export const GUILD_RETAINED_TABLES = ['premium_guild', 'premium_pass_activation'] as const;
 
 // ── Tables with user_id ──────────────────────────────────────────────────────
-/** Deleted by `/privacy erase` (personal data). user_clone includes the biometric .wav. */
+/** Deleted by `/privacy erase` (personal data). */
 export const USER_ERASE_TABLES = [
   'user_voice',
   'tts_optout',
@@ -52,7 +51,6 @@ export const USER_ERASE_TABLES = [
   'user_effect',
   'user_abbreviation',
   'pronunciation_user',
-  'user_clone',
   'stt_consent',
   'vote_reward',
 ] as const;
@@ -106,23 +104,13 @@ export function purgeGuild(db: Database.Database, guildId: string): void {
   invalidateGuild(db, guildId);
 }
 
-export interface EraseResult {
-  /** Paths of voice samples (.wav) for the caller to delete from disk. */
-  removedSamplePaths: string[];
-}
-
 /**
  * Erases ALL of a user's personal data in any server (does not touch the
- * financial/entitlement data). Handles clones separately (via voiceClone): the user's
- * own auto-clone AND the clones made from their VOICE by other people (their biometric
- * data → revoked). Returns the .wav paths for the caller to delete from disk.
+ * financial/entitlement data).
  */
-export function eraseUser(db: Database.Database, userId: string): EraseResult {
-  const removedSamplePaths: string[] = [];
+export function eraseUser(db: Database.Database, userId: string): void {
   const run = db.transaction((uid: string) => {
     for (const table of USER_ERASE_TABLES) {
-      // user_clone is handled below (includes .wav + revocation of clones of their voice).
-      if (table === 'user_clone') continue;
       db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(uid);
     }
     // BESPOKE (key != user_id): kofi_supporter stores the Discord ID in `discord_id`;
@@ -133,14 +121,5 @@ export function eraseUser(db: Database.Database, userId: string): EraseResult {
     deleteUserGcloudUsage(db, uid);
   });
   run(userId);
-
-  // Clones: their own (owner == user) and those others made from THEIR voice (target == user).
-  const own = deleteClone(db, userId);
-  if (own) removedSamplePaths.push(own);
-  for (const { samplePath } of deleteClonesByTarget(db, userId)) {
-    removedSamplePaths.push(samplePath);
-  }
-
   invalidateUser(db, userId);
-  return { removedSamplePaths };
 }

@@ -15,11 +15,9 @@ como regra permanente do projeto (toda a feature futura nasce conforme).
 
 - **Política de privacidade** completa e fiel (PRIVACY.md + vozen.org/privacy): divulga o envio
   do texto ao Google (gTTS) e OpenAI (neural), tabelas SQLite, cache de áudio, retenção. §5(a) ✓
-- **Eliminação por dado**: `/voice reset`, `/voice nickname`, `/voice optin`, `/voice clone delete`,
+- **Eliminação por dado**: `/voice reset`, `/voice nickname`, `/voice optin`,
   `/voice abbrev remove`, `/config pronunciation remove`, `/config reset`. §5(b) parcial ✓
 - **Opt-out de leitura** (`/voice optout`) — respeita a escolha do utilizador. Política #3 ✓
-- **Clone de voz consent-first**: a linha só existe após consentimento (`consent_at`), o alvo
-  pode revogar (`target_id`), o dono pode apagar (.wav + row imediato). Política #1/#2 ✓
 - **Sem DMs não solicitadas** (só sends a canais de guild), **sem venda/partilha de dados**,
   **sem trackers/analytics**, **sem treino de IA** com conteúdo de mensagens. Política #5-7, #17-21 ✓
 - **Minimização de PII**: e-mail do Ko-fi hashado; stats de fala divulgadas na policy. #15/#16 ✓
@@ -76,7 +74,7 @@ Done: teste verde a simular kick→30d→purga; PRIVACY.md atualizado.
 
 ### Fase 4 — `/privacy erase`: apagar TUDO sobre mim num comando (§5(b) "maneira acessível")
 Deliverable: um comando que elimina todos os dados de um utilizador em todas as tabelas.
-- [ ] TDD: `eraseUser(db, userId)` — user_voice, user_nickname, tts_optout, user_clone (+ .wav),
+- [ ] TDD: `eraseUser(db, userId)` — user_voice, user_nickname, tts_optout,
       user_abbrev, talk_stats, game_score, língua/UI prefs, e o que mais tiver `user_id`
       (enumerar; premium pessoal só com confirmação extra — é um bem pago).
 - [ ] Comando `/privacy erase` com confirmação (botão) + i18n nas 34 línguas.
@@ -89,12 +87,11 @@ Deliverable: dados inativos protegidos + processo de breach documentado.
       substituto drop-in do better-sqlite3 (SQLCipher). Validar: migração da BD existente,
       performance, compatibilidade com o código atual. Chave via `.env` (`DB_KEY`).
 - [ ] Se o spike passar: migrar a BD de produção (backup → encrypt → swap → restart).
-      Se falhar/for frágil: fallback = encriptar só os `.wav` de clones (dados mais sensíveis,
-      AES via chave no .env) + documentar risco residual aceite para a BD.
+      Se falhar/for frágil: fallback = documentar o risco residual aceite para a BD.
 - [ ] `docs/INCIDENT-RESPONSE.md`: em suspeita de acesso não autorizado → conter, avaliar
       âmbito, **notificar o Discord e os utilizadores afetados imediatamente** (§5(c)),
       registar cronologia. Meia página, acionável.
-Done: BD (ou pelo menos clones) cifrados em produção + runbook commitado.
+Done: runbook de incidentes commitado; encriptação da BD em defer deliberado.
 
 ### Fase 6 — Regra permanente + gates futuros
 Deliverable: conformidade fixada no processo do projeto.

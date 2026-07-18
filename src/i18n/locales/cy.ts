@@ -237,56 +237,6 @@ export default {
   'voice.effect.set':
     "✅ Effaith llais wedi'i gosod i **{effect}** — mae dy negeseuon nawr yn chwarae gyda'r effaith honno. Defnyddia `/voice effect none` i'w diffodd.",
   'voice.effect.cleared': "✅ Effaith llais wedi'i thynnu — llais glân eto.",
-  'clone.locked':
-    "🔒 Nodwedd Premium yw clonio llais (mae'n costio cyfrifiant go iawn). Gwela `/premium`.",
-  'clone.notInVoice':
-    'Mae angen i ti fod yn y sianel lais **gyda mi** i recordio. Defnyddia `/join` yn gyntaf.',
-  'clone.alreadyRecording':
-    'Rwyt ti eisoes yn recordio sampl — gorffena hi (neu pwysa **⏹️ Stop**) cyn dechrau un arall.',
-  'clone.recording':
-    "🎙️ **Yn recordio dy lais** — dal ati i siarad nes iddo stopio ohono'i hun (~{target}e o leferydd, dydy seibiannau ddim yn cyfrif), neu pwysa **⏹️ Stop** pryd bynnag rwyt ti'n barod. Dim ond DY sain di dw i'n ei chadw.",
-  'clone.recordingOther':
-    "🎙️ **Yn recordio {who}** — dylen nhw ddal ati i siarad nes iddo stopio ohono'i hun (~{target}e o leferydd, dydy seibiannau ddim yn cyfrif), neu pwysa **⏹️ Stop** i orffen.",
-  'clone.recordingProgress':
-    "🔴 Yn recordio… **{got}e / {target}e** o leferydd wedi'i ddal. Dal ati!",
-  'clone.consentRequest':
-    "🎙️ Mae {invoker} eisiau recordio **dy lais** ({target}e o leferydd) i adeiladu clôn llais y gall siarad ag ef. Wyt ti'n caniatáu? *(yn dod i ben mewn 60e)*",
-  'clone.consentAllow': 'Caniatáu',
-  'clone.consentDeny': 'Na',
-  'clone.consentNotYou': "Dim ond y person sy'n cael ei recordio all ateb hyn.",
-  'clone.consentGranted': "✅ Cytunodd {who} — yn dechrau'r recordiad.",
-  'clone.consentRefused': "✖️ Gwrthododd {who}. Recordiad wedi'i ganslo — ni ddaliwyd unrhyw sain.",
-  'clone.consentTimeout': "⌛ Ni atebodd {who} mewn pryd. Recordiad wedi'i ganslo.",
-  'clone.consentWaiting': '⏳ Yn aros i {who} dderbyn yn y sianel…',
-  'clone.targetNotInVoice':
-    'Mae angen i {who} fod yn y sianel lais **gyda mi** i gael ei recordio. Gofynna iddyn nhw redeg `/join` yn gyntaf.',
-  'clone.pickFromList':
-    "Dewisa berson o'r rhestr awgrymiadau (dim ond pobl sydd yn yr alwad y gellir eu recordio). Gad e'n wag i recordio dy hun.",
-  'clone.stopBtn': 'Stop',
-  'clone.stopNotYours': "Dim ond y person sy'n recordio all ei stopio.",
-  'clone.tooShort':
-    "Dim ond {seconds}e o leferydd ges i — mae angen o leiaf ~{min}e (y targed oedd {target}e) i glonio'n dda. Rho gynnig arall arni gyda `/voice clone record`.",
-  'clone.saved':
-    "✅ Sampl llais wedi'i chadw ({seconds}e o leferydd). Troa fe ymlaen gyda `/voice clone use active:true`. Dim ond TI all ddefnyddio dy glôn; dilëa fe unrhyw bryd gyda `/voice clone delete`.",
-  'clone.savedOther':
-    '✅ Cadwyd {seconds}e o lais {who} fel DY glôn di. Troa fe ymlaen gyda `/voice clone use active:true`; dilëa fe unrhyw bryd gyda `/voice clone delete`.',
-  'clone.failed':
-    "Methodd y recordiad — rho gynnig arall arni. Os yw'n dal i ddigwydd, ail-ymuna â'r sianel lais.",
-  'clone.none':
-    'Does gennyt ti ddim clôn llais eto. Recordia un gyda `/voice clone record` (Premium).',
-  'clone.deleted':
-    "🗑️ Clôn llais wedi'i ddileu — sampl a chofnod caniatâd wedi'u tynnu, dim ôl wedi'i gadw.",
-  'clone.revoked':
-    "🛑 Caniatâd wedi'i dynnu'n ôl — tynnwyd {count} clôn llais roedd pobl eraill wedi'u gwneud o'th lais.",
-  'clone.status': "🧬 Clôn llais: sampl wedi'i recordio {date} · ar hyn o bryd **{state}**.",
-  'clone.stateOn': 'YMLAEN',
-  'clone.stateOff': 'i ffwrdd',
-  'clone.noSample': 'Mae angen sampl arnat yn gyntaf — recordia un gyda `/voice clone record`.',
-  'clone.enabled':
-    "✅ Bydd dy negeseuon nawr yn cael eu darllen yn **dy lais wedi'i glonio**. Diffodda unrhyw bryd gyda `/voice clone use active:false`.",
-  'clone.enabledNoEngine':
-    "✅ Wedi'i gadw — ond nid yw'r peiriant clonio wedi'i osod ar yr achos hwn eto, felly byddi'n clywed y llais arferol am nawr.",
-  'clone.disabled': "✅ Llais wedi'i glonio i ffwrdd — yn ôl i'th lais arferol.",
   'voice.effect.locked':
     '🔒 Effaith Premium yw **{effect}**. Effeithiau am ddim: 🤖 Robot ac 🔊 Echo. Datgloa bob un gyda Vozen Premium — gwela `/premium`.',
   'voice.engine.gcloudLocked':
@@ -672,8 +622,4 @@ export default {
   'rand.speak': "Dw i'n dewis… {winner}!",
   'rand.notInVoice': "_(ymuna â sianel lais gyda mi a bydda i'n ei ddweud yn uchel y tro nesaf)_",
   'rand.timeout': "⏰ Dim byd wedi'i ddewis — rheda `/randomizer` eto pan fyddi'n barod.",
-  'stt.busyClone':
-    '⏳ Mae rhywun yn recordio clôn llais yn yr alwad hon ar hyn o bryd. Dim ond un meicroffon sydd gen i — rho gynnig arall arni pan fydd wedi gorffen (ychydig eiliadau).',
-  'clone.busyStt':
-    '⏳ Mae trawsgrifio yn rhedeg yn yr alwad hon, a dim ond un meicroffon sydd gen i. Rheda `/transcribe stop` yn gyntaf, wedyn recordia dy glôn.',
 };

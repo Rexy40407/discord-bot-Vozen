@@ -50,12 +50,6 @@ describe('operational security configuration', () => {
     expect(script).toContain('Get-FileHash');
   });
 
-  it('handles a one-element Python command safely in the clone setup script', () => {
-    const script = source('tools/setup-clone.ps1');
-    expect(script).toContain('if ($basePy.Count -gt 1)');
-    expect(script).not.toContain('& $basePy[0] $basePy[1..($basePy.Count-1)]');
-  });
-
   it('does not ship byte-identical font files under duplicate names', () => {
     const fontDir = resolve(process.cwd(), 'site/assets/fonts');
     const byHash = new Map<string, string>();

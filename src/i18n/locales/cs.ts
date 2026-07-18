@@ -233,54 +233,6 @@ export default {
   'voice.effect.set':
     '✅ Hlasový efekt nastaven na **{effect}** — tvoje zprávy se teď přehrávají s tímto efektem. Vypni ho pomocí `/voice effect none`.',
   'voice.effect.cleared': '✅ Hlasový efekt odstraněn — zase čistý hlas.',
-  'clone.locked':
-    '🔒 Klonování hlasu je Premium funkce (stojí to skutečný výpočetní výkon). Viz `/premium`.',
-  'clone.notInVoice':
-    'K nahrávání musíš být v hlasovém kanálu **se mnou**. Nejdřív použij `/join`.',
-  'clone.alreadyRecording':
-    'Už nahráváš ukázku — dokonči ji (nebo stiskni **⏹️ Stop**), než začneš další.',
-  'clone.recording':
-    '🎙️ **Nahrávám tvůj hlas** — mluv dál, dokud se to samo nezastaví (~{target} s řeči, pauzy se nepočítají), nebo stiskni **⏹️ Stop**, až budeš hotový. Uchovávám jen TVOJE audio.',
-  'clone.recordingOther':
-    '🎙️ **Nahrávám {who}** — měl by mluvit dál, dokud se to samo nezastaví (~{target} s řeči, pauzy se nepočítají), nebo stisknout **⏹️ Stop** pro dokončení.',
-  'clone.recordingProgress': '🔴 Nahrávám… zachyceno **{got} s / {target} s** řeči. Pokračuj!',
-  'clone.consentRequest':
-    '🎙️ {invoker} chce nahrát **tvůj hlas** ({target} s řeči) a vytvořit klon hlasu, kterým bude moci mluvit. Povolíš to? *(vyprší za 60 s)*',
-  'clone.consentAllow': 'Povolit',
-  'clone.consentDeny': 'Ne',
-  'clone.consentNotYou': 'Odpovědět na to může jen ten, kdo se nahrává.',
-  'clone.consentGranted': '✅ {who} souhlasil — spouštím nahrávání.',
-  'clone.consentRefused': '✖️ {who} odmítl. Nahrávání zrušeno — žádné audio nebylo zachyceno.',
-  'clone.consentTimeout': '⌛ {who} neodpověděl včas. Nahrávání zrušeno.',
-  'clone.consentWaiting': '⏳ Čekám, až {who} v kanálu potvrdí…',
-  'clone.targetNotInVoice':
-    '{who} musí být v hlasovém kanálu **se mnou**, aby ho šlo nahrát. Požádej ho, ať nejdřív použije `/join`.',
-  'clone.pickFromList':
-    'Vyber osobu ze seznamu návrhů (nahrát lze jen lidi, kteří jsou v hovoru). Nech prázdné, chceš-li nahrát sebe.',
-  'clone.stopBtn': 'Stop',
-  'clone.stopNotYours': 'Zastavit to může jen ten, kdo nahrává.',
-  'clone.tooShort':
-    'Zachytil jsem jen {seconds} s řeči — pro dobrý klon potřebuji aspoň ~{min} s (cíl byl {target} s). Zkus to znovu pomocí `/voice clone record`.',
-  'clone.saved':
-    '✅ Ukázka hlasu uložena ({seconds} s řeči). Zapni ji pomocí `/voice clone use active:true`. Svůj klon můžeš používat jen TY; kdykoliv ho smaž pomocí `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ Uložil jsem {seconds} s hlasu {who} jako TVŮJ klon. Zapni ho pomocí `/voice clone use active:true`; kdykoliv ho smaž pomocí `/voice clone delete`.',
-  'clone.failed':
-    'Nahrávání selhalo — zkus to znovu. Pokud to přetrvává, připoj se k hlasovému kanálu znovu.',
-  'clone.none': 'Zatím nemáš klon hlasu. Nahraj si ho pomocí `/voice clone record` (Premium).',
-  'clone.deleted':
-    '🗑️ Klon hlasu smazán — ukázka i záznam souhlasu odstraněny, bez jakékoliv stopy.',
-  'clone.revoked':
-    '🛑 Souhlas odvolán — odstranil jsem {count} klon(ů) hlasu, které si z tvého hlasu vytvořili jiní lidé.',
-  'clone.status': '🧬 Klon hlasu: ukázka nahrána {date} · momentálně **{state}**.',
-  'clone.stateOn': 'ZAPNUTÝ',
-  'clone.stateOff': 'vypnutý',
-  'clone.noSample': 'Nejdřív potřebuješ ukázku — nahraj si ji pomocí `/voice clone record`.',
-  'clone.enabled':
-    '✅ Tvoje zprávy se teď budou číst **tvým klonovaným hlasem**. Kdykoliv to vypni pomocí `/voice clone use active:false`.',
-  'clone.enabledNoEngine':
-    '✅ Uloženo — ale klonovací engine zatím na této instanci není nainstalovaný, takže prozatím uslyšíš normální hlas.',
-  'clone.disabled': '✅ Klonovaný hlas vypnut — zpět na tvůj normální hlas.',
   'voice.effect.locked':
     '🔒 **{effect}** je Premium efekt. Efekty zdarma: 🤖 Robot a 🔊 Echo. Odemkni všechny s Vozen Premium — viz `/premium`.',
   'voice.engine.gcloudLocked':
@@ -648,8 +600,4 @@ export default {
   'rand.speak': 'Vybírám… {winner}!',
   'rand.notInVoice': '_(připoj se ke mně do hlasového kanálu a příště to řeknu nahlas)_',
   'rand.timeout': '⏰ Nic nevybráno — spusť `/randomizer` znovu, až budeš chtít.',
-  'stt.busyClone':
-    '⏳ Někdo právě v tomto hovoru nahrává hlasový klon. Mám jen jeden mikrofon — zkus to znovu, až skončí (pár sekund).',
-  'clone.busyStt':
-    '⏳ V tomto hovoru běží přepis a já mám jen jeden mikrofon. Nejdřív spusť `/transcribe stop` a pak nahraj svůj klon.',
 };

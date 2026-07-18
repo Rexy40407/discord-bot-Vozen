@@ -21,26 +21,19 @@ By using Vozen you agree **not** to:
 - Use the bot for **harassment**, intimidation, hate speech, or to target people.
 - Send **spam** or abuse the service (e.g. circumventing message/character limits, deliberately overloading the instance).
 - Synthesize or broadcast **illegal content**, or any content that violates applicable laws.
-- Use **voice cloning** to impersonate someone or to record another person's voice without their explicit consent (see section 3).
 - Violate the [Discord Terms of Service](https://discord.com/terms) or the [Discord Community Guidelines](https://discord.com/guidelines).
 
 The instance operator and the administrators of each server may enforce additional rules (blocklist, limits, role restriction, kill-switch) and may remove access to the bot.
 
 ---
 
-## 3. Voice cloning
-
-Voice cloning (`/voice clone`) may be used to record **your own** voice, or another person's voice **only with their explicit consent**, given through the "Allow" button that appears at the time of recording. Do not use it to impersonate anyone or to record a voice you do not have the right to use. You are solely responsible for any voice sample you create. See the [Privacy Policy](PRIVACY.md) for how clone data is stored and deleted.
-
----
-
-## 4. Reporting problems
+## 3. Reporting problems
 
 To report a problem, abuse, or a violation of these Terms or of the Discord Developer Policy involving Vozen, use the **[support server](https://discord.gg/V6PZYZmhcQ)** (`discord.gg/V6PZYZmhcQ`). Reports are reviewed and appropriate action is taken.
 
 ---
 
-## 5. Premium, payments, cancellation, and refunds
+## 4. Premium, payments, cancellation, and refunds
 
 The official Vozen instance may offer optional paid features through **Discord Premium Apps** and **Ko-fi**. The purchase channel's own terms also apply. A Ko-fi purchase is a transaction between the buyer and the official instance operator; Ko-fi is the payment platform, not the seller of Vozen's digital service.
 
@@ -54,7 +47,7 @@ Self-hosters who charge for their own instance are the seller and are solely res
 
 ---
 
-## 6. No warranty
+## 5. No warranty
 
 Vozen is provided **"as is"**, without warranties of any kind, express or implied, including (but not limited to) warranties of merchantability, fitness for a particular purpose, availability, or freedom from errors. Being self-hosted, **there is no guarantee of availability (uptime)**, of speech synthesis quality, nor of data preservation — the service depends entirely on the instance each operator runs.
 
@@ -64,13 +57,13 @@ This section does not exclude warranties, remedies, or rights that cannot lawful
 
 ---
 
-## 7. Limitation of liability
+## 6. Limitation of liability
 
 To the maximum extent permitted by law, **the Vozen project authors are not liable** for any direct, indirect, incidental, or consequential damages arising from the use or inability to use the software, nor for content generated, processed, or broadcast by any instance. The **operator of each instance** is solely responsible for how they run it, for the data they process, and for compliance with the laws and terms of third parties (Discord and, where applicable, Google or OpenAI). Nothing in this section excludes liability that cannot lawfully be excluded.
 
 ---
 
-## 8. Operator responsibility
+## 7. Operator responsibility
 
 Whoever runs a Vozen instance (the **operator**) is responsible for:
 
@@ -82,13 +75,13 @@ Whoever runs a Vozen instance (the **operator**) is responsible for:
 
 ---
 
-## 9. License
+## 8. License
 
 Vozen is free software distributed under the **GNU AGPL-3.0** license (file [`LICENSE`](LICENSE); declared in the `license` field of `package.json`). The use, copying, modification, and distribution of the source code are governed by that license. In particular, the AGPL requires that anyone who **runs a modified version accessible over a network** make the corresponding source code available to users.
 
 ---
 
-## 10. Changes
+## 9. Changes
 
 These Terms may be updated. The version in force is the one present in this repository. Continued use of the bot after changes implies acceptance of the new Terms.
 

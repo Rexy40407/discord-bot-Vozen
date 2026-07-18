@@ -14,7 +14,6 @@ import { redactBlocked } from '../moderation/filter';
 import { isRepetitionSpam } from '../moderation/antispam';
 import { metrics } from '../metrics';
 import { getVoiceEffect } from '../store/voiceEffect';
-import { getClone } from '../store/voiceClone';
 import { bumpTalk, getTopSpeakers, type TalkBump } from '../store/talkStats';
 import { renderLeaderboard } from '../leaderboard/randomPost';
 import { getUserPronunciations, getServerPronunciations } from '../store/pronunciation';
@@ -375,10 +374,6 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     const outReq = redacted;
     // Voice effect (premium): applied to the WAV by the EffectEngine (external engine).
     outReq.effect = getVoiceEffect(deps.db, message.guildId, message.author.id);
-    // Voice clone (premium): if the author has the clone ON, the CloneEngine synthesizes in
-    // their voice. With no engine installed, the engine ignores it and serves the normal voice.
-    const clone = getClone(deps.db, message.author.id);
-    if (clone?.enabled) outReq.cloneRef = clone.samplePath;
 
     // Everything passed: this message WILL be read. Records the author as the last speaker
     // (only now — a blocked/ignored message does not count for the xsaid suppression).

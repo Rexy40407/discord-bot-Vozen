@@ -10,8 +10,8 @@
 // A SINGLE capital (sentence start, "I", "A", or the "V" in "Voltei") is NOT touched —
 // only RUNS of 2+. \p{M} catches combining diacritics (ÁÁ). PURE.
 //
-// Shared: gTTS uses it (deCapsForGoogle) and it is also applied in Kokoro, Clone and
-// Neural, which lacked this step. Piper is the EXCEPTION — it reads caps as a word
+// Shared: gTTS uses it (deCapsForGoogle) and it is also applied in Kokoro and Neural,
+// which lacked this step. Piper is the EXCEPTION — it reads caps as a word
 // (see accents.ts, which even RE-capitalizes restored accents without issue), so there
 // it is unnecessary and we do not apply it.
 

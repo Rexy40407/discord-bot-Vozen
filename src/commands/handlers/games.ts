@@ -95,7 +95,7 @@ export async function handleGame(i: ChatInputCommandInteraction, deps: BotDeps):
       return;
     }
     // 💎 Premium games (e.g. chess): the user's own Plus OR the server's Premium, same
-    // pattern as /voice clone and /voice effect.
+    // pattern as /voice effect.
     if (def.premium) {
       const now = Date.now();
       const premium =

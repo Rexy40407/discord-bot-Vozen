@@ -16,7 +16,7 @@
 // DECORATOR engine (same pattern as EffectEngine) with its own cache (namespace 'q') and
 // FAIL-SAFE: any error returns the CLEAN voice — NEVER throws (a synth that throws makes
 // the player SKIP the speech => silence). Only runs when the speech ENDS in `?` (the `?`
-// aligns with the audio tail). Engines that don't produce 22050/mono/16 (e.g. clone/Kokoro
+// aligns with the audio tail). Engines that don't produce 22050/mono/16 (e.g. Kokoro
 // at 24k) fall into the fail-safe (splitTailWav returns null) and get no intonation — without crashing.
 
 import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
@@ -54,7 +54,7 @@ export function isQuestion(text: string): boolean {
 
 /**
  * Splits the WAV into [body, tail] where the tail is the last `tailMs` ms, each already as
- * a canonical WAV. Returns `null` if the input is not 22050/mono/16-bit PCM (e.g. clone at 24k)
+ * a canonical WAV. Returns `null` if the input is not 22050/mono/16-bit PCM (e.g. Kokoro at 24k)
  * — the caller then falls back to the clean voice. Cut aligned to the sample-frame. PURE.
  */
 export function splitTailWav(wav: Buffer, tailMs: number): { head: Buffer; tail: Buffer } | null {

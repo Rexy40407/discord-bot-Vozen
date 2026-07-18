@@ -239,56 +239,6 @@ export default {
   'voice.effect.set':
     '✅ Stimmeffekt auf **{effect}** gesetzt — deine Nachrichten werden jetzt mit diesem Effekt abgespielt. Nutze `/voice effect none`, um ihn auszuschalten.',
   'voice.effect.cleared': '✅ Stimmeffekt entfernt — wieder klare Stimme.',
-  'clone.locked':
-    '🔒 Stimmklonen ist eine Premium-Funktion (es kostet echte Rechenleistung). Siehe `/premium`.',
-  'clone.notInVoice':
-    'Du musst **mit mir** im Sprachkanal sein, um aufzunehmen. Nutze zuerst `/join`.',
-  'clone.alreadyRecording':
-    'Du nimmst bereits eine Probe auf — beende sie (oder drücke **⏹️ Stopp**), bevor du eine neue startest.',
-  'clone.recording':
-    '🎙️ **Nehme deine Stimme auf** — sprich weiter, bis es von selbst stoppt (~{target}s Sprache, Pausen zählen nicht), oder drücke **⏹️ Stopp**, wenn du fertig bist. Ich behalte nur DEIN Audio.',
-  'clone.recordingOther':
-    '🎙️ **Nehme {who} auf** — die Person sollte weitersprechen, bis es von selbst stoppt (~{target}s Sprache, Pausen zählen nicht), oder **⏹️ Stopp** drücken, um zu beenden.',
-  'clone.recordingProgress': '🔴 Nehme auf… **{got}s / {target}s** Sprache erfasst. Weiter so!',
-  'clone.consentRequest':
-    '🎙️ {invoker} möchte **deine Stimme** aufnehmen ({target}s Sprache), um einen Stimmklon zu erstellen, mit dem gesprochen werden kann. Erlaubst du es? *(läuft in 60s ab)*',
-  'clone.consentAllow': 'Erlauben',
-  'clone.consentDeny': 'Nein',
-  'clone.consentNotYou': 'Nur die aufgenommene Person kann darauf antworten.',
-  'clone.consentGranted': '✅ {who} hat zugestimmt — die Aufnahme beginnt.',
-  'clone.consentRefused':
-    '✖️ {who} hat abgelehnt. Aufnahme abgebrochen — es wurde kein Audio erfasst.',
-  'clone.consentTimeout': '⌛ {who} hat nicht rechtzeitig geantwortet. Aufnahme abgebrochen.',
-  'clone.consentWaiting': '⏳ Warte darauf, dass {who} im Kanal zustimmt…',
-  'clone.targetNotInVoice':
-    '{who} muss **mit mir** im Sprachkanal sein, um aufgenommen zu werden. Bitte die Person, zuerst `/join` auszuführen.',
-  'clone.pickFromList':
-    'Wähle eine Person aus der Vorschlagsliste (nur wer in der Call ist, kann aufgenommen werden). Lass es leer, um dich selbst aufzunehmen.',
-  'clone.stopBtn': 'Stopp',
-  'clone.stopNotYours': 'Nur wer aufnimmt, kann die Aufnahme stoppen.',
-  'clone.tooShort':
-    'Ich habe nur {seconds}s Sprache erfasst — ich brauche mindestens ~{min}s (Ziel waren {target}s), um gut zu klonen. Versuche es erneut mit `/voice clone record`.',
-  'clone.saved':
-    '✅ Stimmprobe gespeichert ({seconds}s Sprache). Aktiviere sie mit `/voice clone use active:true`. Nur DU kannst deinen Klon nutzen; lösche ihn jederzeit mit `/voice clone delete`.',
-  'clone.savedOther':
-    '✅ {seconds}s von {who}s Stimme als DEIN Klon gespeichert. Aktiviere ihn mit `/voice clone use active:true`; lösche ihn jederzeit mit `/voice clone delete`.',
-  'clone.failed':
-    'Die Aufnahme ist fehlgeschlagen — versuche es erneut. Wenn es weiter passiert, tritt dem Sprachkanal erneut bei.',
-  'clone.none':
-    'Du hast noch keinen Stimmklon. Nimm einen mit `/voice clone record` auf (Premium).',
-  'clone.deleted':
-    '🗑️ Stimmklon gelöscht — Probe und Zustimmungseintrag entfernt, keine Spur behalten.',
-  'clone.revoked':
-    '🛑 Zustimmung zurückgezogen — {count} Stimmklon(e) entfernt, die andere von deiner Stimme erstellt hatten.',
-  'clone.status': '🧬 Stimmklon: Probe aufgenommen am {date} · aktuell **{state}**.',
-  'clone.stateOn': 'AN',
-  'clone.stateOff': 'aus',
-  'clone.noSample': 'Du brauchst zuerst eine Probe — nimm eine mit `/voice clone record` auf.',
-  'clone.enabled':
-    '✅ Deine Nachrichten werden jetzt mit **deiner geklonten Stimme** vorgelesen. Schalte sie jederzeit mit `/voice clone use active:false` aus.',
-  'clone.enabledNoEngine':
-    '✅ Gespeichert — aber die Klon-Engine ist auf dieser Instanz noch nicht installiert, daher hörst du vorerst die normale Stimme.',
-  'clone.disabled': '✅ Geklonte Stimme aus — zurück zu deiner normalen Stimme.',
   'voice.effect.locked':
     '🔒 **{effect}** ist ein Premium-Effekt. Kostenlose Effekte: 🤖 Robot und 🔊 Echo. Schalte alle mit Vozen Premium frei — siehe `/premium`.',
   'voice.engine.gcloudLocked':
@@ -671,8 +621,4 @@ export default {
   'rand.notInVoice':
     '_(tritt mit mir einem Sprachkanal bei und ich sage es beim nächsten Mal laut)_',
   'rand.timeout': '⏰ Nichts gewählt — führe `/randomizer` erneut aus, wenn du bereit bist.',
-  'stt.busyClone':
-    '⏳ Gerade nimmt jemand in diesem Anruf einen Stimmklon auf. Ich habe nur ein Mikrofon — versuch es noch mal, wenn es fertig ist (ein paar Sekunden).',
-  'clone.busyStt':
-    '⏳ In diesem Anruf läuft die Transkription, und ich habe nur ein Mikrofon. Führe zuerst `/transcribe stop` aus und nimm dann deinen Klon auf.',
 };

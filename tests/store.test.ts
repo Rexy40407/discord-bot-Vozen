@@ -25,13 +25,6 @@ import {
 import { isOptedOut, setOptOut, setOptIn } from '../src/store/optout';
 import { getNickname, setNickname, clearNickname } from '../src/store/nickname';
 import { getVoiceEffect, setVoiceEffect, clearVoiceEffect } from '../src/store/voiceEffect';
-import {
-  getClone,
-  saveClone,
-  setCloneEnabled,
-  deleteClone,
-  deleteClonesByTarget,
-} from '../src/store/voiceClone';
 
 const G = 'guild-1';
 const U = 'user-1';
@@ -630,12 +623,18 @@ describe('initDb — tts_role_id migration on an old-schema DB', () => {
   });
 });
 
-describe('initDb — target_id (user_clone) migration on an old-schema DB', () => {
-  it('adds target_id and backfills = user_id (Phase 2: recorded person can revoke)', () => {
-    // The real restart path: a DB with user_clone WITHOUT target_id (old schema,
-    // like the production tts.db with 2 clones). The migration adds the column and assumes
-    // auto-clone (target_id = user_id) on the existing rows.
-    const dir = mkdtempSync(join(tmpdir(), 'migclone-'));
+describe('initDb — drops the removed user_clone table (biometric purge)', () => {
+  const hasUserClone = (db: Database.Database): boolean =>
+    (
+      db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='user_clone'")
+        .all() as unknown[]
+    ).length > 0;
+
+  it('DROPs a pre-existing user_clone table on init (voice-clone feature removed)', () => {
+    // An old production DB may still carry the user_clone table (the removed voice-clone
+    // feature). initDb must DROP it so the stored biometric consent records are purged.
+    const dir = mkdtempSync(join(tmpdir(), 'dropclone-'));
     const file = join(dir, 'old-clone.sqlite');
     try {
       const old = new BetterSqlite3(file);
@@ -652,33 +651,17 @@ describe('initDb — target_id (user_clone) migration on an old-schema DB', () =
           'INSERT INTO user_clone (user_id, sample_path, consent_at, enabled) VALUES (?, ?, ?, ?)',
         )
         .run('u-old', '/x/u-old.wav', 111, 1);
+      expect(hasUserClone(old)).toBe(true);
       old.close();
 
-      // Before: no target_id.
-      const before = new BetterSqlite3(file);
-      expect(
-        (before.pragma('table_info(user_clone)') as Array<{ name: string }>).some(
-          (c) => c.name === 'target_id',
-        ),
-      ).toBe(false);
-      before.close();
-
-      // initDb runs the idempotent migration + backfill.
+      // initDb runs the idempotent DROP TABLE migration -> the table is gone.
       const db = initDb(file);
-      const row = getClone(db, 'u-old');
-      expect(row).not.toBeNull();
-      expect(row!.targetId).toBe('u-old'); // backfill: auto-clone
-      expect(row!.samplePath).toBe('/x/u-old.wav');
-      expect(row!.enabled).toBe(true); // preserved
+      expect(hasUserClone(db)).toBe(false);
 
-      // Idempotent: running again does not blow up nor duplicate the column.
+      // Idempotent: running again on a DB that no longer has the table does not blow up.
       db.close();
       const db2 = initDb(file);
-      expect(
-        (db2.pragma('table_info(user_clone)') as Array<{ name: string }>).filter(
-          (c) => c.name === 'target_id',
-        ),
-      ).toHaveLength(1);
+      expect(hasUserClone(db2)).toBe(false);
       db2.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -801,23 +784,6 @@ describe('store — cache write-through', () => {
     expect(getVoiceEffect(db, G, U)).toBe('robot');
     clearVoiceEffect(db, G, U);
     expect(getVoiceEffect(db, G, U)).toBe('none');
-
-    // clone
-    getClone(db, U);
-    saveClone(db, U, '/a.wav', 1000);
-    expect(getClone(db, U)?.samplePath).toBe('/a.wav');
-    setCloneEnabled(db, U, true);
-    expect(getClone(db, U)?.enabled).toBe(true);
-    deleteClone(db, U);
-    expect(getClone(db, U)).toBeNull();
-  });
-
-  it('deleteClonesByTarget invalidates the affected OWNER cache', () => {
-    saveClone(db, 'owner', '/o.wav', 1000, 'target'); // owner records target's voice
-    getClone(db, 'owner'); // populates the cache
-    const removed = deleteClonesByTarget(db, 'target');
-    expect(removed.map((r) => r.ownerId)).toContain('owner');
-    expect(getClone(db, 'owner')).toBeNull(); // does not serve the old cached value
   });
 
   it('NEGATIVE caching: a get with no row does not re-query on the 2nd get, but set invalidates', () => {
@@ -849,21 +815,6 @@ describe('store — cache write-through', () => {
     const a = getGuildConfig(db, G);
     a.maxChars = 999; // caller mutation
     expect(getGuildConfig(db, G).maxChars).toBe(250); // the cached one did not change
-  });
-
-  it('clone TTL: staleness bounded to 60s (out-of-band write via raw SQL)', () => {
-    vi.useFakeTimers();
-    try {
-      saveClone(db, U, '/velha.wav', 1000);
-      expect(getClone(db, U)?.samplePath).toBe('/velha.wav'); // populates the cache
-      // Simulates ANOTHER process (shard) writing, WITHOUT going through the setter -> no invalidation.
-      db.prepare('UPDATE user_clone SET sample_path = ? WHERE user_id = ?').run('/nova.wav', U);
-      expect(getClone(db, U)?.samplePath).toBe('/velha.wav'); // still cached
-      vi.advanceTimersByTime(61_000);
-      expect(getClone(db, U)?.samplePath).toBe('/nova.wav'); // TTL expired -> re-reads
-    } finally {
-      vi.useRealTimers();
-    }
   });
 });
 
