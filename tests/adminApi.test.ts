@@ -53,6 +53,20 @@ describe('adminApi — enabled / inert', () => {
     expect(await api.login('owner-token')).toEqual({ ok: false });
     expect(api.authorize('anything')).toBeNull();
   });
+
+  it('warns (but still enables) when ADMIN_SESSION_SECRET is weak — SEC-02', () => {
+    // A short secret arms the whole money surface with a weaker HMAC. Follow plan 024's
+    // fail-safe-config precedent: warn loudly at startup, do NOT silently disable a working
+    // console (that would surprise an operator running a short-but-working secret).
+    const weakLogs: string[] = [];
+    const weak = make(db, { adminSessionSecret: 'short', logInfo: (m) => weakLogs.push(m) });
+    expect(weak.enabled).toBe(true);
+    expect(weakLogs.some((l) => l.includes('ADMIN_SESSION_SECRET'))).toBe(true);
+    // A 32+ char secret is silent.
+    const strongLogs: string[] = [];
+    make(db, { adminSessionSecret: 'x'.repeat(32), logInfo: (m) => strongLogs.push(m) });
+    expect(strongLogs.some((l) => l.includes('ADMIN_SESSION_SECRET'))).toBe(false);
+  });
 });
 
 describe('adminApi — login', () => {
@@ -140,6 +154,16 @@ describe('adminApi — grant / revoke / list', () => {
     expect(isUserPremium(db, '111', NOW)).toBe(false);
     expect(api.revoke({ kind: 'premium', id: '222' }).ok).toBe(true);
     expect(api.listPasses().passes).toEqual([]);
+  });
+
+  it('revoke rejects a non-snowflake id without touching the store or the log — SEC-01', () => {
+    // grant() validates the id; revoke() must too. A forged id with a newline must never reach
+    // the store or the log line (log-forging guard). Strong secret so SEC-02 does not warn here.
+    const logs: string[] = [];
+    const api = make(db, { adminSessionSecret: 'x'.repeat(32), logInfo: (m) => logs.push(m) });
+    const res = api.revoke({ kind: 'plus', id: '111\n[admin] forged log line -> true' });
+    expect(res.ok).toBe(false);
+    expect(logs).toEqual([]);
   });
 
   it('listPasses returns active plus, passes and unclaimed pending', () => {

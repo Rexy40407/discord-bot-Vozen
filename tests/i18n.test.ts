@@ -199,6 +199,19 @@ describe('i18n — locale integrity (per-locale registry vs catalog)', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('join.joinedAutoread points at the read channel ({readChannel}) in EVERY locale — I18N-01', () => {
+    // en/pt author it inline; the 33 recombined locales must ALSO surface the clickable channel,
+    // else non-en/pt users get "type in the auto-read channel" with no pointer to WHICH channel —
+    // the exact confusion the state-aware /join message exists to remove.
+    const key = 'join.joinedAutoread';
+    expect(catalog[key]?.en).toContain('{readChannel}');
+    expect(catalog[key]?.pt).toContain('{readChannel}');
+    const offenders = Object.keys(locales)
+      .filter((code) => locales[code]?.[key] !== undefined)
+      .filter((code) => !locales[code][key].includes('{readChannel}'));
+    expect(offenders).toEqual([]);
+  });
+
   it('no locale INVENTS a placeholder absent from its English source (catches {name} -> {nome} mangling)', () => {
     const offenders: string[] = [];
     for (const code of codes) {

@@ -44,7 +44,7 @@ export default {
   'join.joined':
     '✅ Ég er kominn í {channel}! Næsta skref: skrifaðu `/tts halló` og ég les það upphátt. Viltu að ég lesi rás sjálfkrafa? Keyrðu /setup.',
   'join.joinedAutoread':
-    '✅ Ég er kominn í {channel}! Allt tilbúið. Skrifaðu í sjálflesnu rásina og ég les það upphátt.',
+    '✅ Ég er kominn í {channel}! Allt tilbúið. Skrifaðu í sjálflesnu rásina og ég les það upphátt. → {readChannel}',
   'leave.left': 'Fór úr talrásinni. Sjáumst næst!',
   'skip.notInVoice':
     'Ég er ekki enn í talrás — farðu inn í eina og keyrðu /join fyrst, reyndu svo aftur.',

@@ -120,6 +120,14 @@ const validSeats = (s: unknown): s is number =>
 
 export function createAdminApi(deps: AdminApiDeps): AdminApi {
   const enabled = Boolean(deps.adminSessionSecret && deps.ownerId);
+  // SEC-02: a short secret arms the whole money surface with a weaker HMAC. Warn loudly (plan 024's
+  // fail-safe-config precedent) but do NOT disable a working console — that would surprise an
+  // operator running a short-but-working secret. `openssl rand -hex 32` gives 64 hex chars.
+  if (enabled && deps.adminSessionSecret && deps.adminSessionSecret.length < 32) {
+    deps.logInfo(
+      '[admin] WARNING: ADMIN_SESSION_SECRET is shorter than 32 chars — generate a strong one with `openssl rand -hex 32`. The console stays enabled but the session signatures are weaker.',
+    );
+  }
   const ttl = deps.sessionTtlSec ?? 8 * 3600;
 
   async function login(discordToken: string | null): Promise<AdminLoginOk | AdminFail> {
@@ -187,6 +195,9 @@ export function createAdminApi(deps: AdminApiDeps): AdminApi {
   }
 
   function revoke(input: AdminRevokeInput): { ok: boolean } {
+    // SEC-01: validate the id like grant() does — a non-snowflake never reaches the store or the
+    // log line (the log is the console's only forensic record; an unvalidated id could forge lines).
+    if (!validId(input.id)) return { ok: false };
     const ok =
       input.kind === 'plus'
         ? revokeUserPremium(deps.db, input.id)

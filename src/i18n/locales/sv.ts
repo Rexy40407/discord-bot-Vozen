@@ -45,7 +45,7 @@ export default {
   'join.joined':
     '✅ Jag är i {channel}! Nästa steg: skriv `/tts hej` så läser jag upp det. Vill du att jag ska läsa upp en kanal automatiskt? Kör /setup.',
   'join.joinedAutoread':
-    '✅ Jag är i {channel}! Allt är redo. Skriv i kanalen för automatisk uppläsning så läser jag upp det.',
+    '✅ Jag är i {channel}! Allt är redo. Skriv i kanalen för automatisk uppläsning så läser jag upp det. → {readChannel}',
   'leave.left': 'Lämnade röstkanalen. Vi ses nästa gång!',
   'skip.notInVoice':
     'Jag är inte i någon röstkanal än — gå med i en och kör /join först, försök sedan igen.',

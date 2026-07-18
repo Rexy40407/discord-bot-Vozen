@@ -6,7 +6,7 @@ export default {
   'join.joined':
     '✅ Tôi đã vào {channel}! Bước tiếp theo: gõ `/tts hello` và tôi sẽ đọc to lên. Muốn tôi tự động đọc một kênh? Hãy chạy /setup.',
   'join.joinedAutoread':
-    '✅ Tôi đã vào {channel}! Mọi thứ đã sẵn sàng. Hãy gõ trong kênh tự động đọc và tôi sẽ đọc to lên.',
+    '✅ Tôi đã vào {channel}! Mọi thứ đã sẵn sàng. Hãy gõ trong kênh tự động đọc và tôi sẽ đọc to lên. → {readChannel}',
   'leave.left': 'Đã rời kênh thoại. Hẹn gặp lại lần sau!',
   'skip.notInVoice':
     'Tôi chưa ở trong kênh thoại nào — hãy vào một kênh và chạy /join trước, rồi thử lại.',

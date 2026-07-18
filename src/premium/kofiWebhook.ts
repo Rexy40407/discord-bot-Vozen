@@ -848,73 +848,108 @@ function handleAdminRequest(
     return;
   }
 
-  if (path === '/api/admin/passes' && req.method === 'GET') {
-    json(200, ctx.adminApi.listPasses());
-    return;
-  }
+  // A better-sqlite3 error (disk full, I/O) thrown by any synchronous store call below must become
+  // a clean 500 — never escape this request listener to process.on('uncaughtException'), which
+  // exits the whole bot and drops every live voice session (the sibling Ko-fi/dashboard routes all
+  // guard this). The GET routes are covered by the outer try; the POST callbacks run later on the
+  // 'end' event, so they carry their own guard.
+  try {
+    if (path === '/api/admin/passes' && req.method === 'GET') {
+      json(200, ctx.adminApi.listPasses());
+      return;
+    }
 
-  if (path === '/api/admin/guilds' && req.method === 'GET') {
-    json(200, { guilds: ctx.adminApi.listGuilds() });
-    return;
-  }
+    if (path === '/api/admin/guilds' && req.method === 'GET') {
+      json(200, { guilds: ctx.adminApi.listGuilds() });
+      return;
+    }
 
-  if (path === '/api/admin/grant' && req.method === 'POST') {
-    readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
-      let parsed: { kind?: unknown; id?: unknown; days?: unknown; seats?: unknown };
-      try {
-        parsed = JSON.parse(raw || '{}');
-      } catch {
-        json(400, { error: 'bad_request' });
-        return;
-      }
-      if (parsed.kind !== 'plus' && parsed.kind !== 'premium') {
-        json(400, { error: 'bad_kind' });
-        return;
-      }
-      if (typeof parsed.id !== 'string' || typeof parsed.days !== 'number') {
-        json(400, { error: 'bad_request' });
-        return;
-      }
-      const input: AdminGrantInput =
-        parsed.kind === 'plus'
-          ? { kind: 'plus', id: parsed.id, days: parsed.days }
-          : {
-              kind: 'premium',
-              id: parsed.id,
-              days: parsed.days,
-              // A missing/invalid seats becomes NaN -> adminApi rejects with bad_seats.
-              seats: typeof parsed.seats === 'number' ? parsed.seats : Number.NaN,
-            };
-      const r = ctx.adminApi.grant(input);
-      if (!r.ok) {
-        json(400, { error: r.error });
-        return;
-      }
-      json(200, { ok: true, expiresAt: r.expiresAt });
-    });
-    return;
-  }
+    if (path === '/api/admin/grant' && req.method === 'POST') {
+      readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
+        try {
+          let parsed: { kind?: unknown; id?: unknown; days?: unknown; seats?: unknown };
+          try {
+            parsed = JSON.parse(raw || '{}');
+          } catch {
+            json(400, { error: 'bad_request' });
+            return;
+          }
+          if (parsed.kind !== 'plus' && parsed.kind !== 'premium') {
+            json(400, { error: 'bad_kind' });
+            return;
+          }
+          if (typeof parsed.id !== 'string' || typeof parsed.days !== 'number') {
+            json(400, { error: 'bad_request' });
+            return;
+          }
+          const input: AdminGrantInput =
+            parsed.kind === 'plus'
+              ? { kind: 'plus', id: parsed.id, days: parsed.days }
+              : {
+                  kind: 'premium',
+                  id: parsed.id,
+                  days: parsed.days,
+                  // A missing/invalid seats becomes NaN -> adminApi rejects with bad_seats.
+                  seats: typeof parsed.seats === 'number' ? parsed.seats : Number.NaN,
+                };
+          const r = ctx.adminApi.grant(input);
+          if (!r.ok) {
+            json(400, { error: r.error });
+            return;
+          }
+          json(200, { ok: true, expiresAt: r.expiresAt });
+        } catch (err) {
+          ctx.logError('[admin] grant failed', err);
+          try {
+            json(500, { error: 'internal' });
+          } catch {
+            /* response already sent */
+          }
+        }
+      });
+      return;
+    }
 
-  if (path === '/api/admin/revoke' && req.method === 'POST') {
-    readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
-      let parsed: { kind?: unknown; id?: unknown };
-      try {
-        parsed = JSON.parse(raw || '{}');
-      } catch {
-        json(400, { error: 'bad_request' });
-        return;
-      }
-      if ((parsed.kind !== 'plus' && parsed.kind !== 'premium') || typeof parsed.id !== 'string') {
-        json(400, { error: 'bad_request' });
-        return;
-      }
-      const r = ctx.adminApi.revoke({ kind: parsed.kind, id: parsed.id });
-      json(200, { ok: r.ok });
-    });
-    return;
-  }
+    if (path === '/api/admin/revoke' && req.method === 'POST') {
+      readBody(req, res, cors, MAX_ADMIN_BODY, ctx.logError, '[admin]', (raw) => {
+        try {
+          let parsed: { kind?: unknown; id?: unknown };
+          try {
+            parsed = JSON.parse(raw || '{}');
+          } catch {
+            json(400, { error: 'bad_request' });
+            return;
+          }
+          if (
+            (parsed.kind !== 'plus' && parsed.kind !== 'premium') ||
+            typeof parsed.id !== 'string'
+          ) {
+            json(400, { error: 'bad_request' });
+            return;
+          }
+          const r = ctx.adminApi.revoke({ kind: parsed.kind, id: parsed.id });
+          json(200, { ok: r.ok });
+        } catch (err) {
+          ctx.logError('[admin] revoke failed', err);
+          try {
+            json(500, { error: 'internal' });
+          } catch {
+            /* response already sent */
+          }
+        }
+      });
+      return;
+    }
 
-  json(404, { error: 'not_found' });
+    json(404, { error: 'not_found' });
+  } catch (err) {
+    ctx.logError('[admin] request failed', err);
+    try {
+      json(500, { error: 'internal' });
+    } catch {
+      /* response already sent */
+    }
+  }
 }
 
 interface TopggCtx {

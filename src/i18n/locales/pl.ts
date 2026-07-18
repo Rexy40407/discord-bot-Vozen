@@ -45,7 +45,7 @@ export default {
   'join.joined':
     '✅ Jestem na kanale {channel}! Następny krok: napisz `/tts cześć`, a przeczytam to na głos. Chcesz, żebym automatycznie czytał kanał? Uruchom /setup.',
   'join.joinedAutoread':
-    '✅ Jestem na kanale {channel}! Wszystko gotowe. Pisz na kanale automatycznego czytania, a przeczytam to na głos.',
+    '✅ Jestem na kanale {channel}! Wszystko gotowe. Pisz na kanale automatycznego czytania, a przeczytam to na głos. → {readChannel}',
   'leave.left': 'Opuściłem kanał głosowy. Do zobaczenia następnym razem!',
   'skip.notInVoice':
     'Nie jestem jeszcze na kanale głosowym — dołącz do jakiegoś i najpierw użyj /join, potem spróbuj ponownie.',

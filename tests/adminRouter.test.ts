@@ -8,7 +8,7 @@ import type { Server } from 'node:http';
 import type Database from 'better-sqlite3';
 import { initDb } from '../src/store/db';
 import { startKofiWebhook } from '../src/premium/kofiWebhook';
-import { createAdminApi } from '../src/premium/adminApi';
+import { createAdminApi, type AdminApi } from '../src/premium/adminApi';
 import { signAdminSession } from '../src/premium/adminAuth';
 import { isUserPremium } from '../src/store/premium';
 
@@ -56,7 +56,7 @@ describe('admin console — HTTP router', () => {
     db.close();
   });
 
-  async function start(enabled = true): Promise<string> {
+  async function start(enabled = true, adminApiOverride?: AdminApi): Promise<string> {
     server = startKofiWebhook({
       db,
       token: 'tok',
@@ -66,7 +66,7 @@ describe('admin console — HTTP router', () => {
       logError: () => {},
       statusApi: statusApi as never,
       apiOrigin: 'https://vozen.org',
-      adminApi: makeAdmin(db, enabled),
+      adminApi: adminApiOverride ?? makeAdmin(db, enabled),
       adminPanelOrigin: PANEL_ORIGIN,
     });
     if (!server) throw new Error('no server');
@@ -181,6 +181,26 @@ describe('admin console — HTTP router', () => {
     // The existing panel route must NOT have moved to the panel origin.
     const panel = await get(`${base}/api/me/premium`);
     expect(panel.headers.get('access-control-allow-origin')).toBe('https://vozen.org');
+  });
+
+  it('a store error inside an admin route returns 500, not a process crash — BUG-01', async () => {
+    // A better-sqlite3 throw (disk full / I/O) inside a SYNCHRONOUS admin route must become a
+    // clean 500 — never escape the request listener to process.on('uncaughtException') -> exit(1),
+    // which drops every live voice session. Every sibling route (Ko-fi, dashboard) already guards this.
+    const boom: AdminApi = {
+      enabled: true,
+      login: async () => ({ ok: false }),
+      authorize: (t) => (t ? OWNER : null),
+      listPasses: () => {
+        throw new Error('SQLITE_IOERR: disk I/O error');
+      },
+      listGuilds: () => [],
+      grant: () => ({ ok: true, expiresAt: 0 }),
+      revoke: () => ({ ok: true }),
+    };
+    const base = await start(true, boom);
+    const res = await get(`${base}/api/admin/passes`, { authorization: 'Bearer any' });
+    expect(res.status).toBe(500);
   });
 
   it('login has its own tight bucket — the 7th attempt in the window is rate-limited', async () => {

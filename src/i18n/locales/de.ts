@@ -7,7 +7,7 @@ export default {
   'join.joined':
     '✅ Ich bin in {channel}! Nächster Schritt: sag `/tts hallo` und ich lese es laut vor. Soll ich einen Kanal automatisch vorlesen? Führe /setup aus.',
   'join.joinedAutoread':
-    '✅ Ich bin in {channel}! Alles bereit. Schreib im Kanal für automatisches Vorlesen und ich lese es laut vor.',
+    '✅ Ich bin in {channel}! Alles bereit. Schreib im Kanal für automatisches Vorlesen und ich lese es laut vor. → {readChannel}',
   'leave.left': 'Sprachkanal verlassen. Bis zum nächsten Mal!',
   'skip.notInVoice':
     'Ich bin noch in keinem Sprachkanal — tritt einem bei und führe zuerst /join aus, dann versuche es erneut.',

@@ -6,7 +6,7 @@ export default {
   'join.joined':
     '✅ Jsem v {channel}! Další krok: napiš `/tts ahoj` a přečtu to nahlas. Chceš, abych automaticky předčítal kanál? Spusť /setup.',
   'join.joinedAutoread':
-    '✅ Jsem v {channel}! Vše je připraveno. Piš do kanálu pro automatické předčítání a já to přečtu nahlas.',
+    '✅ Jsem v {channel}! Vše je připraveno. Piš do kanálu pro automatické předčítání a já to přečtu nahlas. → {readChannel}',
   'leave.left': 'Opustil jsem hlasový kanál. Zase někdy!',
   'skip.notInVoice':
     'Zatím nejsem v hlasovém kanálu — připoj se k nějakému, spusť /join a pak to zkus znovu.',

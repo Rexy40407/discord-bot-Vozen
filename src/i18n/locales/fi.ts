@@ -45,7 +45,7 @@ export default {
   'join.joined':
     '✅ Olen kanavalla {channel}! Seuraavaksi: sano `/tts hei` niin luen sen ääneen. Haluatko että luen kanavan automaattisesti? Suorita /setup.',
   'join.joinedAutoread':
-    '✅ Olen kanavalla {channel}! Kaikki on valmista. Kirjoita automaattisen lukemisen kanavalle niin luen sen ääneen.',
+    '✅ Olen kanavalla {channel}! Kaikki on valmista. Kirjoita automaattisen lukemisen kanavalle niin luen sen ääneen. → {readChannel}',
   'leave.left': 'Poistuin puhekanavalta. Nähdään ensi kerralla!',
   'skip.notInVoice':
     'En ole vielä puhekanavalla — liity kanavalle ja suorita /join ensin, yritä sitten uudelleen.',
