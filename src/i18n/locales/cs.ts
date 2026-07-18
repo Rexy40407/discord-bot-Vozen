@@ -214,7 +214,7 @@ export default {
     '✅ Souhlas odvolán — na tomto serveru už tě nebudu přepisovat. (Už zveřejněné zprávy zůstávají; pokud chceš, smaž je v Discordu.)',
   'stt.revokeNone': 'S přepisem na tomto serveru jsi nesouhlasil, takže nebylo co odvolat.',
   'privacy.eraseConfirm':
-    '⚠️ Toto trvale smaže **všechna** tvoje data Vozenu na všech serverech: nastavení hlasu, vyslovovanou přezdívku, osobní zkratky a výslovnosti, uložené narozeniny, skóre ve hrách, statistiky mluvení, opt-out a jakýkoliv klon hlasu (včetně nahrávek tvého hlasu pořízených jinými). **Toto nelze vzít zpět.** Jsi si jistý?',
+    '⚠️ Toto trvale smaže **všechna** tvoje data Vozenu na všech serverech: nastavení hlasu, vyslovovanou přezdívku, osobní zkratky a výslovnosti, uložené narozeniny, skóre ve hrách, statistiky mluvení a opt-out. **Toto nelze vzít zpět.** Jsi si jistý?',
   'privacy.erasePremiumNote':
     '_Pozn.: tvůj zaplacený Premium/Plus a historie jeho nákupu zůstávají — patří tobě a zákonem vyžadovaným finančním záznamům. Chceš-li Premium ukončit, nech ho vypršet nebo kontaktuj podporu._',
   'privacy.eraseYes': 'Smazat vše',
@@ -281,12 +281,12 @@ export default {
   'premium.lineUserActive': '👤 **Ty (Plus):** aktivní do {date}',
   'premium.lineUserFree': '👤 **Ty (Plus):** neaktivní',
   'premium.getHint':
-    'Všechno, co používáš dnes, zůstává zdarma. Premium přidává všech 8 hlasových efektů, klonování hlasu, 24/7 v hovoru, 50 osobních výslovností, /rizz a prémiové hry. Podpora: https://ko-fi.com/',
+    'Všechno, co používáš dnes, zůstává zdarma. Premium přidává všech 8 hlasových efektů, 24/7 v hovoru, 50 osobních výslovností, /rizz a prémiové hry. Podpora: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Tvůj Premium pass:** {used}/{total} licencí v používání · vyprší {date}',
   'premium.passServers': '↳ Používá se na: {servers}',
   'premium.pitch':
-    'Zatím nemáš Premium. **Vozen Premium** (€3.99/měs za 3 servery nebo €7.99/měs za 8) odemyká pro celý server: všech 8 hlasových efektů, klonování hlasu, 24/7 v hovoru, 50 osobních výslovností (oproti 3), příkaz /rizz a prémiové hry (Řetěz slov, Wordle, Šachy). **Vozen Plus** (€1.99/měs) ti dá tyhle výhody osobně, na jakémkoliv serveru.',
+    'Zatím nemáš Premium. **Vozen Premium** (€3.99/měs za 3 servery nebo €7.99/měs za 8) odemyká pro celý server: všech 8 hlasových efektů, 24/7 v hovoru, 50 osobních výslovností (oproti 3), příkaz /rizz a prémiové hry (Řetěz slov, Wordle, Šachy). **Vozen Plus** (€1.99/měs) ti dá tyhle výhody osobně, na jakémkoliv serveru.',
   'premium.buyHint':
     '▶ **Získej Premium:** {link}\nPo koupi spusť `/premium activate` na serveru, který chceš.',
   'premium.confirmActivate':

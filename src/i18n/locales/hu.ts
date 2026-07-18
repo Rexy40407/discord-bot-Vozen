@@ -220,7 +220,7 @@ export default {
   'stt.revokeNone':
     'Nem járultál hozzá az átíráshoz ezen a szerveren, így nem volt mit visszavonni.',
   'privacy.eraseConfirm':
-    '⚠️ Ez véglegesen törli **az összes** Vozen-adatodat minden szerveren: hangbeállítások, kimondott becenév, személyes rövidítések és kiejtések, mentett születésnap, játékpontszámok, beszédstatisztikák, kilépés (opt-out), és bármilyen hangklón (beleértve a hangodról mások által készített felvételeket is). **Ez nem vonható vissza.** Biztos vagy benne?',
+    '⚠️ Ez véglegesen törli **az összes** Vozen-adatodat minden szerveren: hangbeállítások, kimondott becenév, személyes rövidítések és kiejtések, mentett születésnap, játékpontszámok, beszédstatisztikák, és kilépés (opt-out). **Ez nem vonható vissza.** Biztos vagy benne?',
   'privacy.erasePremiumNote':
     '_Megjegyzés: a fizetett Premium/Plus és annak vásárlási előzményei megmaradnak — hozzád tartoznak és a törvényileg előírt pénzügyi nyilvántartáshoz. A Premium leállításához hagyd lejárni, vagy fordulj az ügyfélszolgálathoz._',
   'privacy.eraseYes': 'Minden törlése',
@@ -291,12 +291,12 @@ export default {
   'premium.lineUserActive': '👤 **Te (Plus):** aktív eddig: {date}',
   'premium.lineUserFree': '👤 **Te (Plus):** nem aktív',
   'premium.getHint':
-    'Minden, amit ma használsz, ingyenes marad. A Premium hozzáadja mind a 8 hangeffektet, a hangklónozást, a 24/7 hívásban maradást, az 50 személyes kiejtést, a /rizz parancsot és a prémium játékokat. Támogatás: https://ko-fi.com/',
+    'Minden, amit ma használsz, ingyenes marad. A Premium hozzáadja mind a 8 hangeffektet, a 24/7 hívásban maradást, az 50 személyes kiejtést, a /rizz parancsot és a prémium játékokat. Támogatás: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **A Premium bérleted:** {used}/{total} licenc használatban · lejár: {date}',
   'premium.passServers': '↳ Használatban itt: {servers}',
   'premium.pitch':
-    'Még nincs Premiumod. A **Vozen Premium** (3,99 €/hó 3 szerverre, vagy 7,99 €/hó 8-ra) az egész szerverre feloldja: mind a 8 hangeffektet, a hangklónozást, a 24/7 hívásban maradást, az 50 személyes kiejtést (3 helyett), a /rizz parancsot és a prémium játékokat (Szólánc, Wordle, Sakk). A **Vozen Plus** (1,99 €/hó) ezeket az extrákat személyesen adja meg neked, bármelyik szerveren.',
+    'Még nincs Premiumod. A **Vozen Premium** (3,99 €/hó 3 szerverre, vagy 7,99 €/hó 8-ra) az egész szerverre feloldja: mind a 8 hangeffektet, a 24/7 hívásban maradást, az 50 személyes kiejtést (3 helyett), a /rizz parancsot és a prémium játékokat (Szólánc, Wordle, Sakk). A **Vozen Plus** (1,99 €/hó) ezeket az extrákat személyesen adja meg neked, bármelyik szerveren.',
   'premium.buyHint':
     '▶ **Premium beszerzése:** {link}\nVásárlás után futtasd a `/premium activate` parancsot a kívánt szerveren.',
   'premium.confirmActivate':

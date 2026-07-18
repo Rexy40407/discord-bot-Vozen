@@ -32,7 +32,7 @@ export default {
   'stt.revokeNone':
     'Bu sunucuda transkripsiyona onay vermemiştin, bu yüzden geri çekilecek bir şey yoktu.',
   'privacy.eraseConfirm':
-    '⚠️ Bu, her sunucudaki **tüm** Vozen verilerini kalıcı olarak siler: ses ayarları, sesli takma ad, kişisel kısaltmalar ve telaffuzlar, kayıtlı doğum günü, oyun puanları, konuşma istatistikleri, otomatik okuma tercihi ve tüm ses klonları (başkalarının senin sesinden yaptığı kayıtlar dahil). **Bu geri alınamaz.** Emin misin?',
+    '⚠️ Bu, her sunucudaki **tüm** Vozen verilerini kalıcı olarak siler: ses ayarları, sesli takma ad, kişisel kısaltmalar ve telaffuzlar, kayıtlı doğum günü, oyun puanları, konuşma istatistikleri ve otomatik okuma tercihi. **Bu geri alınamaz.** Emin misin?',
   'privacy.erasePremiumNote':
     "_Not: ödediğin Premium/Plus ve satın alma geçmişi saklanır — bunlar sana ve yasal olarak zorunlu mali kayıtlara aittir. Premium'u durdurmak için süresinin dolmasını bekle veya destekle iletişime geç._",
   'privacy.eraseYes': 'Her şeyi sil',
@@ -153,12 +153,12 @@ export default {
   'premium.lineUserActive': '👤 **Sen (Plus):** {date} tarihine kadar aktif',
   'premium.lineUserFree': '👤 **Sen (Plus):** aktif değil',
   'premium.getHint':
-    "Bugün kullandığın her şey ücretsiz kalır. Premium; 8 ses efektinin tümünü, ses klonlamayı, 7/24 çağrıda kalmayı, 50 kişisel telaffuzu, /rizz'i ve premium oyunları ekler. Destek: https://ko-fi.com/",
+    "Bugün kullandığın her şey ücretsiz kalır. Premium; 8 ses efektinin tümünü, 7/24 çağrıda kalmayı, 50 kişisel telaffuzu, /rizz'i ve premium oyunları ekler. Destek: https://ko-fi.com/",
   'premium.linePass':
     '🎟️ **Premium geçişin:** {used}/{total} lisans kullanımda · {date} tarihinde sona erer',
   'premium.passServers': '↳ Kullanımda: {servers}',
   'premium.pitch':
-    "Henüz Premium'un yok. **Vozen Premium** (3 sunucu için €3.99/ay veya 8 sunucu için €7.99/ay) tüm sunucu için şunları açar: 8 ses efektinin tümü, ses klonlama, 7/24 çağrıda kalma, 50 kişisel telaffuz (3 yerine), /rizz komutu ve premium oyunlar (Kelime Zinciri, Wordle, Satranç). **Vozen Plus** (€1.99/ay) bu ayrıcalıkları sana kişisel olarak, her sunucuda verir.",
+    "Henüz Premium'un yok. **Vozen Premium** (3 sunucu için €3.99/ay veya 8 sunucu için €7.99/ay) tüm sunucu için şunları açar: 8 ses efektinin tümü, 7/24 çağrıda kalma, 50 kişisel telaffuz (3 yerine), /rizz komutu ve premium oyunlar (Kelime Zinciri, Wordle, Satranç). **Vozen Plus** (€1.99/ay) bu ayrıcalıkları sana kişisel olarak, her sunucuda verir.",
   'premium.buyHint':
     '▶ **Premium al:** {link}\nSatın aldıktan sonra istediğin sunucuda `/premium activate` komutunu çalıştır.',
   'premium.confirmActivate':

@@ -32,7 +32,7 @@ export default {
   'stt.revokeNone':
     'Du havde ikke samtykket til transskription på denne server, så der var intet at trække tilbage.',
   'privacy.eraseConfirm':
-    '⚠️ Dette sletter permanent **alle** dine Vozen-data på tværs af alle servere: stemmeindstillinger, talt kaldenavn, personlige forkortelser og udtaler, gemt fødselsdag, spilresultater, talestatistik, fravalg og enhver stemmeklon (inklusive optagelser af din stemme lavet af andre). **Dette kan ikke fortrydes.** Er du sikker?',
+    '⚠️ Dette sletter permanent **alle** dine Vozen-data på tværs af alle servere: stemmeindstillinger, talt kaldenavn, personlige forkortelser og udtaler, gemt fødselsdag, spilresultater, talestatistik og fravalg. **Dette kan ikke fortrydes.** Er du sikker?',
   'privacy.erasePremiumNote':
     '_Bemærk: dit betalte Premium/Plus og dets købshistorik bevares — de tilhører dig og de lovpligtige regnskabsdata. For at stoppe Premium, lad det udløbe eller kontakt support._',
   'privacy.eraseYes': 'Slet alt',
@@ -152,11 +152,11 @@ export default {
   'premium.lineUserActive': '👤 **Dig (Plus):** aktiv indtil {date}',
   'premium.lineUserFree': '👤 **Dig (Plus):** ikke aktiv',
   'premium.getHint':
-    'Alt, hvad du bruger i dag, forbliver gratis. Premium tilføjer alle 8 stemmeeffekter, stemmekloning, 24/7 i opkald, 50 personlige udtaler, /rizz og premium-spillene. Support: https://ko-fi.com/',
+    'Alt, hvad du bruger i dag, forbliver gratis. Premium tilføjer alle 8 stemmeeffekter, 24/7 i opkald, 50 personlige udtaler, /rizz og premium-spillene. Support: https://ko-fi.com/',
   'premium.linePass': '🎟️ **Dit Premium-pas:** {used}/{total} licenser i brug · udløber {date}',
   'premium.passServers': '↳ I brug på: {servers}',
   'premium.pitch':
-    'Du har ikke Premium endnu. **Vozen Premium** (€3.99/md for 3 servere eller €7.99/md for 8) låser op for hele serveren: alle 8 stemmeeffekter, stemmekloning, 24/7 i opkald, 50 personlige udtaler (mod 3), /rizz-kommandoen og premium-spillene (Ordkæde, Wordle, Skak). **Vozen Plus** (€1.99/md) giver dig de goder personligt, på enhver server.',
+    'Du har ikke Premium endnu. **Vozen Premium** (€3.99/md for 3 servere eller €7.99/md for 8) låser op for hele serveren: alle 8 stemmeeffekter, 24/7 i opkald, 50 personlige udtaler (mod 3), /rizz-kommandoen og premium-spillene (Ordkæde, Wordle, Skak). **Vozen Plus** (€1.99/md) giver dig de goder personligt, på enhver server.',
   'premium.buyHint':
     '▶ **Få Premium:** {link}\nEfter køb, kør `/premium activate` på den server, du vil have.',
   'premium.confirmActivate':

@@ -31,7 +31,7 @@ export default {
     '✅ Privolitev preklicana — na tem strežniku ne boš več prepisan. (Že objavljena sporočila ostanejo; če želiš, jih izbriši v Discordu.)',
   'stt.revokeNone': 'Na tem strežniku nisi privolil v prepisovanje, zato ni bilo česa preklicati.',
   'privacy.eraseConfirm':
-    '⚠️ To trajno izbriše **vse** tvoje podatke Vozen na vseh strežnikih: nastavitve glasu, izgovorjeni vzdevek, osebne okrajšave in izgovorjave, shranjeni rojstni dan, rezultate iger, statistiko govora, izključitev in morebitni glasovni klon (vključno s posnetki tvojega glasu, ki so jih naredili drugi). **Tega ni mogoče razveljaviti.** Si prepričan?',
+    '⚠️ To trajno izbriše **vse** tvoje podatke Vozen na vseh strežnikih: nastavitve glasu, izgovorjeni vzdevek, osebne okrajšave in izgovorjave, shranjeni rojstni dan, rezultate iger, statistiko govora in izključitev. **Tega ni mogoče razveljaviti.** Si prepričan?',
   'privacy.erasePremiumNote':
     '_Opomba: tvoj plačani Premium/Plus in zgodovina nakupa se ohranita — pripadata tebi in zakonsko obveznim finančnim evidencam. Za prekinitev Premiuma pusti, da poteče, ali se obrni na podporo._',
   'privacy.eraseYes': 'Izbriši vse',
@@ -151,12 +151,12 @@ export default {
   'premium.lineUserActive': '👤 **Ti (Plus):** aktivno do {date}',
   'premium.lineUserFree': '👤 **Ti (Plus):** ni aktivno',
   'premium.getHint':
-    'Vse, kar uporabljaš danes, ostane brezplačno. Premium doda vseh 8 glasovnih učinkov, kloniranje glasu, 24/7 v klicu, 50 osebnih izgovorjav, /rizz in premium igre. Podpora: https://ko-fi.com/',
+    'Vse, kar uporabljaš danes, ostane brezplačno. Premium doda vseh 8 glasovnih učinkov, 24/7 v klicu, 50 osebnih izgovorjav, /rizz in premium igre. Podpora: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Tvoja prepustnica Premium:** {used}/{total} licenc v uporabi · poteče {date}',
   'premium.passServers': '↳ V uporabi na: {servers}',
   'premium.pitch':
-    'Premiuma še nimaš. **Vozen Premium** (€3,99/mes za 3 strežnike ali €7,99/mes za 8) odklene za celoten strežnik: vseh 8 glasovnih učinkov, kloniranje glasu, 24/7 v klicu, 50 osebnih izgovorjav (namesto 3), ukaz /rizz in premium igre (Besedna veriga, Wordle, Šah). **Vozen Plus** (€1,99/mes) ti te ugodnosti da osebno, na katerem koli strežniku.',
+    'Premiuma še nimaš. **Vozen Premium** (€3,99/mes za 3 strežnike ali €7,99/mes za 8) odklene za celoten strežnik: vseh 8 glasovnih učinkov, 24/7 v klicu, 50 osebnih izgovorjav (namesto 3), ukaz /rizz in premium igre (Besedna veriga, Wordle, Šah). **Vozen Plus** (€1,99/mes) ti te ugodnosti da osebno, na katerem koli strežniku.',
   'premium.buyHint':
     '▶ **Pridobi Premium:** {link}\nPo nakupu zaženi `/premium activate` na strežniku, ki ga želiš.',
   'premium.confirmActivate':

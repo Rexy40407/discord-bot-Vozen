@@ -32,7 +32,7 @@ export default {
   'stt.revokeNone':
     'Nie wyraziłeś zgody na transkrypcję na tym serwerze, więc nie było czego wycofywać.',
   'privacy.eraseConfirm':
-    '⚠️ To trwale usuwa **wszystkie** twoje dane Vozen na każdym serwerze: ustawienia głosu, wymawiany pseudonim, osobiste skróty i wymowy, zapisane urodziny, wyniki gier, statystyki mówienia, rezygnację oraz każdy klon głosu (w tym nagrania twojego głosu wykonane przez innych). **Tego nie można cofnąć.** Na pewno?',
+    '⚠️ To trwale usuwa **wszystkie** twoje dane Vozen na każdym serwerze: ustawienia głosu, wymawiany pseudonim, osobiste skróty i wymowy, zapisane urodziny, wyniki gier, statystyki mówienia oraz rezygnację. **Tego nie można cofnąć.** Na pewno?',
   'privacy.erasePremiumNote':
     '_Uwaga: twój opłacony Premium/Plus i jego historia zakupu są zachowywane — należą do ciebie i do wymaganej prawem dokumentacji finansowej. Aby zakończyć Premium, pozwól mu wygasnąć lub skontaktuj się z pomocą._',
   'privacy.eraseYes': 'Usuń wszystko',
@@ -156,11 +156,11 @@ export default {
   'premium.lineUserActive': '👤 **Ty (Plus):** aktywne do {date}',
   'premium.lineUserFree': '👤 **Ty (Plus):** nieaktywne',
   'premium.getHint':
-    'Wszystko, czego używasz dzisiaj, pozostaje darmowe. Premium dodaje wszystkie 8 efektów głosu, klonowanie głosu, obecność 24/7 na kanale, 50 osobistych wymów, /rizz oraz gry premium. Wsparcie: https://ko-fi.com/',
+    'Wszystko, czego używasz dzisiaj, pozostaje darmowe. Premium dodaje wszystkie 8 efektów głosu, obecność 24/7 na kanale, 50 osobistych wymów, /rizz oraz gry premium. Wsparcie: https://ko-fi.com/',
   'premium.linePass': '🎟️ **Twój pass Premium:** {used}/{total} licencji w użyciu · wygasa {date}',
   'premium.passServers': '↳ W użyciu na: {servers}',
   'premium.pitch':
-    'Nie masz jeszcze Premium. **Vozen Premium** (€3.99/mies. za 3 serwery lub €7.99/mies. za 8) odblokowuje dla całego serwera: wszystkie 8 efektów głosu, klonowanie głosu, obecność 24/7 na kanale, 50 osobistych wymów (zamiast 3), polecenie /rizz oraz gry premium (Łańcuch Słów, Wordle, Szachy). **Vozen Plus** (€1.99/mies.) daje ci te dodatki osobiście, na dowolnym serwerze.',
+    'Nie masz jeszcze Premium. **Vozen Premium** (€3.99/mies. za 3 serwery lub €7.99/mies. za 8) odblokowuje dla całego serwera: wszystkie 8 efektów głosu, obecność 24/7 na kanale, 50 osobistych wymów (zamiast 3), polecenie /rizz oraz gry premium (Łańcuch Słów, Wordle, Szachy). **Vozen Plus** (€1.99/mies.) daje ci te dodatki osobiście, na dowolnym serwerze.',
   'premium.buyHint':
     '▶ **Zdobądź Premium:** {link}\nPo zakupie uruchom `/premium activate` na wybranym serwerze.',
   'premium.confirmActivate':

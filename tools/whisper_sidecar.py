@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Sidecar de STT persistente para o Vozen (Fase 4).
 
-Carrega o modelo faster-whisper UMA vez e transcreve N pedidos — o padrao dos sidecars
-clone/kokoro (evita pagar o cold-load por utterance). Protocolo simples de linhas:
+Carrega o modelo faster-whisper UMA vez e transcreve N pedidos — como o sidecar
+kokoro (evita pagar o cold-load por utterance). Protocolo simples de linhas:
 
   entrada (stdin):  1 LINHA = caminho de um ficheiro WAV a transcrever
   saida (stdout):   1 LINHA JSON por pedido -> {"text": "...", "lang": "en"}  ou  {"error": "..."}

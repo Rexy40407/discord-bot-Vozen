@@ -214,7 +214,7 @@ export default {
   'stt.revokeNone':
     'Du hats der Transkriptioun op dësem Server net zougestëmmt, dofir gouf et näischt zréckzezéien.',
   'privacy.eraseConfirm':
-    '⚠️ Dëst läscht permanent **all** deng Vozen-Donnéeën iwwer all Server: Stëmm-Astellungen, geschwaten Spëtznumm, perséinlech Ofkierzungen an Aussproochen, gespäichert Gebuertsdag, Spillpunkten, Schwätz-Statistiken, Opt-out, an all Stëmmklon (och Opnamen vun denger Stëmm, déi anerer gemaach hunn). **Dëst kann net réckgängeg gemaach ginn.** Bass du sécher?',
+    '⚠️ Dëst läscht permanent **all** deng Vozen-Donnéeën iwwer all Server: Stëmm-Astellungen, geschwaten Spëtznumm, perséinlech Ofkierzungen an Aussproochen, gespäichert Gebuertsdag, Spillpunkten, Schwätz-Statistiken, an Opt-out. **Dëst kann net réckgängeg gemaach ginn.** Bass du sécher?',
   'privacy.erasePremiumNote':
     '_Notiz: däi bezuelte Premium/Plus a seng Akafshistorie ginn behalen — si gehéieren dir an de gesetzlech verlaangte Finanzunterlagen. Fir de Premium ze stoppen, looss en oflafen oder kontaktéier de Support._',
   'privacy.eraseYes': 'Alles läschen',
@@ -286,12 +286,12 @@ export default {
   'premium.lineUserActive': '👤 **Du (Plus):** aktiv bis {date}',
   'premium.lineUserFree': '👤 **Du (Plus):** net aktiv',
   'premium.getHint':
-    "Alles, wat s du haut benotz, bleift gratis. Premium füügt all 8 Stëmmeffekter, Stëmmklonen, 24/7 an der Call, 50 perséinlech Aussproochen, /rizz an d'Premium-Spiller bäi. Support: https://ko-fi.com/",
+    "Alles, wat s du haut benotz, bleift gratis. Premium füügt all 8 Stëmmeffekter, 24/7 an der Call, 50 perséinlech Aussproochen, /rizz an d'Premium-Spiller bäi. Support: https://ko-fi.com/",
   'premium.linePass':
     '🎟️ **Däi Premium-Pass:** {used}/{total} Lizenzen a Benotzung · leeft {date} of',
   'premium.passServers': '↳ A Benotzung op: {servers}',
   'premium.pitch':
-    "Du hues nach kee Premium. **Vozen Premium** (€3.99/Mount fir 3 Serveren, oder €7.99/Mount fir 8) schalt fir de ganze Server fräi: all 8 Stëmmeffekter, Stëmmklonen, 24/7 an der Call, 50 perséinlech Aussproochen (vs 3), de /rizz-Kommando an d'Premium-Spiller (Word Chain, Wordle, Chess). **Vozen Plus** (€1.99/Mount) gëtt dir dës Extraen perséinlech, op all Server.",
+    "Du hues nach kee Premium. **Vozen Premium** (€3.99/Mount fir 3 Serveren, oder €7.99/Mount fir 8) schalt fir de ganze Server fräi: all 8 Stëmmeffekter, 24/7 an der Call, 50 perséinlech Aussproochen (vs 3), de /rizz-Kommando an d'Premium-Spiller (Word Chain, Wordle, Chess). **Vozen Plus** (€1.99/Mount) gëtt dir dës Extraen perséinlech, op all Server.",
   'premium.buyHint':
     '▶ **Premium kréien:** {link}\nNom Akaf, laf `/premium activate` op deem Server, deen s du wëlls.',
   'premium.confirmActivate':

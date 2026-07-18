@@ -210,7 +210,7 @@ export default {
     '✅ Đã rút lại đồng ý — bạn sẽ không còn được ghi lời thoại trên máy chủ này nữa. (Các tin nhắn đã đăng vẫn còn; hãy xóa chúng trong Discord nếu bạn muốn.)',
   'stt.revokeNone': 'Bạn chưa đồng ý ghi lời thoại trên máy chủ này, nên không có gì để rút lại.',
   'privacy.eraseConfirm':
-    '⚠️ Thao tác này xóa vĩnh viễn **toàn bộ** dữ liệu Vozen của bạn trên mọi máy chủ: cài đặt giọng, biệt danh đọc to, các từ viết tắt và cách phát âm cá nhân, ngày sinh đã lưu, điểm trò chơi, thống kê trò chuyện, tùy chọn không đọc, và mọi giọng nhân bản (kể cả các bản ghi giọng của bạn do người khác tạo). **Không thể hoàn tác việc này.** Bạn có chắc không?',
+    '⚠️ Thao tác này xóa vĩnh viễn **toàn bộ** dữ liệu Vozen của bạn trên mọi máy chủ: cài đặt giọng, biệt danh đọc to, các từ viết tắt và cách phát âm cá nhân, ngày sinh đã lưu, điểm trò chơi, thống kê trò chuyện, và tùy chọn không đọc. **Không thể hoàn tác việc này.** Bạn có chắc không?',
   'privacy.erasePremiumNote':
     '_Lưu ý: gói Premium/Plus đã trả phí và lịch sử mua hàng của bạn được giữ lại — chúng thuộc về bạn và thuộc hồ sơ tài chính bắt buộc theo luật. Để dừng Premium, hãy để nó hết hạn hoặc liên hệ hỗ trợ._',
   'privacy.eraseYes': 'Xóa mọi thứ',
@@ -278,12 +278,12 @@ export default {
   'premium.lineUserActive': '👤 **Bạn (Plus):** hoạt động đến {date}',
   'premium.lineUserFree': '👤 **Bạn (Plus):** chưa kích hoạt',
   'premium.getHint':
-    'Mọi thứ bạn dùng hôm nay vẫn miễn phí. Premium bổ sung cả 8 hiệu ứng giọng, nhân bản giọng, 24/7 trong cuộc gọi, 50 cách phát âm cá nhân, /rizz và các trò chơi premium. Ủng hộ: https://ko-fi.com/',
+    'Mọi thứ bạn dùng hôm nay vẫn miễn phí. Premium bổ sung cả 8 hiệu ứng giọng, 24/7 trong cuộc gọi, 50 cách phát âm cá nhân, /rizz và các trò chơi premium. Ủng hộ: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Vé Premium của bạn:** đang dùng {used}/{total} giấy phép · hết hạn {date}',
   'premium.passServers': '↳ Đang dùng trên: {servers}',
   'premium.pitch':
-    'Bạn chưa có Premium. **Vozen Premium** (€3.99/tháng cho 3 máy chủ, hoặc €7.99/tháng cho 8) mở khóa cho toàn máy chủ: cả 8 hiệu ứng giọng, nhân bản giọng, 24/7 trong cuộc gọi, 50 cách phát âm cá nhân (so với 3), lệnh /rizz và các trò chơi premium (Nối Chữ, Wordle, Cờ Vua). **Vozen Plus** (€1.99/tháng) cho bạn những đặc quyền đó theo cá nhân, trên bất kỳ máy chủ nào.',
+    'Bạn chưa có Premium. **Vozen Premium** (€3.99/tháng cho 3 máy chủ, hoặc €7.99/tháng cho 8) mở khóa cho toàn máy chủ: cả 8 hiệu ứng giọng, 24/7 trong cuộc gọi, 50 cách phát âm cá nhân (so với 3), lệnh /rizz và các trò chơi premium (Nối Chữ, Wordle, Cờ Vua). **Vozen Plus** (€1.99/tháng) cho bạn những đặc quyền đó theo cá nhân, trên bất kỳ máy chủ nào.',
   'premium.buyHint':
     '▶ **Nhận Premium:** {link}\nSau khi mua, chạy `/premium activate` trên máy chủ bạn muốn.',
   'premium.confirmActivate':

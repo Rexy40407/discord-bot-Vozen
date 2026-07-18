@@ -4,9 +4,7 @@ site/
 site-dist/
 logs/
 node_modules/
-tools/clone-venv/
 audio-cache/
-voice-clones/
 package-lock.json
 scratchpad/
 # docs/ contains prose and untracked artifacts from other sessions; do not rewrite it.

@@ -1,8 +1,0 @@
-# Deps do sidecar de clone de voz (Chatterbox) — versões CONGELADAS a partir do
-# venv conhecido-bom (tools/clone-venv). torch/torchaudio vêm do índice cu124 da
-# PyTorch (passado por --index-url no setup-clone.ps1); o resto vem do PyPI
-# (--extra-index-url). Atualizar de propósito, nunca por acidente.
-torch==2.6.0+cu124
-torchaudio==2.6.0+cu124
-chatterbox-tts==0.1.7
-pillow==12.3.0

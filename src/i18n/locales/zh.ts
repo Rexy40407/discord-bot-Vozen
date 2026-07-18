@@ -190,7 +190,7 @@ export default {
     '✅ 已撤回同意——你不会再在本服务器被转录。（已发布的消息会保留；如需删除请在 Discord 中操作。）',
   'stt.revokeNone': '你此前并未同意在本服务器进行转录，所以没有可撤回的内容。',
   'privacy.eraseConfirm':
-    '⚠️ 这将永久删除你在每个服务器上的 **所有** Vozen 数据：语音设置、朗读昵称、个人缩写和发音、已保存的生日、游戏得分、发言统计、退出设置，以及任何语音克隆（包括他人对你声音的录音）。**此操作无法撤销。** 你确定吗？',
+    '⚠️ 这将永久删除你在每个服务器上的 **所有** Vozen 数据：语音设置、朗读昵称、个人缩写和发音、已保存的生日、游戏得分、发言统计，以及退出设置。**此操作无法撤销。** 你确定吗？',
   'privacy.erasePremiumNote':
     '_注意：你付费的 Premium/Plus 及其购买记录会被保留——它们属于你，也属于法律要求的财务记录。要停止 Premium，请让它到期或联系支持。_',
   'privacy.eraseYes': '删除所有内容',
@@ -255,11 +255,11 @@ export default {
   'premium.lineUserActive': '👤 **你（Plus）：** 有效期至 {date}',
   'premium.lineUserFree': '👤 **你（Plus）：** 未激活',
   'premium.getHint':
-    '你今天使用的一切都将保持免费。Premium 额外提供全部 8 种语音效果、语音克隆、24/7 全天候通话、50 个个人发音、/rizz 以及 premium 游戏。支持：https://ko-fi.com/',
+    '你今天使用的一切都将保持免费。Premium 额外提供全部 8 种语音效果、24/7 全天候通话、50 个个人发音、/rizz 以及 premium 游戏。支持：https://ko-fi.com/',
   'premium.linePass': '🎟️ **你的 Premium 通行证：** 已使用 {used}/{total} 个授权 · 到期 {date}',
   'premium.passServers': '↳ 正在使用于：{servers}',
   'premium.pitch':
-    '你还没有 Premium。**Vozen Premium**（€3.99/月 可用于 3 个服务器，或 €7.99/月 可用于 8 个）为整个服务器解锁：全部 8 种语音效果、语音克隆、24/7 全天候通话、50 个个人发音（对比 3 个）、/rizz 命令以及 premium 游戏（词语接龙、Wordle、国际象棋）。**Vozen Plus**（€1.99/月）在任何服务器上把这些特权只给你个人。',
+    '你还没有 Premium。**Vozen Premium**（€3.99/月 可用于 3 个服务器，或 €7.99/月 可用于 8 个）为整个服务器解锁：全部 8 种语音效果、24/7 全天候通话、50 个个人发音（对比 3 个）、/rizz 命令以及 premium 游戏（词语接龙、Wordle、国际象棋）。**Vozen Plus**（€1.99/月）在任何服务器上把这些特权只给你个人。',
   'premium.buyHint':
     '▶ **获取 Premium：** {link}\n购买后，在你想要的服务器上运行 `/premium activate`。',
   'premium.confirmActivate':

@@ -32,7 +32,7 @@ export default {
   'stt.revokeNone':
     'Je had geen toestemming gegeven voor transcriptie op deze server, dus er was niets in te trekken.',
   'privacy.eraseConfirm':
-    '⚠️ Dit verwijdert **al** je Vozen-gegevens op elke server permanent: steminstellingen, uitgesproken bijnaam, persoonlijke afkortingen en uitspraken, opgeslagen verjaardag, spelscores, praatstatistieken, opt-out en elke stemkloon (inclusief opnames van je stem die door anderen zijn gemaakt). **Dit kan niet ongedaan worden gemaakt.** Weet je het zeker?',
+    '⚠️ Dit verwijdert **al** je Vozen-gegevens op elke server permanent: steminstellingen, uitgesproken bijnaam, persoonlijke afkortingen en uitspraken, opgeslagen verjaardag, spelscores, praatstatistieken en opt-out. **Dit kan niet ongedaan worden gemaakt.** Weet je het zeker?',
   'privacy.erasePremiumNote':
     '_Let op: je betaalde Premium/Plus en de bijbehorende aankoopgeschiedenis blijven bewaard — die horen bij jou en bij wettelijk verplichte financiële administratie. Om Premium te stoppen, laat je het verlopen of neem je contact op met support._',
   'privacy.eraseYes': 'Alles verwijderen',
@@ -157,12 +157,12 @@ export default {
   'premium.lineUserActive': '👤 **Jij (Plus):** actief tot {date}',
   'premium.lineUserFree': '👤 **Jij (Plus):** niet actief',
   'premium.getHint':
-    'Alles wat je vandaag gebruikt, blijft gratis. Premium voegt alle 8 stemeffecten, stemklonen, 24/7 in de call, 50 persoonlijke uitspraken, /rizz en de premiumspellen toe. Steun: https://ko-fi.com/',
+    'Alles wat je vandaag gebruikt, blijft gratis. Premium voegt alle 8 stemeffecten, 24/7 in de call, 50 persoonlijke uitspraken, /rizz en de premiumspellen toe. Steun: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Je Premium-pas:** {used}/{total} licenties in gebruik · verloopt {date}',
   'premium.passServers': '↳ In gebruik op: {servers}',
   'premium.pitch':
-    'Je hebt nog geen Premium. **Vozen Premium** (€3,99/mnd voor 3 servers, of €7,99/mnd voor 8) ontgrendelt voor de hele server: alle 8 stemeffecten, stemklonen, 24/7 in de call, 50 persoonlijke uitspraken (i.p.v. 3), het /rizz-commando en de premiumspellen (Woordketting, Wordle, Schaken). **Vozen Plus** (€1,99/mnd) geeft jou die extraatjes persoonlijk, op elke server.',
+    'Je hebt nog geen Premium. **Vozen Premium** (€3,99/mnd voor 3 servers, of €7,99/mnd voor 8) ontgrendelt voor de hele server: alle 8 stemeffecten, 24/7 in de call, 50 persoonlijke uitspraken (i.p.v. 3), het /rizz-commando en de premiumspellen (Woordketting, Wordle, Schaken). **Vozen Plus** (€1,99/mnd) geeft jou die extraatjes persoonlijk, op elke server.',
   'premium.buyHint':
     '▶ **Premium halen:** {link}\nNa aankoop, gebruik `/premium activate` op de server die je wilt.',
   'premium.confirmActivate':

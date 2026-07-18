@@ -32,7 +32,7 @@ export default {
   'stt.revokeNone':
     'Et ollut antanut suostumusta transkriptioon tällä palvelimella, joten ei ollut mitään peruutettavaa.',
   'privacy.eraseConfirm':
-    '⚠️ Tämä poistaa pysyvästi **kaikki** Vozen-tietosi kaikilta palvelimilta: ääniasetukset, puhutun lempinimen, henkilökohtaiset lyhenteet ja ääntämykset, tallennetun syntymäpäivän, pelipisteet, puhetilastot, opt-outin ja mahdollisen äänikloonin (mukaan lukien muiden tekemät tallenteet äänestäsi). **Tätä ei voi peruuttaa.** Oletko varma?',
+    '⚠️ Tämä poistaa pysyvästi **kaikki** Vozen-tietosi kaikilta palvelimilta: ääniasetukset, puhutun lempinimen, henkilökohtaiset lyhenteet ja ääntämykset, tallennetun syntymäpäivän, pelipisteet, puhetilastot ja opt-outin. **Tätä ei voi peruuttaa.** Oletko varma?',
   'privacy.erasePremiumNote':
     '_Huom: maksettu Premium/Plus ja sen ostohistoria säilytetään — ne kuuluvat sinulle ja lain vaatimaan kirjanpitoon. Pysäyttääksesi Premiumin anna sen vanhentua tai ota yhteyttä tukeen._',
   'privacy.eraseYes': 'Poista kaikki',
@@ -153,11 +153,11 @@ export default {
   'premium.lineUserActive': '👤 **Sinä (Plus):** aktiivinen {date} asti',
   'premium.lineUserFree': '👤 **Sinä (Plus):** ei aktiivinen',
   'premium.getHint':
-    'Kaikki mitä käytät tänään pysyy ilmaisena. Premium lisää kaikki 8 ääniefektiä, äänen kloonauksen, 24/7 puhelussa, 50 henkilökohtaista ääntämystä, /rizzin ja premium-pelit. Tuki: https://ko-fi.com/',
+    'Kaikki mitä käytät tänään pysyy ilmaisena. Premium lisää kaikki 8 ääniefektiä, 24/7 puhelussa, 50 henkilökohtaista ääntämystä, /rizzin ja premium-pelit. Tuki: https://ko-fi.com/',
   'premium.linePass': '🎟️ **Premium-passisi:** {used}/{total} lisenssiä käytössä · vanhenee {date}',
   'premium.passServers': '↳ Käytössä palvelimilla: {servers}',
   'premium.pitch':
-    'Sinulla ei ole vielä Premiumia. **Vozen Premium** (3,99 €/kk 3 palvelimelle tai 7,99 €/kk 8:lle) avaa koko palvelimelle: kaikki 8 ääniefektiä, äänen kloonauksen, 24/7 puhelussa, 50 henkilökohtaista ääntämystä (vs 3), /rizz-komennon ja premium-pelit (Word Chain, Wordle, Chess). **Vozen Plus** (1,99 €/kk) antaa nämä edut henkilökohtaisesti sinulle, millä tahansa palvelimella.',
+    'Sinulla ei ole vielä Premiumia. **Vozen Premium** (3,99 €/kk 3 palvelimelle tai 7,99 €/kk 8:lle) avaa koko palvelimelle: kaikki 8 ääniefektiä, 24/7 puhelussa, 50 henkilökohtaista ääntämystä (vs 3), /rizz-komennon ja premium-pelit (Word Chain, Wordle, Chess). **Vozen Plus** (1,99 €/kk) antaa nämä edut henkilökohtaisesti sinulle, millä tahansa palvelimella.',
   'premium.buyHint':
     '▶ **Hanki Premium:** {link}\nOston jälkeen suorita `/premium activate` haluamallasi palvelimella.',
   'premium.confirmActivate':

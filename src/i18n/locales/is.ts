@@ -31,7 +31,7 @@ export default {
   'stt.revokeNone':
     'Þú hafðir ekki samþykkt umritun á þessum netþjóni, svo það var ekkert að draga til baka.',
   'privacy.eraseConfirm':
-    '⚠️ Þetta eyðir varanlega **öllum** Vozen gögnunum þínum á öllum netþjónum: raddstillingum, töluðu gælunafni, persónulegum skammstöfunum og framburðum, vistuðum afmælisdegi, leikjastigum, tal-tölfræði, afþökkun, og hvaða raddklóni sem er (þar með talið upptökum af rödd þinni sem aðrir gerðu). **Þetta er ekki hægt að afturkalla.** Ertu viss?',
+    '⚠️ Þetta eyðir varanlega **öllum** Vozen gögnunum þínum á öllum netþjónum: raddstillingum, töluðu gælunafni, persónulegum skammstöfunum og framburðum, vistuðum afmælisdegi, leikjastigum, tal-tölfræði, og afþökkun. **Þetta er ekki hægt að afturkalla.** Ertu viss?',
   'privacy.erasePremiumNote':
     '_Athugið: greitt Premium/Plus þitt og kaupsaga þess haldast — þau tilheyra þér og lagalega áskildu bókhaldi. Til að hætta með Premium, láttu það renna út eða hafðu samband við þjónustuver._',
   'privacy.eraseYes': 'Eyða öllu',
@@ -151,12 +151,12 @@ export default {
   'premium.lineUserActive': '👤 **Þú (Plus):** virkt til {date}',
   'premium.lineUserFree': '👤 **Þú (Plus):** ekki virkt',
   'premium.getHint':
-    'Allt sem þú notar í dag helst ókeypis. Premium bætir við öllum 8 raddáhrifunum, raddklónun, 24/7 í símtali, 50 persónulegum framburðum, /rizz og premium leikjunum. Stuðningur: https://ko-fi.com/',
+    'Allt sem þú notar í dag helst ókeypis. Premium bætir við öllum 8 raddáhrifunum, 24/7 í símtali, 50 persónulegum framburðum, /rizz og premium leikjunum. Stuðningur: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Premium-passinn þinn:** {used}/{total} leyfi í notkun · rennur út {date}',
   'premium.passServers': '↳ Í notkun á: {servers}',
   'premium.pitch':
-    'Þú ert ekki enn með Premium. **Vozen Premium** (€3.99/mán fyrir 3 netþjóna, eða €7.99/mán fyrir 8) opnar fyrir allan netþjóninn: öll 8 raddáhrifin, raddklónun, 24/7 í símtali, 50 persónulega framburði (á móti 3), /rizz skipunina og premium leikina (Orðakeðja, Wordle, Skák). **Vozen Plus** (€1.99/mán) gefur þér þessi fríðindi persónulega, á hvaða netþjóni sem er.',
+    'Þú ert ekki enn með Premium. **Vozen Premium** (€3.99/mán fyrir 3 netþjóna, eða €7.99/mán fyrir 8) opnar fyrir allan netþjóninn: öll 8 raddáhrifin, 24/7 í símtali, 50 persónulega framburði (á móti 3), /rizz skipunina og premium leikina (Orðakeðja, Wordle, Skák). **Vozen Plus** (€1.99/mán) gefur þér þessi fríðindi persónulega, á hvaða netþjóni sem er.',
   'premium.buyHint':
     '▶ **Fáðu Premium:** {link}\nEftir kaup, keyrðu `/premium activate` á netþjóninum sem þú vilt.',
   'premium.confirmActivate':

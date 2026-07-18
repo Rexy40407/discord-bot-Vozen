@@ -216,7 +216,7 @@ export default {
   'stt.revokeNone':
     'Du hattest der Transkription auf diesem Server nicht zugestimmt, daher gab es nichts zurückzuziehen.',
   'privacy.eraseConfirm':
-    '⚠️ Dies löscht dauerhaft **alle** deine Vozen-Daten auf allen Servern: Stimmeinstellungen, gesprochener Spitzname, persönliche Abkürzungen und Aussprachen, gespeicherter Geburtstag, Spielpunkte, Sprechstatistiken, Opt-out und jeden Stimmklon (einschließlich Aufnahmen deiner Stimme, die andere gemacht haben). **Das kann nicht rückgängig gemacht werden.** Bist du sicher?',
+    '⚠️ Dies löscht dauerhaft **alle** deine Vozen-Daten auf allen Servern: Stimmeinstellungen, gesprochener Spitzname, persönliche Abkürzungen und Aussprachen, gespeicherter Geburtstag, Spielpunkte, Sprechstatistiken und Opt-out. **Das kann nicht rückgängig gemacht werden.** Bist du sicher?',
   'privacy.erasePremiumNote':
     '_Hinweis: Dein bezahltes Premium/Plus und dessen Kaufhistorie bleiben erhalten — sie gehören dir und den gesetzlich vorgeschriebenen Finanzunterlagen. Um Premium zu beenden, lass es auslaufen oder kontaktiere den Support._',
   'privacy.eraseYes': 'Alles löschen',
@@ -289,12 +289,12 @@ export default {
   'premium.lineUserActive': '👤 **Du (Plus):** aktiv bis {date}',
   'premium.lineUserFree': '👤 **Du (Plus):** nicht aktiv',
   'premium.getHint':
-    'Alles, was du heute nutzt, bleibt kostenlos. Premium fügt alle 8 Stimmeffekte, Stimmklonen, 24/7 in der Call, 50 persönliche Aussprachen, /rizz und die Premium-Spiele hinzu. Support: https://ko-fi.com/',
+    'Alles, was du heute nutzt, bleibt kostenlos. Premium fügt alle 8 Stimmeffekte, 24/7 in der Call, 50 persönliche Aussprachen, /rizz und die Premium-Spiele hinzu. Support: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Dein Premium-Pass:** {used}/{total} Lizenzen in Verwendung · läuft ab {date}',
   'premium.passServers': '↳ In Verwendung auf: {servers}',
   'premium.pitch':
-    'Du hast noch kein Premium. **Vozen Premium** (€3,99/Monat für 3 Server oder €7,99/Monat für 8) schaltet für den ganzen Server frei: alle 8 Stimmeffekte, Stimmklonen, 24/7 in der Call, 50 persönliche Aussprachen (statt 3), den Befehl /rizz und die Premium-Spiele (Wortkette, Wordle, Schach). **Vozen Plus** (€1,99/Monat) gibt dir diese Vorteile persönlich, auf jedem Server.',
+    'Du hast noch kein Premium. **Vozen Premium** (€3,99/Monat für 3 Server oder €7,99/Monat für 8) schaltet für den ganzen Server frei: alle 8 Stimmeffekte, 24/7 in der Call, 50 persönliche Aussprachen (statt 3), den Befehl /rizz und die Premium-Spiele (Wortkette, Wordle, Schach). **Vozen Plus** (€1,99/Monat) gibt dir diese Vorteile persönlich, auf jedem Server.',
   'premium.buyHint':
     '▶ **Premium holen:** {link}\nNach dem Kauf führe `/premium activate` auf dem gewünschten Server aus.',
   'premium.confirmActivate':

@@ -8,10 +8,8 @@ cache/
 models/
 piper/
 
-# Voice-cloning engine (local Python environment, about 6 GB) and temporary files
-tools/clone-venv/
+# Temporary files (smoke-test scratch)
 tools/_smoke_*
-voice-clones/
 
 # Whisper STT sidecar (local Python environment and model)
 tools/whisper-venv/

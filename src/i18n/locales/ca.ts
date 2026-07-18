@@ -33,7 +33,7 @@ export default {
   'stt.revokeNone':
     'No havies consentit la transcripció en aquest servidor, així que no hi havia res per retirar.',
   'privacy.eraseConfirm':
-    "⚠️ Això esborra permanentment **totes** les teves dades de Vozen a tots els servidors: configuració de veu, sobrenom parlat, abreviatures i pronunciacions personals, aniversari desat, puntuacions de jocs, estadístiques de parla, exclusió i qualsevol clon de veu (incloses gravacions de la teva veu fetes per altres). **Això no es pot desfer.** N'estàs segur?",
+    "⚠️ Això esborra permanentment **totes** les teves dades de Vozen a tots els servidors: configuració de veu, sobrenom parlat, abreviatures i pronunciacions personals, aniversari desat, puntuacions de jocs, estadístiques de parla i exclusió. **Això no es pot desfer.** N'estàs segur?",
   'privacy.erasePremiumNote':
     "_Nota: el teu Premium/Plus de pagament i el seu historial de compra es conserven: et pertanyen a tu i als registres financers exigits per llei. Per aturar el Premium, deixa'l caducar o contacta amb el suport._",
   'privacy.eraseYes': 'Esborra-ho tot',
@@ -156,12 +156,12 @@ export default {
   'premium.lineUserActive': '👤 **Tu (Plus):** actiu fins al {date}',
   'premium.lineUserFree': '👤 **Tu (Plus):** inactiu',
   'premium.getHint':
-    'Tot el que fas servir avui continua sent gratuït. El Premium afegeix els 8 efectes de veu, clonatge de veu, 24/7 a la trucada, 50 pronunciacions personals, /rizz i els jocs premium. Suport: https://ko-fi.com/',
+    'Tot el que fas servir avui continua sent gratuït. El Premium afegeix els 8 efectes de veu, 24/7 a la trucada, 50 pronunciacions personals, /rizz i els jocs premium. Suport: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **El teu passi Premium:** {used}/{total} llicències en ús · caduca el {date}',
   'premium.passServers': '↳ En ús a: {servers}',
   'premium.pitch':
-    "Encara no tens Premium. El **Vozen Premium** (€3.99/mes per a 3 servidors, o €7.99/mes per a 8) desbloqueja per a tot el servidor: els 8 efectes de veu, clonatge de veu, 24/7 a la trucada, 50 pronunciacions personals (en lloc de 3), l'ordre /rizz i els jocs premium (Cadena de Paraules, Wordle, Escacs). El **Vozen Plus** (€1.99/mes) et dóna aquests avantatges personalment, a qualsevol servidor.",
+    "Encara no tens Premium. El **Vozen Premium** (€3.99/mes per a 3 servidors, o €7.99/mes per a 8) desbloqueja per a tot el servidor: els 8 efectes de veu, 24/7 a la trucada, 50 pronunciacions personals (en lloc de 3), l'ordre /rizz i els jocs premium (Cadena de Paraules, Wordle, Escacs). El **Vozen Plus** (€1.99/mes) et dóna aquests avantatges personalment, a qualsevol servidor.",
   'premium.buyHint':
     '▶ **Obtén Premium:** {link}\nDesprés de comprar, executa `/premium activate` al servidor que vulguis.',
   'premium.confirmActivate':

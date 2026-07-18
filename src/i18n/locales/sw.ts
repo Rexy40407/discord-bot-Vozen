@@ -31,7 +31,7 @@ export default {
   'stt.revokeNone':
     'Hukuwa umekubali unukuzi kwenye seva hii, kwa hivyo hakukuwa na chochote cha kuondoa.',
   'privacy.eraseConfirm':
-    '⚠️ Hii inafuta kabisa **data yako yote** ya Vozen katika kila seva: mipangilio ya sauti, jina la kupanga linalotamkwa, vifupi na matamshi binafsi, siku ya kuzaliwa iliyohifadhiwa, alama za michezo, takwimu za mazungumzo, kujiondoa, na clone yoyote ya sauti (ikiwa ni pamoja na rekodi za sauti yako zilizofanywa na wengine). **Hii haiwezi kutenduliwa.** Una uhakika?',
+    '⚠️ Hii inafuta kabisa **data yako yote** ya Vozen katika kila seva: mipangilio ya sauti, jina la kupanga linalotamkwa, vifupi na matamshi binafsi, siku ya kuzaliwa iliyohifadhiwa, alama za michezo, takwimu za mazungumzo, na kujiondoa. **Hii haiwezi kutenduliwa.** Una uhakika?',
   'privacy.erasePremiumNote':
     '_Kumbuka: Premium/Plus yako uliyolipia na historia ya ununuzi vinabaki — ni mali yako na ya kumbukumbu za kifedha zinazohitajika kisheria. Ili kusimamisha Premium, iache imalize muda au wasiliana na usaidizi._',
   'privacy.eraseYes': 'Futa kila kitu',
@@ -155,12 +155,12 @@ export default {
   'premium.lineUserActive': '👤 **Wewe (Plus):** hai hadi {date}',
   'premium.lineUserFree': '👤 **Wewe (Plus):** haihai',
   'premium.getHint':
-    'Kila kitu unachotumia leo kinabaki bure. Premium huongeza athari zote 8 za sauti, kunakili sauti, kuwepo kwenye simu 24/7, matamshi 50 binafsi, /rizz na michezo ya premium. Usaidizi: https://ko-fi.com/',
+    'Kila kitu unachotumia leo kinabaki bure. Premium huongeza athari zote 8 za sauti, kuwepo kwenye simu 24/7, matamshi 50 binafsi, /rizz na michezo ya premium. Usaidizi: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Pasi yako ya Premium:** leseni {used}/{total} zinatumika · inaisha {date}',
   'premium.passServers': '↳ Inatumika kwenye: {servers}',
   'premium.pitch':
-    'Bado huna Premium. **Vozen Premium** (€3.99/mwezi kwa seva 3, au €7.99/mwezi kwa 8) hufungua kwa seva nzima: athari zote 8 za sauti, kunakili sauti, kuwepo kwenye simu 24/7, matamshi 50 binafsi (badala ya 3), amri ya /rizz na michezo ya premium (Word Chain, Wordle, Chess). **Vozen Plus** (€1.99/mwezi) hukupa faida hizo binafsi, kwenye seva yoyote.',
+    'Bado huna Premium. **Vozen Premium** (€3.99/mwezi kwa seva 3, au €7.99/mwezi kwa 8) hufungua kwa seva nzima: athari zote 8 za sauti, kuwepo kwenye simu 24/7, matamshi 50 binafsi (badala ya 3), amri ya /rizz na michezo ya premium (Word Chain, Wordle, Chess). **Vozen Plus** (€1.99/mwezi) hukupa faida hizo binafsi, kwenye seva yoyote.',
   'premium.buyHint':
     '▶ **Pata Premium:** {link}\nBaada ya kununua, endesha `/premium activate` kwenye seva unayotaka.',
   'premium.confirmActivate':

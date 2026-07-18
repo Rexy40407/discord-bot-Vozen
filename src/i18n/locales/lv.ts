@@ -31,7 +31,7 @@ export default {
     '✅ Piekrišana atsaukta — tu vairs šajā serverī netiksi transkribēts. (Jau publicētās ziņas paliek; ja vēlies, izdzēs tās Discord.)',
   'stt.revokeNone': 'Tu nebiji piekritis transkripcijai šajā serverī, tāpēc nebija ko atsaukt.',
   'privacy.eraseConfirm':
-    '⚠️ Tas neatgriezeniski izdzēš **visus** tavus Vozen datus visos serveros: balss iestatījumus, izrunāto iesauku, personīgos saīsinājumus un izrunas, saglabāto dzimšanas dienu, spēļu rezultātus, runāšanas statistiku, atteikšanos un jebkuru balss klonu (tostarp citu veidotus tavas balss ierakstus). **To nevar atsaukt.** Vai tiešām?',
+    '⚠️ Tas neatgriezeniski izdzēš **visus** tavus Vozen datus visos serveros: balss iestatījumus, izrunāto iesauku, personīgos saīsinājumus un izrunas, saglabāto dzimšanas dienu, spēļu rezultātus, runāšanas statistiku un atteikšanos. **To nevar atsaukt.** Vai tiešām?',
   'privacy.erasePremiumNote':
     '_Piezīme: tavs apmaksātais Premium/Plus un tā pirkuma vēsture tiek saglabāti — tie pieder tev un likumā prasītajiem finanšu ierakstiem. Lai apturētu Premium, ļauj tam beigties vai sazinies ar atbalstu._',
   'privacy.eraseYes': 'Izdzēst visu',
@@ -153,12 +153,12 @@ export default {
   'premium.lineUserActive': '👤 **Tu (Plus):** aktīvs līdz {date}',
   'premium.lineUserFree': '👤 **Tu (Plus):** neaktīvs',
   'premium.getHint':
-    'Viss, ko izmanto šodien, paliek bezmaksas. Premium pievieno visus 8 balss efektus, balss klonēšanu, 24/7 sarunā, 50 personīgās izrunas, /rizz un premium spēles. Atbalsts: https://ko-fi.com/',
+    'Viss, ko izmanto šodien, paliek bezmaksas. Premium pievieno visus 8 balss efektus, 24/7 sarunā, 50 personīgās izrunas, /rizz un premium spēles. Atbalsts: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Tavs Premium pass:** {used}/{total} licences lietošanā · beidzas {date}',
   'premium.passServers': '↳ Lietošanā: {servers}',
   'premium.pitch':
-    'Tev vēl nav Premium. **Vozen Premium** (€3.99/mo par 3 serveriem vai €7.99/mo par 8) atbloķē visam serverim: visus 8 balss efektus, balss klonēšanu, 24/7 sarunā, 50 personīgās izrunas (pretī 3), /rizz komandu un premium spēles (Vārdu ķēde, Wordle, Šahs). **Vozen Plus** (€1.99/mo) sniedz tev šos bonusus personīgi jebkurā serverī.',
+    'Tev vēl nav Premium. **Vozen Premium** (€3.99/mo par 3 serveriem vai €7.99/mo par 8) atbloķē visam serverim: visus 8 balss efektus, 24/7 sarunā, 50 personīgās izrunas (pretī 3), /rizz komandu un premium spēles (Vārdu ķēde, Wordle, Šahs). **Vozen Plus** (€1.99/mo) sniedz tev šos bonusus personīgi jebkurā serverī.',
   'premium.buyHint':
     '▶ **Iegādāties Premium:** {link}\nPēc pirkuma palaid `/premium activate` serverī, kuru vēlies.',
   'premium.confirmActivate':

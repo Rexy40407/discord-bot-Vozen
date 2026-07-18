@@ -2,7 +2,7 @@
 # Instalado por setup-whisper.sh/.ps1 em tools/whisper-venv/ (gitignored). Versões
 # PINADAS para resolução determinística (antes instalava `faster-whisper` sem versão
 # nenhuma — dois rebuilds podiam puxar releases diferentes, incl. uma comprometida).
-# SEM PyTorch nem cmake. Espelha o padrão de requirements-clone.txt/requirements-kokoro.txt.
+# SEM PyTorch nem cmake. Espelha o padrão de requirements-kokoro.txt.
 #
 # Versões lidas de uma resolução fresca (sem instalar: `pip index versions` +
 # `pip download` para o grafo completo) em 2026-07-14 — NÃO inventadas. Se o VPS já

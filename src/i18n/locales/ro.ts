@@ -32,7 +32,7 @@ export default {
   'stt.revokeNone':
     'Nu consimțiseși la transcriere pe acest server, așa că nu era nimic de retras.',
   'privacy.eraseConfirm':
-    '⚠️ Aceasta șterge definitiv **toate** datele tale Vozen de pe fiecare server: setările de voce, porecla rostită, abrevierile și pronunțiile personale, ziua de naștere salvată, scorurile din jocuri, statisticile de vorbire, dezactivarea și orice clonă de voce (inclusiv înregistrări ale vocii tale făcute de alții). **Aceasta nu poate fi anulată.** Ești sigur?',
+    '⚠️ Aceasta șterge definitiv **toate** datele tale Vozen de pe fiecare server: setările de voce, porecla rostită, abrevierile și pronunțiile personale, ziua de naștere salvată, scorurile din jocuri, statisticile de vorbire și dezactivarea. **Aceasta nu poate fi anulată.** Ești sigur?',
   'privacy.erasePremiumNote':
     '_Notă: Premium/Plus-ul tău plătit și istoricul achiziției se păstrează — îți aparțin ție și evidențelor financiare cerute de lege. Ca să oprești Premium, lasă-l să expire sau contactează suportul._',
   'privacy.eraseYes': 'Șterge tot',
@@ -156,12 +156,12 @@ export default {
   'premium.lineUserActive': '👤 **Tu (Plus):** activ până la {date}',
   'premium.lineUserFree': '👤 **Tu (Plus):** inactiv',
   'premium.getHint':
-    'Tot ce folosești astăzi rămâne gratuit. Premium adaugă toate cele 8 efecte de voce, clonarea vocii, prezența 24/7 în apel, 50 de pronunții personale, /rizz și jocurile premium. Suport: https://ko-fi.com/',
+    'Tot ce folosești astăzi rămâne gratuit. Premium adaugă toate cele 8 efecte de voce, prezența 24/7 în apel, 50 de pronunții personale, /rizz și jocurile premium. Suport: https://ko-fi.com/',
   'premium.linePass':
     '🎟️ **Abonamentul tău Premium:** {used}/{total} licențe în uz · expiră {date}',
   'premium.passServers': '↳ În uz pe: {servers}',
   'premium.pitch':
-    'Încă nu ai Premium. **Vozen Premium** (€3.99/lună pentru 3 servere sau €7.99/lună pentru 8) deblochează pentru tot serverul: toate cele 8 efecte de voce, clonarea vocii, prezența 24/7 în apel, 50 de pronunții personale (față de 3), comanda /rizz și jocurile premium (Lanț de Cuvinte, Wordle, Șah). **Vozen Plus** (€1.99/lună) îți oferă aceste beneficii personal, pe orice server.',
+    'Încă nu ai Premium. **Vozen Premium** (€3.99/lună pentru 3 servere sau €7.99/lună pentru 8) deblochează pentru tot serverul: toate cele 8 efecte de voce, prezența 24/7 în apel, 50 de pronunții personale (față de 3), comanda /rizz și jocurile premium (Lanț de Cuvinte, Wordle, Șah). **Vozen Plus** (€1.99/lună) îți oferă aceste beneficii personal, pe orice server.',
   'premium.buyHint':
     '▶ **Obține Premium:** {link}\nDupă cumpărare, rulează `/premium activate` pe serverul dorit.',
   'premium.confirmActivate':

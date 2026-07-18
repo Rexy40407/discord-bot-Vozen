@@ -214,7 +214,7 @@ export default {
   'stt.revokeNone':
     "Doeddet ti ddim wedi cydsynio i drawsgrifio ar y gweinydd hwn, felly doedd dim byd i'w dynnu'n ôl.",
   'privacy.eraseConfirm':
-    "⚠️ Mae hyn yn dileu **pob un** o'th ddata Vozen ar draws pob gweinydd yn barhaol: gosodiadau llais, llysenw llafar, talfyriadau ac ynganiadau personol, pen-blwydd wedi'i gadw, sgorau gemau, ystadegau siarad, optio-allan, ac unrhyw glôn llais (gan gynnwys recordiadau o'th lais a wnaed gan eraill). **Ni ellir dadwneud hyn.** Wyt ti'n siŵr?",
+    "⚠️ Mae hyn yn dileu **pob un** o'th ddata Vozen ar draws pob gweinydd yn barhaol: gosodiadau llais, llysenw llafar, talfyriadau ac ynganiadau personol, pen-blwydd wedi'i gadw, sgorau gemau, ystadegau siarad, ac optio-allan. **Ni ellir dadwneud hyn.** Wyt ti'n siŵr?",
   'privacy.erasePremiumNote':
     "_Nodyn: mae dy Premium/Plus taledig a'i hanes prynu'n cael eu cadw — maen nhw'n perthyn i ti ac i gofnodion ariannol sy'n ofynnol yn ôl y gyfraith. I stopio Premium, gad iddo ddod i ben neu cysyllta â'r cymorth._",
   'privacy.eraseYes': 'Dileu popeth',
@@ -286,12 +286,12 @@ export default {
   'premium.lineUserActive': '👤 **Ti (Plus):** yn weithredol tan {date}',
   'premium.lineUserFree': '👤 **Ti (Plus):** ddim yn weithredol',
   'premium.getHint':
-    "Mae popeth rwyt ti'n ei ddefnyddio heddiw yn aros am ddim. Mae Premium yn ychwanegu'r 8 effaith llais i gyd, clonio llais, 24/7 mewn galwad, 50 ynganiad personol, /rizz a'r gemau premium. Cefnogaeth: https://ko-fi.com/",
+    "Mae popeth rwyt ti'n ei ddefnyddio heddiw yn aros am ddim. Mae Premium yn ychwanegu'r 8 effaith llais i gyd, 24/7 mewn galwad, 50 ynganiad personol, /rizz a'r gemau premium. Cefnogaeth: https://ko-fi.com/",
   'premium.linePass':
     '🎟️ **Dy bas Premium:** {used}/{total} trwydded yn cael eu defnyddio · yn dod i ben {date}',
   'premium.passServers': '↳ Yn cael ei ddefnyddio ar: {servers}',
   'premium.pitch':
-    "Does gennyt ti ddim Premium eto. Mae **Vozen Premium** (€3.99/mis am 3 gweinydd, neu €7.99/mis am 8) yn datgloi ar gyfer y gweinydd cyfan: yr 8 effaith llais i gyd, clonio llais, 24/7 mewn galwad, 50 ynganiad personol (yn erbyn 3), y gorchymyn /rizz a'r gemau premium (Cadwyn Eiriau, Wordle, Gwyddbwyll). Mae **Vozen Plus** (€1.99/mis) yn rhoi'r breintiau hynny i ti'n bersonol, ar unrhyw weinydd.",
+    "Does gennyt ti ddim Premium eto. Mae **Vozen Premium** (€3.99/mis am 3 gweinydd, neu €7.99/mis am 8) yn datgloi ar gyfer y gweinydd cyfan: yr 8 effaith llais i gyd, 24/7 mewn galwad, 50 ynganiad personol (yn erbyn 3), y gorchymyn /rizz a'r gemau premium (Cadwyn Eiriau, Wordle, Gwyddbwyll). Mae **Vozen Plus** (€1.99/mis) yn rhoi'r breintiau hynny i ti'n bersonol, ar unrhyw weinydd.",
   'premium.buyHint':
     '▶ **Cael Premium:** {link}\nAr ôl prynu, rheda `/premium activate` ar y gweinydd rwyt ti eisiau.',
   'premium.confirmActivate':

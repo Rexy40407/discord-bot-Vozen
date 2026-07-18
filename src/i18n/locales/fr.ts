@@ -33,7 +33,7 @@ export default {
   'stt.revokeNone':
     "Vous n'aviez pas consenti à la transcription sur ce serveur, il n'y avait donc rien à retirer.",
   'privacy.eraseConfirm':
-    "⚠️ Cela supprime définitivement **toutes** vos données Vozen sur l'ensemble des serveurs : réglages de voix, surnom prononcé, abréviations et prononciations personnelles, anniversaire enregistré, scores de jeux, statistiques de parole, désinscription, et tout clone de voix (y compris les enregistrements de votre voix réalisés par d'autres). **Ceci est irréversible.** Êtes-vous sûr ?",
+    "⚠️ Cela supprime définitivement **toutes** vos données Vozen sur l'ensemble des serveurs : réglages de voix, surnom prononcé, abréviations et prononciations personnelles, anniversaire enregistré, scores de jeux, statistiques de parole, et désinscription. **Ceci est irréversible.** Êtes-vous sûr ?",
   'privacy.erasePremiumNote':
     "_Note : votre Premium/Plus payant et son historique d'achat sont conservés — ils vous appartiennent et relèvent des registres financiers exigés par la loi. Pour arrêter Premium, laissez-le expirer ou contactez le support._",
   'privacy.eraseYes': 'Tout supprimer',
@@ -159,12 +159,12 @@ export default {
   'premium.lineUserActive': "👤 **Vous (Plus) :** actif jusqu'au {date}",
   'premium.lineUserFree': '👤 **Vous (Plus) :** inactif',
   'premium.getHint':
-    "Tout ce que vous utilisez aujourd'hui reste gratuit. Premium ajoute les 8 effets de voix, le clonage de voix, le 24/7 en appel, 50 prononciations personnelles, /rizz et les jeux premium. Soutien : https://ko-fi.com/",
+    "Tout ce que vous utilisez aujourd'hui reste gratuit. Premium ajoute les 8 effets de voix, le 24/7 en appel, 50 prononciations personnelles, /rizz et les jeux premium. Soutien : https://ko-fi.com/",
   'premium.linePass':
     '🎟️ **Votre pass Premium :** {used}/{total} licences utilisées · expire le {date}',
   'premium.passServers': '↳ Utilisé sur : {servers}',
   'premium.pitch':
-    "Vous n'avez pas encore Premium. **Vozen Premium** (€3.99/mois pour 3 serveurs, ou €7.99/mois pour 8) débloque pour tout le serveur : les 8 effets de voix, le clonage de voix, le 24/7 en appel, 50 prononciations personnelles (contre 3), la commande /rizz et les jeux premium (Chaîne de Mots, Wordle, Échecs). **Vozen Plus** (€1.99/mois) vous offre ces avantages à titre personnel, sur n'importe quel serveur.",
+    "Vous n'avez pas encore Premium. **Vozen Premium** (€3.99/mois pour 3 serveurs, ou €7.99/mois pour 8) débloque pour tout le serveur : les 8 effets de voix, le 24/7 en appel, 50 prononciations personnelles (contre 3), la commande /rizz et les jeux premium (Chaîne de Mots, Wordle, Échecs). **Vozen Plus** (€1.99/mois) vous offre ces avantages à titre personnel, sur n'importe quel serveur.",
   'premium.buyHint':
     "▶ **Obtenir Premium :** {link}\nAprès l'achat, lancez `/premium activate` sur le serveur de votre choix.",
   'premium.confirmActivate':
