@@ -271,7 +271,7 @@ Nova passagem `/improve` @ commit `407503c` + refactor Components V2 por commita
 (correção · segurança · performance · dívida/testes/docs) → findings vetados à mão
 contra o código citado. **Segurança: LIMPA (zero HIGH/MED).**
 
-**Plano consolidado: [`033-full-review-fixes-and-upgrades.md`](033-full-review-fixes-and-upgrades.md)** — Status: **TODO**
+**Plano consolidado: [`033-full-review-fixes-and-upgrades.md`](033-full-review-fixes-and-upgrades.md)** — Status: **~90% DONE** (reconciliado na 5.ª auditoria, ver secção abaixo)
 
 | Secção | Conteúdo | Prio |
 | --- | --- | --- |
@@ -283,3 +283,49 @@ contra o código citado. **Segurança: LIMPA (zero HIGH/MED).**
 
 Não-planeados registados no próprio plano (SEC-01/02/04 by-design/LOW, PERF-06 por
 verificar, PERF-07/TEST-03 dobrados na vaga de refactor).
+
+---
+
+## 5.ª auditoria — 2026-07-18 (Fable planeia · Opus executa)
+
+Nova passagem `/improve` a pedido do Diogo, com o modelo económico invertido: **3 auditores
+Fable 5** em paralelo (consola de admin · reconciliar 033 + código da sessão · varredura ampla),
+cada achado **vetado contra a fonte pelo Opus**, e depois **executado pelo Opus** (TDD). Baseline:
+`npm run check` verde, 2004 testes → **2009+** no fim.
+
+**Reconciliação do plano 033** (estava marcado "TODO", mas ~90% executado em sessões anteriores):
+P0.1-P0.3 DONE (`05f3ab4`/`73badd5`), P0.4 externo (Diogo/Ko-fi), **B1/B2/B4/B5/B6/B8 DONE**
+(`b683744`/`73badd5`), **B7 DONE-por-caracterização** (WAL já dá `synchronous=NORMAL`, provado em
+`tests/storeDb.test.ts` — o pragma explícito é redundante; um auditor reportou-o como aberto, **rejeitado**
+na vetação), P2.3/P2.4/P2.5 DONE (`1669816`), P2.1/P2.2 REJECTED (medidos in-plan). **B3 agora DONE**
+(nesta ronda). Abertos e registados abaixo (D1/D2/D3 splits, P2.6 SQL, D4/D5 docs, F1/F2/F4 direção).
+Planos **034-037 DONE** (claim copy, no-auto-activation, claim-help modal, consola de admin) — o índice
+não os tinha em linha; ficam registados aqui.
+
+### Executados nesta ronda (TDD, vetados, verde)
+
+| # | Achado | Cat | Commit |
+| --- | --- | --- | --- |
+| BUG-01 | Rotas admin sem try/catch → um erro de BD (disco cheio/IO) escapava a `uncaughtException` → `exit(1)` e derrubava TODAS as sessões de voz. Envolvido → 500 limpo. | correção | `15ff017` |
+| SEC-01 | `revoke()` saltava a validação de snowflake do `grant()` e logava o id cru (log-forging). Reusa `validId`. | segurança | `15ff017` |
+| SEC-02 | Sem guarda de força no `ADMIN_SESSION_SECRET`; avisa no arranque se < 32 chars (precedente do plano 024). | segurança | `15ff017` |
+| DX-01 | `src/tts/cache.ts` tinha bytes NUL literais → o ripgrep tratava o ficheiro como binário e ignorava-o (invisível a greps e aos agentes). Escape ` ` (valor idêntico). | dx | `15ff017` |
+| I18N-01 | As 33 traduções de `join.joinedAutoread` perdiam o `{readChannel}` que en/pt têm → utilizadores não-en/pt sem ponteiro para o canal. Menção clicável + teste de paridade. | i18n | `15ff017` |
+| B3 | Botão "Stop" da gravação de clone estava no efémero do invocador → o alvo (quem é gravado) não o via. Movido para um cartão PÚBLICO, apagado no `finally`. Invariante de re-ensurdecer intacto. | correção/consent | `a9ca723` |
+| DOCS-01 | Este índice estava desatualizado (033 "TODO", 034-037 sem linha) → reconciliado. | docs | (esta secção) |
+
+### Deferidos como PLANOS (refactors puros — para um passe focado, não à pressa no fim desta ronda)
+
+- **[DEBT-03] `BoundedMap` partilhado → [`038-boundedmap-utility.md`](038-boundedmap-utility.md)**: o idioma de mapa-limitado
+  está escrito à mão ~14× em 2 sabores; o sabor "wipe" regride sozinho (B8 corrigiu 1 sítio, `claimHelp.ts` reintroduziu-o
+  no dia seguinte). Efeito: seguro de convergência (não perf). Migração mecânica com testes por sítio.
+- **[DEBT-04] Split do `kofiWebhook.ts` (1235 linhas) → [`039-split-kofiwebhook.md`](039-split-kofiwebhook.md)**: cresceu 61%
+  em 48h e é hoje o único ficheiro que junta o caminho do dinheiro E o wiring de auth do owner. Revisita o D2 diferido (o
+  ganho dobrou). **MED-risk (money path)** — merece o seu próprio passe com gate + review, não o fim de uma ronda grande.
+
+### Áreas verificadas e LIMPAS (não são planos)
+
+Sessão auth/HMAC/CORS/rate-limit da consola (fortes, pinados), caminho quente de mensagens (tudo em `cached()`),
+`talkStats` (P2.6 defer mantém-se), deps (sem lag com custo real), injeção (limpa). Direção F1 (localização dos
+nomes dos slash-commands), F2 (dashboard 3b canal+voz), F4 (apagar transcrições no revoke) e DIRECTION-03 (pedidos
+de claim-help na consola) continuam decisões do maintainer.
