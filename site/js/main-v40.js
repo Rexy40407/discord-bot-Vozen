@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   Vozen site — main-v39.js
+   Vozen site — main-v40.js
    ═══════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
@@ -100,6 +100,35 @@
     if (active && langEl) langEl.textContent = hearLangName(active.dataset.sample, siteLang);
   }
 
+  // Keep each translated hero phrase on the same single visual line. Some translations are
+  // naturally wider than English (French is the longest current example), so a fixed font size
+  // makes one phrase wrap and doubles the hero height. Measure the real rendered glyphs and only
+  // reduce the display size when a phrase would overflow its column.
+  function fitHeroTitle() {
+    const title = document.querySelector(".hero__title");
+    if (!title) return;
+    title.style.removeProperty("font-size");
+    const lines = [...title.querySelectorAll("span")];
+    const available = title.clientWidth;
+    const baseSize = Number.parseFloat(getComputedStyle(title).fontSize);
+    if (!available || !baseSize || lines.length === 0) return;
+    const widest = Math.max(...lines.map((line) => line.scrollWidth));
+    if (widest <= available) return;
+    const fitted = Math.max(34, Math.floor(baseSize * (available / widest) * 0.985));
+    title.style.fontSize = `${fitted}px`;
+  }
+
+  let heroFitFrame = 0;
+  function scheduleHeroTitleFit() {
+    window.cancelAnimationFrame(heroFitFrame);
+    heroFitFrame = window.requestAnimationFrame(fitHeroTitle);
+  }
+
+  window.addEventListener("resize", scheduleHeroTitleFit, { passive: true });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(scheduleHeroTitleFit).catch(() => {});
+  }
+
   // As 10 línguas do seletor: [código, bandeira, autónimo (nome na própria língua)].
   // Sem RTL — todas usam layout normal LTR (o texto árabe alinha à esquerda; o bidi do
   // Unicode continua a renderizar os caracteres na direção certa dentro da linha).
@@ -155,6 +184,8 @@
     if (documentTitleKey && d[documentTitleKey] != null) document.title = d[documentTitleKey];
     syncLangMenu(lang);
     localizeHear(lang);
+    fitHeroTitle();
+    scheduleHeroTitleFit();
     renderCommands();
     renderFaq();
     renderPanel(); // re-renderiza o painel Premium na língua atual (sem novo fetch)
@@ -405,6 +436,21 @@
       return;
     }
     setPanel({ mode: "anon" });
+  }
+
+  function logoutConfirmModal() {
+    return (
+      `<div class="ppmodal ppanel__logoutconfirm" id="ppLogoutConfirm" hidden>` +
+      `<div class="ppmodal__backdrop" id="ppLogoutConfirmBackdrop"></div>` +
+      `<div class="ppanel__logoutconfirmbox" role="dialog" aria-modal="true" aria-labelledby="ppLogoutConfirmTitle" aria-describedby="ppLogoutConfirmBody" tabindex="-1">` +
+      `<span class="ppanel__logoutconfirmicon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M10 5H6.5A2.5 2.5 0 0 0 4 7.5v9A2.5 2.5 0 0 0 6.5 19H10M14 8l4 4-4 4M8 12h10"/></svg></span>` +
+      `<h2 id="ppLogoutConfirmTitle">${t("account.logoutConfirmTitle")}</h2>` +
+      `<p id="ppLogoutConfirmBody">${t("account.logoutConfirmBody")}</p>` +
+      `<div class="ppanel__logoutconfirmactions">` +
+      `<button type="button" class="ppanel__logoutcancel" id="ppLogoutConfirmCancel">${t("account.logoutCancel")}</button>` +
+      `<button type="button" class="ppanel__logoutaction" id="ppLogoutConfirmAction">${t("account.logoutConfirmAction")}</button>` +
+      `</div></div></div>`
+    );
   }
 
   // Lê o token do fragment no regresso do OAuth, valida o `state` (CSRF) e LIMPA o fragment.
@@ -805,11 +851,10 @@
 
   async function doInstantActivation(ev, options = {}) {
     if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
-    const el = document.getElementById("premiumPanel");
-    const button = el && el.querySelector("#ppActivateBtn");
-    const consent = el && el.querySelector("#ppClaimConsent");
-    const receiptButton = el && el.querySelector("#ppClaimBtn");
-    const receiptInput = el && el.querySelector("#ppClaimCode");
+    const button = document.getElementById("ppActivateBtn");
+    const consent = document.getElementById("ppClaimConsent");
+    const receiptButton = document.getElementById("ppClaimBtn");
+    const receiptInput = document.getElementById("ppClaimCode");
     if (!button) return;
     if (!consent || !consent.checked) {
       setClaimMessage(t("claim.consentRequired"), "err");
@@ -911,11 +956,10 @@
   // válido (404 genérico do backend).
   async function doClaim(ev) {
     ev.preventDefault();
-    const el = document.getElementById("premiumPanel");
-    const input = el && el.querySelector("#ppClaimCode");
-    const btn = el && el.querySelector("#ppClaimBtn");
-    const msg = el && el.querySelector("#ppClaimMsg");
-    const consent = el && el.querySelector("#ppClaimConsent");
+    const input = document.getElementById("ppClaimCode");
+    const btn = document.getElementById("ppClaimBtn");
+    const msg = document.getElementById("ppClaimMsg");
+    const consent = document.getElementById("ppClaimConsent");
     if (!input || !btn) return;
     const code = (input.value || "").trim();
     const setMsg = (text, kind) => {
@@ -925,7 +969,8 @@
       msg.className = "ppanel__claimmsg" + (kind ? " is-" + kind : "");
     };
     if (!code) {
-      setMsg(t("claim.notfound"), "err");
+      setMsg(t("claim.receiptRequired"), "err");
+      input.focus();
       return;
     }
     // O Ref do recibo (`Ref: S-M1X823C9FW`) e a unica coisa com ar de codigo no email do Ko-fi, e
@@ -1027,6 +1072,41 @@
     purchaseActivationOpener = null;
   }
 
+  let logoutConfirmOpener = null;
+
+  function mountLogoutConfirm(el) {
+    document.getElementById("ppLogoutConfirm")?.remove();
+    if (!el.querySelector("#ppLogout")) return;
+    document.body.insertAdjacentHTML("beforeend", logoutConfirmModal());
+    document
+      .getElementById("ppLogoutConfirmCancel")
+      ?.addEventListener("click", closeLogoutConfirm);
+    document
+      .getElementById("ppLogoutConfirmBackdrop")
+      ?.addEventListener("click", closeLogoutConfirm);
+    document.getElementById("ppLogoutConfirmAction")?.addEventListener("click", logout);
+  }
+
+  function openLogoutConfirm() {
+    const modal = document.getElementById("ppLogoutConfirm");
+    if (!modal) return;
+    logoutConfirmOpener = document.activeElement;
+    modal.hidden = false;
+    document.body.classList.add("is-modal-open");
+    document.getElementById("ppLogoutConfirmCancel")?.focus();
+  }
+
+  function closeLogoutConfirm() {
+    const modal = document.getElementById("ppLogoutConfirm");
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    document.body.classList.remove("is-modal-open");
+    if (logoutConfirmOpener && typeof logoutConfirmOpener.focus === "function") {
+      logoutConfirmOpener.focus();
+    }
+    logoutConfirmOpener = null;
+  }
+
   // Quem abriu o modal, para lhe devolver o foco ao fechar. Sem isto, quem navega por teclado
   // volta ao topo do documento e tem de refazer o caminho todo ate ao cartao.
   let claimHelpOpener = null;
@@ -1074,6 +1154,11 @@
   // cada loadPanel e um listener por render acumulava-se em silencio.
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Escape") return;
+    const logoutModal = document.getElementById("ppLogoutConfirm");
+    if (logoutModal && !logoutModal.hidden) {
+      closeLogoutConfirm();
+      return;
+    }
     const help = document.getElementById("ppClaimHelp");
     if (help && !help.hidden) {
       closeClaimHelp();
@@ -1205,7 +1290,7 @@
     renderNavLogin(navDataForState());
     const byId = (id) => el.querySelector("#" + id);
     byId("ppLogin")?.addEventListener("click", login);
-    byId("ppLogout")?.addEventListener("click", logout);
+    byId("ppLogout")?.addEventListener("click", openLogoutConfirm);
     byId("ppRetry")?.addEventListener("click", loadPanel);
     byId("ppActivateBtn")?.addEventListener("click", doInstantActivation);
     byId("ppClaimForm")?.addEventListener("submit", doClaim);
@@ -1216,6 +1301,7 @@
     });
     mountClaimHelp(el);
     mountPurchaseActivation(el);
+    mountLogoutConfirm(el);
     el.querySelector(".ppanel__id")?.addEventListener("click", async (ev) => {
       const btn = ev.currentTarget;
       const id = btn.dataset.id || "";

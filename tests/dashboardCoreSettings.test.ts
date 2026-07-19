@@ -9,7 +9,7 @@ const source = (path: string): string =>
 describe('dashboard channel and voice controls', () => {
   it('ships cache-busted assets and removes the immediately replaced versions', () => {
     const page = source('site/dashboard.html');
-    expect(page).toContain('js/i18n-v36.js');
+    expect(page).toContain('js/i18n-v37.js');
     expect(page).toContain('js/dashboard-v6.js');
     expect(page).not.toContain('js/i18n-v35.js');
     expect(page).not.toContain('js/dashboard-v5.js');

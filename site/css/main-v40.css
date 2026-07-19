@@ -1764,3 +1764,29 @@ body.is-modal-open { overflow: hidden; }
   .marquee__track { animation: none; }
   .orb { animation: none; }
 }
+
+/* Desktop presence pass. CSS zoom mirrors a 110% browser zoom while the reciprocal width keeps
+   the page inside the viewport. Account content keeps its purpose-built scale; its navigation is
+   enlarged separately in account-v4.css. Mobile and tablet layouts are intentionally unchanged. */
+@media (min-width: 1001px) {
+  :root {
+    --site-desktop-scale: 1.1;
+  }
+
+  body:not(.page-account) {
+    width: calc(100% / var(--site-desktop-scale));
+    zoom: var(--site-desktop-scale);
+  }
+}
+
+/* Every translation keeps the hero as two deliberate phrases. main-v40.js reduces the shared
+   font size only when the real glyph width would exceed this line. */
+.hero__title span {
+  white-space: nowrap;
+}
+
+/* Reserve the same two-line footer note in both paid cards. The note text is identical per
+   language, but the slightly different column widths previously moved one CTA by ~18px. */
+.paid-plans .price-card__idnote {
+  min-height: 3em;
+}
