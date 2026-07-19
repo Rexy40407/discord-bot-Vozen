@@ -37,7 +37,7 @@
     <main class="legal">
       <a class="back" href="/">← Back to Vozen</a>
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: 15 July 2026</p>
+      <p class="updated">Last updated: 19 July 2026</p>
 
       <p>
         Vozen is a text-to-speech (TTS) bot for Discord. This page explains exactly what
@@ -45,8 +45,9 @@
         it, how long we keep it, and the rights you have under the EU General Data Protection
         Regulation (GDPR) and similar laws. In plain language: Vozen keeps the settings it
         needs to work, and nothing else. It does <b>not</b> keep a log of your messages, sets
-        <b>no cookies</b>, runs <b>no trackers</b>, and never asks for your email, phone
-        number, or password.
+        <b>no cookies</b>, runs <b>no trackers</b>, and never asks you to type your Discord
+        email, phone number, or password. With your Discord OAuth permission, instant activation
+        can read the verified email on your Discord account once, as explained below.
       </p>
 
       <h2>1. Who we are &amp; how to contact us</h2>
@@ -76,20 +77,21 @@
         <li><b>Opt-out list</b> — if you ask Vozen not to read your messages, we store that choice.</li>
         <li><b>Fun stats</b> — minigame scores (points and wins) and "top speaker" counts (how many of your messages were read aloud, plus daily streaks). These power the <code>/topspeakers</code> and <code>/game</code> leaderboards.</li>
         <li><b>Birthday</b> — only the <b>month and day</b> you optionally set, never the year. Used so Vozen can wish you a happy birthday in the voice channel.</li>
-        <li><b>Premium status &amp; payments</b> — whether a server or user has Premium, when it expires, and the source (e.g. a Ko-fi purchase); for server passes, which servers you activated a licence on. When you buy via Ko-fi, its receipt includes your email — Vozen stores only a <b>one-way hash</b> of it (never the email itself), used solely to keep subscription renewals linked to your Discord account.</li>
+        <li><b>Premium status &amp; payments</b> — whether a server or user has Premium, when it expires, and the source (e.g. a Ko-fi purchase); for server passes, which servers you activated a licence on. When you buy via Ko-fi, its receipt includes your email — Vozen stores only a <b>one-way keyed hash</b> of it (never the email itself), used solely to link purchases and subscription renewals to your Discord account. For an activated purchase, Vozen also stores minimum consent evidence: transaction and confirmation IDs, your Discord ID, acceptance time, activation-terms version, and activation method. It stores neither an email nor an email hash in that consent record.</li>
       </ul>
 
       <h2>3. Why we store it (legal bases)</h2>
       <ul>
-        <li><b>To provide the service you asked for</b> (GDPR Art. 6(1)(b)/(f)) — your voice/engine/speed preferences, server settings, opt-out choice, and pronunciation overrides. This is the data Vozen needs to read messages the way you configured it.</li>
+        <li><b>To provide the service you asked for</b> (GDPR Art. 6(1)(b)/(f)) — your voice/engine/speed preferences, server settings, opt-out choice, pronunciation overrides, and the one-time use of your verified Discord email to activate the matching paid purchase.</li>
         <li><b>Your consent</b> (Art. 6(1)(a)) — your optional birthday and voice transcription (see §5). You can withdraw consent at any time; it does not affect processing already done.</li>
         <li><b>Our legitimate interests</b> (Art. 6(1)(f)) — keeping the bot working and fair: rate limits, the blocklist, anti-spam, operational/security logs, and the minigame and "top speaker" leaderboards. You can object at any time (see §9).</li>
-        <li><b>Financial records</b> (Art. 6(1)(c)/(f)) — Premium/payment data (including the hashed Ko-fi email) is kept as accounting and entitlement history.</li>
+        <li><b>Financial and activation records</b> (Art. 6(1)(c)/(f)) — Premium/payment data (including the hashed Ko-fi email) and minimum evidence of the request for immediate digital delivery are kept for accounting, fraud prevention, entitlement history, and disputes.</li>
       </ul>
 
       <h2>4. What we do NOT store</h2>
       <ul>
         <li>We do <b>not</b> keep a history or log of your chat messages. Text is turned into speech on the fly and then discarded.</li>
+        <li>We do <b>not</b> store, cache, or log the verified Discord email used for instant activation or the transient hash computed from it. Both exist only in memory for that activation request and are then discarded.</li>
         <li>To speed up repeated phrases, recently synthesized audio may be cached on the server. It is keyed by a content hash rather than your user ID, rotates out under a bounded cache policy, and can still reveal the spoken content to someone with server-file access.</li>
         <li>Outside of a transcription session you consented to, the bot stays deafened and does not listen to or store voice-channel audio.</li>
         <li>We do <b>not</b> keep web access logs that tie your IP address to your activity. Our API (<code>api.vozen.org</code>) uses your IP only <b>momentarily</b>, in memory, for rate-limiting and security — it is never written to our logs. (This website is served by GitHub Pages, whose standard host logs are outside our control; see §8.)</li>
@@ -110,29 +112,33 @@
       <h2>6. Signing in on vozen.org</h2>
       <p>
         When you log in with Discord to view your account or the server dashboard, we use Discord
-        OAuth2 and request only your basic profile (<b>identify</b>) and, for the dashboard, your
-        <b>server list</b> (<b>guilds</b>) — used only to show which servers you can configure.
-        This is used to answer your request and is <b>not</b> written to our database; it is held
-        in memory for at most ~60 seconds and then discarded. Your access token stays in
-        <b>your browser</b> and is sent only to Vozen's own API over HTTPS.
+        OAuth2 and request your basic profile (<b>identify</b>), your verified account email
+        (<b>email</b>) on the account page, and, for the dashboard, your <b>server list</b>
+        (<b>guilds</b>). The email is used only if you request instant Ko-fi activation: Vozen
+        computes the same keyed hash used by the Ko-fi receipt, then immediately discards both
+        the plaintext email and the transient hash. They are never stored, cached, or logged.
+        Basic profile and server-list data may be cached in memory for at most ~60 seconds and
+        are not written to our database. Your access token stays in <b>your browser</b> and is
+        sent only to Vozen's own API over HTTPS.
       </p>
 
       <h2>7. Cookies &amp; local storage</h2>
       <p>
         vozen.org sets <b>no cookies</b> and runs <b>no analytics or trackers</b>. Fonts are
         served from our own server, so loading the site sends nothing to third-party font or
-        analytics providers. The site uses your browser's storage only for two
-        strictly-necessary things: your Discord access token (<code>sessionStorage</code>,
-        cleared when you log out or close the tab) and your chosen interface language
-        (<code>localStorage</code>). Because these are strictly necessary to provide what you
-        asked for, no consent banner is required.
+        analytics providers. The site uses your browser's storage only for strictly necessary
+        functions: your Discord access token (<code>sessionStorage</code>, cleared when you log
+        out or close the tab), a one-shot activation intent containing no email (also
+        <code>sessionStorage</code>, removed on use and expiring after five minutes), and your
+        chosen interface language (<code>localStorage</code>). Because these are strictly
+        necessary to provide what you asked for, no consent banner is required.
       </p>
 
       <h2>8. Who we share data with</h2>
       <p>We do <b>not</b> sell your data or share it with data brokers or ad networks. We use a small number of providers to run the service:</p>
       <ul>
         <li><b>Speech providers</b> — local Piper voices do not send text to a third party. If a Google voice is selected or enabled by the operator, the <b>text to be spoken</b> is sent to Google to generate audio (never your user ID or message history), subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
-        <li><b>Discord</b> — the platform the bot runs on; all bot activity is processed under <a href="https://discord.com/privacy" target="_blank" rel="noopener">Discord's Privacy Policy</a>.</li>
+        <li><b>Discord</b> — the platform the bot runs on and the OAuth provider. With your permission, Discord supplies your verified account email for the one-time instant-activation check; all Discord processing is subject to <a href="https://discord.com/privacy" target="_blank" rel="noopener">Discord's Privacy Policy</a>.</li>
         <li><b>Ko-fi</b> — processes Premium payments; its receipt includes your email, of which we keep only a one-way hash (see §2).</li>
         <li><b>top.gg</b> — we publish only the <b>server count</b> (a single number), never any personal data.</li>
         <li><b>Activation help</b> — if you use the "get help" option on the account page (when you can't activate a purchase yourself), the <b>email you enter</b> and your Discord ID are sent to a private operator channel so the operator can find your Ko-fi order and activate your pass by hand. It's used only to locate that order and is not stored in our database.</li>
@@ -155,8 +161,8 @@
         <li><b>Audio cache</b> — rotates automatically (about 500 files per engine, oldest first); not tied to you.</li>
         <li><b>HD-voice usage counter</b> — auto-purged after about 3 months.</li>
         <li><b>An unclaimed Ko-fi purchase</b> — auto-purged after 90 days.</li>
-        <li><b>Premium / payment records</b> (including the hashed Ko-fi email) — kept while needed for an active entitlement and afterwards only for accounting, fraud prevention, disputes, and legal obligations; deleted or anonymized when no longer necessary.</li>
-        <li><b>Website login</b> — your token lives only in your browser session; the ~60-second server-side cache is discarded immediately.</li>
+        <li><b>Premium / payment records</b> (including the hashed Ko-fi email and minimum activation-consent evidence) — kept while needed for an active entitlement and afterwards only for accounting, fraud prevention, disputes, and legal obligations; deleted or anonymized when no longer necessary.</li>
+        <li><b>Website login</b> — your token lives only in your browser session; basic identity data may use a ~60-second server-side cache. The activation email and transient hash are never cached and are discarded as soon as that request finishes.</li>
       </ul>
 
       <h2>11. Your rights</h2>
