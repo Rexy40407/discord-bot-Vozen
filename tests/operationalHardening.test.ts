@@ -11,7 +11,7 @@ const source = (path: string): string =>
 const SITE_JS = 'site/js/main-v38.js';
 const SITE_I18N = 'site/js/i18n-v34.js';
 const SITE_CSS = 'site/css/main-v38.css';
-const ACCOUNT_CSS = 'site/css/account-v1.css';
+const ACCOUNT_CSS = 'site/css/account-v2.css';
 
 /** Body of a top-level function in the site bundle, comments stripped. Comments are dropped
  *  because these assertions are about the markup a function RENDERS — a comment explaining why
@@ -40,7 +40,8 @@ describe('operational security configuration', () => {
     const page = source('site/account.html');
     const css = source(ACCOUNT_CSS);
 
-    expect(page).toContain('css/account-v1.css');
+    expect(page).toContain('css/account-v2.css');
+    expect(page).not.toContain('css/account-v1.css');
     expect(page).toContain('class="account-workspace"');
     expect(page).toContain('class="account-membership"');
     expect(page).toContain('class="account-tasklist"');
