@@ -14,6 +14,9 @@
   // escondido (a feature ainda não está no ar). Preenche com o teu host quando tiveres o
   // domínio/túnel + PREMIUM_API_ENABLED=true no bot. Ex.: "https://api.vozen.xyz".
   const PREMIUM_API_BASE = "https://api.vozen.org";
+  const ACTIVATION_TERMS_VERSION = "2026-07-19";
+  const ACTIVATION_INTENT_KEY = "vozen.activationIntent";
+  const ACTIVATION_INTENT_TTL_MS = 5 * 60 * 1000;
   const INVITE_URL =
     CLIENT_ID && CLIENT_ID !== "YOUR_CLIENT_ID"
       ? `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&scope=bot%20applications.commands&permissions=${INVITE_PERMISSIONS}`
@@ -257,7 +260,7 @@
   syncKofiLinks();
 
   /* ── Painel Premium (login com Discord + estado da conta) ─────────────
-     OAuth2 implicit (scope identify): 100% client-side, sem segredo. O token vem no
+     OAuth2 implicit (scopes identify + email): 100% client-side, sem segredo. O token vem no
      fragment (#access_token), guardamo-lo em sessionStorage, limpamos o fragment, e
      chamamos GET {API_BASE}/api/me/premium. A API valida o token na Discord e devolve só
      o estado DESTE utilizador. Escondido enquanto PREMIUM_API_BASE estiver vazio. */
@@ -266,6 +269,7 @@
   const NAV_USER_KEY = "vozen.navuser";
   const OAUTH_REDIRECT = new URL("/account", location.href).href;
   let panelState = { mode: "hidden" };
+  let activationResume = { kind: "none" };
 
   const t = (k) => (DICT[lang] && DICT[lang][k]) || (DICT.en && DICT.en[k]) || k;
   const esc = (s) =>
@@ -331,22 +335,38 @@
     return [...a].map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
-  function login() {
+  function login(options = {}) {
     let state;
+    let nonce;
     try {
       state = randState();
+      nonce = randState();
     } catch {
       alert("Your browser can't generate a secure login token. Please update it and try again.");
       return;
     }
     try {
       sessionStorage.setItem(STATE_KEY, state);
+      if (options && options.resumeActivation === true) {
+        sessionStorage.setItem(
+          ACTIVATION_INTENT_KEY,
+          JSON.stringify({
+            action: "activate-by-email",
+            termsVersion: ACTIVATION_TERMS_VERSION,
+            createdAt: Date.now(),
+            nonce,
+            oauthState: state,
+          }),
+        );
+      } else {
+        sessionStorage.removeItem(ACTIVATION_INTENT_KEY);
+      }
     } catch {}
     const u = new URL("https://discord.com/oauth2/authorize");
     u.searchParams.set("client_id", CLIENT_ID);
     u.searchParams.set("redirect_uri", OAUTH_REDIRECT);
     u.searchParams.set("response_type", "token");
-    u.searchParams.set("scope", "identify");
+    u.searchParams.set("scope", "identify email");
     u.searchParams.set("state", state);
     location.href = u.toString();
   }
@@ -355,6 +375,7 @@
     try {
       sessionStorage.removeItem(TOK_KEY);
       sessionStorage.removeItem(NAV_USER_KEY);
+      sessionStorage.removeItem(ACTIVATION_INTENT_KEY);
     } catch {}
     if (IS_ACCOUNT) {
       window.location.href = "/";
@@ -379,7 +400,34 @@
     // CSRF: exige um `state` guardado que bata certo. Sem ele (ou diferente) => descarta o
     // token — nunca aceitamos um fragment que não conseguimos verificar como nosso.
     if (!expected || st !== expected) return null;
-    return tok;
+    return { token: tok, state: st };
+  }
+
+  // The activation intent is consumed before any replay. It is tied to the OAuth state, expires
+  // quickly, and cannot survive a terms-version change, which makes the replay strictly one-shot.
+  function consumeActivationIntent(oauthState) {
+    let raw = null;
+    try {
+      raw = sessionStorage.getItem(ACTIVATION_INTENT_KEY);
+      sessionStorage.removeItem(ACTIVATION_INTENT_KEY);
+    } catch {}
+    if (!raw) return { kind: "none" };
+    try {
+      const intent = JSON.parse(raw);
+      const age = Date.now() - Number(intent.createdAt);
+      const valid =
+        intent.action === "activate-by-email" &&
+        intent.termsVersion === ACTIVATION_TERMS_VERSION &&
+        intent.oauthState === oauthState &&
+        typeof intent.nonce === "string" &&
+        intent.nonce.length >= 16 &&
+        Number.isFinite(age) &&
+        age >= 0 &&
+        age <= ACTIVATION_INTENT_TTL_MS;
+      return valid ? { kind: "resume" } : { kind: "invalid" };
+    } catch {
+      return { kind: "invalid" };
+    }
   }
 
   function setPanel(s) {
@@ -401,8 +449,9 @@
     const fromHash = readTokenFromHash();
     if (fromHash) {
       try {
-        sessionStorage.setItem(TOK_KEY, fromHash);
+        sessionStorage.setItem(TOK_KEY, fromHash.token);
       } catch {}
+      activationResume = consumeActivationIntent(fromHash.state);
       // Bounce de regresso: o /dashboard reutiliza o redirect /account (o único registado no
       // portal) para o OAuth com scope `guilds`. O token fica no sessionStorage (mesmo
       // domínio), e saltamos de volta. Só caminhos internos (anti open-redirect).
@@ -449,6 +498,18 @@
       }
       if (!res.ok) throw new Error("http " + res.status);
       setPanel({ mode: "ok", data: await res.json() });
+      const resume = activationResume;
+      activationResume = { kind: "none" };
+      if (resume.kind === "resume") {
+        const consent = document.getElementById("ppClaimConsent");
+        if (consent) consent.checked = true;
+        window.setTimeout(
+          () => void doInstantActivation(null, { allowRelogin: false }),
+          0,
+        );
+      } else if (resume.kind === "invalid") {
+        setClaimMessage(t("claim.resumeExpired"), "err");
+      }
     } catch {
       setPanel({ mode: "error" });
     }
@@ -501,24 +562,22 @@
     return (
       `<div class="ppanel__claim">` +
       `<span class="ppanel__claimtitle">${t("claim.title")}</span>` +
-      `<p class="ppanel__claimhint">${t("claim.hint")}</p>` +
-      `<form class="ppanel__claimform" id="ppClaimForm">` +
-      `<input type="text" id="ppClaimCode" class="ppanel__claiminput" placeholder="${esc(t("claim.placeholder"))}" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120">` +
-      `<button type="submit" class="ppanel__claimbtn" id="ppClaimBtn">${t("claim.btn")}</button>` +
-      `</form>` +
-      // Consentimento afirmativo antes da entrega. A checkbox e OBRIGATORIA: ninguem ativa o passe
-      // sem aceitar os termos (guardado abaixo por !consent.checked). A entrega acontece AQUI, no
-      // momento da ativacao, nao no checkout do Ko-fi — por isso e aqui que a caixa tem de estar,
-      // antes do POST /api/link. O quando fica registado em kofi_pending.claimed_at.
-      // A renuncia dos 14 dias (dir. 2011/83/UE art. 16(m)) vive DENTRO dos /terms que a pessoa
-      // aceita aqui: ativar o passe = pedir a entrega imediata e reconhecer que por isso se perde
-      // o direito de retratacao (clausula concreta nos termos). A linha fica limpa; a renuncia esta
-      // nos termos aceites, nao na cara do comprador.
+      `<p class="ppanel__claimhint">${t("claim.instantHint")}</p>` +
+      `<button type="button" class="ppanel__activatebtn" id="ppActivateBtn">${t("claim.instantBtn")}</button>` +
+      `<p class="ppanel__gift">${t("claim.giftNote")}</p>` +
+      // Consent is explicit in the label itself, before either delivery path. The server records a
+      // stable terms version for instant activation; receipt-code activation keeps its HTTP contract.
       // {terms} no texto de claim.consent marca onde entra o link — substituido por um <a> para
       // /terms. O <a> e conteudo interativo: clicar nele abre os termos sem marcar a checkbox
       // (comportamento do <label> no HTML) — confirmado no browser.
       `<label class="ppanel__claimconsent"><input type="checkbox" id="ppClaimConsent"> <span>${t("claim.consent").replace("{terms}", `<a href="/terms" target="_blank" rel="noopener">${t("claim.consentTerms")}</a>`)}</span></label>` +
       `<p class="ppanel__claimmsg" id="ppClaimMsg" role="status" aria-live="polite" hidden></p>` +
+      `<div class="ppanel__claimsep"><span>${t("claim.orReceipt")}</span></div>` +
+      `<p class="ppanel__claimhint">${t("claim.hint")}</p>` +
+      `<form class="ppanel__claimform" id="ppClaimForm">` +
+      `<input type="text" id="ppClaimCode" class="ppanel__claiminput" placeholder="${esc(t("claim.placeholder"))}" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120">` +
+      `<button type="submit" class="ppanel__claimbtn" id="ppClaimBtn">${t("claim.btn")}</button>` +
+      `</form>` +
       // Sits AFTER the status message on purpose: "no purchase found" is the moment someone
       // realises they no longer have the receipt, and the way out should be the next thing they
       // read. Closing the receipt tab was never a dead end — Ko-fi emails every buyer a copy —
@@ -604,6 +663,189 @@
       statusRow("Vozen Plus", plusActive, plusDetail) +
       `</div>${servers}${claimCard()}`
     );
+  }
+
+  function setClaimMessage(text, kind) {
+    const msg = document.getElementById("ppClaimMsg");
+    if (!msg) return null;
+    msg.hidden = false;
+    msg.textContent = text;
+    msg.className = "ppanel__claimmsg" + (kind ? " is-" + kind : "");
+    return msg;
+  }
+
+  function setClaimAction(text, label, action) {
+    const msg = setClaimMessage(text, "err");
+    if (!msg) return;
+    msg.appendChild(document.createTextNode(" "));
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ppanel__msglink";
+    button.textContent = label;
+    button.addEventListener("click", action, { once: true });
+    msg.appendChild(button);
+  }
+
+  function downloadActivationConfirmation(confirmation, items) {
+    const acceptedAt = Number(confirmation && confirmation.acceptedAt);
+    const safeItems = Array.isArray(items)
+      ? items.map((item) => ({
+          plan: item && item.plan,
+          days: item && item.days,
+          seats: item && item.seats,
+          expiresAt: item && item.expiresAt,
+        }))
+      : [];
+    const payload = {
+      service: "Vozen",
+      confirmation: {
+        id: confirmation && confirmation.id,
+        acceptedAt: Number.isFinite(acceptedAt) ? acceptedAt : null,
+        acceptedAtIso: Number.isFinite(acceptedAt) ? new Date(acceptedAt).toISOString() : null,
+        termsVersion: confirmation && confirmation.termsVersion,
+        method: confirmation && confirmation.method,
+      },
+      items: safeItems,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2) + "\n"], {
+      type: "application/json;charset=utf-8",
+    });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = href;
+    link.download = `vozen-activation-${payload.confirmation.id || "confirmation"}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(href), 0);
+  }
+
+  function renderActivationSuccess(body) {
+    const msg = setClaimMessage(t("claim.activationOk"), "ok");
+    if (!msg) return;
+    const items = Array.isArray(body.items) ? body.items : [];
+    const list = document.createElement("ul");
+    list.className = "ppanel__activationitems";
+    for (const item of items) {
+      const row = document.createElement("li");
+      const plan = item && item.plan === "premium" ? "Vozen Premium" : "Vozen Plus";
+      const parts = [plan, `${Number(item && item.days) || 0} ${t("claim.days")}`];
+      if (item && item.plan === "premium") {
+        parts.push(`${Number(item.seats) || 0} ${t("claim.seats")}`);
+      }
+      row.textContent = parts.join(" · ");
+      list.appendChild(row);
+    }
+    msg.appendChild(list);
+    const download = document.createElement("button");
+    download.type = "button";
+    download.className = "ppanel__msglink";
+    download.textContent = t("claim.downloadConfirmation");
+    download.addEventListener("click", () =>
+      downloadActivationConfirmation(body.confirmation, items),
+    );
+    msg.appendChild(download);
+  }
+
+  async function doInstantActivation(ev, options = {}) {
+    if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+    const el = document.getElementById("premiumPanel");
+    const button = el && el.querySelector("#ppActivateBtn");
+    const consent = el && el.querySelector("#ppClaimConsent");
+    const receiptButton = el && el.querySelector("#ppClaimBtn");
+    const receiptInput = el && el.querySelector("#ppClaimCode");
+    if (!button) return;
+    if (!consent || !consent.checked) {
+      setClaimMessage(t("claim.consentRequired"), "err");
+      consent?.focus();
+      return;
+    }
+    const allowRelogin = options.allowRelogin !== false;
+    const token = storedToken();
+    if (!token) {
+      if (allowRelogin) login({ resumeActivation: true });
+      else
+        setClaimAction(t("claim.loginAgain"), t("panel.login"), () =>
+          login({ resumeActivation: true }),
+        );
+      return;
+    }
+
+    const previous = button.textContent;
+    button.disabled = true;
+    if (receiptButton) receiptButton.disabled = true;
+    if (receiptInput) receiptInput.disabled = true;
+    button.textContent = t("claim.instantWorking");
+    try {
+      const res = await fetch(PREMIUM_API_BASE + "/api/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({
+          termsAccepted: true,
+          termsVersion: ACTIVATION_TERMS_VERSION,
+        }),
+      });
+      let body = {};
+      try {
+        body = await res.json();
+      } catch {}
+      if (res.status === 200 && body.ok === true) {
+        renderActivationSuccess(body);
+        return;
+      }
+      const error = body && typeof body.error === "string" ? body.error : "";
+      if (res.status === 403 && error === "no_email_scope") {
+        if (allowRelogin) login({ resumeActivation: true });
+        else
+          setClaimAction(t("claim.loginAgain"), t("panel.login"), () =>
+            login({ resumeActivation: true }),
+          );
+        return;
+      }
+      if (res.status === 401) {
+        try {
+          sessionStorage.removeItem(TOK_KEY);
+          sessionStorage.removeItem(NAV_USER_KEY);
+        } catch {}
+        setClaimAction(t("claim.loginAgain"), t("panel.login"), () =>
+          login({ resumeActivation: true }),
+        );
+        return;
+      }
+      if (res.status === 404) {
+        setClaimMessage(t("claim.activationNotFound"), "err");
+        receiptInput?.focus();
+        return;
+      }
+      if (res.status === 429) {
+        setClaimMessage(t("claim.ratelimited"), "err");
+        return;
+      }
+      if (res.status === 422 && error === "email_missing") {
+        setClaimMessage(t("claim.emailMissing"), "err");
+        return;
+      }
+      if (res.status === 422 && error === "email_unverified") {
+        setClaimMessage(t("claim.emailUnverified"), "err");
+        return;
+      }
+      if (res.status === 503) {
+        setClaimMessage(t("claim.serviceUnavailable"), "err");
+        return;
+      }
+      if (error === "bad_terms_version") {
+        setClaimMessage(t("claim.resumeExpired"), "err");
+        return;
+      }
+      setClaimMessage(t("claim.error"), "err");
+    } catch {
+      setClaimMessage(t("claim.serviceUnavailable"), "err");
+    } finally {
+      button.disabled = false;
+      if (receiptButton) receiptButton.disabled = false;
+      if (receiptInput) receiptInput.disabled = false;
+      button.textContent = previous;
+    }
   }
 
   // Submete o código da transação a POST {API_BASE}/api/link (autenticado com o token do OAuth).
@@ -864,6 +1106,7 @@
     byId("ppLogin")?.addEventListener("click", login);
     byId("ppLogout")?.addEventListener("click", logout);
     byId("ppRetry")?.addEventListener("click", loadPanel);
+    byId("ppActivateBtn")?.addEventListener("click", doInstantActivation);
     byId("ppClaimForm")?.addEventListener("submit", doClaim);
     byId("ppClaimHelpOpen")?.addEventListener("click", () => openClaimHelp(""));
     mountClaimHelp(el);

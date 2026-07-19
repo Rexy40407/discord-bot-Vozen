@@ -8,8 +8,8 @@ const source = (path: string): string =>
 
 // The site's assets are cache-busted by FILENAME (never a query string), so every rename churns
 // these tests too. One constant each: the rename is then a one-line edit here, not a hunt.
-const SITE_JS = 'site/js/main-v36.js';
-const SITE_I18N = 'site/js/i18n-v33.js';
+const SITE_JS = 'site/js/main-v37.js';
+const SITE_I18N = 'site/js/i18n-v34.js';
 const SITE_CSS = 'site/css/main-v38.css';
 
 /** Body of a top-level function in the site bundle, comments stripped. Comments are dropped
@@ -78,12 +78,8 @@ describe('operational security configuration', () => {
     expect(script).not.toContain('aria-label="Copiar Discord ID"');
   });
 
-  // Delivery of a distance contract happens when the pass is activated HERE, not at Ko-fi's
-  // checkout — so the affirmative acceptance has to be collected here, before POST /api/link.
-  // The 14-day withdrawal acknowledgement (2011/83/EU art. 16(m)) no longer sits on the line;
-  // it lives inside the /terms the box accepts (asserted by the terms-carry-the-waiver test).
-  // Drop the checkbox and the acceptance disappears entirely — failing open would activate the
-  // pass with no consent at all, which is worse than never having it.
+  // Delivery happens when the buyer activates here, so the checkbox itself must explicitly name
+  // immediate performance and the applicable loss of the withdrawal right before either path.
   it('gates pass activation behind an express consent checkbox', () => {
     const script = source(SITE_JS);
     expect(script).toContain('id="ppClaimConsent"');
@@ -94,18 +90,35 @@ describe('operational security configuration', () => {
     expect(script).toContain('claim.consentRequired');
   });
 
-  // The consent line is a clean "I accept the terms and conditions": the 14-day acknowledgement
-  // moved OUT of the line and INTO the accepted /terms (see the terms-carry-the-waiver test), so
-  // ticking the box accepts terms that contain the art. 16(m) waiver. The linked noun phrase is a
-  // real <a href="/terms"> injected in place of the {terms} token — not the one-time .js-support
-  // wiring, which runs once at load, before the card is injected after OAuth.
-  it('renders the consent line as an acceptance of the terms, with a real terms link', () => {
+  it('renders explicit immediate-delivery consent with a real terms link', () => {
     const card = fnSource(source(SITE_JS), 'function claimCard()');
     expect(card).toContain('claim.consent');
     expect(card).toContain('claim.consentTerms');
     expect(card).toMatch(/<a href="\/terms"/);
     // The <a> is injected in place of the {terms} placeholder inside the trusted consent copy.
     expect(card).toContain('.replace("{terms}"');
+    const english = i18nBundle().en['claim.consent'];
+    expect(english).toMatch(/immediate activation/i);
+    expect(english).toMatch(/withdrawal right/i);
+  });
+
+  it('implements instant activation with strict success parsing and one-shot OAuth resume', () => {
+    const script = source(SITE_JS);
+    const card = claimCardSource();
+    const activation = fnSource(script, 'async function doInstantActivation(');
+    expect(card).toContain('id="ppActivateBtn"');
+    expect(card).toContain('claim.giftNote');
+    expect(card.indexOf('ppActivateBtn')).toBeLessThan(card.indexOf('ppClaimCode'));
+    expect(script).toContain('const ACTIVATION_TERMS_VERSION = "2026-07-19"');
+    expect(script).toContain('u.searchParams.set("scope", "identify email")');
+    expect(activation).toContain('PREMIUM_API_BASE + "/api/activate"');
+    expect(activation).toContain('termsAccepted: true');
+    expect(activation).toMatch(/res\.status === 200 && body\.ok === true/);
+    expect(script).toContain('const ACTIVATION_INTENT_TTL_MS = 5 * 60 * 1000');
+    expect(script).toContain('sessionStorage.removeItem(ACTIVATION_INTENT_KEY)');
+    expect(script).toContain('allowRelogin: false');
+    expect(script).toContain('downloadActivationConfirmation');
+    expect(script).toContain('acceptedAtIso');
   });
 
   // The claim field takes the whole receipt URL now (extractReceiptCode, src/premium/claim.ts),
@@ -246,6 +259,21 @@ describe('operational security configuration', () => {
       // Every consent string must keep the {terms} placeholder — that is where the clickable
       // terms link is injected. A translation that drops it would render a linkless sentence.
       expect(all[lang]['claim.consent'], `${lang} keeps the {terms} slot`).toContain('{terms}');
+      for (const key of [
+        'claim.instantBtn',
+        'claim.instantWorking',
+        'claim.giftNote',
+        'claim.orReceipt',
+        'claim.activationOk',
+        'claim.downloadConfirmation',
+        'claim.emailMissing',
+        'claim.emailUnverified',
+        'claim.serviceUnavailable',
+        'claim.loginAgain',
+        'claim.resumeExpired',
+      ]) {
+        expect(all[lang][key], `${lang} ${key}`).toBeTruthy();
+      }
     }
   });
 
@@ -257,14 +285,13 @@ describe('operational security configuration', () => {
     expect(css).toMatch(/\.ppanel__claimconsent a\s*\{[^}]*var\(--aqua\)/);
   });
 
-  // The 14-day withdrawal acknowledgement (art. 16(m)) no longer prints on the consent line — it
-  // lives in the /terms the buyer accepts by ticking the box. If it vanished from the terms too,
-  // the refund policy would claim a waiver that was never given, which is worse than never having
-  // it. So the concrete waiver clause must survive in terms.html.
-  it('keeps the 14-day withdrawal waiver in the terms the consent line accepts', () => {
+  // The terms accepted by the checkbox must identify both activation methods, the same stable
+  // version sent to the API, and the confirmation the buyer can keep.
+  it('keeps the versioned immediate-delivery acknowledgement in the accepted terms', () => {
     const terms = source('site/terms.html');
-    expect(terms).toMatch(/14-day right of withdrawal/i);
-    expect(terms).toContain('art. 16(m)');
-    expect(terms).toMatch(/activate a pass/i);
+    expect(terms).toMatch(/14-day withdrawal right/i);
+    expect(terms).toContain('activation-terms version <code>2026-07-19</code>');
+    expect(terms).toMatch(/activate a Ko-fi purchase by verified Discord email or receipt/i);
+    expect(terms).toMatch(/downloadable confirmation/i);
   });
 });
