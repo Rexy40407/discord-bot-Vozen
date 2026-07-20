@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type Database from 'better-sqlite3';
+import Database from 'better-sqlite3';
 import { initDb } from '../src/store/db';
 
 // CHARACTERIZATION of the durability settings production actually runs with.
@@ -47,5 +47,23 @@ describe('initDb — durability pragmas (characterization)', () => {
   it('sets a busy_timeout so a concurrent reader never fails instantly', () => {
     db = initDb(join(dir, 'test.db'));
     expect(db.pragma('busy_timeout', { simple: true })).toBeGreaterThan(0);
+  });
+
+  it('migrates the old vote-only reminder state into the alternating rotation', () => {
+    const path = join(dir, 'legacy-promo.db');
+    const legacy = new Database(path);
+    legacy.exec(`CREATE TABLE vote_promo_state (
+      guild_id TEXT PRIMARY KEY,
+      last_post_at INTEGER NOT NULL
+    )`);
+    legacy.prepare('INSERT INTO vote_promo_state VALUES (?, ?)').run('guild-1', 123);
+    legacy.close();
+
+    db = initDb(path);
+    const columns = db.pragma('table_info(vote_promo_state)') as Array<{ name: string }>;
+    expect(columns.map((column) => column.name)).toContain('last_kind');
+    expect(
+      db.prepare('SELECT last_kind FROM vote_promo_state WHERE guild_id = ?').get('guild-1'),
+    ).toEqual({ last_kind: 'vote' });
   });
 });

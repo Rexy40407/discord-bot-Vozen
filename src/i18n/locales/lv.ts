@@ -102,6 +102,8 @@ export default {
     '🔒 **{effect}** ir Premium efekts. Bezmaksas efekti: 🤖 Robot un 🔊 Echo. Atbloķē visus ar Vozen Premium — skati `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** ir Premium balss dzinis. Atbloķē to ar Vozen Plus (personīgi) vai Vozen Premium (serverim) — skati `/premium`. Pa to laiku tava balss paliek bezmaksas lokālajā dzinī.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** ir Premium balss dzinis. Atbloķē to ar Vozen Plus (personīgi) vai Vozen Premium (serverim) — skati `/premium`. Pa to laiku tava balss paliek bezmaksas lokālajā dzinī.',
   'voice.notInVoice': 'Es vēl neesmu balss kanālā — vispirms palaid /join.',
   'voice.previewPlaying': 'Atskaņoju paraugu…',
   'preview.sample': 'Sveiki, es esmu Vozen. Ieraksti, dzirdi.',
@@ -154,6 +156,8 @@ export default {
   'premium.lineUserFree': '👤 **Tu (Plus):** neaktīvs',
   'premium.getHint':
     'Viss, ko izmanto šodien, paliek bezmaksas. Premium pievieno visus 8 balss efektus, 24/7 sarunā, 50 personīgās izrunas, /rizz un premium spēles. Atbalsts: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Tavs Premium pass:** {used}/{total} licences lietošanā · beidzas {date}',
   'premium.passServers': '↳ Lietošanā: {servers}',
@@ -253,6 +257,7 @@ export default {
     'Sēriju paziņojumi **izslēgti** — Vozen joprojām skaita sērijas (skati `/topspeakers`), bet par tām klusē.',
   'config.soundboardOn': 'Skaņu panelis **ieslēgts** — ikviens var atskaņot klipus ar `/sound`.',
   'config.soundboardOff': 'Skaņu panelis **izslēgts** — `/sound` šajā serverī ir atspējots.',
+  'config.votePromosLabel': 'top.gg balvas paziņojumi + Vozen Support',
   'config.greetOn': '✅ Es sveikšu cilvēkus vārdā, kad viņi pievienosies balss kanālam.',
   'config.greetOff': '🔇 Es **nesveikšu** cilvēkus, kad viņi pievienojas balss kanālam.',
   'config.greetLangSet': '✅ Pievienošanās sveiciena valoda iestatīta uz **{language}**.',
@@ -333,13 +338,13 @@ export default {
   'vote.noClientId':
     'Vozen balsošanas saite vēl nav iestatīta (trūkst CLIENT_ID). Informē bota administratoru.',
   'vote.link':
-    'Nobalso par Vozen (bez maksas, ik pēc 12h) un palīdzi vairāk cilvēkiem to atrast:\n{url}',
+    'Nobalso par Vozen (bez maksas, ik pēc 12h) un palīdzi vairāk cilvēkiem to atrast:\n{url}\nJa šis konts vēl nekad nav saņēmis balvu, tas iegūst **48 stundas Vozen Plus**, tikai vienu reizi katram kontam.',
   'invite.button': 'Pievienot Vozen',
   'vote.button': 'Balsot vietnē top.gg',
   'vote.upsell':
-    '🗳️ Nav Plus? Balso par Vozen vietnē top.gg → **24h Plus bez maksas** (reizi mēnesī): {url}',
+    '🗳️ Ja šis konts vēl nekad nav saņēmis balvu, tas iegūst **48 stundas Vozen Plus**, tikai vienu reizi katram kontam. {url}',
   'vote.cooldownStatus':
-    '🗳️ Tu jau saņēmi balsojuma balvu — balso vēlreiz, lai iegūtu vēl **24h Plus** {date}.',
+    '🗳️ Šis konts jau ir izmantojis vienreizējo balvu par balsošanu. Tu joprojām vari balsot, lai atbalstītu Vozen, bet vairāk Plus nesaņemsi.',
   'help.title': 'Vozen — ieraksti, dzirdi.',
   'help.embedTitle': 'Vozen — Komandas',
   'help.intro':
@@ -368,6 +373,8 @@ export default {
   'welcome.title': 'Paldies, ka pievienoji Vozen! 👋',
   'welcome.description':
     'Vozen nolasa tavu tērzēšanu skaļi balss kanālos — ieraksti, dzirdi.\n\n**Sāc vienā solī:** palaid {setup}, un es iestatīšu automātisko lasīšanu un pievienošos tavam balss kanālam.\n\nVajag pilnu komandu sarakstu? Palaid {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Kā dalībnieki to izmanto (3 soļi)',
   'welcome.stepsBody':
     '1) Pievienojies balss kanālam\n2) Palaid /join, lai es tev pievienojos\n3) Raksti teksta kanālā (vai izmanto /tts) un es to nolasīšu skaļi\nPilns komandu saraksts: /help',

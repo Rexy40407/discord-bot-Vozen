@@ -153,7 +153,8 @@ export default {
   'invite.link': 'Přidej Vozen na svůj server:\n{url}',
   'vote.noClientId':
     'Hlasovací odkaz Vozen zatím není nastaven (chybí CLIENT_ID). Dej vědět správci bota.',
-  'vote.link': 'Hlasuj pro Vozen (zdarma, každých 12 h) a pomoz víc lidem ho najít:\n{url}',
+  'vote.link':
+    'Hlasuj pro Vozen (zdarma, každých 12 h) a pomoz víc lidem ho najít:\n{url}\nPokud tento účet odměnu ještě nikdy nevyužil, získá **48 hodin Vozen Plus**, pouze jednou na účet.',
   'help.title': 'Vozen — napiš to, poslechni si to.',
   'help.embedTitle': 'Vozen — Příkazy',
   'help.intro':
@@ -180,6 +181,8 @@ export default {
   'welcome.title': 'Díky, že jsi přidal Vozen! 👋',
   'welcome.description':
     'Vozen předčítá tvůj chat nahlas v hlasových kanálech — napiš to, poslechni si to.\n\n**Začni jedním krokem:** spusť {setup} a nastavím automatické předčítání a připojím se k tvému hlasovému kanálu.\n\nPotřebuješ úplný seznam příkazů? Spusť {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Jak to členové používají (3 kroky)',
   'welcome.stepsBody':
     '1) Připoj se k hlasovému kanálu\n2) Spusť /join, abych se k tobě přidal\n3) Piš do textového kanálu (nebo použij /tts) a já to přečtu nahlas\nÚplný seznam příkazů: /help',
@@ -237,6 +240,8 @@ export default {
     '🔒 **{effect}** je Premium efekt. Efekty zdarma: 🤖 Robot a 🔊 Echo. Odemkni všechny s Vozen Premium — viz `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** je Premium hlasový engine. Odemkni ho s Vozen Plus (osobní) nebo Vozen Premium (server) — viz `/premium`. Do té doby zůstává tvůj hlas na bezplatném lokálním enginu.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** je Premium hlasový engine. Odemkni ho s Vozen Plus (osobní) nebo Vozen Premium (server) — viz `/premium`. Do té doby zůstává tvůj hlas na bezplatném lokálním enginu.',
   'rizz.playing': '😏 Rozdávám balicí hlášky…\n> {line}',
   'rizz.unknownLang': 'Ten jazyk neznám. Vyber si nějaký ze seznamu.',
   'rizz.locked':
@@ -282,6 +287,8 @@ export default {
   'premium.lineUserFree': '👤 **Ty (Plus):** neaktivní',
   'premium.getHint':
     'Všechno, co používáš dnes, zůstává zdarma. Premium přidává všech 8 hlasových efektů, 24/7 v hovoru, 50 osobních výslovností, /rizz a prémiové hry. Podpora: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Tvůj Premium pass:** {used}/{total} licencí v používání · vyprší {date}',
   'premium.passServers': '↳ Používá se na: {servers}',
@@ -347,6 +354,7 @@ export default {
     'Oznámení sérií **vypnutá** — Vozen série stále počítá (viz `/topspeakers`), ale mlčí o nich.',
   'config.soundboardOn': 'Soundboard **zapnutý** — kdokoliv může přehrávat klipy pomocí `/sound`.',
   'config.soundboardOff': 'Soundboard **vypnutý** — `/sound` je na tomto serveru zakázaný.',
+  'config.votePromosLabel': 'Oznámení o odměně top.gg + Vozen Support',
   'config.greetOn': '✅ Budu lidi zdravit jménem, když se připojí k hlasovému kanálu.',
   'config.greetOff': '🔇 **Nebudu** lidi zdravit, když se připojí k hlasovému kanálu.',
   'config.greetLangSet': '✅ Jazyk pozdravu při připojení nastaven na **{language}**.',
@@ -368,9 +376,9 @@ export default {
   'invite.button': 'Přidat Vozen',
   'vote.button': 'Hlasovat na top.gg',
   'vote.upsell':
-    '🗳️ Nemáš Plus? Hlasuj pro Vozen na top.gg → **24 h Plusu zdarma** (jednou měsíčně): {url}',
+    '🗳️ Pokud tento účet odměnu ještě nikdy nevyužil, získá **48 hodin Vozen Plus**, pouze jednou na účet. {url}',
   'vote.cooldownStatus':
-    '🗳️ Odměnu za hlas sis už vyzvedl — hlasuj znovu pro dalších **24 h Plusu** {date}.',
+    '🗳️ Tento účet už jednorázovou odměnu za hlas využil. Stále můžeš hlasovat pro podporu Vozenu, ale další Plus nezískáš.',
   'help.support': '🛟 Potřebuješ pomoc nebo chceš nahlásit problém? {url}',
   'help.source': '📄 Otevřený zdroj (AGPL-3.0) — získej přesný zdrojový kód, který zde běží: {url}',
   'game.start.needVoice':

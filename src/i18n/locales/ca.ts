@@ -105,6 +105,8 @@ export default {
     "🔒 **{effect}** és un efecte Premium. Efectes gratuïts: 🤖 Robot i 🔊 Echo. Desbloqueja'ls tots amb Vozen Premium: consulta `/premium`.",
   'voice.engine.gcloudLocked':
     "🔒 **💎 Google HD** és un motor de veu Premium. Desbloqueja'l amb Vozen Plus (personal) o Vozen Premium (servidor): consulta `/premium`. Mentrestant, la teva veu es queda al motor local gratuït.",
+  'voice.engine.kokoroLocked':
+    "🔒 **💎 Kokoro** és un motor de veu Premium. Desbloqueja'l amb Vozen Plus (personal) o Vozen Premium (servidor): consulta `/premium`. Mentrestant, la teva veu es queda al motor local gratuït.",
   'voice.notInVoice': 'Encara no soc en cap canal de veu. Executa /join primer.',
   'voice.previewPlaying': 'Reproduint una mostra…',
   'preview.sample': "Hola, soc en Vozen. Escriu-ho i escolta'l.",
@@ -157,6 +159,8 @@ export default {
   'premium.lineUserFree': '👤 **Tu (Plus):** inactiu',
   'premium.getHint':
     'Tot el que fas servir avui continua sent gratuït. El Premium afegeix els 8 efectes de veu, 24/7 a la trucada, 50 pronunciacions personals, /rizz i els jocs premium. Suport: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **El teu passi Premium:** {used}/{total} llicències en ús · caduca el {date}',
   'premium.passServers': '↳ En ús a: {servers}',
@@ -262,6 +266,7 @@ export default {
     'Taula de sons **activada**: qualsevol persona pot reproduir clips amb `/sound`.',
   'config.soundboardOff':
     'Taula de sons **desactivada**: `/sound` està desactivat en aquest servidor.',
+  'config.votePromosLabel': 'Avisos de recompensa de top.gg + Vozen Support',
   'config.greetOn': '✅ Saludaré la gent pel seu nom quan entrin al canal de veu.',
   'config.greetOff': '🔇 **No** saludaré la gent quan entrin al canal de veu.',
   'config.greetLangSet': "✅ Llengua de la salutació d'entrada establerta a **{language}**.",
@@ -342,13 +347,14 @@ export default {
   'invite.link': 'Afegeix en Vozen al teu servidor:\n{url}',
   'vote.noClientId':
     "L'enllaç de vot d'en Vozen encara no està configurat (falta CLIENT_ID). Avisa l'administrador del bot.",
-  'vote.link': 'Vota en Vozen (gratis, cada 12 h) i ajuda que més gent el descobreixi:\n{url}',
+  'vote.link':
+    'Vota en Vozen (gratis, cada 12 h) i ajuda que més gent el descobreixi:\n{url}\nSi aquest compte mai no ha reclamat la recompensa, obté **48 h de Vozen Plus**, una única vegada per compte.',
   'invite.button': 'Afegeix en Vozen',
   'vote.button': 'Vota a top.gg',
   'vote.upsell':
-    '🗳️ Sense Plus? Vota en Vozen a top.gg → **24h de Plus gratis** (un cop al mes): {url}',
+    '🗳️ Si aquest compte mai no ha reclamat la recompensa, obté **48 h de Vozen Plus**, una única vegada per compte. {url}',
   'vote.cooldownStatus':
-    '🗳️ Ja has reclamat la teva recompensa per votar: torna a votar per obtenir unes altres **24h de Plus** {date}.',
+    '🗳️ Aquest compte ja ha utilitzat la seva recompensa de vot única. Encara pots votar per donar suport a Vozen, però no rebràs més Plus.',
   'help.title': "Vozen — escriu-ho i escolta'l.",
   'help.embedTitle': 'Vozen — Ordres',
   'help.intro':
@@ -377,6 +383,8 @@ export default {
   'welcome.title': 'Gràcies per afegir en Vozen! 👋',
   'welcome.description':
     "En Vozen llegeix el teu xat en veu alta als canals de veu: escriu-ho i escolta'l.\n\n**Comença en un sol pas:** executa {setup} i configuraré la lectura automàtica i entraré al teu canal de veu.\n\nNecessites la llista completa d'ordres? Executa {help}.",
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Com el fan servir els membres (3 passos)',
   'welcome.stepsBody':
     "1) Entra en un canal de veu\n2) Executa /join perquè hi entri amb tu\n3) Escriu al canal de text (o fes servir /tts) i ho llegiré en veu alta\nLlista completa d'ordres: /help",

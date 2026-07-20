@@ -155,7 +155,7 @@ export default {
   'vote.noClientId':
     'A Vozen szavazólinkje még nincs beállítva (hiányzik a CLIENT_ID). Szólj a bot adminjának.',
   'vote.link':
-    'Szavazz a Vozenra (ingyenes, 12 óránként), és segíts, hogy többen megtalálják:\n{url}',
+    'Szavazz a Vozenra (ingyenes, 12 óránként), és segíts, hogy többen megtalálják:\n{url}\nHa ez a fiók még soha nem igényelte a jutalmat, **48 óra Vozen Plust** kap, fiókonként csak egyszer.',
   'help.title': 'Vozen — írd be, hallgasd meg.',
   'help.embedTitle': 'Vozen — Parancsok',
   'help.intro':
@@ -182,6 +182,8 @@ export default {
   'welcome.title': 'Köszönjük, hogy hozzáadtad a Vozent! 👋',
   'welcome.description':
     'A Vozen hangosan felolvassa a csevegésedet a hangcsatornákban — írd be, hallgasd meg.\n\n**Kezdj el egyetlen lépésben:** futtasd a(z) {setup} parancsot, és beállítom az automatikus felolvasást, majd csatlakozom a hangcsatornádhoz.\n\nSzükséged van a teljes parancslistára? Futtasd a(z) {help} parancsot.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Hogyan használják a tagok (3 lépés)',
   'welcome.stepsBody':
     '1) Csatlakozz egy hangcsatornához\n2) Futtasd a /join parancsot, hogy csatlakozzak hozzád\n3) Írj a szöveges csatornába (vagy használd a /tts parancsot), és hangosan felolvasom\nTeljes parancslista: /help',
@@ -247,6 +249,8 @@ export default {
     '🔒 A(z) **{effect}** Premium effekt. Ingyenes effektek: 🤖 Robot és 🔊 Echo. Oldd fel az összeset a Vozen Premiummal — nézd meg a `/premium` parancsot.',
   'voice.engine.gcloudLocked':
     '🔒 A **💎 Google HD** egy Premium hangmotor. Oldd fel a Vozen Plusszal (személyes) vagy a Vozen Premiummal (szerver) — nézd meg a `/premium` parancsot. Addig a hangod az ingyenes helyi motoron marad.',
+  'voice.engine.kokoroLocked':
+    '🔒 A **💎 Kokoro** egy Premium hangmotor. Oldd fel a Vozen Plusszal (személyes) vagy a Vozen Premiummal (szerver) — nézd meg a `/premium` parancsot. Addig a hangod az ingyenes helyi motoron marad.',
   'rizz.playing': '😏 Jön egy kis rizz…\n> {line}',
   'rizz.unknownLang': 'Nem ismerem ezt a nyelvet. Válassz egyet a listából.',
   'rizz.locked':
@@ -292,6 +296,8 @@ export default {
   'premium.lineUserFree': '👤 **Te (Plus):** nem aktív',
   'premium.getHint':
     'Minden, amit ma használsz, ingyenes marad. A Premium hozzáadja mind a 8 hangeffektet, a 24/7 hívásban maradást, az 50 személyes kiejtést, a /rizz parancsot és a prémium játékokat. Támogatás: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **A Premium bérleted:** {used}/{total} licenc használatban · lejár: {date}',
   'premium.passServers': '↳ Használatban itt: {servers}',
@@ -360,6 +366,7 @@ export default {
     'Sorozatértesítők **ki** — a Vozen továbbra is követi a sorozatokat (lásd `/topspeakers`), de nem jelzi őket.',
   'config.soundboardOn': 'Hangtábla **be** — bárki lejátszhat klipeket a `/sound` paranccsal.',
   'config.soundboardOff': 'Hangtábla **ki** — a `/sound` le van tiltva ezen a szerveren.',
+  'config.votePromosLabel': 'top.gg-jutalomértesítések + Vozen Support',
   'config.greetOn': '✅ Néven köszöntöm az embereket, amikor csatlakoznak a hangcsatornához.',
   'config.greetOff': '🔇 **Nem** köszöntöm az embereket, amikor csatlakoznak a hangcsatornához.',
   'config.greetLangSet': '✅ A csatlakozási köszöntés nyelve beállítva: **{language}**.',
@@ -381,9 +388,9 @@ export default {
   'invite.button': 'Vozen hozzáadása',
   'vote.button': 'Szavazás a top.gg-n',
   'vote.upsell':
-    '🗳️ Nincs Plusod? Szavazz a Vozenra a top.gg-n → **24 óra ingyen Plus** (havonta egyszer): {url}',
+    '🗳️ Ha ez a fiók még soha nem igényelte a jutalmat, **48 óra Vozen Plust** kap, fiókonként csak egyszer. {url}',
   'vote.cooldownStatus':
-    '🗳️ Már igényelted a szavazási jutalmadat — szavazz újra még **24 óra Plusért** {date}.',
+    '🗳️ Ez a fiók már felhasználta az egyszeri szavazási jutalmát. Továbbra is szavazhatsz a Vozen támogatására, de több Plust nem kapsz.',
   'help.support': '🛟 Segítségre van szükséged, vagy problémát jelentenél? {url}',
   'help.source':
     '📄 Nyílt forráskód (AGPL-3.0) — szerezd meg az itt futó pontos forráskódot: {url}',

@@ -1777,7 +1777,7 @@ body.is-modal-open { overflow: hidden; }
   }
 }
 
-/* Every translation keeps the hero as two deliberate phrases. main-v41.js reduces the shared
+/* Every translation keeps the hero as two deliberate phrases. main-v42.js reduces the shared
    font size only when the real glyph width would exceed this line. */
 .hero__title span {
   white-space: nowrap;

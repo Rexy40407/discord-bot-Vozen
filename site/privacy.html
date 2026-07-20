@@ -37,7 +37,7 @@
     <main class="legal">
       <a class="back" href="/">← Back to Vozen</a>
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: 19 July 2026</p>
+      <p class="updated">Last updated: 20 July 2026</p>
 
       <p>
         Vozen is a text-to-speech (TTS) bot for Discord. This page explains exactly what
@@ -60,8 +60,8 @@
       </p>
       <p>
         To ask a question, exercise any of your rights, or report a concern, contact us on our
-        <a href="https://discord.gg/V6PZYZmhcQ" target="_blank" rel="noopener">support server</a>
-        (<code>discord.gg/V6PZYZmhcQ</code>). This is the fastest way to reach the operator.
+        <a href="https://discord.gg/4kYw2WUbNN" target="_blank" rel="noopener">support server</a>
+        (<code>discord.gg/4kYw2WUbNN</code>). This is the fastest way to reach the operator.
       </p>
 
       <h2>2. What we store</h2>
@@ -78,6 +78,7 @@
         <li><b>Fun stats</b> — minigame scores (points and wins) and "top speaker" counts (how many of your messages were read aloud, plus daily streaks). These power the <code>/topspeakers</code> and <code>/game</code> leaderboards.</li>
         <li><b>Aggregate TTS usage</b> — the <code>talk_usage</code> table keeps counters by server, user, detected/selected language, and resolved TTS engine. It stores counts only, never message text. These aggregates let the private operator console show a top talker's dominant language and engine. They are deleted for that user by <code>/privacy erase</code> and for that server by the server-data purge.</li>
         <li><b>Birthday</b> — only the <b>month and day</b> you optionally set, never the year. Used so Vozen can wish you a happy birthday in the voice channel.</li>
+        <li><b>Optional Vozen notices</b> — Top.gg reward and support-server cards are off by default and can be enabled by an admin with <code>/config vote-reminders active:true</code>. They alternate in the configured setup channel: at most one card in any rolling 24 hours, and each kind at most once per 48 hours, so both can never appear on the same day. A server ID, timestamp, and last-card kind persist this rotation across restarts; every card explains how to disable it. When you vote, top.gg separately sends your Discord user ID in a signed webhook. An eligible account receives <b>48 hours of Plus once ever</b>. The raw ID is kept only while that entitlement is active and is then deleted. A separate keyed one-way HMAC marker records that the account used its lifetime reward without storing the raw ID.</li>
         <li><b>Premium status &amp; payments</b> — whether a server or user has Premium, when it expires, and the source (e.g. a Ko-fi purchase); for server passes, which servers you activated a licence on. When you buy via Ko-fi, its receipt includes your email — Vozen stores only a <b>one-way keyed hash</b> of it (never the email itself), used solely to link purchases and subscription renewals to your Discord account. For an activated purchase, Vozen also stores minimum consent evidence: transaction and confirmation IDs, your Discord ID, acceptance time, activation-terms version, and activation method. It stores neither an email nor an email hash in that consent record.</li>
       </ul>
 
@@ -85,7 +86,7 @@
       <ul>
         <li><b>To provide the service you asked for</b> (GDPR Art. 6(1)(b)/(f)) — your voice/engine/speed preferences, server settings, opt-out choice, pronunciation overrides, and the one-time use of your verified Discord email to activate the matching paid purchase.</li>
         <li><b>Your consent</b> (Art. 6(1)(a)) — your optional birthday and voice transcription (see §5). You can withdraw consent at any time; it does not affect processing already done.</li>
-        <li><b>Our legitimate interests</b> (Art. 6(1)(f)) — keeping the bot working and fair: rate limits, the blocklist, anti-spam, operational/security logs, and the minigame and "top speaker" leaderboards. You can object at any time (see §9).</li>
+        <li><b>Our legitimate interests</b> (Art. 6(1)(f)) — keeping the bot working and fair: rate limits, the blocklist, anti-spam, operational/security logs, the non-reversible vote-redemption marker needed to enforce the one-account lifetime limit, and the minigame and "top speaker" leaderboards. You can object at any time (see §11).</li>
         <li><b>Financial and activation records</b> (Art. 6(1)(c)/(f)) — Premium/payment data (including the hashed Ko-fi email) and minimum evidence of the request for immediate digital delivery are kept for accounting, fraud prevention, entitlement history, and disputes.</li>
       </ul>
 
@@ -141,7 +142,7 @@
         <li><b>Speech providers</b> — local Piper voices do not send text to a third party. If a Google voice is selected or enabled by the operator, the <b>text to be spoken</b> is sent to Google to generate audio (never your user ID or message history), subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
         <li><b>Discord</b> — the platform the bot runs on and the OAuth provider. With your permission, Discord supplies your verified account email for the one-time instant-activation check; all Discord processing is subject to <a href="https://discord.com/privacy" target="_blank" rel="noopener">Discord's Privacy Policy</a>.</li>
         <li><b>Ko-fi</b> — processes Premium payments; its receipt includes your email, of which we keep only a one-way hash (see §2).</li>
-        <li><b>top.gg</b> — we publish only the <b>server count</b> (a single number), never any personal data.</li>
+        <li><b>top.gg</b> — we publish the bot's <b>server count</b>. If you vote, top.gg sends your Discord user ID to our signed webhook so Vozen can apply the advertised one-time 48-hour Plus reward; no message content is sent.</li>
         <li><b>Activation help</b> — if you use the "get help" option on the account page (when you can't activate a purchase yourself), the <b>email you enter</b> and your Discord ID are sent to a private operator channel so the operator can find your Ko-fi order and activate your pass by hand. It's used only to locate that order and is not stored in our database.</li>
         <li><b>Operator admin console</b> — the operator has a private console (gated by the operator's own Discord login — only the owner's account may enter) to manage Premium and to see <b>aggregate usage per server</b>: the server's name and icon, how many messages Vozen read there, top talkers, and each global top talker's dominant language and TTS engine from <code>talk_usage</code>. These are counters, never message content. User-scoped <code>talk_stats</code> and <code>talk_usage</code> are removed by <code>/privacy erase</code>; server-scoped rows are removed by the server-data purge.</li>
         <li><b>GitHub Pages</b> — hosts this website; like any web host it processes standard request logs (including IP addresses).</li>
@@ -158,6 +159,7 @@
       <h2>10. How long we keep it</h2>
       <ul>
         <li><b>Your personal settings and stats</b> — kept until you remove them (with the relevant command or <code>/privacy erase</code>).</li>
+        <li><b>Vote reward</b> — the raw Discord ID and reward timestamp are deleted after 48 hours or by <code>/privacy erase</code>. The non-reversible HMAC redemption marker is kept while the promotion operates solely to prevent another claim; erasure does not make the account eligible again.</li>
         <li><b>Server data</b> — automatically deleted <b>30 days</b> after Vozen is removed from a server, unless it is re-invited within that window.</li>
         <li><b>Audio cache</b> — rotates automatically (about 500 files per engine, oldest first); not tied to you.</li>
         <li><b>HD-voice usage counter</b> — auto-purged after about 3 months.</li>
@@ -167,11 +169,11 @@
       </ul>
 
       <h2>11. Your rights</h2>
-      <p>Under the GDPR you have the following rights over your data. To exercise any of them, use the bot commands below or ask on the <a href="https://discord.gg/V6PZYZmhcQ" target="_blank" rel="noopener">support server</a>.</p>
+      <p>Under the GDPR you have the following rights over your data. To exercise any of them, use the bot commands below or ask on the <a href="https://discord.gg/4kYw2WUbNN" target="_blank" rel="noopener">support server</a>.</p>
       <ul>
         <li><b>Access</b> — ask what data is tied to your ID.</li>
         <li><b>Rectification</b> — most of your data is settings you can change yourself with the bot's commands.</li>
-        <li><b>Erasure</b> — <code>/privacy erase</code> deletes your erasable personal settings, preferences, consent, scores, <code>talk_stats</code>, and <code>talk_usage</code> across all servers. It does not silently revoke paid rights or destroy the minimum financial and activation records retained for accounting, fraud prevention, disputes, and legal obligations. Individual commands remove single items (<code>/voice reset</code>, <code>/voice nickname</code> with no name, <code>/voice optin</code>, <code>/config reset</code>, and so on).</li>
+        <li><b>Erasure</b> — <code>/privacy erase</code> deletes your erasable personal settings, preferences, consent, scores, <code>talk_stats</code>, <code>talk_usage</code>, and an active free vote entitlement across all servers. It does not make the account eligible for the lifetime vote reward again: the non-reversible anti-abuse HMAC marker remains while that promotion operates. It also does not silently revoke paid rights or destroy minimum financial and activation records retained for accounting, fraud prevention, disputes, and legal obligations. Individual commands remove single items (<code>/voice reset</code>, <code>/voice nickname</code> with no name, <code>/voice optin</code>, <code>/config reset</code>, and so on).</li>
         <li><b>Restriction &amp; objection</b> — stop being read aloud with <code>/voice optout</code>, or ask us to restrict processing.</li>
         <li><b>Portability</b> — request a copy of your data.</li>
         <li><b>Withdraw consent</b> — e.g. <code>/transcribe revoke</code> or removing your birthday — at any time, without affecting past processing.</li>
@@ -209,7 +211,7 @@
       <hr />
       <p class="foot-note">
         Questions? Join the
-        <a href="https://discord.gg/V6PZYZmhcQ" target="_blank" rel="noopener">support server</a>.
+        <a href="https://discord.gg/4kYw2WUbNN" target="_blank" rel="noopener">support server</a>.
         · <a href="/terms">Terms of Service</a>
       </p>
     </main>

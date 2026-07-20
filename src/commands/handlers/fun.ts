@@ -64,8 +64,8 @@ export async function handleLaugh(i: ChatInputCommandInteraction, deps: BotDeps)
     model,
     speed,
     singleVoice: true,
-    // laughs in the SAME engine the user chose; the resolver applies the gcloud gate (->google
-    // without Premium) and attaches the budget (Phase 3) — returns engine + gcloudBudget.
+    // Laughs in the SAME engine the user chose; the resolver applies the Kokoro/Google HD
+    // gate and attaches the Google HD budget — returns engine + gcloudBudget.
     ...resolveUserEngine(deps.db, i.guildId!, i.user.id, stored?.engine, Date.now()),
   };
   // say() returns false when the queue is at cap: in that case we reuse tts.busy.
@@ -236,7 +236,7 @@ export async function handleRizz(i: ChatInputCommandInteraction, deps: BotDeps):
     deps.config.defaultVoice ||
     'en_US-amy-medium';
   const stored = getUserVoice(deps.db, i.guildId!, i.user.id);
-  // follows the user's engine (like /joke and /laugh), with the gcloud gate + budget (Phase 3).
+  // follows the user's engine (like /joke and /laugh), with the paid-engine gate and budget.
   const resolvedEngine = resolveUserEngine(
     deps.db,
     i.guildId!,

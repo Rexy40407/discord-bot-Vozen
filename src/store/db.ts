@@ -39,7 +39,8 @@ export function initDb(path: string): Database.Database {
         antispam       INTEGER NOT NULL DEFAULT 0,
         stay_in_call   INTEGER NOT NULL DEFAULT 0,
         streak_announce INTEGER NOT NULL DEFAULT 1,
-        soundboard     INTEGER NOT NULL DEFAULT 1
+        soundboard     INTEGER NOT NULL DEFAULT 1,
+        vote_promos    INTEGER NOT NULL DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS blocklist (
@@ -157,11 +158,36 @@ export function initDb(path: string): Database.Database {
         source     TEXT NOT NULL DEFAULT ''
       );
 
-      -- top.gg vote reward: stores only the latest reward timestamp for the 30-day
-      -- cooldown. This minimal personal record is erasable through /privacy erase.
+      -- Active top.gg vote entitlement. The raw Discord ID is needed only while the
+      -- 48h reward can be used and is erasable through /privacy erase. The permanent
+      -- one-claim guard is the separate pseudonymous vote_redemption ledger below.
       CREATE TABLE IF NOT EXISTS vote_reward (
         user_id     TEXT PRIMARY KEY,
         rewarded_at INTEGER NOT NULL
+      );
+
+      -- Lifetime one-claim guard for the top.gg reward. user_hash is
+      -- HMAC-SHA256(VOTE_REDEMPTION_SECRET, Discord user id), never the raw id. It is
+      -- retained while the promotion exists so deleting personal settings or restarting
+      -- the VPS cannot make the same account eligible again.
+      CREATE TABLE IF NOT EXISTS vote_redemption (
+        user_hash   TEXT PRIMARY KEY,
+        redeemed_at INTEGER NOT NULL
+      );
+
+      -- Fails closed if VOTE_REDEMPTION_SECRET is accidentally replaced. Without
+      -- this fingerprint a new secret would make every existing HMAC unmatchable
+      -- and incorrectly let every account claim again.
+      CREATE TABLE IF NOT EXISTS vote_redemption_meta (
+        singleton          INTEGER PRIMARY KEY CHECK (singleton = 1),
+        secret_fingerprint TEXT NOT NULL
+      );
+
+      -- Persistent per-server rotation for occasional Top.gg/support reminders.
+      CREATE TABLE IF NOT EXISTS vote_promo_state (
+        guild_id     TEXT PRIMARY KEY,
+        last_post_at INTEGER NOT NULL,
+        last_kind    TEXT NOT NULL DEFAULT 'vote' CHECK (last_kind IN ('vote', 'support'))
       );
 
       -- Voice effect per (guild,user): FFmpeg filter applied to the member's TTS.
@@ -321,6 +347,14 @@ export function initDb(path: string): Database.Database {
     const uvCols = db.pragma('table_info(user_voice)') as Array<{ name: string }>;
     if (!uvCols.some((c) => c.name === 'engine')) {
       db.exec("ALTER TABLE user_voice ADD COLUMN engine TEXT NOT NULL DEFAULT 'google'");
+    }
+    // Existing rows came from the vote-only scheduler, so `vote` is the honest backfill:
+    // after the 24h shared cooldown their next card is support, preserving alternation.
+    const promoCols = db.pragma('table_info(vote_promo_state)') as Array<{ name: string }>;
+    if (!promoCols.some((c) => c.name === 'last_kind')) {
+      db.exec(
+        "ALTER TABLE vote_promo_state ADD COLUMN last_kind TEXT NOT NULL DEFAULT 'vote' CHECK (last_kind IN ('vote', 'support'))",
+      );
     }
     // Idempotent migration of `is_subscription` on kofi_pending (plan 035). DEFAULT 0 is the
     // conservative backfill for rows already waiting: they stay standalone and cannot move the

@@ -149,7 +149,8 @@ export default {
   'invite.link': 'Añade Vozen a tu servidor:\n{url}',
   'vote.noClientId':
     'El enlace de votación de Vozen aún no está configurado (falta CLIENT_ID). Avisa al administrador del bot.',
-  'vote.link': 'Vota por Vozen (gratis, cada 12h) y ayuda a que más gente lo descubra:\n{url}',
+  'vote.link':
+    'Vota por Vozen (gratis, cada 12h) y ayuda a que más gente lo descubra:\n{url}\nSi esta cuenta nunca ha reclamado la recompensa, recibe **48 h de Vozen Plus**, una sola vez por cuenta.',
   'help.title': 'Vozen — escríbelo, escúchalo.',
   'help.embedTitle': 'Vozen — Comandos',
   'help.intro':
@@ -176,6 +177,8 @@ export default {
   'welcome.title': '¡Gracias por añadir a Vozen! 👋',
   'welcome.description':
     'Vozen lee tu chat en voz alta en los canales de voz: escríbelo, escúchalo.\n\n**Empieza en un solo paso:** ejecuta {setup} y configuraré la lectura automática y me uniré a tu canal de voz.\n\n¿Necesitas la lista completa de comandos? Ejecuta {help}.',
+  'welcome.enginePlans':
+    'Las voces neurales Piper siguen siendo gratis. 💎 Kokoro y Google HD se desbloquean con Vozen Plus o Premium del servidor.',
   'welcome.stepsTitle': 'Cómo lo usan los miembros (3 pasos)',
   'welcome.stepsBody':
     '1) Únete a un canal de voz\n2) Ejecuta /join para que me una a ti\n3) Escribe en el canal de texto (o usa /tts) y lo leeré en voz alta\nLista completa de comandos: /help',
@@ -238,6 +241,8 @@ export default {
     '🔒 **{effect}** es un efecto Premium. Efectos gratis: 🤖 Robot y 🔊 Echo. Desbloquéalos todos con Vozen Premium: consulta `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** es un motor de voz Premium. Desbloquéalo con Vozen Plus (personal) o Vozen Premium (servidor): consulta `/premium`. Mientras tanto, tu voz se queda en el motor local gratuito.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** es un motor de voz Premium. Desbloquéalo con Vozen Plus (personal) o Vozen Premium (servidor): consulta `/premium`. Mientras tanto, tu voz se queda en el motor local gratuito.',
   'rizz.playing': '😏 Soltando piropos…\n> {line}',
   'rizz.unknownLang': 'No conozco ese idioma. Elige uno de la lista.',
   'rizz.locked':
@@ -284,6 +289,8 @@ export default {
   'premium.lineUserFree': '👤 **Tú (Plus):** inactivo',
   'premium.getHint':
     'Todo lo que usas hoy sigue siendo gratis. Premium añade los 8 efectos de voz, 24/7 en la llamada, 50 pronunciaciones personales, /rizz y los juegos premium. Apoyo: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Motores de voz Premium:** Kokoro neural y Google HD — se desbloquean para ti con Plus o para todos con Premium del servidor.',
   'premium.linePass': '🎟️ **Tu pase Premium:** {used}/{total} licencias en uso · caduca {date}',
   'premium.passServers': '↳ En uso en: {servers}',
   'premium.pitch':
@@ -353,6 +360,7 @@ export default {
     'Tabla de sonidos **activada**: cualquiera puede reproducir clips con `/sound`.',
   'config.soundboardOff':
     'Tabla de sonidos **desactivada**: `/sound` está deshabilitado en este servidor.',
+  'config.votePromosLabel': 'Avisos de recompensa de top.gg + Vozen Support',
   'config.greetOn': '✅ Saludaré a la gente por su nombre cuando entre en el canal de voz.',
   'config.greetOff': '🔇 **No** saludaré a la gente cuando entre en el canal de voz.',
   'config.greetLangSet': '✅ Idioma del saludo de entrada configurado en **{language}**.',
@@ -374,9 +382,9 @@ export default {
   'invite.button': 'Añadir Vozen',
   'vote.button': 'Votar en top.gg',
   'vote.upsell':
-    '🗳️ ¿Sin Plus? Vota por Vozen en top.gg → **24 h de Plus gratis** (una vez al mes): {url}',
+    '🗳️ Si esta cuenta nunca ha reclamado la recompensa, recibe **48 h de Vozen Plus**, una sola vez por cuenta. {url}',
   'vote.cooldownStatus':
-    '🗳️ Ya reclamaste tu recompensa por votar: vuelve a votar para conseguir otras **24 h de Plus** {date}.',
+    '🗳️ Esta cuenta ya utilizó su recompensa de voto única. Puedes seguir votando para apoyar a Vozen, pero no recibirás más Plus.',
   'help.support': '🛟 ¿Necesitas ayuda o quieres informar de un problema? {url}',
   'help.source':
     '📄 Código abierto (AGPL-3.0): consigue el código exacto que se ejecuta aquí: {url}',

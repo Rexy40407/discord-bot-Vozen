@@ -136,7 +136,8 @@ export default {
   'invite.noClientId': 'Vozen 的邀请链接尚未设置（缺少 CLIENT_ID）。请告知机器人管理员。',
   'invite.link': '将 Vozen 添加到你的服务器：\n{url}',
   'vote.noClientId': 'Vozen 的投票链接尚未设置（缺少 CLIENT_ID）。请告知机器人管理员。',
-  'vote.link': '为 Vozen 投票（免费，每 12h 一次），帮助更多人发现它：\n{url}',
+  'vote.link':
+    '为 Vozen 投票（免费，每 12h 一次），帮助更多人发现它：\n{url}\n如果此账号从未领取过奖励，可获得 **48 小时 Vozen Plus**；每个账号仅限一次。',
   'help.title': 'Vozen——打字，即听。',
   'help.embedTitle': 'Vozen——命令',
   'help.intro': 'Vozen 在语音频道中朗读你的文字——免费神经网络语音，支持数十种语言。',
@@ -162,6 +163,8 @@ export default {
   'welcome.title': '感谢添加 Vozen！👋',
   'welcome.description':
     'Vozen 在语音频道中朗读你的聊天内容——打字，即听。\n\n**一步开始：** 运行 {setup}，我就会设置好自动朗读并加入你的语音频道。\n\n需要完整命令列表？运行 {help}。',
+  'welcome.enginePlans':
+    'Piper 神经语音继续免费。💎 Kokoro 和 Google HD 可通过 Vozen Plus 或服务器 Premium 解锁。',
   'welcome.stepsTitle': '成员如何使用（3 步）',
   'welcome.stepsBody':
     '1）加入一个语音频道\n2）运行 /join，我就会加入你\n3）在文字频道打字（或使用 /tts），我就会念出来\n完整命令列表：/help',
@@ -214,6 +217,8 @@ export default {
     '🔒 **{effect}** 是 Premium 效果。免费效果：🤖 机器人和 🔊 回声。用 Vozen Premium 解锁全部——查看 `/premium`。',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** 是 Premium 语音引擎。用 Vozen Plus（个人）或 Vozen Premium（服务器）解锁它——查看 `/premium`。在此期间，你的声音会保持使用免费的本地引擎。',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** 是 Premium 语音引擎。用 Vozen Plus（个人）或 Vozen Premium（服务器）解锁它——查看 `/premium`。在此期间，你的声音会保持使用免费的本地引擎。',
   'rizz.playing': '😏 来点撩人情话……\n> {line}',
   'rizz.unknownLang': '我不懂这种语言。请从列表中选一个。',
   'rizz.locked':
@@ -256,6 +261,8 @@ export default {
   'premium.lineUserFree': '👤 **你（Plus）：** 未激活',
   'premium.getHint':
     '你今天使用的一切都将保持免费。Premium 额外提供全部 8 种语音效果、24/7 全天候通话、50 个个人发音、/rizz 以及 premium 游戏。支持：https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium 语音引擎：**Kokoro 神经语音和 Google HD——Plus 为个人解锁，服务器 Premium 为全服解锁。',
   'premium.linePass': '🎟️ **你的 Premium 通行证：** 已使用 {used}/{total} 个授权 · 到期 {date}',
   'premium.passServers': '↳ 正在使用于：{servers}',
   'premium.pitch':
@@ -315,6 +322,7 @@ export default {
     '连续记录提醒 **已关闭**——Vozen 仍会记录连续记录（见 `/topspeakers`），但不会主动提示。',
   'config.soundboardOn': '音效板 **已开启**——任何人都可以用 `/sound` 播放片段。',
   'config.soundboardOff': '音效板 **已关闭**——本服务器已禁用 `/sound`。',
+  'config.votePromosLabel': 'top.gg 奖励通知 + Vozen Support',
   'config.greetOn': '✅ 当有人加入语音频道时，我会称名字问候他们。',
   'config.greetOff': '🔇 当有人加入语音频道时，我 **不会** 问候他们。',
   'config.greetLangSet': '✅ 加入问候语言已设为 **{language}**。',
@@ -335,8 +343,9 @@ export default {
   'botstats.uptime': '在线时长：**{value}**',
   'invite.button': '添加 Vozen',
   'vote.button': '在 top.gg 投票',
-  'vote.upsell': '🗳️ 没有 Plus？在 top.gg 为 Vozen 投票 → **免费 24 小时 Plus**（每月一次）：{url}',
-  'vote.cooldownStatus': '🗳️ 你已领取投票奖励——{date} 可再次投票获得又一个 **24 小时 Plus**。',
+  'vote.upsell':
+    '🗳️ 如果此账号从未领取过奖励，可获得 **48 小时 Vozen Plus**；每个账号仅限一次。 {url}',
+  'vote.cooldownStatus': '🗳️ 此账号已使用一次性投票奖励。你仍可投票支持 Vozen，但不会再获得 Plus。',
   'help.support': '🛟 需要帮助或想报告问题？{url}',
   'help.source': '📄 开源（AGPL-3.0）——获取此处运行的确切源代码：{url}',
   'game.start.needVoice': '这是一个 **语音游戏**——先加入一个语音频道并运行 /join，然后再开始。',

@@ -51,6 +51,10 @@ export interface GuildConfig {
   // can turn it off with /config soundboard. The per-user rate-limit already limits
   // spam; this toggle is the per-server kill-switch.
   soundboard: boolean;
+  // votePromos: alternating Top.gg reward and Vozen support notices in the configured
+  // TTS channel. OFF by default and enabled only by a server admin through
+  // /config vote-reminders. Never sends DMs or mentions.
+  votePromos: boolean;
 }
 
 const DEFAULTS: GuildConfig = {
@@ -74,6 +78,7 @@ const DEFAULTS: GuildConfig = {
   stayInCall: false, // 24/7 in-call OFF by default (opt-in, even with Premium)
   streakAnnounce: true, // streak 🔥 notice ON by default
   soundboard: true, // /sound ON by default (admin turns off with /config soundboard)
+  votePromos: false, // alternating Top.gg/support notices OFF by default; admin must opt in
 };
 
 interface GuildConfigRow {
@@ -96,6 +101,7 @@ interface GuildConfigRow {
   stay_in_call: number | null;
   streak_announce: number | null;
   soundboard: number | null;
+  vote_promos: number | null;
 }
 
 type SqlValue = string | number | null;
@@ -246,6 +252,13 @@ export const GUILD_CONFIG_COLUMNS: GuildConfigColumn[] = [
     sqlType: 'INTEGER NOT NULL DEFAULT 1',
     toDb: asBool,
     fromDb: (r) => (r == null ? DEFAULTS.soundboard : r === 1),
+  },
+  {
+    prop: 'votePromos',
+    column: 'vote_promos',
+    sqlType: 'INTEGER NOT NULL DEFAULT 0',
+    toDb: asBool,
+    fromDb: (r) => (r == null ? DEFAULTS.votePromos : r === 1),
   },
 ];
 

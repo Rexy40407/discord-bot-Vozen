@@ -150,7 +150,8 @@ export default {
   'invite.link': 'Ychwanega Vozen at dy weinydd:\n{url}',
   'vote.noClientId':
     "Nid yw dolen bleidleisio Vozen wedi'i sefydlu eto (mae CLIENT_ID ar goll). Rho wybod i weinyddwr y bot.",
-  'vote.link': "Pleidleisia dros Vozen (am ddim, bob 12 awr) a helpa mwy o bobl i'w ganfod:\n{url}",
+  'vote.link':
+    "Pleidleisia dros Vozen (am ddim, bob 12 awr) a helpa mwy o bobl i'w ganfod:\n{url}\nOs nad yw’r cyfrif hwn erioed wedi hawlio’r wobr, mae’n cael **48 awr o Vozen Plus**, unwaith yn unig fesul cyfrif.",
   'help.title': 'Vozen — teipia fo, clyw fo.',
   'help.embedTitle': 'Vozen — Gorchmynion',
   'help.intro':
@@ -177,6 +178,8 @@ export default {
   'welcome.title': 'Diolch am ychwanegu Vozen! 👋',
   'welcome.description':
     "Mae Vozen'n darllen dy sgwrs yn uchel mewn sianeli llais — teipia fo, clyw fo.\n\n**Dechrau mewn un cam:** rheda {setup} a bydda i'n sefydlu darllen awtomatig ac ymuno â'th sianel lais.\n\nAngen y rhestr gorchmynion lawn? Rheda {help}.",
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': "Sut mae aelodau'n ei ddefnyddio (3 cham)",
   'welcome.stepsBody':
     "1) Ymuna â sianel lais\n2) Rheda /join er mwyn i mi ymuno â thi\n3) Teipia yn y sianel destun (neu defnyddia /tts) a bydda i'n ei ddarllen yn uchel\nRhestr gorchmynion lawn: /help",
@@ -241,6 +244,8 @@ export default {
     '🔒 Effaith Premium yw **{effect}**. Effeithiau am ddim: 🤖 Robot ac 🔊 Echo. Datgloa bob un gyda Vozen Premium — gwela `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 Peiriant llais Premium yw **💎 Google HD**. Datgloa fe gyda Vozen Plus (personol) neu Vozen Premium (gweinydd) — gwela `/premium`. Yn y cyfamser mae dy lais yn aros ar y peiriant lleol am ddim.',
+  'voice.engine.kokoroLocked':
+    '🔒 Peiriant llais Premium yw **💎 Kokoro**. Datgloa fe gyda Vozen Plus (personol) neu Vozen Premium (gweinydd) — gwela `/premium`. Yn y cyfamser mae dy lais yn aros ar y peiriant lleol am ddim.',
   'rizz.playing': '😏 Yn gollwng ychydig o swyn…\n> {line}',
   'rizz.unknownLang': "Dw i ddim yn adnabod yr iaith yna. Dewisa un o'r rhestr.",
   'rizz.locked':
@@ -287,6 +292,8 @@ export default {
   'premium.lineUserFree': '👤 **Ti (Plus):** ddim yn weithredol',
   'premium.getHint':
     "Mae popeth rwyt ti'n ei ddefnyddio heddiw yn aros am ddim. Mae Premium yn ychwanegu'r 8 effaith llais i gyd, 24/7 mewn galwad, 50 ynganiad personol, /rizz a'r gemau premium. Cefnogaeth: https://ko-fi.com/",
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Dy bas Premium:** {used}/{total} trwydded yn cael eu defnyddio · yn dod i ben {date}',
   'premium.passServers': '↳ Yn cael ei ddefnyddio ar: {servers}',
@@ -360,6 +367,7 @@ export default {
   'config.soundboardOn': 'Bwrdd sain **ymlaen** — gall unrhyw un chwarae clipiau gyda `/sound`.',
   'config.soundboardOff':
     "Bwrdd sain **i ffwrdd** — mae `/sound` wedi'i analluogi ar y gweinydd hwn.",
+  'config.votePromosLabel': 'Hysbysiadau gwobr top.gg + Vozen Support',
   'config.greetOn': "✅ Bydda i'n cyfarch pobl wrth eu henw pan ymunan nhw â'r sianel lais.",
   'config.greetOff': "🔇 **Ni fydda i'n** cyfarch pobl pan ymunan nhw â'r sianel lais.",
   'config.greetLangSet': "✅ Iaith cyfarch wrth ymuno wedi'i gosod i **{language}**.",
@@ -381,9 +389,9 @@ export default {
   'invite.button': 'Ychwanega Vozen',
   'vote.button': 'Pleidleisia ar top.gg',
   'vote.upsell':
-    '🗳️ Dim Plus? Pleidleisia dros Vozen ar top.gg → **24awr o Plus am ddim** (unwaith y mis): {url}',
+    '🗳️ Os nad yw’r cyfrif hwn erioed wedi hawlio’r wobr, mae’n cael **48 awr o Vozen Plus**, unwaith yn unig fesul cyfrif. {url}',
   'vote.cooldownStatus':
-    '🗳️ Rwyt ti eisoes wedi hawlio dy wobr bleidleisio — pleidleisia eto am **24awr arall o Plus** {date}.',
+    '🗳️ Mae’r cyfrif hwn eisoes wedi defnyddio ei wobr bleidleisio unwaith. Gallwch bleidleisio o hyd i gefnogi Vozen, ond ni fydd yn rhoi rhagor o Plus.',
   'help.support': '🛟 Angen help neu eisiau riportio problem? {url}',
   'help.source': "📄 Cod agored (AGPL-3.0) — cael y cod union sy'n rhedeg yma: {url}",
   'game.start.needVoice':

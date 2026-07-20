@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   Vozen site — main-v41.js
+   Vozen site — main-v42.js
    ═══════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
@@ -9,7 +9,7 @@
      SUPPORT_URL é o convite do servidor de suporte do Vozen. */
   const CLIENT_ID = "1523826014935842997";
   const INVITE_PERMISSIONS = "326420745216"; // Connect+Speak+ViewChannel+SendMessages+ReadMessageHistory+EmbedLinks + threads dos jogos (CreatePublicThreads+SendMessagesInThreads+ManageThreads)
-  const SUPPORT_URL = "https://discord.gg/V6PZYZmhcQ"; // servidor de suporte do Vozen
+  const SUPPORT_URL = "https://discord.gg/4kYw2WUbNN"; // servidor de suporte do Vozen
   // Painel Premium: base HTTPS da API do bot (GET /api/me/premium). VAZIO => o painel fica
   // escondido (a feature ainda não está no ar). Preenche com o teu host quando tiveres o
   // domínio/túnel + PREMIUM_API_ENABLED=true no bot. Ex.: "https://api.vozen.xyz".

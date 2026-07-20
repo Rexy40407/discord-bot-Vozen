@@ -51,7 +51,7 @@ aos ~75 servidores). O `.env` já documenta `PREMIUM_GUILD_SKU_ID`/`PREMIUM_USER
 documentadas, contacto do operador preenchido, idade 13+.
 
 ### 2.3 Canal de denúncia — FECHADO na Fase 1
-Existe servidor de suporte (`discord.gg/V6PZYZmhcQ`). Ligado ao `/help` (env `SUPPORT_URL`),
+Existe servidor de suporte (`discord.gg/4kYw2WUbNN`). Ligado ao `/help` (env `SUPPORT_URL`),
 à Privacidade e aos Termos.
 
 ## 3. Notas
@@ -62,11 +62,11 @@ Existe servidor de suporte (`discord.gg/V6PZYZmhcQ`). Ligado ao `/help` (env `SU
   Piper se a Google fechar a porta. (Risco de terceiros, não do Discord.)
 - **Breach:** o ToS de developer (§5) obriga a notificar o Discord e os afetados em caso de
   acesso não autorizado a Dados da API. Documentar o processo antes de escalar.
-- **Recompensa por voto (growth loop):** um voto no top.gg dá **24h de Vozen Plus** grátis
-  (`source='vote'`, `vote_reward`), limitado a **1× a cada 30 dias** por conta. Conforme com
+- **Recompensa por voto (growth loop):** o primeiro voto elegível no top.gg dá **48h de Vozen Plus** grátis,
+  limitado a **uma única vez por conta** através de um ledger HMAC persistente. Conforme com
   o top.gg — que **permite** incentivar VOTOS (nunca REVIEWS/ratings, que ficam de fora por
-  design; a copy pede sempre "votar"). Sem DM (hard rule). Dados: só `{user_id, rewarded_at}`,
-  disclosado no PRIVACY.md e apagável por `/privacy erase`.
+  design; a copy pede sempre "votar"). Sem DM nem ping (hard rule). O ID em claro existe apenas
+  durante as 48h; o marcador HMAC anti-abuso e a retenção estão divulgados no PRIVACY.md.
 - **Rever:** o artigo da política foi atualizado em 2026-07-07 — reavaliar periodicamente.
 
 ## Atualização 2026-07-11 (re-auditoria + novo trabalho)

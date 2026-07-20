@@ -103,6 +103,8 @@ export default {
     '🔒 **{effect}** on Premium-efekti. Ilmaiset efektit: 🤖 Robot ja 🔊 Echo. Avaa kaikki Vozen Premiumilla — katso `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** on Premium-äänimoottori. Avaa se Vozen Plusilla (henkilökohtainen) tai Vozen Premiumilla (palvelin) — katso `/premium`. Sillä välin äänesi pysyy ilmaisessa paikallisessa moottorissa.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** on Premium-äänimoottori. Avaa se Vozen Plusilla (henkilökohtainen) tai Vozen Premiumilla (palvelin) — katso `/premium`. Sillä välin äänesi pysyy ilmaisessa paikallisessa moottorissa.',
   'voice.notInVoice': 'En ole vielä puhekanavalla — suorita /join ensin.',
   'voice.previewPlaying': 'Toistetaan näytettä…',
   'preview.sample': 'Hei, olen Vozen. kirjoita se, kuule se.',
@@ -154,6 +156,8 @@ export default {
   'premium.lineUserFree': '👤 **Sinä (Plus):** ei aktiivinen',
   'premium.getHint':
     'Kaikki mitä käytät tänään pysyy ilmaisena. Premium lisää kaikki 8 ääniefektiä, 24/7 puhelussa, 50 henkilökohtaista ääntämystä, /rizzin ja premium-pelit. Tuki: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass': '🎟️ **Premium-passisi:** {used}/{total} lisenssiä käytössä · vanhenee {date}',
   'premium.passServers': '↳ Käytössä palvelimilla: {servers}',
   'premium.pitch':
@@ -254,6 +258,7 @@ export default {
     'Soundboard **päällä** — kuka tahansa voi toistaa klippejä komennolla `/sound`.',
   'config.soundboardOff':
     'Soundboard **pois päältä** — `/sound` on poistettu käytöstä tällä palvelimella.',
+  'config.votePromosLabel': 'top.gg-palkintoilmoitukset + Vozen Support',
   'config.greetOn': '✅ Tervehdin ihmisiä nimeltä, kun he liittyvät puhekanavalle.',
   'config.greetOff': '🔇 **En** tervehdi ihmisiä, kun he liittyvät puhekanavalle.',
   'config.greetLangSet': '✅ Liittymistervehdyksen kieleksi asetettu **{language}**.',
@@ -334,13 +339,14 @@ export default {
   'invite.link': 'Lisää Vozen palvelimellesi:\n{url}',
   'vote.noClientId':
     'Vozenn äänestyslinkkiä ei ole vielä määritetty (CLIENT_ID puuttuu). Kerro botin ylläpitäjälle.',
-  'vote.link': 'Äänestä Vozena (ilmaista, 12 tunnin välein) ja auta useampia löytämään se:\n{url}',
+  'vote.link':
+    'Äänestä Vozena (ilmaista, 12 tunnin välein) ja auta useampia löytämään se:\n{url}\nJos tämä tili ei ole koskaan lunastanut palkintoa, se saa **48 tuntia Vozen Plusia**, vain kerran tiliä kohti.',
   'invite.button': 'Lisää Vozen',
   'vote.button': 'Äänestä top.gg:ssä',
   'vote.upsell':
-    '🗳️ Ei Plusia? Äänestä Vozenia top.gg:ssä → **24h Plusia ilmaiseksi** (kerran kuussa): {url}',
+    '🗳️ Jos tämä tili ei ole koskaan lunastanut palkintoa, se saa **48 tuntia Vozen Plusia**, vain kerran tiliä kohti. {url}',
   'vote.cooldownStatus':
-    '🗳️ Olet jo lunastanut äänestyspalkkiosi — äänestä uudelleen saadaksesi lisää **24h Plusia** {date}.',
+    '🗳️ Tämä tili on jo käyttänyt kertaluonteisen äänestyspalkintonsa. Voit yhä äänestää tukeaksesi Vozenia, mutta et saa lisää Plusia.',
   'help.title': 'Vozen — kirjoita se, kuule se.',
   'help.embedTitle': 'Vozen — Komennot',
   'help.intro': 'Vozen lukee tekstisi ääneen puhekanavilla — ilmaisia neuroääniä, kymmeniä kieliä.',
@@ -369,6 +375,8 @@ export default {
   'welcome.title': 'Kiitos että lisäsit Vozenn! 👋',
   'welcome.description':
     'Vozen lukee chattisi ääneen puhekanavilla — kirjoita se, kuule se.\n\n**Pääset alkuun yhdessä vaiheessa:** suorita {setup} niin määritän automaattisen lukemisen ja liityn puhekanavallesi.\n\nTarvitsetko täyden komentolistan? Suorita {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Näin jäsenet käyttävät sitä (3 vaihetta)',
   'welcome.stepsBody':
     '1) Liity puhekanavalle\n2) Suorita /join niin liityn seuraasi\n3) Kirjoita tekstikanavalle (tai käytä /tts) niin luen sen ääneen\nTäysi komentolista: /help',

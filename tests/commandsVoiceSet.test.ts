@@ -168,6 +168,38 @@ describe('/voice set — Google HD engine gate (gcloud)', () => {
   });
 });
 
+describe('/voice set — Kokoro Premium gate', () => {
+  let db: Database.Database;
+  beforeEach(() => {
+    db = initDb(':memory:');
+  });
+  afterEach(() => {
+    db.close();
+  });
+
+  it('Kokoro WITHOUT Premium -> locked message and does NOT save the voice', async () => {
+    const i = makeVoiceInteraction({ sub: 'set', model: 'en_US-amy-medium', engine: 'kokoro' });
+    await handleInteraction(i as any, makeDeps(db));
+    expect(i.replies[0]).toContain('Kokoro');
+    expect(i.replies[0]).toMatch(/Premium/);
+    expect(getUserVoice(db, GUILD, USER)).toBeNull();
+  });
+
+  it('Kokoro WITH Vozen Plus -> saves Kokoro', async () => {
+    grantUserPremium(db, USER, 30, 'test', Date.now());
+    const i = makeVoiceInteraction({ sub: 'set', model: 'en_US-amy-medium', engine: 'kokoro' });
+    await handleInteraction(i as any, makeDeps(db));
+    expect(getUserVoice(db, GUILD, USER)?.engine).toBe('kokoro');
+  });
+
+  it('Kokoro WITH server Premium -> saves Kokoro', async () => {
+    grantGuildPremium(db, GUILD, 30, 'test', Date.now());
+    const i = makeVoiceInteraction({ sub: 'set', model: 'en_US-amy-medium', engine: 'kokoro' });
+    await handleInteraction(i as any, makeDeps(db));
+    expect(getUserVoice(db, GUILD, USER)?.engine).toBe('kokoro');
+  });
+});
+
 describe('/voice set — speed out of range (0.5–2.0)', () => {
   let db: Database.Database;
   beforeEach(() => {

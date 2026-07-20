@@ -24,6 +24,7 @@ import { GuildVoicePlayer } from './voice/player';
 import { AloneWatcher } from './voice/aloneWatcher';
 import { GreetCooldown } from './voice/greetCooldown';
 import { LeaderboardPoster } from './leaderboard/randomPost';
+import { VotePromoPoster } from './votePromo';
 import { DuplicateTracker } from './moderation/antispam';
 import { CountGate } from './moderation/countGate';
 import type { BotDeps } from './bot/deps';
@@ -32,7 +33,12 @@ import { GameManager } from './games/manager';
 import { systemClock } from './games/types';
 import { channelCard } from './ui/messages';
 import { isGuildPremium } from './store/premium';
-import { claimVoteReward, VOTE_REWARD_HOURS } from './store/voteReward';
+import {
+  claimVoteReward,
+  initializeVoteRedemptionLedger,
+  purgeExpiredVoteRewards,
+  VOTE_REWARD_HOURS,
+} from './store/voteReward';
 import { createVoiceSession, becomeSpeakerIfStage } from './voice/session';
 import { listVoicePresence, forgetVoicePresence } from './store/voicePresence';
 import { planRejoin, type ChannelState } from './voice/rejoin';
@@ -69,6 +75,12 @@ async function main(): Promise<void> {
   // stalls go to the log + metrics.loopStalls. Timer unref'd — never holds the process.
   startLoopLagMonitor();
   const db = initDb(config.dbPath);
+  if (config.voteRedemptionSecret) {
+    const backfilled = initializeVoteRedemptionLedger(db, config.voteRedemptionSecret);
+    if (backfilled > 0) {
+      log.info(`[vote] protected ${backfilled} pre-existing reward(s) in the lifetime ledger.`);
+    }
+  }
   const cache = new AudioCache(path.join(path.dirname(config.dbPath), 'audio-cache'));
 
   // Models DELIBERATELY excluded from the options/detection. Since 2026-07-10 Diogo
@@ -163,6 +175,7 @@ async function main(): Promise<void> {
     // 5-min cooldown of the join greeting (anti-spam of joining/leaving the call).
     greetCooldown: new GreetCooldown(),
     leaderboardPoster: new LeaderboardPoster(),
+    votePromoPoster: new VotePromoPoster(db),
     // Duplicate tracker for the reading anti-spam (opt-in per guild).
     dupTracker: new DuplicateTracker(),
     countGate: new CountGate(),
@@ -252,25 +265,25 @@ async function main(): Promise<void> {
     log.error('[index] failed to start the health server (ignored)', err);
   }
 
-  // Vote REWARD (growth loop): each ELIGIBLE upvote gives VOTE_REWARD_HOURS of Plus to
-  // the voter (source 'vote' — EXTRA, never the base quality). 30-day COOLDOWN per account
-  // (claimVoteReward): voting more times counts for top.gg but does not stack free Plus (does not
-  // cannibalize the paid one). No DM (hard rule) — the person sees the status in /vote and /premium. The SAME
-  // callback serves both webhook entry points (see below).
+  // The first verified vote on a Discord account grants 48h of Plus. A permanent
+  // HMAC ledger makes retries/restarts idempotent, while the temporary entitlement
+  // stays separate from paid Premium provenance. No DMs.
   const rewardVote = (userId: string): void => {
     try {
-      const res = claimVoteReward(db, userId, Date.now());
+      if (!config.voteRedemptionSecret) {
+        throw new Error('VOTE_REDEMPTION_SECRET is required for the one-time vote reward');
+      }
+      const res = claimVoteReward(db, userId, Date.now(), config.voteRedemptionSecret);
       if (res.granted) {
         log.info(
-          `[vote] recompensa: +${VOTE_REWARD_HOURS}h de Plus para ${userId} (fim ${new Date(res.expiresAt!).toISOString()}).`,
+          `[vote] one-time reward granted: +${VOTE_REWARD_HOURS}h of Plus (ends ${new Date(res.expiresAt!).toISOString()}).`,
         );
       } else {
-        log.info(
-          `[vote] voto de ${userId} contou, mas a recompensa está em cooldown (elegível ${new Date(res.nextEligibleAt!).toISOString()}).`,
-        );
+        log.info('[vote] vote counted; this account already used its one-time reward.');
       }
     } catch (err) {
-      log.error(`[vote] failed to grant a vote reward to ${userId} (ignored)`, err);
+      log.error('[vote] failed to grant a vote reward; requesting retry', err);
+      throw err;
     }
   };
 
@@ -473,6 +486,26 @@ async function main(): Promise<void> {
       );
     } catch (err) {
       log.error('[index] failed to start the pending Ko-fi purchase purge job (ignored)', err);
+    }
+    // The raw Discord id is needed only while its 48h reward is active. The
+    // lifetime one-claim HMAC remains in vote_redemption, so this minimization
+    // cannot make the account eligible again. Runs now and once per day.
+    try {
+      const purgeVoteEntitlements = (): void => {
+        try {
+          const removed = purgeExpiredVoteRewards(db, Date.now());
+          if (removed > 0) {
+            log.info(`[retention] purged ${removed} expired vote entitlement(s).`);
+          }
+        } catch (err) {
+          log.error('[retention] vote entitlement purge failed (ignored)', err);
+        }
+      };
+      purgeVoteEntitlements();
+      const voteRewardTimer = setInterval(purgeVoteEntitlements, 24 * 60 * 60 * 1000);
+      voteRewardTimer.unref?.();
+    } catch (err) {
+      log.error('[index] failed to start the vote entitlement purge job (ignored)', err);
     }
     // Removed voice-clone feature: purge the legacy voice-clones/ sample directory (biometric
     // .wav files) the deleted /voice clone feature stored on disk. Runs ONLY ONCE at startup

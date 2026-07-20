@@ -105,6 +105,8 @@ export default {
     '🔒 **{effect}** is een Premium-effect. Gratis effecten: 🤖 Robot en 🔊 Echo. Ontgrendel ze allemaal met Vozen Premium — bekijk `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** is een Premium-stemengine. Ontgrendel hem met Vozen Plus (persoonlijk) of Vozen Premium (server) — bekijk `/premium`. Ondertussen blijft je stem op de gratis lokale engine.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** is een Premium-stemengine. Ontgrendel hem met Vozen Plus (persoonlijk) of Vozen Premium (server) — bekijk `/premium`. Ondertussen blijft je stem op de gratis lokale engine.',
   'voice.notInVoice': 'Ik zit nog niet in een spraakkanaal — gebruik eerst /join.',
   'voice.previewPlaying': 'Een voorbeeld afspelen…',
   'preview.sample': 'Hoi, ik ben Vozen. Typ het, hoor het.',
@@ -158,6 +160,8 @@ export default {
   'premium.lineUserFree': '👤 **Jij (Plus):** niet actief',
   'premium.getHint':
     'Alles wat je vandaag gebruikt, blijft gratis. Premium voegt alle 8 stemeffecten, 24/7 in de call, 50 persoonlijke uitspraken, /rizz en de premiumspellen toe. Steun: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Je Premium-pas:** {used}/{total} licenties in gebruik · verloopt {date}',
   'premium.passServers': '↳ In gebruik op: {servers}',
@@ -260,6 +264,7 @@ export default {
     'Reeksmeldingen **uit** — Vozen houdt reeksen nog steeds bij (zie `/topspeakers`) maar zegt er niets over.',
   'config.soundboardOn': 'Soundboard **aan** — iedereen kan clips afspelen met `/sound`.',
   'config.soundboardOff': 'Soundboard **uit** — `/sound` is uitgeschakeld op deze server.',
+  'config.votePromosLabel': 'Meldingen over top.gg-beloning + Vozen Support',
   'config.greetOn': '✅ Ik begroet mensen bij naam wanneer ze bij het spraakkanaal aansluiten.',
   'config.greetOff': '🔇 Ik begroet mensen **niet** wanneer ze bij het spraakkanaal aansluiten.',
   'config.greetLangSet': '✅ Taal van de begroeting bij binnenkomst ingesteld op **{language}**.',
@@ -341,13 +346,14 @@ export default {
   'invite.link': 'Voeg Vozen toe aan je server:\n{url}',
   'vote.noClientId':
     'De stemlink van Vozen is nog niet ingesteld (CLIENT_ID ontbreekt). Laat het de botbeheerder weten.',
-  'vote.link': 'Stem op Vozen (gratis, elke 12 uur) en help meer mensen om het te vinden:\n{url}',
+  'vote.link':
+    'Stem op Vozen (gratis, elke 12 uur) en help meer mensen om het te vinden:\n{url}\nAls dit account de beloning nog nooit heeft geclaimd, krijgt het **48 uur Vozen Plus**, slechts één keer per account.',
   'invite.button': 'Vozen toevoegen',
   'vote.button': 'Stem op top.gg',
   'vote.upsell':
-    '🗳️ Geen Plus? Stem op Vozen op top.gg → **24u Plus gratis** (één keer per maand): {url}',
+    '🗳️ Als dit account de beloning nog nooit heeft geclaimd, krijgt het **48 uur Vozen Plus**, slechts één keer per account. {url}',
   'vote.cooldownStatus':
-    '🗳️ Je hebt je stembeloning al geclaimd — stem opnieuw voor nog eens **24u Plus** {date}.',
+    '🗳️ Dit account heeft de eenmalige stembeloning al gebruikt. Je kunt nog steeds stemmen om Vozen te steunen, maar krijgt geen extra Plus.',
   'help.title': 'Vozen — typ het, hoor het.',
   'help.embedTitle': "Vozen — Commando's",
   'help.intro':
@@ -376,6 +382,8 @@ export default {
   'welcome.title': 'Bedankt voor het toevoegen van Vozen! 👋',
   'welcome.description':
     "Vozen leest je chat hardop voor in spraakkanalen — typ het, hoor het.\n\n**Begin in één stap:** gebruik {setup} en ik stel automatisch voorlezen in en sluit me aan bij je spraakkanaal.\n\nWil je de volledige lijst met commando's? Gebruik {help}.",
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Hoe leden het gebruiken (3 stappen)',
   'welcome.stepsBody':
     "1) Sluit je aan bij een spraakkanaal\n2) Gebruik /join zodat ik me bij je aansluit\n3) Typ in het tekstkanaal (of gebruik /tts) en ik lees het hardop voor\nVolledige lijst met commando's: /help",

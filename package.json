@@ -13,6 +13,7 @@
     "start": "node dist/index.js",
     "start:prod": "npm run build && node scripts/start-prod.mjs",
     "start:sharded": "node dist/shard.js",
+    "backup:db": "node scripts/backup-db.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc -p tsconfig.test.json --noEmit",

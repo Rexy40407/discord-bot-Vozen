@@ -148,7 +148,7 @@ export default {
   'vote.noClientId':
     'ვოქსის ხმის მიცემის ბმული ჯერ არ არის დაყენებული (CLIENT_ID აკლია). აცნობეთ ბოტის ადმინისტრატორს.',
   'vote.link':
-    'მიეცით ხმა ვოქსის (უფასოდ, ყოველ 12სთ-ში) და დაეხმარეთ, მეტმა ადამიანმა აღმოაჩინოს:\n{url}',
+    'მიეცით ხმა ვოქსის (უფასოდ, ყოველ 12სთ-ში) და დაეხმარეთ, მეტმა ადამიანმა აღმოაჩინოს:\n{url}\nთუ ამ ანგარიშს ჯილდო არასდროს მიუღია, მიიღებს **Vozen Plus-ის 48 საათს**, მხოლოდ ერთხელ თითო ანგარიშზე.',
   'help.title': 'ვოქსი — აკრიფე, მოისმინე.',
   'help.embedTitle': 'ვოქსი — ბრძანებები',
   'help.intro':
@@ -175,6 +175,8 @@ export default {
   'welcome.title': 'გმადლობთ ვოქსის დამატებისთვის! 👋',
   'welcome.description':
     'ვოქსი კითხულობს თქვენს ჩატს ხმამაღლა ხმოვან არხებში — აკრიფე, მოისმინე.\n\n**დაიწყეთ ერთი ნაბიჯით:** გაუშვით {setup} და მე დავაყენებ ავტოკითხვას და შემოვალ თქვენს ხმოვან არხში.\n\nგჭირდებათ ბრძანებების სრული სია? გაუშვით {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'როგორ იყენებენ ამას წევრები (3 ნაბიჯი)',
   'welcome.stepsBody':
     '1) შედით ხმოვან არხში\n2) გაუშვით /join, რომ შემოვიდე თქვენთან\n3) დაწერეთ ტექსტურ არხში (ან გამოიყენეთ /tts) და მე ხმამაღლა წავიკითხავ\nბრძანებების სრული სია: /help',
@@ -236,6 +238,8 @@ export default {
     '🔒 **{effect}** Premium ეფექტია. უფასო ეფექტები: 🤖 Robot და 🔊 Echo. ყველა გახსენით ვოქსი Premium-ით — იხილეთ `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** Premium ხმის ძრავაა. გახსენით ვოქსი Plus-ით (პირადი) ან ვოქსი Premium-ით (სერვერი) — იხილეთ `/premium`. მანამდე თქვენი ხმა უფასო ლოკალურ ძრავაზე რჩება.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** Premium ხმის ძრავაა. გახსენით ვოქსი Plus-ით (პირადი) ან ვოქსი Premium-ით (სერვერი) — იხილეთ `/premium`. მანამდე თქვენი ხმა უფასო ლოკალურ ძრავაზე რჩება.',
   'rizz.playing': '😏 ვისვრი ცოტა ხიბლს…\n> {line}',
   'rizz.unknownLang': 'ეს ენა არ ვიცი. აირჩიეთ ერთ-ერთი სიიდან.',
   'rizz.locked':
@@ -281,6 +285,8 @@ export default {
   'premium.lineUserFree': '👤 **თქვენ (Plus):** არააქტიური',
   'premium.getHint':
     'ყველაფერი, რასაც დღეს იყენებთ, უფასო რჩება. Premium ამატებს ხმის 8-ვე ეფექტს, 24/7 ზარში ყოფნას, 50 პირად გამოთქმას, /rizz-ს და premium თამაშებს. მხარდაჭერა: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **თქვენი Premium პასი:** გამოყენებულია {used}/{total} ლიცენზია · იწურება {date}',
   'premium.passServers': '↳ გამოიყენება: {servers}',
@@ -349,6 +355,7 @@ export default {
   'config.soundboardOn':
     'საუნდბორდი **ჩართულია** — ნებისმიერს შეუძლია კლიპების ჩართვა `/sound`-ით.',
   'config.soundboardOff': 'საუნდბორდი **გამორთულია** — `/sound` ამ სერვერზე გათიშულია.',
+  'config.votePromosLabel': 'top.gg-ის ჯილდოს შეტყობინებები + Vozen Support',
   'config.greetOn': '✅ ხმოვან არხში შესვლისას ადამიანებს სახელით მივესალმები.',
   'config.greetOff': '🔇 ხმოვან არხში შესვლისას ადამიანებს **არ** მივესალმები.',
   'config.greetLangSet': '✅ შესვლის მისალმების ენად დაყენდა **{language}**.',
@@ -370,9 +377,9 @@ export default {
   'invite.button': 'ვოქსის დამატება',
   'vote.button': 'ხმის მიცემა top.gg-ზე',
   'vote.upsell':
-    '🗳️ Plus არ გაქვთ? მიეცით ხმა ვოქსის top.gg-ზე → **24სთ Plus უფასოდ** (თვეში ერთხელ): {url}',
+    '🗳️ თუ ამ ანგარიშს ჯილდო არასდროს მიუღია, მიიღებს **Vozen Plus-ის 48 საათს**, მხოლოდ ერთხელ თითო ანგარიშზე. {url}',
   'vote.cooldownStatus':
-    '🗳️ ხმის მიცემის ჯილდო უკვე მიიღეთ — მიეცით ხმა ხელახლა კიდევ **24სთ Plus**-ისთვის {date}.',
+    '🗳️ ამ ანგარიშმა ერთჯერადი ხმის ჯილდო უკვე გამოიყენა. Vozen-ის მხარდასაჭერად ხმის მიცემა კვლავ შეგიძლია, მაგრამ დამატებით Plus-ს ვერ მიიღებ.',
   'help.support': '🛟 გჭირდებათ დახმარება ან გსურთ პრობლემის შეტყობინება? {url}',
   'help.source': '📄 ღია კოდი (AGPL-3.0) — მიიღეთ ზუსტი კოდი, რომელიც აქ მუშაობს: {url}',
   'game.start.needVoice':

@@ -102,6 +102,8 @@ export default {
     '🔒 **{effect}** är en Premium-effekt. Gratiseffekter: 🤖 Robot och 🔊 Echo. Lås upp alla med Vozen Premium — se `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** är en Premium-röstmotor. Lås upp den med Vozen Plus (personligt) eller Vozen Premium (server) — se `/premium`. Under tiden stannar din röst på den gratis lokala motorn.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** är en Premium-röstmotor. Lås upp den med Vozen Plus (personligt) eller Vozen Premium (server) — se `/premium`. Under tiden stannar din röst på den gratis lokala motorn.',
   'voice.notInVoice': 'Jag är inte i någon röstkanal än — kör /join först.',
   'voice.previewPlaying': 'Spelar upp ett prov…',
   'preview.sample': 'Hej, jag är Vozen. skriv det, hör det.',
@@ -154,6 +156,8 @@ export default {
   'premium.lineUserFree': '👤 **Du (Plus):** inte aktiv',
   'premium.getHint':
     'Allt du använder idag förblir gratis. Premium lägger till alla 8 rösteffekter, 24/7 i samtal, 50 personliga uttal, /rizz och premiumspelen. Stöd: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass': '🎟️ **Ditt Premium-pass:** {used}/{total} licenser i bruk · går ut {date}',
   'premium.passServers': '↳ I bruk på: {servers}',
   'premium.pitch':
@@ -253,6 +257,7 @@ export default {
     'Streak-aviseringar **av** — Vozen håller fortfarande koll på streaks (se `/topspeakers`) men säger inget om dem.',
   'config.soundboardOn': 'Ljudbräda **på** — vem som helst kan spela upp klipp med `/sound`.',
   'config.soundboardOff': 'Ljudbräda **av** — `/sound` är inaktiverat på den här servern.',
+  'config.votePromosLabel': 'Notiser om top.gg-belöningen + Vozen Support',
   'config.greetOn': '✅ Jag hälsar folk vid namn när de går med i röstkanalen.',
   'config.greetOff': '🔇 Jag hälsar **inte** folk när de går med i röstkanalen.',
   'config.greetLangSet': '✅ Språk för välkomsthälsning satt till **{language}**.',
@@ -334,13 +339,14 @@ export default {
   'invite.link': 'Lägg till Vozen på din server:\n{url}',
   'vote.noClientId':
     'Vozens röstlänk är inte uppsatt ännu (CLIENT_ID saknas). Meddela bottens administratör.',
-  'vote.link': 'Rösta på Vozen (gratis, var 12:e timme) och hjälp fler att hitta den:\n{url}',
+  'vote.link':
+    'Rösta på Vozen (gratis, var 12:e timme) och hjälp fler att hitta den:\n{url}\nOm kontot aldrig har hämtat belöningen får det **48 timmar Vozen Plus**, endast en gång per konto.',
   'invite.button': 'Lägg till Vozen',
   'vote.button': 'Rösta på top.gg',
   'vote.upsell':
-    '🗳️ Inget Plus? Rösta på Vozen på top.gg → **24h Plus gratis** (en gång i månaden): {url}',
+    '🗳️ Om kontot aldrig har hämtat belöningen får det **48 timmar Vozen Plus**, endast en gång per konto. {url}',
   'vote.cooldownStatus':
-    '🗳️ Du har redan hämtat din röstbelöning — rösta igen för ytterligare **24h Plus** {date}.',
+    '🗳️ Det här kontot har redan använt sin engångsbelöning för röstning. Du kan fortfarande rösta för att stödja Vozen, men får inget mer Plus.',
   'help.title': 'Vozen — skriv det, hör det.',
   'help.embedTitle': 'Vozen — Kommandon',
   'help.intro': 'Vozen läser upp din text i röstkanaler — gratis neurala röster, dussintals språk.',
@@ -368,6 +374,8 @@ export default {
   'welcome.title': 'Tack för att du la till Vozen! 👋',
   'welcome.description':
     'Vozen läser upp din chatt i röstkanaler — skriv det, hör det.\n\n**Kom igång i ett steg:** kör {setup} så ställer jag in automatisk uppläsning och går med i din röstkanal.\n\nBehöver du hela kommandolistan? Kör {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Så använder medlemmar det (3 steg)',
   'welcome.stepsBody':
     '1) Gå med i en röstkanal\n2) Kör /join så går jag med dig\n3) Skriv i textkanalen (eller använd /tts) så läser jag upp det\nFullständig kommandolista: /help',

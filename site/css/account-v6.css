@@ -4162,3 +4162,9 @@ body.page-account .ppanel__logoutaction:active {
     grid-template-columns: 1fr;
   }
 }
+
+/* Discord avatars are circular at every account breakpoint. Keep this final so
+   the compact layout rules above can resize the avatar without reshaping it. */
+body.page-account .ppanel__av {
+  border-radius: 50%;
+}

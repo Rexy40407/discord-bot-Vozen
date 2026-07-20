@@ -34,6 +34,7 @@ describe('loadConfig', () => {
       HEALTH_PORT: undefined,
       TOPGG_WEBHOOK_PORT: undefined,
       TOPGG_WEBHOOK_SECRET: undefined,
+      VOTE_REDEMPTION_SECRET: undefined,
       TOPGG_WEBHOOK_ALLOW_INSECURE: undefined,
       GTTS_CHUNK_CONCURRENCY: undefined,
       BOT_SHARDS: undefined,
@@ -233,8 +234,19 @@ describe('loadConfig', () => {
   });
 
   it('reads TOPGG_WEBHOOK_SECRET from env', () => {
+    setEnv({
+      ...REQUIRED,
+      TOPGG_WEBHOOK_SECRET: 's3cr3t',
+      VOTE_REDEMPTION_SECRET: '0123456789abcdef0123456789abcdef',
+    });
+    const cfg = loadConfig();
+    expect(cfg.topggWebhookSecret).toBe('s3cr3t');
+    expect(cfg.voteRedemptionSecret).toBe('0123456789abcdef0123456789abcdef');
+  });
+
+  it('refuses to start a vote endpoint with a missing lifetime-ledger secret', () => {
     setEnv({ ...REQUIRED, TOPGG_WEBHOOK_SECRET: 's3cr3t' });
-    expect(loadConfig().topggWebhookSecret).toBe('s3cr3t');
+    expect(() => loadConfig()).toThrow(/invalid security configuration/i);
   });
 
   // P11.4 — optional BOT_SHARDS: absent/empty => undefined (single-process

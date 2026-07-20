@@ -105,6 +105,8 @@ export default {
     '🔒 **{effect}** — це ефект Premium. Безкоштовні ефекти: 🤖 Robot і 🔊 Echo. Розблокуйте всі з Vozen Premium — перегляньте `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** — це голосовий рушій Premium. Розблокуйте його з Vozen Plus (особистий) або Vozen Premium (сервер) — перегляньте `/premium`. Тим часом ваш голос лишається на безкоштовному локальному рушії.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** — це голосовий рушій Premium. Розблокуйте його з Vozen Plus (особистий) або Vozen Premium (сервер) — перегляньте `/premium`. Тим часом ваш голос лишається на безкоштовному локальному рушії.',
   'voice.notInVoice': 'Я ще не в голосовому каналі — спочатку виконайте /join.',
   'voice.previewPlaying': 'Відтворюю зразок…',
   'preview.sample': 'Привіт, я Vozen. напишіть це, почуйте це.',
@@ -157,6 +159,8 @@ export default {
   'premium.lineUserFree': '👤 **Ви (Plus):** неактивний',
   'premium.getHint':
     'Усе, чим ви користуєтеся сьогодні, лишається безкоштовним. Premium додає всі 8 голосових ефектів, режим 24/7 у дзвінку, 50 особистих вимов, /rizz та преміум-ігри. Підтримка: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Ваш пропуск Premium:** використано {used}/{total} ліцензій · спливає {date}',
   'premium.passServers': '↳ Використовується на: {servers}',
@@ -261,6 +265,7 @@ export default {
   'config.soundboardOn':
     'Саундборд **увімкнено** — будь-хто може відтворювати кліпи за допомогою `/sound`.',
   'config.soundboardOff': 'Саундборд **вимкнено** — `/sound` вимкнено на цьому сервері.',
+  'config.votePromosLabel': 'Сповіщення про нагороду top.gg + Vozen Support',
   'config.greetOn': "✅ Я вітатиму людей на ім'я, коли вони заходять до голосового каналу.",
   'config.greetOff': '🔇 Я **не** вітатиму людей, коли вони заходять до голосового каналу.',
   'config.greetLangSet': '✅ Мову вітання при вході встановлено на **{language}**.',
@@ -341,13 +346,13 @@ export default {
   'vote.noClientId':
     'Посилання для голосування за Vozen ще не налаштоване (відсутній CLIENT_ID). Повідомте про це адміністратора бота.',
   'vote.link':
-    'Проголосуйте за Vozen (безкоштовно, кожні 12 год) і допоможіть більшій кількості людей знайти його:\n{url}',
+    'Проголосуйте за Vozen (безкоштовно, кожні 12 год) і допоможіть більшій кількості людей знайти його:\n{url}\nЯкщо цей обліковий запис ще не отримував нагороду, він отримає **48 годин Vozen Plus**, лише один раз на обліковий запис.',
   'invite.button': 'Додати Vozen',
   'vote.button': 'Проголосувати на top.gg',
   'vote.upsell':
-    '🗳️ Немає Plus? Проголосуйте за Vozen на top.gg → **24 год Plus безкоштовно** (раз на місяць): {url}',
+    '🗳️ Якщо цей обліковий запис ще не отримував нагороду, він отримає **48 годин Vozen Plus**, лише один раз на обліковий запис. {url}',
   'vote.cooldownStatus':
-    '🗳️ Ви вже отримали нагороду за голос — проголосуйте знову заради ще **24 год Plus** {date}.',
+    '🗳️ Цей обліковий запис уже використав одноразову нагороду за голос. Ви все ще можете голосувати на підтримку Vozen, але додатковий Plus не нараховується.',
   'help.title': 'Vozen — напишіть це, почуйте це.',
   'help.embedTitle': 'Vozen — Команди',
   'help.intro':
@@ -376,6 +381,8 @@ export default {
   'welcome.title': 'Дякуємо, що додали Vozen! 👋',
   'welcome.description':
     'Vozen зачитує ваш чат вголос у голосових каналах — напишіть це, почуйте це.\n\n**Почніть в один крок:** виконайте {setup}, і я налаштую автозачитування та приєднаюся до вашого голосового каналу.\n\nПотрібен повний список команд? Виконайте {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Як учасники цим користуються (3 кроки)',
   'welcome.stepsBody':
     '1) Зайдіть до голосового каналу\n2) Виконайте /join, щоб я приєднався до вас\n3) Пишіть у текстовому каналі (або скористайтеся /tts), і я озвучу це вголос\nПовний список команд: /help',

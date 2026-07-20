@@ -13,7 +13,7 @@ const CANONICAL_PERMISSIONS = '326420745216';
 const CANONICAL_INVITE =
   `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}` +
   `&permissions=${CANONICAL_PERMISSIONS}&scope=bot%20applications.commands`;
-const SUPPORT_URL = 'https://discord.gg/V6PZYZmhcQ';
+const SUPPORT_URL = 'https://discord.gg/4kYw2WUbNN';
 
 const normalizedDiscordInvites = (content: string): string[] =>
   [...content.matchAll(/https:\/\/discord\.com\/oauth2\/authorize\?[^"')\s]+/g)].map((match) =>
@@ -46,7 +46,7 @@ describe('site acquisition and trust contracts', () => {
   it('keeps the bot, runtime, HTML fallbacks, and README on one invite bitfield', () => {
     expect(INVITE_PERMISSIONS).toBe(CANONICAL_PERMISSIONS);
 
-    const runtime = source('site/js/main-v41.js');
+    const runtime = source('site/js/main-v42.js');
     expect(runtime).toContain(`const INVITE_PERMISSIONS = "${CANONICAL_PERMISSIONS}";`);
     expect(runtime).toContain(
       '`https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&permissions=${INVITE_PERMISSIONS}&scope=bot%20applications.commands`',
@@ -75,7 +75,7 @@ describe('site acquisition and trust contracts', () => {
       'site/index.html',
       'site/privacy.html',
       'site/terms.html',
-      'site/js/main-v41.js',
+      'site/js/main-v42.js',
     ]) {
       const urls = supportUrls(source(path));
       expect(urls.length, path).toBeGreaterThan(0);
@@ -105,7 +105,12 @@ describe('site acquisition and trust contracts', () => {
     expect(homepage).toContain('38 neural voices in 35 languages and 16 minigames');
     expect(homepage).toContain('Core free forever; Premium adds optional extras.');
     expect(homepage).toContain('data-to="16"');
-    expect(homepage).toContain('all 38 voices in 35 languages');
+    expect(homepage).toContain('38 Piper voices in 35 languages');
+    expect(homepage).toContain('Kokoro and Google HD are Premium voice engines');
+    expect(homepage).toContain('data-i18n="price.m.21"');
+    expect(homepage).toMatch(
+      /data-i18n="price\.m\.21"[^>]*>Kokoro neural engine<\/th><td[^>]*class="has-not">—<\/td><td[^>]*class="has">✓<\/td><td[^>]*class="has">✓<\/td>/,
+    );
   });
 
   it('runs the parser-based English fallback verifier before building the site', () => {

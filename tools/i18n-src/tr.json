@@ -26,7 +26,7 @@
     "hero.mini": "35 dil · 38 ses · 16 mini oyun · ücretsiz temel sürüm",
     "hear.eyebrow": "Dinle",
     "hear.title": "Oynat'a bas. Bu gerçek bir Vozen sesi.",
-    "hear.sub": "Her klip Vozen'in kendisi tarafından üretilir. Google, Piper ve Kokoro'yu karşılaştırmak için motorları değiştir.",
+    "hear.sub": "Tüm motorları dene. Piper ücretsizdir; Kokoro, Vozen Plus veya Premium ile açılır.",
     "stat.langs": "dil",
     "stat.voices": "nöral ses",
     "stat.games": "mini oyun",
@@ -50,7 +50,7 @@
     "feat.7.t": "Ses efektleri",
     "feat.7.d": "Robot, yankı, kalın, sincap, radyo, iblis… mesajların, dönüştürülmüş halde. İki efekt ücretsiz, sekizinin tamamı Premium ile.",
     "feat.8.t": "Adil Premium",
-    "feat.8.d": "€3.99/ay ekstraların kilidini açar. Bugün ücretsiz olan her şey ücretsiz kalır — bu bir söz, oyun değil.",
+    "feat.8.d": "Aylık €3.99 Kokoro ve sunucu ekstralarını açar. Temel Piper çekirdeği ücretsiz kalır.",
     "feat.9.t": "Açık kaynak",
     "feat.9.d": "Vozen'in tüm kodu GitHub'da herkese açık. İncele, öğren ya da bir PR aç — gizli bir şey yok, casus yazılım yok.",
     "lang.eyebrow": "Diller",
@@ -81,7 +81,7 @@
     "cmd.admin": "Yönetici",
     "price.eyebrow": "Fiyatlandırma",
     "price.title": "Ücretsiz temel sürüm. Adil Premium.",
-    "price.sub": "Vozen'in bugün yaptığı her şey ücretsiz kalır — sonsuza dek. Premium, bize gerçek işlem gücüne mal olan ekstraları ekler.",
+    "price.sub": "Piper tabanlı çekirdek ücretsiz kalır. Premium; Kokoro, Google HD ve daha fazla işlem gücü kullanan ekstraları açar.",
     "price.choose.title": "Yükseltmenin kime ait olacağını seç.",
     "price.choose.sub": "Temel özellikleri ücretsiz kullan, kendini yükselt veya sunucundaki herkes için Premium'u aç.",
     "price.free.pitch": "Tüm temel özellikler. Kart yok, deneme yok.",
@@ -146,7 +146,7 @@
     "price.max.note": "Yılda 75,99 € (~%20 tasarruf) · Ko-fi’de al",
     "price.pro.seats3": "3 sunucu",
     "price.pro.seats10": "8 sunucu",
-    "price.m.1": "38 ses",
+    "price.m.1": "38 Piper sesi",
     "price.m.2": "35 dil",
     "price.m.3": "Kanalını sesli okur",
     "price.m.4": "Şakalar ve selamlamalar",
@@ -300,7 +300,8 @@
     "account.defaultUser": "Discord kullanıcısı",
     "account.discordAvatar": "{name} avatarı",
     "dashboard.retry": "Tekrar dene",
-    "dashboard.secureTokenError": "Tarayıcın güvenli bir giriş belirteci oluşturamıyor. Lütfen güncelle."
+    "dashboard.secureTokenError": "Tarayıcın güvenli bir giriş belirteci oluşturamıyor. Lütfen güncelle.",
+    "price.m.21": "Kokoro nöral ses motoru"
   },
   "commands": {
     "general": [
@@ -350,11 +351,11 @@
   "faq": [
     [
       "Vozen gerçekten ücretsiz mi?",
-      "Evet — Vozen'in bugün yaptığı her şey ücretsiz ve ücretsiz kalıyor: tüm sesler, 15 oyunun tamamı, selamlamalar, yönetici araçları. Vozen Premium (sunucu başına €3.99/ay) yalnızca tam ses efekti paketi gibi isteğe bağlı ekstralar ekler. Kullandığın hiçbir şey asla ücretli duvarın ardına geçmez."
+      "Evet — çekirdek ücretsiz kalır: 35 dilde 38 Piper sesi, otomatik okuma, selamlamalar, oyunların çoğu ve tüm yönetici kontrolleri. Kokoro ve Google HD Premium motorlardır; Plus kişisel, Premium ise sunucu çapında açar."
     ],
     [
       "Premium neleri içerir?",
-      "8 ses efektinin tamamı (kalın, iblis, radyo, su altı…), premium nöral seslerle, ve kanal boşalsa bile ses kanalında kalır. Sunucu başına €3.99/ay ya da €37.99/yıl veya sunucular arasında seninle gelen kişisel ayrıcalıklar için Vozen Plus (€1.99/ay). Kodları /premium activate ile kullan. Ko-fi’de satın aldıktan sonra vozen.org/account’ta etkinleştir — Discord ile giriş yap ve Ko-fi makbuzundaki işlem kodunu yapıştır."
+      "Kokoro nöral ve Google HD motorları, 8 ses efektinin tamamı, 7/24 kanalda kalma, 50 kişisel telaffuz, /rizz ve Premium oyunlar. Aylık €3.99 3 sunucuyu, €7.99 ise 8 sunucuyu kapsar; Vozen Plus (€1.99/ay) kişisel ayrıcalıkları her sunucuda verir."
     ],
     [
       "Vozen'i sunucuma nasıl eklerim?",
@@ -373,8 +374,8 @@
       "Evet. Her üye /voice set ile kendi sesini ve dilini ayarlar, üstelik Vozen her mesajın dilini otomatik olarak bile algılayabilir."
     ],
     [
-      "Google mı Piper mı — hangi ses motoru?",
-      "İkisi de ücretsiz. Google (varsayılan) 35 dilin tamamını anında kapsar; Piper kendi sunucumuzda çalışır ve bazı dillerde, örneğin Portekizce'de, çoğu zaman daha iyi ses verir. /voice set ile istediğin zaman değiştir — kişiye özeldir."
+      "Piper, Kokoro veya Google HD — hangi ses motoru?",
+      "Piper ücretsiz yerel motordur. Kokoro nöral ve Google HD için kişisel Vozen Plus ya da sunucuda Vozen Premium gerekir. /voice set ile değiştir; erişim bitince otomatik olarak ücretsiz motora döner."
     ],
     [
       "Özellikleri nasıl kapatırım?",

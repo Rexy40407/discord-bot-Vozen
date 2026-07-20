@@ -134,9 +134,13 @@ export async function handleServerStats(
       );
     }
   } else {
-    // Free: teaser -> upsell (perk discovery) + invitation to vote (24h of free Plus).
+    // Free: teaser + one-time vote reward, only while this account is eligible.
     lines.push(t('serverstats.upsell', locale));
-    const vote = voteUpsellLine(locale, deps.config.clientId);
+    const vote =
+      deps.config.voteRedemptionSecret &&
+      voteRewardStatus(deps.db, i.user.id, deps.config.voteRedemptionSecret).eligible
+        ? voteUpsellLine(locale, deps.config.clientId)
+        : null;
     if (vote) lines.push(vote);
   }
 
@@ -146,7 +150,6 @@ export async function handleServerStats(
 // Discord renders <t:SECONDS:D> as a per-user localized date.
 const stampDate = (ms: number): string => `<t:${Math.floor(ms / 1000)}:D>`;
 // <t:SECONDS:R> = localized RELATIVE time ("in 3 days").
-const stampRelative = (ms: number): string => `<t:${Math.floor(ms / 1000)}:R>`;
 
 /** Server names (best-effort via cache; fallback = id) for the pass messages. */
 function serverNames(deps: BotDeps, ids: string[]): string {
@@ -203,18 +206,23 @@ async function handlePremiumInfo(i: ChatInputCommandInteraction, deps: BotDeps):
 
   const anyActive = guildActive || passActive || uActive;
   const desc = anyActive
-    ? lines
-    : [t('premium.pitch', locale), '', t('premium.buyHint', locale, { link: deps.config.kofiUrl })];
-  // Without Plus: offers the FREE path (vote → 24h). If the reward was already earned this
-  // month, shows WHEN it becomes available again — so it doesn't send people to vote in vain
-  // (30-day cooldown).
-  if (!anyActive) {
-    const vs = voteRewardStatus(deps.db, i.user.id, now);
+    ? [...lines, '', t('premium.enginePerks', locale)]
+    : [
+        t('premium.pitch', locale),
+        '',
+        t('premium.enginePerks', locale),
+        '',
+        t('premium.buyHint', locale, { link: deps.config.kofiUrl }),
+      ];
+  // Without Plus: offer the 48h reward only if this account never used it.
+  // Claimed accounts get an honest permanent status instead of a false countdown.
+  if (!anyActive && deps.config.voteRedemptionSecret) {
+    const vs = voteRewardStatus(deps.db, i.user.id, deps.config.voteRedemptionSecret);
     if (vs.eligible) {
       const vote = voteUpsellLine(locale, deps.config.clientId);
       if (vote) desc.push('', vote);
-    } else if (vs.nextEligibleAt !== null) {
-      desc.push('', t('vote.cooldownStatus', locale, { date: stampRelative(vs.nextEligibleAt) }));
+    } else {
+      desc.push('', t('vote.cooldownStatus', locale));
     }
   }
   const embed = brandEmbed(anyActive ? 'premium' : 'brand')
@@ -552,7 +560,12 @@ export async function handleVote(i: ChatInputCommandInteraction, deps: BotDeps):
       .setLabel(t('vote.button', locale))
       .setEmoji('🗳️'),
   );
-  await i.reply(replyCard(t('vote.link', locale, { url }), { rows: [row] }));
+  const claimed =
+    deps.config.voteRedemptionSecret &&
+    voteRewardStatus(deps.db, i.user.id, deps.config.voteRedemptionSecret).alreadyRedeemed;
+  const content = [t('vote.link', locale, { url })];
+  if (claimed) content.push(t('vote.cooldownStatus', locale));
+  await i.reply(replyCard(content.join('\n\n'), { rows: [row] }));
 }
 
 /**
@@ -614,10 +627,9 @@ export async function handleHelp(i: ChatInputCommandInteraction, deps: BotDeps):
 
   const embed = brandEmbed()
     .setTitle(t('help.embedTitle', locale))
-    // Description: brand tagline + what Vozen does (intro) + the differentiator
-    // (free neural voice) — the same key as the welcome embed — + support + source (AGPL §13).
+    // Description: what Vozen does + the free/paid engine boundary, then support and source.
     .setDescription(
-      `${t('help.title', locale)}\n${t('help.intro', locale)}\n\n${t('welcome.tagline', locale)}\n\n${supportLine}\n${sourceLine}`,
+      `${t('help.title', locale)}\n${t('help.intro', locale)}\n\n${t('welcome.enginePlans', locale)}\n\n${supportLine}\n${sourceLine}`,
     )
     .addFields(fields)
     .setFooter({ text: t('help.footer', locale, { command: '/setup' }) });

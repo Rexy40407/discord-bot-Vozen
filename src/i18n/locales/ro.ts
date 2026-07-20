@@ -104,6 +104,8 @@ export default {
     '🔒 **{effect}** este un efect Premium. Efecte gratuite: 🤖 Robot și 🔊 Echo. Deblochează-le pe toate cu Vozen Premium — vezi `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** este un motor de voce Premium. Deblochează-l cu Vozen Plus (personal) sau Vozen Premium (server) — vezi `/premium`. Între timp, vocea ta rămâne pe motorul local gratuit.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** este un motor de voce Premium. Deblochează-l cu Vozen Plus (personal) sau Vozen Premium (server) — vezi `/premium`. Între timp, vocea ta rămâne pe motorul local gratuit.',
   'voice.notInVoice': 'Încă nu sunt într-un canal de voce — rulează /join mai întâi.',
   'voice.previewPlaying': 'Redau o mostră…',
   'preview.sample': 'Bună, sunt Vozen. scrie-l, ascultă-l.',
@@ -157,6 +159,8 @@ export default {
   'premium.lineUserFree': '👤 **Tu (Plus):** inactiv',
   'premium.getHint':
     'Tot ce folosești astăzi rămâne gratuit. Premium adaugă toate cele 8 efecte de voce, prezența 24/7 în apel, 50 de pronunții personale, /rizz și jocurile premium. Suport: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Abonamentul tău Premium:** {used}/{total} licențe în uz · expiră {date}',
   'premium.passServers': '↳ În uz pe: {servers}',
@@ -261,6 +265,7 @@ export default {
     'Anunțuri de serie **oprite** — Vozen tot urmărește seriile (vezi `/topspeakers`), dar nu le anunță.',
   'config.soundboardOn': 'Soundboard **activ** — oricine poate reda clipuri cu `/sound`.',
   'config.soundboardOff': 'Soundboard **oprit** — `/sound` este dezactivat pe acest server.',
+  'config.votePromosLabel': 'Notificări despre recompensa top.gg + Vozen Support',
   'config.greetOn': '✅ Voi saluta oamenii pe nume când intră în canalul de voce.',
   'config.greetOff': '🔇 **Nu** voi saluta oamenii când intră în canalul de voce.',
   'config.greetLangSet': '✅ Limba salutului de intrare setată la **{language}**.',
@@ -343,13 +348,13 @@ export default {
   'vote.noClientId':
     'Linkul de vot al lui Vozen nu este încă configurat (CLIENT_ID lipsește). Anunță administratorul botului.',
   'vote.link':
-    'Votează Vozen (gratuit, la fiecare 12h) și ajută mai mulți oameni să-l descopere:\n{url}',
+    'Votează Vozen (gratuit, la fiecare 12h) și ajută mai mulți oameni să-l descopere:\n{url}\nDacă acest cont nu a revendicat niciodată recompensa, primește **48 de ore de Vozen Plus**, o singură dată per cont.',
   'invite.button': 'Adaugă Vozen',
   'vote.button': 'Votează pe top.gg',
   'vote.upsell':
-    '🗳️ Fără Plus? Votează Vozen pe top.gg → **24h de Plus gratuit** (o dată pe lună): {url}',
+    '🗳️ Dacă acest cont nu a revendicat niciodată recompensa, primește **48 de ore de Vozen Plus**, o singură dată per cont. {url}',
   'vote.cooldownStatus':
-    '🗳️ Ți-ai revendicat deja recompensa pentru vot — votează din nou pentru încă **24h de Plus** {date}.',
+    '🗳️ Acest cont a folosit deja recompensa unică pentru vot. Poți vota în continuare pentru a susține Vozen, dar nu vei primi mai mult Plus.',
   'help.title': 'Vozen — scrie-l, ascultă-l.',
   'help.embedTitle': 'Vozen — Comenzi',
   'help.intro':
@@ -378,6 +383,8 @@ export default {
   'welcome.title': 'Mulțumim că ai adăugat Vozen! 👋',
   'welcome.description':
     'Vozen îți citește conversația cu voce tare în canalele de voce — scrie-l, ascultă-l.\n\n**Începe într-un singur pas:** rulează {setup} și configurez citirea automată și intru în canalul tău de voce.\n\nAi nevoie de lista completă de comenzi? Rulează {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Cum o folosesc membrii (3 pași)',
   'welcome.stepsBody':
     '1) Intră într-un canal de voce\n2) Rulează /join ca să intru cu tine\n3) Scrie în canalul text (sau folosește /tts) și citesc cu voce tare\nLista completă de comenzi: /help',

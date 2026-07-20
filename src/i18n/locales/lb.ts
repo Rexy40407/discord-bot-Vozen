@@ -150,7 +150,8 @@ export default {
   'invite.link': 'Füg de Vozen op ären Server bäi:\n{url}',
   'vote.noClientId':
     'De Vozen säi Stëmmlink ass nach net agestallt (CLIENT_ID feelt). Sot et dem Bot-Admin.',
-  'vote.link': 'Stëmm fir de Vozen (gratis, all 12h) an hëllef, datt méi Leit en fannen:\n{url}',
+  'vote.link':
+    'Stëmm fir de Vozen (gratis, all 12h) an hëllef, datt méi Leit en fannen:\n{url}\nWann dëse Kont d’Belounung nach ni geholl huet, kritt en **48 Stonne Vozen Plus**, nëmmen eemol pro Kont.',
   'help.title': 'Vozen — tipp et, héier et.',
   'help.embedTitle': 'Vozen — Kommandoen',
   'help.intro':
@@ -177,6 +178,8 @@ export default {
   'welcome.title': 'Merci, datt s du de Vozen bäigefüügt hues! 👋',
   'welcome.description':
     'De Vozen liest däi Chat haart a Sproochkanäl vir — tipp et, héier et.\n\n**Leeë lass an engem Schrëtt:** laf {setup} an ech riichten automatescht Virliesen an a trieden an däi Sproochkanal bäi.\n\nBrauchs du déi komplett Kommandolëscht? Laf {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Wéi Memberen et benotzen (3 Schrëtt)',
   'welcome.stepsBody':
     '1) Géi an ee Sproochkanal\n2) Laf /join, sou datt ech mat dir bäitrieden\n3) Tipp am Textkanal (oder benotz /tts) an ech liesen et haart vir\nKomplett Kommandolëscht: /help',
@@ -240,6 +243,8 @@ export default {
     '🔒 **{effect}** ass e Premium-Effekt. Gratis Effekter: 🤖 Robot an 🔊 Echo. Schalt all fräi mam Vozen Premium — kuck `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** ass e Premium-Stëmmmotor. Schalt e fräi mam Vozen Plus (perséinlech) oder Vozen Premium (Server) — kuck `/premium`. Bis dohin bleift deng Stëmm um gratis lokale Motor.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** ass e Premium-Stëmmmotor. Schalt e fräi mam Vozen Plus (perséinlech) oder Vozen Premium (Server) — kuck `/premium`. Bis dohin bleift deng Stëmm um gratis lokale Motor.',
   'rizz.playing': '😏 Maachen e bësse Rizz…\n> {line}',
   'rizz.unknownLang': 'Ech kennen dës Sprooch net. Wiel eng aus der Lëscht.',
   'rizz.locked':
@@ -287,6 +292,8 @@ export default {
   'premium.lineUserFree': '👤 **Du (Plus):** net aktiv',
   'premium.getHint':
     "Alles, wat s du haut benotz, bleift gratis. Premium füügt all 8 Stëmmeffekter, 24/7 an der Call, 50 perséinlech Aussproochen, /rizz an d'Premium-Spiller bäi. Support: https://ko-fi.com/",
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Däi Premium-Pass:** {used}/{total} Lizenzen a Benotzung · leeft {date} of',
   'premium.passServers': '↳ A Benotzung op: {servers}',
@@ -355,6 +362,7 @@ export default {
     "Streak-Meldungen **aus** — de Vozen verfollegt d'Streaks weider (kuck `/topspeakers`), awer bleift roueg doriwwer.",
   'config.soundboardOn': 'Soundboard **un** — jidderee kann Clipsen mat `/sound` spillen.',
   'config.soundboardOff': 'Soundboard **aus** — `/sound` ass op dësem Server deaktivéiert.',
+  'config.votePromosLabel': 'top.gg-Belounungshinweiser + Vozen Support',
   'config.greetOn': "✅ Ech begréissen d'Leit mam Numm, wann si an de Sproochkanal erakommen.",
   'config.greetOff': "🔇 Ech begréissen d'Leit **net**, wann si an de Sproochkanal erakommen.",
   'config.greetLangSet': "✅ Sprooch fir d'Begréissung beim Bäitrëtt op **{language}** gesat.",
@@ -376,9 +384,9 @@ export default {
   'invite.button': 'Vozen bäifügen',
   'vote.button': 'Op top.gg stëmmen',
   'vote.upsell':
-    '🗳️ Kee Plus? Stëmm fir de Vozen op top.gg → **24h Plus gratis** (eng Kéier de Mount): {url}',
+    '🗳️ Wann dëse Kont d’Belounung nach ni geholl huet, kritt en **48 Stonne Vozen Plus**, nëmmen eemol pro Kont. {url}',
   'vote.cooldownStatus':
-    '🗳️ Du hues deng Stëmm-Belounung schonn ofgeholl — stëmm nach eng Kéier fir weider **24h Plus** {date}.',
+    '🗳️ Dëse Kont huet seng eemoleg Stëmmbelounung scho benotzt. Du kanns weiderhi stëmme fir de Vozen z’ënnerstëtzen, mee et gëtt kee weidere Plus.',
   'help.support': '🛟 Brauchs du Hëllef oder wëlls e Problem mellen? {url}',
   'help.source': '📄 Open Source (AGPL-3.0) — kréi de genaue Quellcode, deen hei leeft: {url}',
   'game.start.needVoice':

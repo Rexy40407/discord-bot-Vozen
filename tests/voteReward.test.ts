@@ -1,20 +1,27 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type Database from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { initDb } from '../src/store/db';
-import { isUserPremium, getUserPremiumExpiry } from '../src/store/premium';
+import { getUserPremiumExpiry, grantUserPremium, isUserPremium } from '../src/store/premium';
 import {
   claimVoteReward,
-  voteRewardStatus,
   getVoteRewardAt,
+  hasRedeemedVoteReward,
+  initializeVoteRedemptionLedger,
+  purgeExpiredVoteRewards,
+  voteRedemptionHash,
+  voteRewardStatus,
   VOTE_REWARD_HOURS,
-  VOTE_REWARD_COOLDOWN_MS,
+  VOTE_REWARD_MS,
 } from '../src/store/voteReward';
 
-const HOUR_MS = 3_600_000;
-const DAY_MS = 86_400_000;
-const U = 'voter-1';
+const USER_ID = '123456789012345678';
+const SECRET = '0123456789abcdef0123456789abcdef';
+const NOW = 1_800_000_000_000;
 
-describe('voteReward — 24h reward with a 30-day cooldown', () => {
+describe('vote reward — one 48h claim per Discord account, ever', () => {
   let db: Database.Database;
 
   beforeEach(() => {
@@ -22,64 +29,136 @@ describe('voteReward — 24h reward with a 30-day cooldown', () => {
   });
   afterEach(() => db.close());
 
-  it('constants: reward = 24h, cooldown = 30 days', () => {
-    // Pin the literals (Diogo chose 24h + 1 month). Do NOT derive from the constant on
-    // both sides — otherwise the test is tautological and doesn't protect the value.
-    expect(VOTE_REWARD_HOURS).toBe(24);
-    expect(VOTE_REWARD_COOLDOWN_MS).toBe(30 * DAY_MS);
+  it('grants exactly 48h on the first verified vote', () => {
+    expect(VOTE_REWARD_HOURS).toBe(48);
+    const result = claimVoteReward(db, USER_ID, NOW, SECRET);
+
+    expect(result).toEqual({ granted: true, expiresAt: NOW + VOTE_REWARD_MS });
+    expect(getVoteRewardAt(db, USER_ID)).toBe(NOW);
+    expect(isUserPremium(db, USER_ID, NOW + VOTE_REWARD_MS - 1)).toBe(true);
+    expect(isUserPremium(db, USER_ID, NOW + VOTE_REWARD_MS)).toBe(false);
   });
 
-  it('1st vote: grants 24h of Plus and records the moment', () => {
-    const NOW = 1_000_000_000;
-    const res = claimVoteReward(db, U, NOW);
-    expect(res.granted).toBe(true);
-    expect(res.expiresAt).toBe(NOW + 24 * HOUR_MS);
-    expect(isUserPremium(db, U, NOW + 1000)).toBe(true);
-    expect(isUserPremium(db, U, NOW + 24 * HOUR_MS + 1)).toBe(false);
-    expect(getVoteRewardAt(db, U)).toBe(NOW);
+  it('never grants a second reward, even years later', () => {
+    claimVoteReward(db, USER_ID, NOW, SECRET);
+    const second = claimVoteReward(db, USER_ID, NOW + 10 * 365 * 86_400_000, SECRET);
+
+    expect(second).toEqual({ granted: false, alreadyRedeemed: true });
+    expect(getVoteRewardAt(db, USER_ID)).toBe(NOW);
   });
 
-  it('2nd vote within the 30 days: grants NOTHING (cooldown) and does not extend the Plus', () => {
-    const NOW = 1_000_000_000;
-    claimVoteReward(db, U, NOW);
-    const expiryDepoisDo1 = getUserPremiumExpiry(db, U);
+  it('fails closed if the stable HMAC key is accidentally changed', () => {
+    claimVoteReward(db, USER_ID, NOW, SECRET);
+    const replacement = 'abcdef0123456789abcdef0123456789';
 
-    // 12h later (can vote on top.gg, but the reward is in cooldown).
-    const res2 = claimVoteReward(db, U, NOW + 12 * HOUR_MS);
-    expect(res2.granted).toBe(false);
-    expect(res2.nextEligibleAt).toBe(NOW + VOTE_REWARD_COOLDOWN_MS);
-    // The Plus did NOT accumulate — it still expires at the same instant as the 1st vote.
-    expect(getUserPremiumExpiry(db, U)).toBe(expiryDepoisDo1);
-    // The cooldown marker also didn't move backward or forward.
-    expect(getVoteRewardAt(db, U)).toBe(NOW);
+    expect(() => voteRewardStatus(db, USER_ID, replacement)).toThrow(/does not match/i);
+    expect(() =>
+      claimVoteReward(db, '999999999999999999', NOW + VOTE_REWARD_MS, replacement),
+    ).toThrow(/does not match/i);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM vote_redemption').get()).toEqual({ n: 1 });
   });
 
-  it('vote exactly at 30 days: eligible again, grants a new 24h', () => {
-    const NOW = 1_000_000_000;
-    claimVoteReward(db, U, NOW);
-    const LATER = NOW + VOTE_REWARD_COOLDOWN_MS; // boundary: already eligible
-    const res = claimVoteReward(db, U, LATER);
-    expect(res.granted).toBe(true);
-    expect(res.expiresAt).toBe(LATER + 24 * HOUR_MS);
-    expect(getVoteRewardAt(db, U)).toBe(LATER);
-  });
+  it('backfills rewards created before the lifetime ledger and remains idempotent', () => {
+    db.prepare('INSERT INTO vote_reward (user_id, rewarded_at) VALUES (?, ?)').run(USER_ID, NOW);
 
-  it('voteRewardStatus: eligible when never earned; in cooldown it shows the next instant', () => {
-    const NOW = 1_000_000_000;
-    expect(voteRewardStatus(db, U, NOW)).toEqual({ eligible: true, nextEligibleAt: null });
-
-    claimVoteReward(db, U, NOW);
-    expect(voteRewardStatus(db, U, NOW + DAY_MS)).toEqual({
-      eligible: false,
-      nextEligibleAt: NOW + VOTE_REWARD_COOLDOWN_MS,
+    expect(initializeVoteRedemptionLedger(db, SECRET)).toBe(1);
+    expect(initializeVoteRedemptionLedger(db, SECRET)).toBe(0);
+    expect(hasRedeemedVoteReward(db, USER_ID, SECRET)).toBe(true);
+    expect(claimVoteReward(db, USER_ID, NOW + VOTE_REWARD_MS, SECRET)).toEqual({
+      granted: false,
+      alreadyRedeemed: true,
     });
-    expect(voteRewardStatus(db, U, NOW + VOTE_REWARD_COOLDOWN_MS)).toEqual({
+  });
+
+  it('checks the pinned key at startup before a webhook or command is used', () => {
+    initializeVoteRedemptionLedger(db, SECRET);
+
+    expect(() => initializeVoteRedemptionLedger(db, 'abcdef0123456789abcdef0123456789')).toThrow(
+      /does not match/i,
+    );
+  });
+
+  it('keeps the lifetime marker after /privacy erase removes the raw entitlement', () => {
+    claimVoteReward(db, USER_ID, NOW, SECRET);
+    db.prepare('DELETE FROM vote_reward WHERE user_id = ?').run(USER_ID); // /privacy erase path
+
+    expect(getVoteRewardAt(db, USER_ID)).toBeNull();
+    expect(hasRedeemedVoteReward(db, USER_ID, SECRET)).toBe(true);
+    expect(claimVoteReward(db, USER_ID, NOW + VOTE_REWARD_MS, SECRET)).toEqual({
+      granted: false,
+      alreadyRedeemed: true,
+    });
+  });
+
+  it('stores a keyed HMAC rather than the raw Discord id in the permanent ledger', () => {
+    claimVoteReward(db, USER_ID, NOW, SECRET);
+    const row = db.prepare('SELECT user_hash FROM vote_redemption').get() as { user_hash: string };
+
+    expect(row.user_hash).toBe(voteRedemptionHash(SECRET, USER_ID));
+    expect(row.user_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(row.user_hash).not.toContain(USER_ID);
+  });
+
+  it('purges expired raw entitlements without removing lifetime markers', () => {
+    claimVoteReward(db, USER_ID, NOW, SECRET);
+    expect(purgeExpiredVoteRewards(db, NOW + VOTE_REWARD_MS - 1)).toBe(0);
+    expect(purgeExpiredVoteRewards(db, NOW + VOTE_REWARD_MS)).toBe(1);
+    expect(getVoteRewardAt(db, USER_ID)).toBeNull();
+    expect(hasRedeemedVoteReward(db, USER_ID, SECRET)).toBe(true);
+  });
+
+  it('does not overwrite or extend a paid Plus entitlement', () => {
+    const paidExpiry = grantUserPremium(db, USER_ID, 30, 'kofi', NOW);
+    claimVoteReward(db, USER_ID, NOW, SECRET);
+
+    expect(getUserPremiumExpiry(db, USER_ID)).toBe(paidExpiry);
+    expect(db.prepare('SELECT source FROM premium_user WHERE user_id = ?').get(USER_ID)).toEqual({
+      source: 'kofi',
+    });
+  });
+
+  it('reports permanent eligibility honestly', () => {
+    expect(voteRewardStatus(db, USER_ID, SECRET)).toEqual({
       eligible: true,
-      nextEligibleAt: null,
+      alreadyRedeemed: false,
+    });
+    claimVoteReward(db, USER_ID, NOW, SECRET);
+    expect(voteRewardStatus(db, USER_ID, SECRET)).toEqual({
+      eligible: false,
+      alreadyRedeemed: true,
     });
   });
 
-  it('user with no history: getVoteRewardAt returns null', () => {
-    expect(getVoteRewardAt(db, 'ninguem')).toBeNull();
+  it('rejects weak secrets and malformed Discord ids', () => {
+    expect(() => voteRedemptionHash('short', USER_ID)).toThrow(/at least 32/i);
+    expect(() => voteRedemptionHash(SECRET, 'not-an-id')).toThrow(/Discord user id/i);
+  });
+});
+
+describe('vote reward persistence across process/VPS restarts', () => {
+  it('reopening the on-disk SQLite database cannot make an account eligible again', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'vozen-vote-'));
+    const dbPath = join(dir, 'tts.db');
+    try {
+      const first = initDb(dbPath);
+      claimVoteReward(first, USER_ID, NOW, SECRET);
+      first.close();
+
+      const afterRestart = initDb(dbPath);
+      try {
+        expect(hasRedeemedVoteReward(afterRestart, USER_ID, SECRET)).toBe(true);
+        expect(claimVoteReward(afterRestart, USER_ID, NOW + 365 * 86_400_000, SECRET)).toEqual({
+          granted: false,
+          alreadyRedeemed: true,
+        });
+        expect(() =>
+          hasRedeemedVoteReward(afterRestart, USER_ID, 'abcdef0123456789abcdef0123456789'),
+        ).toThrow(/does not match/i);
+      } finally {
+        afterRestart.close();
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

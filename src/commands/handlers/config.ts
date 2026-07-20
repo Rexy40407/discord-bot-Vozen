@@ -141,6 +141,15 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
     const on = i.options.getBoolean('active', true);
     setGuildConfig(deps.db, i.guildId!, { soundboard: on });
     await reply(i, on ? t('config.soundboardOn', locale) : t('config.soundboardOff', locale));
+  } else if (sub === 'vote-reminders') {
+    // Alternating Top.gg/support notices in the configured TTS channel. Default OFF;
+    // only a Manage Server admin can opt the guild in or back out.
+    const on = i.options.getBoolean('active', true);
+    setGuildConfig(deps.db, i.guildId!, { votePromos: on });
+    await reply(
+      i,
+      `${t('config.votePromosLabel', locale)}: **${on ? t('config.on', locale) : t('config.off', locale)}**`,
+    );
   } else if (sub === 'greet') {
     // Voice greeting for whoever joins the call. ON by default.
     const on = i.options.getBoolean('active', true);
@@ -209,6 +218,7 @@ export async function handleConfig(i: ChatInputCommandInteraction, deps: BotDeps
       t('config.showTextInVoice', locale, { value: cfg.textInVoice ? on : off }),
       t('config.showAntispam', locale, { value: cfg.antispam ? on : off }),
       t('config.showSoundboard', locale, { value: cfg.soundboard ? on : off }),
+      `${t('config.votePromosLabel', locale)}: ${cfg.votePromos ? on : off}`,
       t('config.showGreet', locale, {
         value: cfg.greetOnJoin ? on : off,
         language:

@@ -327,7 +327,7 @@ hides or disables the matching feature when it is absent.
 
 | Sidecar                          | Powers                      | Installer                        | Notes                                                                  |
 | -------------------------------- | --------------------------- | -------------------------------- | ---------------------------------------------------------------------- |
-| Kokoro (`kokoro-onnx`, ONNX/CPU) | `/voice set engine:Kokoro`  | `tools/setup-kokoro.ps1`         | No PyTorch. Opt-in per user.                                           |
+| Kokoro (`kokoro-onnx`, ONNX/CPU) | `/voice set engine:Kokoro`  | `tools/setup-kokoro.ps1`         | No PyTorch. Requires Plus or Premium at runtime.                        |
 | faster-whisper                   | `/transcribe` (voice→text)  | `tools/setup-whisper.{sh,ps1}`   | Model `base` runs on a small VPS (~2.2s per 13.6s of speech).          |
 
 ---

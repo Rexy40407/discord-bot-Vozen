@@ -734,3 +734,37 @@ describe('/config streaks — streak announcement toggle (default ON)', () => {
     expect(getGuildConfig(db, GUILD).streakAnnounce).toBe(true);
   });
 });
+
+describe('/config vote-reminders — admin opt-in (default OFF)', () => {
+  let db: Database.Database;
+  beforeEach(() => {
+    db = initDb(':memory:');
+  });
+  afterEach(() => {
+    db.close();
+  });
+
+  it('is disabled by default', () => {
+    expect(getGuildConfig(db, GUILD).votePromos).toBe(false);
+  });
+
+  it('an admin can turn reminders on persistently', async () => {
+    const i = makeConfigInteraction({
+      sub: 'vote-reminders',
+      optionsMap: { active: true },
+    });
+    await handleInteraction(i as any, makeConfigDeps(db));
+    expect(getGuildConfig(db, GUILD).votePromos).toBe(true);
+    expect(i.replies.join('\n')).toMatch(/Top\.gg/i);
+  });
+
+  it('an admin can turn reminders back off', async () => {
+    setGuildConfig(db, GUILD, { votePromos: true });
+    const i = makeConfigInteraction({
+      sub: 'vote-reminders',
+      optionsMap: { active: false },
+    });
+    await handleInteraction(i as any, makeConfigDeps(db));
+    expect(getGuildConfig(db, GUILD).votePromos).toBe(false);
+  });
+});

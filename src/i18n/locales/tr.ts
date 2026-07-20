@@ -104,6 +104,8 @@ export default {
     '🔒 **{effect}** bir Premium efektidir. Ücretsiz efektler: 🤖 Robot ve 🔊 Echo. Hepsini Vozen Premium ile aç — `/premium` komutuna bak.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** bir Premium ses motorudur. Vozen Plus (kişisel) veya Vozen Premium (sunucu) ile aç — `/premium` komutuna bak. Bu arada sesin ücretsiz yerel motorda kalır.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** bir Premium ses motorudur. Vozen Plus (kişisel) veya Vozen Premium (sunucu) ile aç — `/premium` komutuna bak. Bu arada sesin ücretsiz yerel motorda kalır.',
   'voice.notInVoice': 'Henüz bir ses kanalında değilim — önce /join komutunu çalıştır.',
   'voice.previewPlaying': 'Bir örnek çalıyor…',
   'preview.sample': 'Merhaba, ben Vozen. yaz, dinle.',
@@ -154,6 +156,8 @@ export default {
   'premium.lineUserFree': '👤 **Sen (Plus):** aktif değil',
   'premium.getHint':
     "Bugün kullandığın her şey ücretsiz kalır. Premium; 8 ses efektinin tümünü, 7/24 çağrıda kalmayı, 50 kişisel telaffuzu, /rizz'i ve premium oyunları ekler. Destek: https://ko-fi.com/",
+  'premium.enginePerks':
+    '💎 **Premium ses motorları:** Kokoro nöral ve Google HD — Plus ile kişisel olarak veya sunucu Premium ile herkes için açılır.',
   'premium.linePass':
     '🎟️ **Premium geçişin:** {used}/{total} lisans kullanımda · {date} tarihinde sona erer',
   'premium.passServers': '↳ Kullanımda: {servers}',
@@ -258,6 +262,7 @@ export default {
     "Seri bildirimleri **kapalı** — Vozen serileri yine de takip eder (`/topspeakers`'e bak) ama bunları duyurmaz.",
   'config.soundboardOn': 'Ses panosu **açık** — herkes `/sound` ile klip çalabilir.',
   'config.soundboardOff': 'Ses panosu **kapalı** — `/sound` bu sunucuda devre dışı.',
+  'config.votePromosLabel': 'top.gg ödül bildirimleri + Vozen Support',
   'config.greetOn': '✅ Ses kanalına katıldıklarında insanları adlarıyla selamlayacağım.',
   'config.greetOff': '🔇 Ses kanalına katıldıklarında insanları **selamlamayacağım**.',
   'config.greetLangSet': '✅ Katılım selamlama dili **{language}** olarak ayarlandı.',
@@ -340,13 +345,13 @@ export default {
   'vote.noClientId':
     "Vozen'nin oy bağlantısı henüz ayarlanmadı (CLIENT_ID eksik). Bot yöneticisine bildir.",
   'vote.link':
-    "Vozen'ye oy ver (ücretsiz, her 12 saatte bir) ve daha fazla kişinin onu bulmasına yardım et:\n{url}",
+    "Vozen'ye oy ver (ücretsiz, her 12 saatte bir) ve daha fazla kişinin onu bulmasına yardım et:\n{url}\nBu hesap ödülü daha önce hiç almadıysa **48 saatlik Vozen Plus** kazanır, hesap başına yalnızca bir kez.",
   'invite.button': "Vozen'yi ekle",
   'vote.button': "top.gg'de oy ver",
   'vote.upsell':
-    "🗳️ Plus yok mu? top.gg'de Vozen'ye oy ver → **24 saat ücretsiz Plus** (ayda bir): {url}",
+    '🗳️ Bu hesap ödülü daha önce hiç almadıysa **48 saatlik Vozen Plus** kazanır, hesap başına yalnızca bir kez. {url}',
   'vote.cooldownStatus':
-    '🗳️ Oy ödülünü zaten aldın — bir **24 saat Plus** daha için {date} tekrar oy ver.',
+    '🗳️ Bu hesap tek seferlik oy ödülünü zaten kullandı. Vozen’i desteklemek için oy vermeye devam edebilirsin, ancak daha fazla Plus verilmez.',
   'help.title': 'Vozen — yaz, dinle.',
   'help.embedTitle': 'Vozen — Komutlar',
   'help.intro': 'Vozen metnini ses kanallarında sesli okur — ücretsiz nöral sesler, onlarca dil.',
@@ -374,6 +379,8 @@ export default {
   'welcome.title': "Vozen'yi eklediğin için teşekkürler! 👋",
   'welcome.description':
     'Vozen sohbetini ses kanallarında sesli okur — yaz, dinle.\n\n**Tek adımda başla:** {setup} komutunu çalıştır, otomatik okumayı ayarlayıp ses kanalına katılayım.\n\nTam komut listesi mi lazım? {help} komutunu çalıştır.',
+  'welcome.enginePlans':
+    'Piper nöral sesleri ücretsiz kalır. 💎 Kokoro ve Google HD, Vozen Plus veya sunucu Premium ile açılır.',
   'welcome.stepsTitle': 'Üyeler nasıl kullanır (3 adım)',
   'welcome.stepsBody':
     '1) Bir ses kanalına katıl\n2) Sana katılmam için /join komutunu çalıştır\n3) Metin kanalına yaz (veya /tts kullan), sesli okuyayım\nTam komut listesi: /help',

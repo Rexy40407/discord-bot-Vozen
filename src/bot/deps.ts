@@ -7,6 +7,7 @@ import { RateLimiter } from '../moderation/rateLimiter';
 import type { AloneWatcher } from '../voice/aloneWatcher';
 import type { GreetCooldown } from '../voice/greetCooldown';
 import type { LeaderboardPoster } from '../leaderboard/randomPost';
+import type { VotePromoPoster } from '../votePromo';
 import type { DuplicateTracker } from '../moderation/antispam';
 import type { CountGate } from '../moderation/countGate';
 import type { GameManager } from '../games/manager';
@@ -44,6 +45,8 @@ export interface BotDeps {
    * (without it, never appears). See leaderboard/randomPost.
    */
   leaderboardPoster?: LeaderboardPoster;
+  /** Alternating Top.gg/support notices, persisted so restarts cannot bypass their cooldowns. */
+  votePromoPoster?: VotePromoPoster;
   /**
    * Duplicate-message tracker (anti-spam), per (guild, author). Detects the same person
    * repeating the same large message within a short window. Only consulted when the guild
@@ -116,6 +119,7 @@ export function removePlayer(
  */
 export function handleGuildDelete(
   deps: Pick<BotDeps, 'players' | 'limiters' | 'aloneWatcher' | 'games'> &
+    Partial<Pick<BotDeps, 'votePromoPoster'>> &
     Partial<Pick<BotDeps, 'db'>>,
   guildId: string,
 ): void {
@@ -126,6 +130,7 @@ export function handleGuildDelete(
     // removePlayer/onVoiceLeft would leave alive if it didn't need voice — otherwise the
     // session stays stuck in the map (leak) after the guild leaves.
     deps.games?.endGuild(guildId);
+    deps.votePromoPoster?.forget(guildId);
     // Release the store cache entries for this guild (memory bound).
     if (deps.db) invalidateGuild(deps.db, guildId);
     // 24/7 in-call: the guild is gone -> forget the presence (don't restore on startup).

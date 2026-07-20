@@ -107,6 +107,8 @@ export default {
     '🔒 **{effect}** est un effet Premium. Effets gratuits : 🤖 Robot et 🔊 Echo. Débloquez-les tous avec Vozen Premium — voir `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** est un moteur de voix Premium. Débloquez-le avec Vozen Plus (personnel) ou Vozen Premium (serveur) — voir `/premium`. En attendant, votre voix reste sur le moteur local gratuit.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** est un moteur de voix Premium. Débloquez-le avec Vozen Plus (personnel) ou Vozen Premium (serveur) — voir `/premium`. En attendant, votre voix reste sur le moteur local gratuit.',
   'voice.notInVoice': "Je ne suis pas encore dans un salon vocal — lancez d'abord /join.",
   'voice.previewPlaying': "Lecture d'un échantillon…",
   'preview.sample': 'Salut, je suis Vozen. Tapez-le, entendez-le.',
@@ -160,6 +162,8 @@ export default {
   'premium.lineUserFree': '👤 **Vous (Plus) :** inactif',
   'premium.getHint':
     "Tout ce que vous utilisez aujourd'hui reste gratuit. Premium ajoute les 8 effets de voix, le 24/7 en appel, 50 prononciations personnelles, /rizz et les jeux premium. Soutien : https://ko-fi.com/",
+  'premium.enginePerks':
+    '💎 **Moteurs vocaux Premium :** Kokoro neuronal et Google HD — débloqués pour vous avec Plus ou pour tous avec le Premium du serveur.',
   'premium.linePass':
     '🎟️ **Votre pass Premium :** {used}/{total} licences utilisées · expire le {date}',
   'premium.passServers': '↳ Utilisé sur : {servers}',
@@ -265,6 +269,7 @@ export default {
   'config.soundboardOn':
     "Soundboard **activé** — n'importe qui peut jouer des clips avec `/sound`.",
   'config.soundboardOff': 'Soundboard **désactivé** — `/sound` est désactivé sur ce serveur.',
+  'config.votePromosLabel': 'Avis de récompense top.gg + Vozen Support',
   'config.greetOn': '✅ Je saluerai les gens par leur nom quand ils rejoindront le salon vocal.',
   'config.greetOff': '🔇 Je **ne saluerai pas** les gens quand ils rejoindront le salon vocal.',
   'config.greetLangSet': "✅ Langue du message d'accueil à l'arrivée définie sur **{language}**.",
@@ -347,13 +352,13 @@ export default {
   'vote.noClientId':
     "Le lien de vote de Vozen n'est pas encore configuré (CLIENT_ID est manquant). Prévenez l'administrateur du bot.",
   'vote.link':
-    'Votez pour Vozen (gratuit, toutes les 12 h) et aidez plus de gens à le découvrir :\n{url}',
+    'Votez pour Vozen (gratuit, toutes les 12 h) et aidez plus de gens à le découvrir :\n{url}\nSi ce compte n’a jamais réclamé la récompense, il reçoit **48 h de Vozen Plus**, une seule fois par compte.',
   'invite.button': 'Ajouter Vozen',
   'vote.button': 'Voter sur top.gg',
   'vote.upsell':
-    '🗳️ Pas de Plus ? Votez pour Vozen sur top.gg → **24h de Plus gratuites** (une fois par mois) : {url}',
+    '🗳️ Si ce compte n’a jamais réclamé la récompense, il reçoit **48 h de Vozen Plus**, une seule fois par compte. {url}',
   'vote.cooldownStatus':
-    '🗳️ Vous avez déjà réclamé votre récompense de vote — revotez pour **24h de Plus** supplémentaires {date}.',
+    '🗳️ Ce compte a déjà utilisé sa récompense de vote unique. Vous pouvez toujours voter pour soutenir Vozen, mais vous ne recevrez plus de Plus.',
   'help.title': 'Vozen — tapez-le, entendez-le.',
   'help.embedTitle': 'Vozen — Commandes',
   'help.intro':
@@ -382,6 +387,8 @@ export default {
   'welcome.title': "Merci d'avoir ajouté Vozen ! 👋",
   'welcome.description':
     'Vozen lit votre discussion à voix haute dans les salons vocaux — tapez-le, entendez-le.\n\n**Commencez en une seule étape :** lancez {setup} et je configurerai la lecture automatique et rejoindrai votre salon vocal.\n\nBesoin de la liste complète des commandes ? Lancez {help}.',
+  'welcome.enginePlans':
+    'Les voix neuronales Piper restent gratuites. 💎 Kokoro et Google HD se débloquent avec Vozen Plus ou le Premium du serveur.',
   'welcome.stepsTitle': "Comment les membres l'utilisent (3 étapes)",
   'welcome.stepsBody':
     '1) Rejoignez un salon vocal\n2) Lancez /join pour que je vous rejoigne\n3) Écrivez dans le salon textuel (ou utilisez /tts) et je lis à voix haute\nListe complète des commandes : /help',

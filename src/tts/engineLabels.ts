@@ -21,6 +21,11 @@ const BRAND: Partial<Record<UserEngine, string>> = {
   gcloud: 'Google HD',
 };
 
+/** Engines unlocked by either personal Plus or Premium on the current server. */
+export function isPremiumVoiceEngine(engine: UserEngine): boolean {
+  return engine === 'kokoro' || engine === 'gcloud';
+}
+
 /**
  * User-facing name of an engine, in `locale`. Total over UserEngine: an unmapped value
  * falls back to the default label rather than leaking the raw id.

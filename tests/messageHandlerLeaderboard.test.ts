@@ -7,6 +7,7 @@ import { initDb } from '../src/store/db';
 import { setGuildConfig } from '../src/store/guildConfig';
 import { bumpTalk, getTopSpeakers } from '../src/store/talkStats';
 import { CountGate } from '../src/moderation/countGate';
+import type { CommunityPromoKind } from '../src/votePromo';
 
 const GUILD = 'g-lb';
 const CHAN = 'chan-tts';
@@ -16,7 +17,11 @@ const AVAILABLE = ['en_US-amy-medium', 'pt_PT-tugao-medium'];
 function makeDeps(
   db: Database.Database,
   say: ReturnType<typeof vi.fn>,
-  opts: { record: boolean; lbSend: ReturnType<typeof vi.fn> },
+  opts: {
+    record: boolean;
+    lbSend: ReturnType<typeof vi.fn>;
+    promoRecord?: CommunityPromoKind | null;
+  },
 ): BotDeps {
   const players = new Map<string, unknown>();
   players.set(GUILD, { say });
@@ -31,8 +36,18 @@ function makeDeps(
     players,
     limiters: new Map(),
     availableModels: AVAILABLE,
-    config: { defaultVoice: 'de_DE-thorsten-medium', defaultSpeed: 1.0, messageLeadMs: 0 },
+    config: {
+      clientId: '1523826014935842997',
+      supportUrl: 'https://discord.gg/4kYw2WUbNN',
+      defaultVoice: 'de_DE-thorsten-medium',
+      defaultSpeed: 1.0,
+      messageLeadMs: 0,
+    },
     leaderboardPoster: { record: vi.fn().mockReturnValue(opts.record) },
+    votePromoPoster:
+      opts.promoRecord === undefined
+        ? undefined
+        : { record: vi.fn().mockReturnValue(opts.promoRecord) },
   } as unknown as BotDeps;
 }
 
@@ -91,6 +106,54 @@ describe('handleMessage — automatic leaderboard (F2)', () => {
     await handleMessage(makeMsg(), makeDeps(db, say, { record: false, lbSend }));
     expect(say).toHaveBeenCalledTimes(1);
     expect(lbSend).not.toHaveBeenCalled();
+  });
+
+  it('vote promo wins -> posts the localized one-time 48h reward without pinging', async () => {
+    setGuildConfig(db, GUILD, { votePromos: true });
+    const lbSend = vi.fn().mockResolvedValue(undefined);
+    const say = vi.fn().mockResolvedValue(true);
+    const deps = makeDeps(db, say, { record: false, promoRecord: 'vote', lbSend });
+    await handleMessage(makeMsg(), deps);
+    expect(lbSend).toHaveBeenCalledTimes(1);
+    const payload = lbSend.mock.calls[0][0];
+    expect(messageText(payload)).toContain('48h of Plus free');
+    expect(messageText(payload)).toContain('top.gg');
+    expect(payload.allowedMentions).toEqual({ parse: [] });
+    expect((deps.votePromoPoster as any).record).toHaveBeenCalledWith(GUILD);
+  });
+
+  it('support promo wins -> posts the official Vozen help server without pinging', async () => {
+    setGuildConfig(db, GUILD, { votePromos: true });
+    const lbSend = vi.fn().mockResolvedValue(undefined);
+    const say = vi.fn().mockResolvedValue(true);
+    const deps = makeDeps(db, say, { record: false, promoRecord: 'support', lbSend });
+    await handleMessage(makeMsg(), deps);
+    expect(lbSend).toHaveBeenCalledTimes(1);
+    const payload = lbSend.mock.calls[0][0];
+    expect(messageText(payload)).toContain('https://discord.gg/4kYw2WUbNN');
+    expect(payload.allowedMentions).toEqual({ parse: [] });
+  });
+
+  it('the default-off setting prevents the promo decider and message entirely', async () => {
+    const lbSend = vi.fn().mockResolvedValue(undefined);
+    const say = vi.fn().mockResolvedValue(true);
+    const deps = makeDeps(db, say, { record: false, promoRecord: 'vote', lbSend });
+
+    await handleMessage(makeMsg(), deps);
+
+    expect(lbSend).not.toHaveBeenCalled();
+    expect((deps.votePromoPoster as any).record).not.toHaveBeenCalled();
+  });
+
+  it('leaderboard and promo never collide on the same message', async () => {
+    setGuildConfig(db, GUILD, { votePromos: true });
+    const lbSend = vi.fn().mockResolvedValue(undefined);
+    const say = vi.fn().mockResolvedValue(true);
+    const deps = makeDeps(db, say, { record: true, promoRecord: 'vote', lbSend });
+    await handleMessage(makeMsg(), deps);
+    expect(lbSend).toHaveBeenCalledTimes(1);
+    expect(messageText(lbSend.mock.calls[0][0])).toContain('Top talkers');
+    expect((deps.votePromoPoster as any).record).not.toHaveBeenCalled();
   });
 
   it('queue full (say false) -> does not count or post (record is not even called)', async () => {

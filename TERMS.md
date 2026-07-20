@@ -2,7 +2,7 @@
 
 > _type it, hear it._
 
-**Last updated:** 2026-07-19
+**Last updated:** 2026-07-20
 
 Vozen is an **open-source**, **self-hosted** Text-to-Speech (TTS) bot for Discord: each instance is run by an independent **operator**. By using a Vozen instance, you agree to these Terms. Because the software is self-hosted, the **instance operator** is responsible for its operation and for compliance with the applicable rules.
 
@@ -29,7 +29,7 @@ The instance operator and the administrators of each server may enforce addition
 
 ## 3. Reporting problems
 
-To report a problem, abuse, or a violation of these Terms or of the Discord Developer Policy involving Vozen, use the **[support server](https://discord.gg/V6PZYZmhcQ)** (`discord.gg/V6PZYZmhcQ`). Reports are reviewed and appropriate action is taken.
+To report a problem, abuse, or a violation of these Terms or of the Discord Developer Policy involving Vozen, use the **[support server](https://discord.gg/4kYw2WUbNN)** (`discord.gg/4kYw2WUbNN`). Reports are reviewed and appropriate action is taken.
 
 ---
 
@@ -39,10 +39,11 @@ The official Vozen instance may offer optional paid features through **Discord P
 
 - Paid features offered through an external channel must also be available through Discord Premium Apps wherever Discord supports that offering, at a final pre-tax price no higher on Discord than through the external channel.
 - A subscription can be cancelled through the channel where it was purchased. Cancellation stops future renewal; access normally remains available until the end of the paid period, subject to that channel's rules.
-- For a missing, defective, or misdescribed digital service, or to request a refund, contact the [support server](https://discord.gg/V6PZYZmhcQ). Ko-fi refunds are handled by the operator; Discord purchases are also subject to Discord's purchase and refund process.
+- For a missing, defective, or misdescribed digital service, or to request a refund, contact the [support server](https://discord.gg/4kYw2WUbNN). Ko-fi refunds are handled by the operator; Discord purchases are also subject to Discord's purchase and refund process.
 - For Ko-fi activation by verified Discord email or receipt, ticking the activation checkbox expressly asks the operator to begin providing the paid digital features immediately and acknowledges that any applicable 14-day withdrawal right is lost once performance begins, where all legal conditions for that loss are met. This acceptance is recorded against each activated transaction under activation-terms version `2026-07-19`, and the site provides a downloadable confirmation after activation.
 - Nothing in these Terms limits mandatory consumer rights. In the EU/EEA, a 14-day withdrawal right may apply to a distance contract. It is lost early only where all legal conditions are met, including any required prior express consent and acknowledgement. Statutory conformity remedies remain unaffected.
 - Price or feature changes do not reduce the benefits already promised for a paid period. Material changes apply prospectively unless a platform's terms or applicable law require otherwise.
+- **Top.gg vote promotion.** The first eligible, verified top.gg vote made by a Discord account grants **48 hours of Vozen Plus**, once per account for the lifetime of the promotion. Further votes, vote retries, test events, and top.gg double-vote periods do not grant or extend Plus. The reward has no cash value, is not transferable, and may not be obtained through vote automation, alternate accounts used to evade the limit, or other abuse. Vozen may change or end the promotion prospectively, but an already-active 48-hour reward will not be shortened merely because the promotion ends.
 
 Self-hosters who charge for their own instance are the seller and are solely responsible for checkout disclosures, taxes, invoices, cancellations, refunds, and consumer-law compliance.
 

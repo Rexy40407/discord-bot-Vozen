@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://discord.com/oauth2/authorize?client_id=1523826014935842997&permissions=326420745216&scope=bot%20applications.commands"><img src="https://img.shields.io/badge/Add%20to-Discord-5865F2?logo=discord&logoColor=white" alt="Add to Discord"></a>
   <a href="https://vozen.org"><img src="https://img.shields.io/badge/website-vozen.org-7c5cff" alt="Website"></a>
-  <a href="https://discord.gg/V6PZYZmhcQ"><img src="https://img.shields.io/badge/support-server-5865F2?logo=discord&logoColor=white" alt="Support server"></a>
+  <a href="https://discord.gg/4kYw2WUbNN"><img src="https://img.shields.io/badge/support-server-5865F2?logo=discord&logoColor=white" alt="Support server"></a>
   <a href="https://top.gg/bot/1523826014935842997/vote"><img src="https://img.shields.io/badge/vote-top.gg-ff3366" alt="Vote on top.gg"></a>
   <a href="https://github.com/Rexy40407/discord-bot-Vozen/actions/workflows/ci.yml"><img src="https://github.com/Rexy40407/discord-bot-Vozen/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License"></a>
@@ -64,8 +64,8 @@ voice channel, type in the text channel, and you're done.
 
 ## Premium
 
-Vozen's core is free and always will be — including the neural voice. **Plus** and
-**Premium** add extras like Google HD voices, 24/7 always-on, voice→text
+Vozen's Piper-powered core is free and always will be. **Plus** and **Premium**
+unlock the Kokoro neural engine, Google HD voices, 24/7 always-on, voice→text
 transcription and higher limits.
 
 **[→ Plans and prices at vozen.org](https://vozen.org/#premium)** · run `/premium info`
@@ -73,7 +73,7 @@ in Discord to see what you have.
 
 ## Support
 
-Something broken, or an idea? **[Join the support server](https://discord.gg/V6PZYZmhcQ)**
+Something broken, or an idea? **[Join the support server](https://discord.gg/4kYw2WUbNN)**
 — that's the fastest way to reach us. Bugs can also go in
 [GitHub issues](https://github.com/Rexy40407/discord-bot-Vozen/issues).
 

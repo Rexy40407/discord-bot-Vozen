@@ -236,12 +236,12 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .addStringOption((o) =>
           o
             .setName('engine')
-            .setDescription('Voice engine: default, Piper, Kokoro, or Google HD (Premium)')
+            .setDescription('Voice engine: default, Piper, Kokoro or Google HD (paid)')
             .setRequired(false)
             .addChoices(
               { name: 'Default (local Piper)', value: 'google' },
               { name: 'Piper', value: 'piper' },
-              { name: 'Kokoro (neural)', value: 'kokoro' },
+              { name: '💎 Kokoro (Premium neural)', value: 'kokoro' },
               { name: '💎 Google HD (Premium)', value: 'gcloud' },
             ),
         ),
@@ -429,6 +429,12 @@ const commandDefsRaw: RESTPostAPIApplicationCommandsJSONBody[] = [
         .setDescription(
           'Allow /sound (play sound clips in the call) on this server (on by default)',
         )
+        .addBooleanOption((o) => o.setName('active').setDescription('on/off').setRequired(true)),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName('vote-reminders')
+        .setDescription('Allow alternating Top.gg and support notices (off by default)')
         .addBooleanOption((o) => o.setName('active').setDescription('on/off').setRequired(true)),
     )
     .addSubcommand((s) =>

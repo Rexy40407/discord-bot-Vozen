@@ -1,8 +1,9 @@
 import type Database from 'better-sqlite3';
+import { VOTE_REWARD_MS } from './voteReward';
 
 // Vozen Premium / Plus: EXPIRY-based subscriptions (unix ms). No row or expired =>
-// Free. The NEW features (full effects, soundboard, etc.) check isGuildPremium/
-// isUserPremium; nothing that is already free becomes paid. Purchases arrive via the
+// Free. Paid features (Kokoro/Google HD, full effects, etc.) check isGuildPremium/
+// isUserPremium. Purchases arrive via the
 // Ko-fi webhook (source 'kofi'); the owner can also grant by hand with /vozengrant (source 'manual').
 
 export type PremiumKind = 'guild' | 'user';
@@ -26,9 +27,17 @@ export function isGuildPremium(db: Database.Database, guildId: string, now: numb
 }
 
 export function isUserPremium(db: Database.Database, userId: string, now: number): boolean {
-  const row = db.prepare('SELECT expires_at FROM premium_user WHERE user_id = ?').get(userId) as
-    { expires_at: number } | undefined;
-  return !!row && row.expires_at > now;
+  const row = db
+    .prepare(
+      `SELECT MAX(expires_at) AS expires_at
+         FROM (
+           SELECT expires_at FROM premium_user WHERE user_id = ?
+           UNION ALL
+           SELECT rewarded_at + ? AS expires_at FROM vote_reward WHERE user_id = ?
+         )`,
+    )
+    .get(userId, VOTE_REWARD_MS, userId) as { expires_at: number | null };
+  return row.expires_at !== null && row.expires_at > now;
 }
 
 /** Guild premium expiry (unix ms) or null if it never had one. May be in the past. */
@@ -65,9 +74,17 @@ export function effectiveGuildPremiumExpiry(
 
 /** User Plus expiry (unix ms) or null if it never had one. May be in the past. */
 export function getUserPremiumExpiry(db: Database.Database, userId: string): number | null {
-  const row = db.prepare('SELECT expires_at FROM premium_user WHERE user_id = ?').get(userId) as
-    { expires_at: number } | undefined;
-  return row ? row.expires_at : null;
+  const row = db
+    .prepare(
+      `SELECT MAX(expires_at) AS expires_at
+         FROM (
+           SELECT expires_at FROM premium_user WHERE user_id = ?
+           UNION ALL
+           SELECT rewarded_at + ? AS expires_at FROM vote_reward WHERE user_id = ?
+         )`,
+    )
+    .get(userId, VOTE_REWARD_MS, userId) as { expires_at: number | null };
+  return row.expires_at;
 }
 
 /**

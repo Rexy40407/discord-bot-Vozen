@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { voteUpsellLine } from '../src/commands/voteUpsell';
 
-describe('voteUpsellLine — invitation to vote → 24h of free Plus', () => {
+describe('voteUpsellLine — invitation to the one-time 48h Plus reward', () => {
   it('no clientId (undefined or empty): returns null (broken link) — appends nothing', () => {
     expect(voteUpsellLine('en', undefined)).toBeNull();
     expect(voteUpsellLine('pt', '')).toBeNull();

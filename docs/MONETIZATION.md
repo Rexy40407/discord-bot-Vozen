@@ -1,9 +1,8 @@
 # Vozen — Monetization Plan
 
-> Status: **plan / decided pricing**. Nothing is gated yet unless a commit says so.
-> Guiding rule: **never take anything out of Free that already exists.** The site says
-> "core free forever" — Premium sells *new* value (better voices, higher limits, extras),
-> never ransoms features people already use. Free is marketing; Premium funds the servers.
+> Status: **implemented pricing and entitlement model**. Piper and the essential TTS
+> workflow remain free; Kokoro/Google HD, higher limits and extras require personal Plus
+> or server Premium. Free is marketing; Premium funds the servers.
 
 ## Pricing (decided)
 
@@ -18,7 +17,7 @@ bot (~75 servers) + team-owned app. Until then: **Ko-fi / Patreon + `/redeem` co
 
 ---
 
-## 🆓 FREE — everything that exists today stays free, forever
+## 🆓 FREE — the essential Piper-powered core stays free
 
 - **Core TTS:** auto-read channel, `/tts`, "Speak" context menu, 34 languages, automatic
   language detection, mixed-language synthesis in one sentence.
@@ -71,15 +70,15 @@ bot (~75 servers) + team-owned app. Until then: **Ko-fi / Patreon + `/redeem` co
 - **For Free (growth):** lite voice effects, mini soundboard, limited triggers,
   `/translate` with a daily quota — each gives the taste that converts.
 - **For Premium (revenue):** the full version of each + Kokoro + 24/7 + custom greetings.
-- **Growth loop:** vote reward — `/vote` on top.gg unlocks **12h of one premium voice**.
+- **Growth loop:** the first eligible `/vote` on top.gg unlocks **48h of Vozen Plus**, once per Discord account ever.
   Free for us, addictive for them, boosts our ranking.
 
 ---
 
 ## ⚠️ Honest notes (read before flipping the switch)
 
-1. **Site copy:** currently "Free forever · No paywall". Before monetizing, change to
-   "Core free forever" / "Everything you know stays free" — transparency avoids backlash.
+1. **Site copy:** say exactly which engine belongs to each tier: Piper is free;
+   Kokoro and Google HD require Plus or server Premium. Avoid blanket “no paywall” claims.
 2. **gTTS is an unofficial endpoint** — can't sell reliability on top of it. Premium must
    run on Piper/Kokoro (local, controlled). Revenue pays for serious infra.
 3. **The bot runs on a home PC.** Before charging, it needs a VPS (~€5–10/mo). First goal

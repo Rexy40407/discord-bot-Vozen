@@ -61,6 +61,15 @@ describe('i18n — t(key, locale, params)', () => {
     expect(t('help.title', 'es')).not.toBe('');
   });
 
+  it('states the Piper/Kokoro plan boundary in bot copy', () => {
+    for (const locale of ['en', 'pt', 'es']) {
+      expect(t('welcome.enginePlans', locale), locale).toContain('Piper');
+      expect(t('welcome.enginePlans', locale), locale).toContain('Kokoro');
+      expect(t('premium.enginePerks', locale), locale).toContain('Google HD');
+      expect(t('voice.engine.kokoroLocked', locale), locale).toContain('Kokoro');
+    }
+  });
+
   // Proves the PHASE B architecture: when there is a locales/<code>.ts file with the
   // key, t() serves that translation (branch 1 of the chain). In Phase A the registry is
   // empty, so NO other test exercises this branch — without this, a bug in
