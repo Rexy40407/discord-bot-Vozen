@@ -75,10 +75,9 @@ export function pickWelcomeChannel(guild: WelcomeGuildLike): WelcomeChannelLike 
  * Menciona o que o Vozen faz, /setup como 1.º passo e /help para a lista completa.
  */
 export function buildWelcomeEmbed(locale: string = DEFAULT_LOCALE): EmbedBuilder {
-  // Reforca o diferenciador (voz neural gratis, sem paywall) logo no welcome: e o
-  // que separa o Vozen do lider pago do mercado. Anexado a descricao para nao
-  // colidir com o footer da marca ('welcome.footer').
-  const description = `${t('welcome.description', locale, { setup: '`/setup`', help: '`/help`' })}\n\n${t('welcome.tagline', locale)}`;
+  // The welcome states the free baseline and the paid engines explicitly, so a new
+  // server never mistakes the selectable Kokoro preview for a free entitlement.
+  const description = `${t('welcome.description', locale, { setup: '`/setup`', help: '`/help`' })}\n\n${t('welcome.enginePlans', locale)}`;
   return (
     brandEmbed()
       .setTitle(t('welcome.title', locale))

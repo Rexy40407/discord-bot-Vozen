@@ -101,6 +101,8 @@ export default {
     '🔒 **{effect}** er en Premium-effekt. Gratis effekter: 🤖 Robot og 🔊 Echo. Lås alle op med Vozen Premium — se `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** er en Premium-stemmemotor. Lås den op med Vozen Plus (personlig) eller Vozen Premium (server) — se `/premium`. Indtil da bliver din stemme på den gratis lokale motor.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** er en Premium-stemmemotor. Lås den op med Vozen Plus (personlig) eller Vozen Premium (server) — se `/premium`. Indtil da bliver din stemme på den gratis lokale motor.',
   'voice.notInVoice': 'Jeg er ikke i en talekanal endnu — kør /join først.',
   'voice.previewPlaying': 'Afspiller en prøve…',
   'preview.sample': 'Hej, jeg er Vozen. skriv det, hør det.',
@@ -153,6 +155,8 @@ export default {
   'premium.lineUserFree': '👤 **Dig (Plus):** ikke aktiv',
   'premium.getHint':
     'Alt, hvad du bruger i dag, forbliver gratis. Premium tilføjer alle 8 stemmeeffekter, 24/7 i opkald, 50 personlige udtaler, /rizz og premium-spillene. Support: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass': '🎟️ **Dit Premium-pas:** {used}/{total} licenser i brug · udløber {date}',
   'premium.passServers': '↳ I brug på: {servers}',
   'premium.pitch':
@@ -251,6 +255,7 @@ export default {
     'Stime-beskeder **fra** — Vozen sporer stadig stimer (se `/topspeakers`), men holder mund om dem.',
   'config.soundboardOn': 'Lydtavle **til** — alle kan afspille klip med `/sound`.',
   'config.soundboardOff': 'Lydtavle **fra** — `/sound` er deaktiveret på denne server.',
+  'config.votePromosLabel': 'Notifikationer om top.gg-belønning + Vozen Support',
   'config.greetOn': '✅ Jeg hilser på folk ved navn, når de går ind i talekanalen.',
   'config.greetOff': '🔇 Jeg **hilser ikke** på folk, når de går ind i talekanalen.',
   'config.greetLangSet': '✅ Sprog for velkomsthilsen sat til **{language}**.',
@@ -331,13 +336,14 @@ export default {
   'invite.link': 'Tilføj Vozen til din server:\n{url}',
   'vote.noClientId':
     'Vozens stemmelink er ikke sat op endnu (CLIENT_ID mangler). Sig det til bot-administratoren.',
-  'vote.link': 'Stem på Vozen (gratis, hver 12. time) og hjælp flere med at finde den:\n{url}',
+  'vote.link':
+    'Stem på Vozen (gratis, hver 12. time) og hjælp flere med at finde den:\n{url}\nHvis denne konto aldrig har hentet belønningen, får den **48 timers Vozen Plus**, kun én gang pr. konto.',
   'invite.button': 'Tilføj Vozen',
   'vote.button': 'Stem på top.gg',
   'vote.upsell':
-    '🗳️ Ingen Plus? Stem på Vozen på top.gg → **24t Plus gratis** (én gang om måneden): {url}',
+    '🗳️ Hvis denne konto aldrig har hentet belønningen, får den **48 timers Vozen Plus**, kun én gang pr. konto. {url}',
   'vote.cooldownStatus':
-    '🗳️ Du har allerede hentet din stemmebelønning — stem igen for endnu **24t Plus** {date}.',
+    '🗳️ Denne konto har allerede brugt sin engangsbelønning for at stemme. Du kan stadig stemme for at støtte Vozen, men det giver ikke mere Plus.',
   'help.title': 'Vozen — skriv det, hør det.',
   'help.embedTitle': 'Vozen — Kommandoer',
   'help.intro':
@@ -366,6 +372,8 @@ export default {
   'welcome.title': 'Tak fordi du tilføjede Vozen! 👋',
   'welcome.description':
     'Vozen læser din chat højt i talekanaler — skriv det, hør det.\n\n**Kom i gang i ét trin:** kør {setup}, så sætter jeg automatisk oplæsning op og går ind i din talekanal.\n\nHar du brug for den fulde kommandoliste? Kør {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Sådan bruger medlemmer det (3 trin)',
   'welcome.stepsBody':
     '1) Gå ind i en talekanal\n2) Kør /join, så jeg går ind sammen med dig\n3) Skriv i tekstkanalen (eller brug /tts), så læser jeg det højt\nFuld kommandoliste: /help',

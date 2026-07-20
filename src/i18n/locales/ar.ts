@@ -141,7 +141,8 @@ export default {
   'invite.link': 'أضف Vozen إلى خادمك:\n{url}',
   'vote.noClientId':
     'رابط التصويت لـ Vozen غير مُعدّ بعد (CLIENT_ID مفقود). أخبر مسؤول البوت بذلك.',
-  'vote.link': 'صوّت لـ Vozen (مجاناً، كل 12 ساعة) وساعد المزيد من الناس على اكتشافه:\n{url}',
+  'vote.link':
+    'صوّت لـ Vozen (مجاناً، كل 12 ساعة) وساعد المزيد من الناس على اكتشافه:\n{url}\nإذا لم يسبق لهذا الحساب استلام المكافأة، فسيحصل على **48 ساعة من Vozen Plus**، مرة واحدة فقط لكل حساب.',
   'help.title': 'Vozen — اكتبها، اسمعها.',
   'help.embedTitle': 'Vozen — الأوامر',
   'help.intro': 'يقرأ Vozen نصك بصوت عالٍ في القنوات الصوتية — أصوات عصبية مجانية، وعشرات اللغات.',
@@ -167,6 +168,8 @@ export default {
   'welcome.title': 'شكراً لإضافتك Vozen! 👋',
   'welcome.description':
     'يقرأ Vozen دردشتك بصوت عالٍ في القنوات الصوتية — اكتبها، اسمعها.\n\n**ابدأ بخطوة واحدة:** شغّل {setup} وسأُعدّ القراءة التلقائية وأنضم إلى قناتك الصوتية.\n\nتحتاج قائمة الأوامر الكاملة؟ شغّل {help}.',
+  'welcome.enginePlans':
+    'تبقى أصوات Piper العصبية مجانية. 💎 يُفتح Kokoro وGoogle HD عبر Vozen Plus أو Premium للخادم.',
   'welcome.stepsTitle': 'كيف يستخدمه الأعضاء (3 خطوات)',
   'welcome.stepsBody':
     '1) انضم إلى قناة صوتية\n2) شغّل /join لأنضم إليك\n3) اكتب في القناة النصية (أو استخدم /tts) وسأقرأها بصوت عالٍ\nقائمة الأوامر الكاملة: /help',
@@ -223,6 +226,8 @@ export default {
     '🔒 **{effect}** مؤثّر Premium. المؤثّرات المجانية: 🤖 Robot و🔊 Echo. افتحها كلها مع Vozen Premium — راجع `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** محرك صوت Premium. افتحه مع Vozen Plus (شخصي) أو Vozen Premium (للخادم) — راجع `/premium`. في هذه الأثناء يبقى صوتك على المحرك المحلي المجاني.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** محرك صوت Premium. افتحه مع Vozen Plus (شخصي) أو Vozen Premium (للخادم) — راجع `/premium`. في هذه الأثناء يبقى صوتك على المحرك المحلي المجاني.',
   'rizz.playing': '😏 أطلق بعض عبارات الغزل…\n> {line}',
   'rizz.unknownLang': 'لا أعرف هذه اللغة. اختر واحدة من القائمة.',
   'rizz.locked':
@@ -267,6 +272,8 @@ export default {
   'premium.lineUserFree': '👤 **أنت (Plus):** غير نشط',
   'premium.getHint':
     'كل ما تستخدمه اليوم يبقى مجانياً. يضيف Premium كل مؤثّرات الصوت الثمانية، والبقاء في المكالمة 24/7، و50 نطقاً شخصياً، و/rizz والألعاب المميزة. الدعم: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **محركات الصوت Premium:** ‏Kokoro العصبي وGoogle HD — يفتحهما Plus لك شخصيًا أو Premium لكل أعضاء الخادم.',
   'premium.linePass':
     '🎟️ **تصريح Premium الخاص بك:** {used}/{total} رخصة قيد الاستخدام · ينتهي {date}',
   'premium.passServers': '↳ قيد الاستخدام في: {servers}',
@@ -331,6 +338,7 @@ export default {
     'إشعارات السلاسل **معطّلة** — لا يزال Vozen يتتبع السلاسل (راجع `/topspeakers`) لكنه يبقى صامتاً بشأنها.',
   'config.soundboardOn': 'لوحة الأصوات **مفعّلة** — يمكن لأي شخص تشغيل المقاطع عبر `/sound`.',
   'config.soundboardOff': 'لوحة الأصوات **معطّلة** — الأمر `/sound` معطّل على هذا الخادم.',
+  'config.votePromosLabel': 'إشعارات مكافأة top.gg + Vozen Support',
   'config.greetOn': '✅ سأحيّي الأشخاص بأسمائهم عندما ينضمون إلى القناة الصوتية.',
   'config.greetOff': '🔇 **لن** أحيّي الأشخاص عندما ينضمون إلى القناة الصوتية.',
   'config.greetLangSet': '✅ تم تعيين لغة تحية الانضمام إلى **{language}**.',
@@ -352,9 +360,9 @@ export default {
   'invite.button': 'أضف Vozen',
   'vote.button': 'صوّت على top.gg',
   'vote.upsell':
-    '🗳️ لا تملك Plus؟ صوّت لـVozen على top.gg → **24 ساعة من Plus مجاناً** (مرة في الشهر): {url}',
+    '🗳️ إذا لم يسبق لهذا الحساب استلام المكافأة، فسيحصل على **48 ساعة من Vozen Plus**، مرة واحدة فقط لكل حساب. {url}',
   'vote.cooldownStatus':
-    '🗳️ لقد حصلت بالفعل على مكافأة تصويتك — صوّت مجدداً لتحصل على **24 ساعة أخرى من Plus** {date}.',
+    '🗳️ استخدم هذا الحساب مكافأة التصويت لمرة واحدة بالفعل. لا تزال تستطيع التصويت لدعم Vozen، لكنك لن تحصل على Plus إضافي.',
   'help.support': '🛟 تحتاج مساعدة أو تريد الإبلاغ عن مشكلة؟ {url}',
   'help.source': '📄 مفتوح المصدر (AGPL-3.0) — احصل على المصدر الدقيق الذي يعمل هنا: {url}',
   'game.start.needVoice': 'هذه **لعبة صوتية** — ادخل إلى قناة صوتية وشغّل /join أولاً، ثم ابدأها.',

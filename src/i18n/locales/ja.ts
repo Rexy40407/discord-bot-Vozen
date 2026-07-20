@@ -151,7 +151,7 @@ export default {
   'vote.noClientId':
     'Vozen の投票リンクはまだ設定されていません（CLIENT_ID がありません）。ボットの管理者にお知らせください。',
   'vote.link':
-    'Vozen に投票して（無料・12時間ごと）、もっと多くの人に見つけてもらいましょう：\n{url}',
+    'Vozen に投票して（無料・12時間ごと）、もっと多くの人に見つけてもらいましょう：\n{url}\nこのアカウントで報酬を受け取ったことがなければ、**Vozen Plusを48時間**獲得できます。報酬は1アカウントにつき一度限りです。',
   'help.title': 'Vozen — 入力して、聞く。',
   'help.embedTitle': 'Vozen — コマンド',
   'help.intro':
@@ -178,6 +178,8 @@ export default {
   'welcome.title': 'Vozen を追加してくれてありがとう！ 👋',
   'welcome.description':
     'Vozen はあなたのチャットをボイスチャンネルで読み上げます：入力して、聞く。\n\n**1ステップで始める：** {setup} を実行すると、自動読み上げを設定してあなたのボイスチャンネルに参加します。\n\nコマンドの一覧が必要ですか？ {help} を実行してください。',
+  'welcome.enginePlans':
+    'Piperニューラル音声は引き続き無料です。💎 KokoroとGoogle HDはVozen PlusまたはサーバーPremiumで解放されます。',
   'welcome.stepsTitle': 'メンバーの使い方（3ステップ）',
   'welcome.stepsBody':
     '1) ボイスチャンネルに参加\n2) /join を実行して私を呼ぶ\n3) テキストチャンネルに入力（または /tts を使用）すると読み上げます\nコマンド一覧：/help',
@@ -240,6 +242,8 @@ export default {
     '🔒 **{effect}** は Premium エフェクトです。無料エフェクト：🤖 Robot と 🔊 Echo。Vozen Premium ですべて解除できます。`/premium` を確認してください。',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** は Premium の音声エンジンです。Vozen Plus（個人）または Vozen Premium（サーバー）で解除できます。`/premium` を確認してください。それまであなたの声は無料のローカルエンジンのままです。',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** は Premium の音声エンジンです。Vozen Plus（個人）または Vozen Premium（サーバー）で解除できます。`/premium` を確認してください。それまであなたの声は無料のローカルエンジンのままです。',
   'rizz.playing': '😏 ちょっとキメ台詞を…\n> {line}',
   'rizz.unknownLang': 'その言語はわかりません。リストから選んでください。',
   'rizz.locked':
@@ -285,6 +289,8 @@ export default {
   'premium.lineUserFree': '👤 **あなた（Plus）：** 無効',
   'premium.getHint':
     '今お使いのものはすべて無料のままです。Premium では8種類すべてのボイスエフェクト、24時間通話常駐、個人発音50件、/rizz、そしてプレミアムゲームが追加されます。支援：https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium音声エンジン:** ニューラルKokoroとGoogle HD — Plusでは個人向け、サーバーPremiumでは全員に解放されます。',
   'premium.linePass':
     '🎟️ **あなたの Premium パス：** ライセンス {used}/{total} 使用中 · {date} に期限切れ',
   'premium.passServers': '↳ 使用中：{servers}',
@@ -353,6 +359,7 @@ export default {
     '継続記録の通知**オフ** — Vozen は引き続き連続記録を集計しますが（`/topspeakers` を参照）、それを知らせません。',
   'config.soundboardOn': 'サウンドボード**オン** — 誰でも `/sound` でクリップを再生できます。',
   'config.soundboardOff': 'サウンドボード**オフ** — このサーバーでは `/sound` は無効です。',
+  'config.votePromosLabel': 'top.gg報酬のお知らせ + Vozen Support',
   'config.greetOn': '✅ 人がボイスチャンネルに参加したら、名前で挨拶します。',
   'config.greetOff': '🔇 人がボイスチャンネルに参加しても挨拶し**ません**。',
   'config.greetLangSet': '✅ 参加時の挨拶の言語を **{language}** に設定しました。',
@@ -373,9 +380,10 @@ export default {
   'botstats.uptime': '稼働時間：**{value}**',
   'invite.button': 'Vozen を追加',
   'vote.button': 'top.gg で投票',
-  'vote.upsell': '🗳️ Plus がない？ top.gg で Vozen に投票 → **Plus 24時間無料**（月1回）：{url}',
+  'vote.upsell':
+    '🗳️ このアカウントで報酬を受け取ったことがなければ、**Vozen Plusを48時間**獲得できます。報酬は1アカウントにつき一度限りです。 {url}',
   'vote.cooldownStatus':
-    '🗳️ 投票報酬はすでに受け取り済みです。{date} にもう一度投票すると、さらに **Plus 24時間**を獲得できます。',
+    '🗳️ このアカウントは一度限りの投票報酬をすでに使用しています。Vozenを応援するために投票はできますが、追加のPlusは付与されません。',
   'help.support': '🛟 サポートが必要ですか、または問題を報告したいですか？ {url}',
   'help.source': '📄 オープンソース（AGPL-3.0）— ここで動いているソースそのものを入手：{url}',
   'game.start.needVoice':

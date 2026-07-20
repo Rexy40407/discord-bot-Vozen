@@ -107,21 +107,20 @@ describe('buildWelcomeEmbed', () => {
     expect(text).toContain('/setup');
   });
 
-  // Posicionamento: o welcome tem de reforcar o diferenciador (voz neural gratis,
-  // sem paywall) — e o que separa o Vozen do lider pago do mercado. Afirmamos
-  // substrings distintivas (nao a frase inteira) para tolerar ajustes de wording.
-  it('reforca o diferenciador "voz neural gratis, sem paywall" (en)', () => {
+  it('explains the free Piper / paid Kokoro boundary (en)', () => {
     const json = buildWelcomeEmbed('en').toJSON();
     const desc = json.description ?? '';
-    expect(desc).toContain('neural');
-    expect(desc).toContain('paywall');
+    expect(desc).toContain('Piper');
+    expect(desc).toContain('Kokoro');
+    expect(desc).toContain('Premium');
   });
 
-  it('reforca o diferenciador tambem em pt', () => {
+  it('explains the free Piper / paid Kokoro boundary in pt', () => {
     const json = buildWelcomeEmbed('pt').toJSON();
     const desc = json.description ?? '';
-    expect(desc).toContain('neural');
-    expect(desc).toContain('paywall');
+    expect(desc).toContain('Piper');
+    expect(desc).toContain('Kokoro');
+    expect(desc).toContain('Premium');
   });
 
   // Onboarding beginner-friendly: alem de /setup+/help, o welcome tem de mostrar o

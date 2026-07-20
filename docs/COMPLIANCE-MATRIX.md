@@ -60,8 +60,9 @@
 
 | # | Requirement | Status | Evidence |
 | - | ----------- | ------ | -------- |
-| 5.1 | Vote webhook authenticated | ✅ | `src/vote.ts`: `timingSafeEqual` on the secret; without a secret the webhook does not start (SEC-01). |
-| 5.2 | Vote rewards honest + non-deceptive | ✅ | Vote → 12h Plus perks (`store/voteReward`), disclosed on site. |
+| 5.1 | Vote webhook authenticated | ✅ | `src/vote.ts`: v1 raw-body HMAC-SHA256 with timestamp replay guard; legacy v0 uses `timingSafeEqual`; without a secret the public route does not start (SEC-01). |
+| 5.2 | Vote rewards honest + non-deceptive | ✅ | First eligible verified vote → 48h Plus (`store/voteReward`), once per Discord account ever. A persistent HMAC redemption ledger prevents retries, restarts, deployments, or erasure from creating a second claim; the terms and both privacy policies disclose this. |
+| 5.3 | Promotional notices bounded and controllable | ✅ | Activity-driven Top.gg/support cards alternate in the configured setup channel, off by default and enabled only by an admin via `/config vote-reminders active:true`. A persisted 24h shared slot plus the alternation keeps each kind at least 48h apart and prevents same-day collisions; every card includes the opt-out command and sends no DMs or pings. |
 
 ## 6. GitHub Pages / GitHub ToS
 

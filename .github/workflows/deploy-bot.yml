@@ -29,10 +29,14 @@ jobs:
       # Pin a SHA (não a tag mutável): esta action corre com a chave SSH do VPS, logo um
       # hijack da tag daria execução no servidor de produção. Bump deliberado via Dependabot.
       - uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
+        env:
+          TOPGG_WEBHOOK_SECRET: ${{ secrets.TOPGG_WEBHOOK_SECRET }}
+          VOTE_REDEMPTION_SECRET: ${{ secrets.VOTE_REDEMPTION_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: TOPGG_WEBHOOK_SECRET,VOTE_REDEMPTION_SECRET
           # Plan 027 (OPS-02/OPS-03): abordagem escolhida foi o gate de testes NO SCRIPT
           # (correr `vitest` no VPS), não `workflow_run` sobre a CI. Motivo: `workflow_run`
           # não suporta filtro `paths:`, e a CI (ci.yml) corre em todo o push à main sem
@@ -62,12 +66,18 @@ jobs:
             # produção, onde correm como o utilizador do serviço vozen no VPS.
             npm ci --ignore-scripts
             npm rebuild better-sqlite3 @discordjs/opus esbuild ffmpeg-static
+            # Online SQLite backup before migrations/tests/restart. The default target is
+            # ../vozen-backups, outside the Git checkout; a failed backup aborts deployment.
+            npm run backup:db
             # The SAME gate as ci.yml (CLAUDE.md's canonical one): build + typecheck +
             # lint + format:check + vitest. Running only build+vitest here let a push
             # that CI rejects (lint, formatting, or a test-file type error) still reach
             # `systemctl restart` — both workflows trigger independently on push, so the
             # deploy must carry its own full gate rather than assume CI passed.
             npm run check
+            # Persist only the two allow-listed vote secrets from GitHub Actions. The script
+            # validates them, removes duplicate keys, writes atomically, and never logs values.
+            node scripts/sync-deploy-env.mjs
             sudo -n systemctl restart vozen.service
             sleep 20
             systemctl is-active vozen.service

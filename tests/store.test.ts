@@ -101,6 +101,7 @@ describe('store', () => {
         stayInCall: false, // 24/7 in-call OFF by default
         streakAnnounce: true, // streak 🔥 announcement ON by default
         soundboard: true, // /sound ON by default
+        votePromos: false, // alternating Top.gg/support reminders OFF by default; admins opt in
       });
     });
 
@@ -149,6 +150,7 @@ describe('store', () => {
         stayInCall: false, // 24/7 in-call OFF by default
         streakAnnounce: true, // streak 🔥 announcement ON by default
         soundboard: true, // /sound ON by default
+        votePromos: false, // alternating Top.gg/support reminders OFF by default; admins opt in
       });
     });
 
@@ -250,6 +252,7 @@ describe('store', () => {
         stayInCall: true,
         streakAnnounce: false,
         soundboard: false,
+        votePromos: true,
       };
       setGuildConfig(db, G, full);
       expect(getGuildConfig(db, G)).toEqual(full);
@@ -303,6 +306,7 @@ describe('store', () => {
           stayInCall: false,
           streakAnnounce: true,
           soundboard: true,
+          votePromos: false,
         });
         // All descriptor columns now exist after the migration.
         const info = migrated.pragma('table_info(guild_config)') as Array<{ name: string }>;

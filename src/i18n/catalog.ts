@@ -344,6 +344,10 @@ export const catalog: Record<string, Entry> = {
     en: '🔒 **💎 Google HD** is a Premium voice engine. Unlock it with Vozen Plus (personal) or Vozen Premium (server) — see `/premium`. Meanwhile your voice stays on the free local engine.',
     pt: '🔒 O motor **💎 Google HD** é Premium. Desbloqueia-o com o Vozen Plus (pessoal) ou o Vozen Premium (servidor) — vê `/premium`. Entretanto a tua voz fica no motor local gratuito.',
   },
+  'voice.engine.kokoroLocked': {
+    en: '🔒 **💎 Kokoro** is a Premium neural voice engine. Unlock it with Vozen Plus (personal) or Vozen Premium (server) — see `/premium`. Meanwhile your voice stays on the free local engine.',
+    pt: '🔒 O motor neural **💎 Kokoro** é Premium. Desbloqueia-o com o Vozen Plus (pessoal) ou o Vozen Premium (servidor) — vê `/premium`. Entretanto a tua voz fica no motor local gratuito.',
+  },
   'voice.notInVoice': {
     en: "I'm not in a voice channel yet — run /join first.",
     pt: 'Ainda nao estou num canal de voz — usa /join primeiro.',
@@ -548,6 +552,10 @@ export const catalog: Record<string, Entry> = {
   'premium.getHint': {
     en: 'Everything you use today stays free. Premium adds all 8 voice effects, 24/7 in-call, 50 personal pronunciations, /rizz and the premium games. Support: https://ko-fi.com/',
     pt: 'Tudo o que já usas continua grátis. O Premium acrescenta os 8 efeitos de voz, 24/7 na call, 50 pronúncias pessoais, /rizz e os jogos premium. Apoio: https://ko-fi.com/',
+  },
+  'premium.enginePerks': {
+    en: '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
+    pt: '💎 **Motores de voz Premium:** Kokoro neural e Google HD — desbloqueados para ti com Plus ou para todos com o Premium do servidor.',
   },
   // Passe (compra de Premium): linha de estado + montra + fluxo activate/deactivate.
   'premium.linePass': {
@@ -852,6 +860,10 @@ export const catalog: Record<string, Entry> = {
   'config.soundboardOff': {
     en: 'Soundboard **off** — `/sound` is disabled on this server.',
     pt: 'Soundboard **desligado** — o `/sound` está desativado neste servidor.',
+  },
+  'config.votePromosLabel': {
+    en: 'Vozen notices (Top.gg + support)',
+    pt: 'Avisos do Vozen (Top.gg + suporte)',
   },
   'config.greetOn': {
     en: "✅ I'll greet people by name when they join the voice channel.",
@@ -1168,20 +1180,20 @@ export const catalog: Record<string, Entry> = {
     pt: 'O Vozen ainda nao tem o link de voto configurado (CLIENT_ID em falta). Avisa o admin do bot.',
   },
   'vote.link': {
-    en: 'Vote for Vozen (free, every 12h) and get **24h of Vozen Plus** for yourself 🎁 (once a month) — plus you help more people find it:\n{url}',
-    pt: 'Vota no Vozen (grátis, a cada 12h) e ganha **24h de Vozen Plus** para ti 🎁 (1× por mês) — e ainda ajudas mais gente a encontrá-lo:\n{url}',
+    en: 'Vote for Vozen (free, every 12h). If this Discord account has never claimed the reward, it gets **48h of Vozen Plus** — once per account, ever. You also help more people find it:\n{url}',
+    pt: 'Vota no Vozen (grátis, a cada 12h). Se esta conta Discord nunca resgatou a recompensa, recebe **48h de Vozen Plus** — uma única vez por conta. Também ajudas mais gente a encontrá-lo:\n{url}',
   },
   'invite.button': { en: 'Add Vozen', pt: 'Adicionar o Vozen' },
   'vote.button': { en: 'Vote on top.gg', pt: 'Votar no top.gg' },
   // Upsell curto (uma linha) para anexar onde um utilizador FREE já é upsellado.
   'vote.upsell': {
-    en: '🗳️ No Plus? Vote for Vozen on top.gg → **24h of Plus free** (once a month): {url}',
-    pt: '🗳️ Sem Plus? Vota no Vozen no top.gg → **24h de Plus grátis** (1× por mês): {url}',
+    en: '🗳️ Never claimed on this account? Vote for Vozen on top.gg → **48h of Plus free**, once per account: {url}',
+    pt: '🗳️ Nunca resgataste nesta conta? Vota no Vozen no top.gg → **48h de Plus grátis**, uma única vez por conta: {url}',
   },
-  // Estado no /premium quando a recompensa por voto está em cooldown ({date} = <t:..:R>).
+  // Honest status after the account has consumed its lifetime vote reward.
   'vote.cooldownStatus': {
-    en: '🗳️ You already claimed your vote reward — vote again for another **24h of Plus** {date}.',
-    pt: '🗳️ Já ganhaste a recompensa por voto — podes ganhar mais **24h de Plus** {date}.',
+    en: '🗳️ This account already used its one-time vote reward. You can still vote to support Vozen, but it will not grant more Plus.',
+    pt: '🗳️ Esta conta já usou a recompensa única por voto. Ainda podes votar para apoiar o Vozen, mas não receberás mais Plus.',
   },
 
   // ── /help chrome (tudo o que NAO e a lista de comandos, que vem de commandDefs) ──
@@ -1370,6 +1382,10 @@ export const catalog: Record<string, Entry> = {
   'welcome.tagline': {
     en: 'Natural neural voice — free forever, no paywall.',
     pt: 'Voz neural natural — grátis para sempre, sem paywall.',
+  },
+  'welcome.enginePlans': {
+    en: 'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
+    pt: 'As vozes neurais Piper continuam grátis. 💎 Kokoro e Google HD desbloqueiam com Vozen Plus ou Premium do servidor.',
   },
 
   // ── /game — minijogos ─────────────────────────────────────────────────────

@@ -26,7 +26,7 @@
     "hero.mini": "35 langues · 38 voix · 16 mini-jeux · cœur gratuit",
     "hear.eyebrow": "Écoutez-le",
     "hear.title": "Appuyez sur lecture. Ça, c'est une vraie voix Vozen.",
-    "hear.sub": "Chaque extrait est généré par Vozen lui-même. Changez de moteur pour comparer Google, Piper et Kokoro.",
+    "hear.sub": "Écoutez tous les moteurs. Piper est gratuit ; Kokoro se débloque avec Vozen Plus ou Premium.",
     "stat.langs": "langues",
     "stat.voices": "voix neuronales",
     "stat.games": "mini-jeux",
@@ -50,7 +50,7 @@
     "feat.7.t": "Effets de voix",
     "feat.7.d": "Robot, écho, grave, chipmunk, radio, démon… vos messages, transformés. Deux effets gratuits, les huit avec Premium.",
     "feat.8.t": "Un Premium équitable",
-    "feat.8.d": "€3.99/mois débloquent les extras. Tout ce qui est gratuit aujourd'hui le reste — c'est une promesse, pas un piège.",
+    "feat.8.d": "3,99 €/mois débloquent Kokoro et les extras du serveur. Le cœur essentiel avec Piper reste gratuit.",
     "feat.9.t": "Open source",
     "feat.9.d": "Tout le code de Vozen est public sur GitHub. Auditez-le, apprenez-en, ou ouvrez une PR — aucun secret, aucun mouchard.",
     "lang.eyebrow": "Langues",
@@ -81,7 +81,7 @@
     "cmd.admin": "Admin",
     "price.eyebrow": "Tarifs",
     "price.title": "Cœur gratuit. Premium équitable.",
-    "price.sub": "Tout ce que fait Vozen aujourd'hui reste gratuit — à vie. Premium ajoute les extras qui nous coûtent de la vraie puissance de calcul.",
+    "price.sub": "Le cœur propulsé par Piper reste gratuit. Premium débloque Kokoro, Google HD et les extras plus gourmands en calcul.",
     "price.choose.title": "Choisissez qui profite de l’amélioration.",
     "price.choose.sub": "Gardez l’essentiel gratuit, améliorez votre compte ou débloquez Premium pour tout le serveur.",
     "price.free.pitch": "Tout l’essentiel. Sans carte, sans essai.",
@@ -146,7 +146,7 @@
     "price.max.note": "75,99 €/an (~20 % d’économie) · sur Ko-fi",
     "price.pro.seats3": "3 serveurs",
     "price.pro.seats10": "8 serveurs",
-    "price.m.1": "38 voix",
+    "price.m.1": "38 voix Piper",
     "price.m.2": "35 langues",
     "price.m.3": "Lit ton salon à voix haute",
     "price.m.4": "Blagues et salutations",
@@ -300,7 +300,8 @@
     "account.defaultUser": "Utilisateur Discord",
     "account.discordAvatar": "Avatar de {name}",
     "dashboard.retry": "Réessayer",
-    "dashboard.secureTokenError": "Votre navigateur ne peut pas générer de jeton de connexion sécurisé. Veuillez le mettre à jour."
+    "dashboard.secureTokenError": "Votre navigateur ne peut pas générer de jeton de connexion sécurisé. Veuillez le mettre à jour.",
+    "price.m.21": "Moteur neuronal Kokoro"
   },
   "commands": {
     "general": [
@@ -350,11 +351,11 @@
   "faq": [
     [
       "Vozen est-il vraiment gratuit ?",
-      "Oui — tout ce que fait Vozen aujourd'hui est gratuit et le reste : toutes les voix, les 15 jeux, les accueils, les outils d'admin. Vozen Premium (€3.99/mois par serveur) ne fait qu'ajouter des extras optionnels, comme le pack complet d'effets de voix. Rien de ce que vous utilisez ne passe jamais derrière un paywall."
+      "Oui — le cœur reste gratuit : 38 voix Piper dans 35 langues, lecture automatique, accueils, la plupart des jeux et tous les contrôles admin. Kokoro et Google HD sont des moteurs Premium ; Plus les débloque pour vous et Premium pour le serveur."
     ],
     [
       "Que comprend Premium ?",
-      "Les 8 effets de voix (grave, démon, radio, sous l'eau…), avec des voix neuronales premium, et il reste dans ton salon vocal même quand tout le monde part. €3.99/mois ou €37.99/an par serveur, ou Vozen Plus (€1.99/mois) pour des avantages personnels qui vous suivent d'un serveur à l'autre. Activez vos codes avec /premium activate. Après l’achat sur Ko-fi, activez sur vozen.org/account — connectez-vous avec Discord et collez le code de transaction de votre reçu Ko-fi."
+      "Les moteurs Kokoro neuronal et Google HD, les 8 effets vocaux, le mode 24/7, 50 prononciations personnelles, /rizz et les jeux Premium. 3,99 €/mois couvrent 3 serveurs, ou 7,99 €/mois en couvrent 8 ; Vozen Plus (1,99 €/mois) donne les avantages personnels sur tous les serveurs."
     ],
     [
       "Comment ajouter Vozen à mon serveur ?",
@@ -373,8 +374,8 @@
       "Oui. Chaque membre définit sa propre voix et sa langue avec /voice set, et Vozen peut même détecter automatiquement la langue de chaque message."
     ],
     [
-      "Google ou Piper — quel moteur de voix ?",
-      "Les deux sont gratuits. Google (par défaut) couvre les 35 langues instantanément ; Piper tourne sur notre propre serveur et sonne souvent mieux dans certaines langues, comme le portugais. Changez à tout moment avec /voice set — c'est propre à chacun."
+      "Piper, Kokoro ou Google HD — quel moteur vocal ?",
+      "Piper est le moteur local gratuit. Kokoro neuronal et Google HD exigent Vozen Plus pour vous ou Vozen Premium sur le serveur. Changez avec /voice set ; à l’expiration, Vozen revient automatiquement au moteur gratuit."
     ],
     [
       "Comment désactiver des fonctionnalités ?",

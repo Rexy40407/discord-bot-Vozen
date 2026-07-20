@@ -8,10 +8,10 @@ const source = (path: string): string =>
 
 // The site's assets are cache-busted by FILENAME (never a query string), so every rename churns
 // these tests too. One constant each: the rename is then a one-line edit here, not a hunt.
-const SITE_JS = 'site/js/main-v41.js';
-const SITE_I18N = 'site/js/i18n-v37.js';
+const SITE_JS = 'site/js/main-v42.js';
+const SITE_I18N = 'site/js/i18n-v38.js';
 const SITE_CSS = 'site/css/main-v41.css';
-const ACCOUNT_CSS = 'site/css/account-v5.css';
+const ACCOUNT_CSS = 'site/css/account-v6.css';
 
 /** Body of a top-level function in the site bundle, comments stripped. Comments are dropped
  *  because these assertions are about the markup a function RENDERS — a comment explaining why
@@ -105,14 +105,15 @@ describe('operational security configuration', () => {
     const page = source('site/account.html');
     const css = source(ACCOUNT_CSS);
 
-    expect(page).toContain('css/account-v5.css');
-    expect(page).not.toContain('css/account-v4.css');
+    expect(page).toContain('css/account-v6.css');
+    expect(page).not.toContain('css/account-v5.css');
+    expect(css).toMatch(/body\.page-account \.ppanel__av\s*\{\s*border-radius:\s*50%;\s*\}\s*$/);
     expect(page).toContain('<header class="nav" id="nav">');
     expect(page).toContain('class="account-workspace"');
     expect(page).toContain('class="account-membership"');
     expect(page).toContain('class="account-tasklist"');
     expect(page).toContain('id="accountActivateOpen"');
-    expect(page).toContain('js/main-v41.js');
+    expect(page).toContain('js/main-v42.js');
     expect(css).toContain('body.page-account');
     expect(css).toMatch(/@media\s*\(max-width:\s*760px\)/);
     expect(css).toMatch(/@media\s*\(min-width:\s*1280px\)\s*and\s*\(min-height:\s*800px\)/);

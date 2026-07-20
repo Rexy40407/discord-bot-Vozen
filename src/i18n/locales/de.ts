@@ -152,7 +152,7 @@ export default {
   'vote.noClientId':
     'Der Abstimmungslink von Vozen ist noch nicht eingerichtet (CLIENT_ID fehlt). Sag dem Bot-Admin Bescheid.',
   'vote.link':
-    'Stimme für Vozen ab (kostenlos, alle 12 Std.) und hilf, dass mehr Leute es finden:\n{url}',
+    'Stimme für Vozen ab (kostenlos, alle 12 Std.) und hilf, dass mehr Leute es finden:\n{url}\nFalls dieses Konto die Belohnung noch nie eingelöst hat, erhält es **48 Stunden Vozen Plus**, einmalig pro Konto.',
   'help.title': 'Vozen — tippen, hören.',
   'help.embedTitle': 'Vozen — Befehle',
   'help.intro':
@@ -179,6 +179,8 @@ export default {
   'welcome.title': 'Danke, dass du Vozen hinzugefügt hast! 👋',
   'welcome.description':
     'Vozen liest deinen Chat in Sprachkanälen laut vor — tippen, hören.\n\n**In einem Schritt loslegen:** führe {setup} aus und ich richte das automatische Vorlesen ein und trete deinem Sprachkanal bei.\n\nBrauchst du die vollständige Befehlsliste? Führe {help} aus.',
+  'welcome.enginePlans':
+    'Die neuronalen Piper-Stimmen bleiben kostenlos. 💎 Kokoro und Google HD gibt es mit Vozen Plus oder Server-Premium.',
   'welcome.stepsTitle': 'So nutzen es Mitglieder (3 Schritte)',
   'welcome.stepsBody':
     '1) Tritt einem Sprachkanal bei\n2) Führe /join aus, damit ich zu dir komme\n3) Schreib im Textkanal (oder nutze /tts) und ich lese es laut vor\nVollständige Befehlsliste: /help',
@@ -243,6 +245,8 @@ export default {
     '🔒 **{effect}** ist ein Premium-Effekt. Kostenlose Effekte: 🤖 Robot und 🔊 Echo. Schalte alle mit Vozen Premium frei — siehe `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** ist eine Premium-Stimm-Engine. Schalte sie mit Vozen Plus (persönlich) oder Vozen Premium (Server) frei — siehe `/premium`. In der Zwischenzeit bleibt deine Stimme auf der kostenlosen lokalen Engine.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** ist eine Premium-Stimm-Engine. Schalte sie mit Vozen Plus (persönlich) oder Vozen Premium (Server) frei — siehe `/premium`. In der Zwischenzeit bleibt deine Stimme auf der kostenlosen lokalen Engine.',
   'rizz.playing': '😏 Lass ein bisschen Rizz raus…\n> {line}',
   'rizz.unknownLang': 'Diese Sprache kenne ich nicht. Wähle eine aus der Liste.',
   'rizz.locked':
@@ -290,6 +294,8 @@ export default {
   'premium.lineUserFree': '👤 **Du (Plus):** nicht aktiv',
   'premium.getHint':
     'Alles, was du heute nutzt, bleibt kostenlos. Premium fügt alle 8 Stimmeffekte, 24/7 in der Call, 50 persönliche Aussprachen, /rizz und die Premium-Spiele hinzu. Support: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium-Stimmen-Engines:** Kokoro und Google HD — persönlich mit Plus oder für alle mit Server-Premium freigeschaltet.',
   'premium.linePass':
     '🎟️ **Dein Premium-Pass:** {used}/{total} Lizenzen in Verwendung · läuft ab {date}',
   'premium.passServers': '↳ In Verwendung auf: {servers}',
@@ -357,6 +363,7 @@ export default {
     'Streak-Hinweise **aus** — Vozen zählt Streaks weiterhin (siehe `/topspeakers`), bleibt aber still darüber.',
   'config.soundboardOn': 'Soundboard **an** — jeder kann mit `/sound` Clips abspielen.',
   'config.soundboardOff': 'Soundboard **aus** — `/sound` ist auf diesem Server deaktiviert.',
+  'config.votePromosLabel': 'Hinweise zur top.gg-Belohnung + Vozen Support',
   'config.greetOn': '✅ Ich begrüße Leute mit Namen, wenn sie dem Sprachkanal beitreten.',
   'config.greetOff': '🔇 Ich begrüße Leute **nicht**, wenn sie dem Sprachkanal beitreten.',
   'config.greetLangSet': '✅ Sprache der Beitrittsbegrüßung auf **{language}** gesetzt.',
@@ -378,9 +385,9 @@ export default {
   'invite.button': 'Vozen hinzufügen',
   'vote.button': 'Auf top.gg abstimmen',
   'vote.upsell':
-    '🗳️ Kein Plus? Stimme für Vozen auf top.gg ab → **24 Std. Plus gratis** (1× im Monat): {url}',
+    '🗳️ Falls dieses Konto die Belohnung noch nie eingelöst hat, erhält es **48 Stunden Vozen Plus**, einmalig pro Konto. {url}',
   'vote.cooldownStatus':
-    '🗳️ Du hast deine Abstimmungsbelohnung schon abgeholt — stimme erneut für weitere **24 Std. Plus** {date}.',
+    '🗳️ Dieses Konto hat die einmalige Abstimmungsbelohnung bereits genutzt. Du kannst Vozen weiterhin mit deiner Stimme unterstützen, erhältst aber kein weiteres Plus.',
   'help.support': '🛟 Brauchst du Hilfe oder willst ein Problem melden? {url}',
   'help.source': '📄 Open Source (AGPL-3.0) — hol dir den exakten Quellcode, der hier läuft: {url}',
   'game.start.needVoice':

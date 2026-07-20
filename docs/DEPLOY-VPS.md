@@ -101,6 +101,16 @@ KOFI_WEBHOOK_PORT=3001
 # Painel Premium — ATIVA aqui
 PREMIUM_API_ENABLED=true
 PREMIUM_API_ORIGIN=https://vozen.org
+
+# Recompensa top.gg (o segredo whs_ vem do dashboard da top.gg)
+TOPGG_WEBHOOK_SECRET=<whs_...>
+# Gera UMA VEZ com: openssl rand -hex 32
+# Nunca troques esta chave sem migrar o ledger de resgates.
+VOTE_REDEMPTION_SECRET=<64 caracteres hex>
+
+# Cópias SQLite locais fora do checkout Git
+DB_BACKUP_DIR=../vozen-backups
+DB_BACKUP_RETENTION_DAYS=30
 ```
 
 `PREMIUM_API_ORIGIN` é a única origem que o CORS deixa chamar a API — tem
@@ -238,12 +248,13 @@ sudo systemctl restart vozen.service
 ## 12. Deploy automático (GitHub Actions → SSH ao VPS)
 
 > **JÁ ATIVO (2026-07-09).** O workflow `.github/workflows/deploy-bot.yml` existe e os
-> secrets `VPS_HOST`/`VPS_USER`/`VPS_SSH_KEY` estão configurados no repositório. A cada
+> secrets `VPS_HOST`/`VPS_USER`/`VPS_SSH_KEY` e os dois segredos de votos estão configurados no repositório. A cada
 > push à `main` que altere `src/**`, o bot atualiza-se sozinho no VPS (~1 min). O texto
 > abaixo é o registo de COMO foi montado (para refazer noutra máquina/servidor).
 
-Automatiza-se como o site: a cada push à `main` que altere `src/**`, um workflow do
-GitHub faz SSH ao VPS e corre os mesmos 4 comandos sozinho.
+Automatiza-se como o site: a cada push à `main` que altere o bot, um workflow do
+GitHub faz SSH ao VPS, cria um backup SQLite online, corre o gate completo, sincroniza
+apenas os dois segredos de votos permitidos e reinicia o serviço.
 
 **No VPS**, gera um par de chaves SSH dedicado ao deploy (não uses a tua
 chave pessoal):
@@ -255,13 +266,15 @@ cat ~/.ssh/deploy_key        # copia esta CHAVE PRIVADA para o passo seguinte
 ```
 
 **No GitHub** → repositório → **Settings → Secrets and variables → Actions
-→ New repository secret**, cria 3 segredos:
+→ New repository secret**, cria estes segredos:
 
 | Nome | Valor |
 |---|---|
 | `VPS_HOST` | o IP do VPS |
 | `VPS_USER` | `vozen` |
 | `VPS_SSH_KEY` | o conteúdo da chave **privada** (`~/.ssh/deploy_key`, tudo incluindo `-----BEGIN...-----`) |
+| `TOPGG_WEBHOOK_SECRET` | o segredo `whs_...` mostrado pelo webhook do top.gg |
+| `VOTE_REDEMPTION_SECRET` | uma chave estável gerada uma vez com `openssl rand -hex 32`; nunca a rodar sem migração do ledger |
 
 **No repositório**, cria `.github/workflows/deploy-bot.yml`:
 
@@ -309,6 +322,17 @@ vozen ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart vozen.service
 A partir daqui, cada `git push` à `main` com alterações em `src/` publica-se
 sozinho no VPS em ~1 minuto — tal como o site já faz no GitHub Pages.
 
+O workflow real executa `npm run backup:db` antes dos testes e do restart. A
+cópia online inclui alterações ainda presentes no WAL e fica, por defeito, em
+`~/vozen-backups`, fora do checkout que recebe `git reset --hard`. Isto protege
+reinícios e deploys, mas **não** a perda total do disco/VPS: copia regularmente
+`tts.db`, `~/vozen-backups/` e `.env` para armazenamento externo cifrado.
+
+Depois do gate, `scripts/sync-deploy-env.mjs` grava atomicamente no `.env` apenas
+`TOPGG_WEBHOOK_SECRET` e `VOTE_REDEMPTION_SECRET`, recebidos dos GitHub Actions
+Secrets. O script rejeita valores vazios/fracos, remove linhas duplicadas e nunca
+imprime os valores. Os outros segredos do `.env` não são tocados.
+
 ## Checklist rápida
 
 - [ ] VPS criado (Ubuntu 24.04), IP anotado
@@ -322,6 +346,9 @@ sozinho no VPS em ~1 minuto — tal como o site já faz no GitHub Pages.
 - [ ] `PREMIUM_API_BASE` atualizado no site + push
 - [ ] Redirect URI adicionado no Discord Developer Portal
 - [ ] Deploy automático (passo 12): secrets no GitHub + `deploy-bot.yml` + sudoers
+- [ ] `VOTE_REDEMPTION_SECRET` gerado uma vez e guardado com a cópia cifrada do `.env`
+- [ ] `npm run backup:db` cria uma cópia restaurável fora do checkout Git
+- [ ] Backup externo cifrado de `tts.db`, `vozen-backups/` e `.env`
 
 ## Estado real do VPS (feito em 2026-07-09)
 

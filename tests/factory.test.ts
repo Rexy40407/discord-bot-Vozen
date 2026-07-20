@@ -47,7 +47,7 @@ function baseConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     gttsBreakerThreshold: 3,
     gttsBreakerCooldownMs: 60_000,
     gttsChunkConcurrency: 3,
-    supportUrl: 'https://discord.gg/V6PZYZmhcQ',
+    supportUrl: 'https://discord.gg/4kYw2WUbNN',
     kofiUrl: 'https://ko-fi.com/',
     kofiWebhookPort: 3001,
     premiumApiEnabled: false,

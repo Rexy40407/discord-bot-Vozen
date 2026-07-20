@@ -39,6 +39,10 @@ export interface AppConfig {
   // Secret absent => webhook without auth (insecure; always recommended to set it).
   topggWebhookPort?: number;
   topggWebhookSecret?: string;
+  // Stable server-only HMAC key for the lifetime one-claim vote ledger. It is
+  // intentionally separate from the rotatable Top.gg webhook secret. Required
+  // for vote rewards; minimum 32 characters. Env: VOTE_REDEMPTION_SECRET.
+  voteRedemptionSecret?: string;
   // SEC-01 — EXPLICIT opt-in to run the top.gg webhook WITHOUT a secret (insecure:
   // anyone who discovers the port forges votes). Default false => without a secret,
   // the listener does NOT start. Env: TOPGG_WEBHOOK_ALLOW_INSECURE=true.
@@ -248,6 +252,7 @@ export interface ConfigFinding {
 // new secret with the same risk must be added here.
 const EMPTY_SECRET_VARS = [
   'TOPGG_WEBHOOK_SECRET',
+  'VOTE_REDEMPTION_SECRET',
   'KOFI_WEBHOOK_TOKEN',
   // PAID API keys: if a residual empty `KEY=` line overrides the good one, the respective
   // Premium engine silently falls back to the free default (Google HD) or fails
@@ -286,6 +291,16 @@ export function validateConfigEnv(env: Record<string, string | undefined>): Conf
 
   const topggPortSet = (env.TOPGG_WEBHOOK_PORT ?? '').trim() !== '';
   const topggSecretNonEmpty = (env.TOPGG_WEBHOOK_SECRET ?? '').trim() !== '';
+  const insecureTopggEnabled =
+    topggPortSet && (env.TOPGG_WEBHOOK_ALLOW_INSECURE ?? '').trim().toLowerCase() === 'true';
+  const redemptionSecret = (env.VOTE_REDEMPTION_SECRET ?? '').trim();
+  if ((topggSecretNonEmpty || insecureTopggEnabled) && redemptionSecret.length < 32) {
+    findings.push({
+      level: 'error',
+      message:
+        '[config] the top.gg vote endpoint is enabled but VOTE_REDEMPTION_SECRET is missing or shorter than 32 characters; refusing to start with a resettable reward ledger.',
+    });
+  }
   if (topggPortSet && topggSecretNonEmpty) {
     findings.push({
       level: 'warn',
@@ -298,9 +313,13 @@ export function validateConfigEnv(env: Record<string, string | undefined>): Conf
 }
 
 export function loadConfig(): AppConfig {
-  for (const finding of validateConfigEnv(process.env)) {
+  const findings = validateConfigEnv(process.env);
+  for (const finding of findings) {
     if (finding.level === 'error') log.error(finding.message);
     else log.warn(finding.message);
+  }
+  if (findings.some((finding) => finding.level === 'error')) {
+    throw new Error('[config] invalid security configuration; see the error above');
   }
   return {
     token: requireEnv('DISCORD_TOKEN'),
@@ -354,6 +373,7 @@ export function loadConfig(): AppConfig {
     // port, separate from HEALTH_PORT on purpose.
     topggWebhookPort: numEnvOptional('TOPGG_WEBHOOK_PORT'),
     topggWebhookSecret: strEnv('TOPGG_WEBHOOK_SECRET', '') || undefined,
+    voteRedemptionSecret: strEnv('VOTE_REDEMPTION_SECRET', '') || undefined,
     topggWebhookAllowInsecure: boolEnvDefaultOff('TOPGG_WEBHOOK_ALLOW_INSECURE'),
     topggToken: strEnv('TOPGG_TOKEN', '') || undefined,
     errorWebhookUrl: strEnv('ERROR_WEBHOOK_URL', '') || undefined,
@@ -387,7 +407,7 @@ export function loadConfig(): AppConfig {
     ),
     // Support/report channel (Discord Developer Policy requirement).
     // Default = Vozen's official support server; override with SUPPORT_URL.
-    supportUrl: strEnv('SUPPORT_URL', 'https://discord.gg/V6PZYZmhcQ'),
+    supportUrl: strEnv('SUPPORT_URL', 'https://discord.gg/4kYw2WUbNN'),
     // Premium Apps (native monetization). Absent => inert entitlements (only /redeem).
     premiumGuildSkuId: strEnv('PREMIUM_GUILD_SKU_ID', '') || undefined,
     premiumUserSkuId: strEnv('PREMIUM_USER_SKU_ID', '') || undefined,

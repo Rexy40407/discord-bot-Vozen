@@ -148,7 +148,7 @@ export default {
   'vote.noClientId':
     'Liên kết bình chọn Vozen chưa được thiết lập (thiếu CLIENT_ID). Hãy báo cho quản trị viên bot.',
   'vote.link':
-    'Bình chọn cho Vozen (miễn phí, mỗi 12 giờ) và giúp nhiều người biết đến nó hơn:\n{url}',
+    'Bình chọn cho Vozen (miễn phí, mỗi 12 giờ) và giúp nhiều người biết đến nó hơn:\n{url}\nNếu tài khoản này chưa từng nhận thưởng, tài khoản sẽ có **48 giờ Vozen Plus**, chỉ một lần cho mỗi tài khoản.',
   'help.title': 'Vozen — gõ ra, nghe ngay.',
   'help.embedTitle': 'Vozen — Các lệnh',
   'help.intro':
@@ -175,6 +175,8 @@ export default {
   'welcome.title': 'Cảm ơn bạn đã thêm Vozen! 👋',
   'welcome.description':
     'Vozen đọc to cuộc trò chuyện của bạn trong kênh thoại — gõ ra, nghe ngay.\n\n**Bắt đầu chỉ trong một bước:** chạy {setup} và tôi sẽ thiết lập tự động đọc rồi vào kênh thoại của bạn.\n\nCần danh sách lệnh đầy đủ? Chạy {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Cách thành viên sử dụng (3 bước)',
   'welcome.stepsBody':
     '1) Vào một kênh thoại\n2) Chạy /join để tôi vào cùng bạn\n3) Gõ trong kênh văn bản (hoặc dùng /tts) và tôi sẽ đọc to lên\nDanh sách lệnh đầy đủ: /help',
@@ -234,6 +236,8 @@ export default {
     '🔒 **{effect}** là hiệu ứng Premium. Hiệu ứng miễn phí: 🤖 Robot và 🔊 Echo. Mở khóa tất cả với Vozen Premium — xem `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** là bộ máy giọng Premium. Mở khóa với Vozen Plus (cá nhân) hoặc Vozen Premium (máy chủ) — xem `/premium`. Trong lúc đó giọng của bạn vẫn dùng bộ máy cục bộ miễn phí.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** là bộ máy giọng Premium. Mở khóa với Vozen Plus (cá nhân) hoặc Vozen Premium (máy chủ) — xem `/premium`. Trong lúc đó giọng của bạn vẫn dùng bộ máy cục bộ miễn phí.',
   'rizz.playing': '😏 Thả vài câu thả thính…\n> {line}',
   'rizz.unknownLang': 'Tôi không biết ngôn ngữ đó. Hãy chọn một ngôn ngữ trong danh sách.',
   'rizz.locked':
@@ -279,6 +283,8 @@ export default {
   'premium.lineUserFree': '👤 **Bạn (Plus):** chưa kích hoạt',
   'premium.getHint':
     'Mọi thứ bạn dùng hôm nay vẫn miễn phí. Premium bổ sung cả 8 hiệu ứng giọng, 24/7 trong cuộc gọi, 50 cách phát âm cá nhân, /rizz và các trò chơi premium. Ủng hộ: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Vé Premium của bạn:** đang dùng {used}/{total} giấy phép · hết hạn {date}',
   'premium.passServers': '↳ Đang dùng trên: {servers}',
@@ -345,6 +351,7 @@ export default {
     'Thông báo chuỗi ngày **tắt** — Vozen vẫn theo dõi chuỗi ngày (xem `/topspeakers`) nhưng không thông báo.',
   'config.soundboardOn': 'Bảng âm thanh **bật** — bất kỳ ai cũng có thể phát clip với `/sound`.',
   'config.soundboardOff': 'Bảng âm thanh **tắt** — `/sound` bị vô hiệu hóa trên máy chủ này.',
+  'config.votePromosLabel': 'Thông báo phần thưởng top.gg + Vozen Support',
   'config.greetOn': '✅ Tôi sẽ chào mọi người theo tên khi họ vào kênh thoại.',
   'config.greetOff': '🔇 Tôi sẽ **không** chào mọi người khi họ vào kênh thoại.',
   'config.greetLangSet': '✅ Đã đặt ngôn ngữ lời chào khi vào thành **{language}**.',
@@ -366,9 +373,9 @@ export default {
   'invite.button': 'Thêm Vozen',
   'vote.button': 'Bình chọn trên top.gg',
   'vote.upsell':
-    '🗳️ Chưa có Plus? Bình chọn cho Vozen trên top.gg → **24h Plus miễn phí** (mỗi tháng một lần): {url}',
+    '🗳️ Nếu tài khoản này chưa từng nhận thưởng, tài khoản sẽ có **48 giờ Vozen Plus**, chỉ một lần cho mỗi tài khoản. {url}',
   'vote.cooldownStatus':
-    '🗳️ Bạn đã nhận phần thưởng bình chọn — hãy bình chọn lại để nhận thêm **24h Plus** {date}.',
+    '🗳️ Tài khoản này đã dùng phần thưởng bình chọn một lần. Bạn vẫn có thể bình chọn để ủng hộ Vozen, nhưng sẽ không nhận thêm Plus.',
   'help.support': '🛟 Cần trợ giúp hoặc muốn báo cáo sự cố? {url}',
   'help.source': '📄 Mã nguồn mở (AGPL-3.0) — lấy mã nguồn chính xác đang chạy ở đây: {url}',
   'game.start.needVoice':

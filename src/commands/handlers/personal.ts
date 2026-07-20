@@ -31,6 +31,7 @@ import {
 import { isUserPremium, isGuildPremium } from '../../store/premium';
 import { t } from '../../i18n/index';
 import { voteUpsellLine } from '../voteUpsell';
+import { voteRewardStatus } from '../../store/voteReward';
 import { localeForUser, reply } from '../helpers';
 import { speakRawText } from './core';
 import { log } from '../../logging/logger';
@@ -143,9 +144,13 @@ async function applyAddPronunciation(
   if (res === 'limit') {
     const parts = [t('pron.limitHit', locale, { limit })];
     if (!premium) {
-      // Paid path (Ko-fi) + FREE path (vote → 24h of Plus) side by side.
+      // Paid path + the one-time 48h vote reward while this account is eligible.
       parts.push(t('pron.limitUpsell', locale, { url: deps.config.kofiUrl }));
-      const vote = voteUpsellLine(locale, deps.config.clientId);
+      const vote =
+        deps.config.voteRedemptionSecret &&
+        voteRewardStatus(deps.db, i.user.id, deps.config.voteRedemptionSecret).eligible
+          ? voteUpsellLine(locale, deps.config.clientId)
+          : null;
       if (vote) parts.push(vote);
     }
     await send(parts.join('\n'));

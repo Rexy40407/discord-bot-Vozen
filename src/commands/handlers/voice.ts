@@ -29,7 +29,7 @@ import { setNickname, clearNickname } from '../../store/nickname';
 import { isGuildPremium, isUserPremium } from '../../store/premium';
 import { setVoiceEffect } from '../../store/voiceEffect';
 import { isVoiceEffect, isPremiumEffect, effectLabel, type VoiceEffect } from '../../tts/effects';
-import { engineLabel } from '../../tts/engineLabels';
+import { engineLabel, isPremiumVoiceEngine } from '../../tts/engineLabels';
 import { sanitizeSpeakerName } from '../../language/speakerName';
 import { formatVoiceList, makeLocalizedNamer } from '../../language/voiceMap';
 import type { SynthRequest } from '../../tts/engine';
@@ -126,13 +126,12 @@ async function handleVoiceConfig(
         new StringSelectMenuBuilder()
           .setCustomId(`vcfg:engine:${i.id}`)
           .setPlaceholder(t('voice.config.pickEngine', locale))
-          // Same labels as every other surface (engineLabel); 💎 marks the Premium one.
+          // Same labels as every other surface (engineLabel); 💎 marks paid engines.
           .addOptions(
             (['google', 'piper', 'kokoro', 'gcloud'] as const).map((e) => ({
-              label:
-                e === 'gcloud'
-                  ? `💎 ${engineLabel(e, locale, deps.config.ttsEngine)}`
-                  : engineLabel(e, locale, deps.config.ttsEngine),
+              label: isPremiumVoiceEngine(e)
+                ? `💎 ${engineLabel(e, locale, deps.config.ttsEngine)}`
+                : engineLabel(e, locale, deps.config.ttsEngine),
               value: e,
               default: state.engine === e,
             })),
@@ -200,10 +199,16 @@ async function handleVoiceConfig(
       if (!check.ok) {
         // Keep the panel open; tell them via a follow-up so they can pick another engine.
         await ci.reply(
-          replyCard(t('voice.engine.gcloudLocked', locale), {
-            ephemeral: true,
-            tone: 'premium',
-          }),
+          replyCard(
+            t(
+              state.engine === 'kokoro' ? 'voice.engine.kokoroLocked' : 'voice.engine.gcloudLocked',
+              locale,
+            ),
+            {
+              ephemeral: true,
+              tone: 'premium',
+            },
+          ),
         );
         return;
       }
@@ -291,15 +296,21 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
       'google' | 'piper' | 'kokoro' | 'gcloud' | null;
     const currentEngine = getUserVoice(deps.db, i.guildId!, i.user.id)?.engine ?? 'google';
     const engine = engineOpt ?? currentEngine;
-    // Premium GATE: the Google HD engine (gcloud) requires Vozen Plus (user) OR the server's
+    // Premium GATE: Kokoro and Google HD require Vozen Plus (user) OR the server's
     // Premium. Only here, when SAVING — at runtime resolveUserEngine revalidates (expired
     // Premium -> gTTS). Same pattern as the premium effects (voice.effect.locked).
-    if (engine === 'gcloud') {
+    if (isPremiumVoiceEngine(engine)) {
       const now = Date.now();
       const unlocked =
         isUserPremium(deps.db, i.user.id, now) || isGuildPremium(deps.db, i.guildId!, now);
       if (!unlocked) {
-        await reply(i, t('voice.engine.gcloudLocked', locale));
+        await reply(
+          i,
+          t(
+            engine === 'kokoro' ? 'voice.engine.kokoroLocked' : 'voice.engine.gcloudLocked',
+            locale,
+          ),
+        );
         return;
       }
     }
@@ -428,8 +439,8 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
       model,
       speed,
       singleVoice: true,
-      // the preview must sound like what the user will hear; the resolver applies the gcloud gate
-      // (->google without Premium) and the budget (Phase 3) — engine + gcloudBudget.
+      // The preview must sound like what the user will hear; the resolver applies the paid-engine
+      // gate and the Google HD budget — engine + gcloudBudget.
       ...resolveUserEngine(deps.db, i.guildId!, i.user.id, stored?.engine, Date.now()),
     };
     // say() returns false when the queue is at the cap: in that case do NOT lie "now

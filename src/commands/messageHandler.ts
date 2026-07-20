@@ -18,6 +18,7 @@ import { bumpTalk, getTopSpeakers, type TalkBump } from '../store/talkStats';
 import { bumpTalkUsage } from '../store/talkUsage';
 import { bumpGuildTalk } from '../store/guildTalkStreak';
 import { renderLeaderboard } from '../leaderboard/randomPost';
+import { supportPromoMessage, votePromoMessage } from '../votePromo';
 import { getUserPronunciations, getServerPronunciations } from '../store/pronunciation';
 import { getUserVoice } from '../store/userVoice';
 import { resolveUserEngine } from '../tts/resolveEngine';
@@ -349,7 +350,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       announceSpeaker: announce ? speakerName : undefined,
     });
     // Engine chosen by the author (google default | piper | kokoro | gcloud). The shared
-    // resolver demotes 'gcloud'->'google' if Premium is not active (runtime
+    // resolver demotes paid Kokoro/Google HD -> 'google' if Premium is not active (runtime
     // gate) and (Phase 3) attaches the budget descriptor — the TWO fields (engine +
     // gcloudBudget) are exactly what ResolvedEngine returns. The PerUserEngineRouter
     // dispatches by req.engine.
@@ -446,6 +447,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // a configured channel); the decider does the threshold + cooldown + draw. Mentions are
     // suppressed (an unsolicited post should not ping 10 people). Best-effort: a failed send
     // (no write permission, etc.) can NEVER break the speech.
+    let automaticPostSent = false;
     if (queued && cfg.ttsChannelId && deps.leaderboardPoster?.record(message.guildId)) {
       try {
         const rows = getTopSpeakers(deps.db, message.guildId, new Date(), 10);
@@ -461,9 +463,38 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
               allowedMentions: { parse: [] },
             }),
           );
+          automaticPostSent = true;
         }
       } catch (err) {
         log.warn('[messageHandler] failed to post the automatic leaderboard (ignored)', err);
+      }
+    }
+
+    // Activity-driven promotional rotation in /setup. Admin-controlled and default-off.
+    // One shared 24h slot alternates Top.gg -> support -> Top.gg, so the same card cannot
+    // recur before 48h and both cards can never appear on the same day.
+    if (
+      queued &&
+      !automaticPostSent &&
+      cfg.ttsChannelId &&
+      cfg.votePromos &&
+      deps.config.clientId &&
+      deps.votePromoPoster
+    ) {
+      try {
+        const ch = deps.client.channels.cache.get(cfg.ttsChannelId);
+        if (ch && 'send' in ch && typeof (ch as { send?: unknown }).send === 'function') {
+          const promo = deps.votePromoPoster.record(message.guildId);
+          if (promo) {
+            const payload =
+              promo === 'vote'
+                ? votePromoMessage(cfg.locale, deps.config.clientId)
+                : supportPromoMessage(cfg.locale, deps.config.supportUrl);
+            await (ch as { send: (c: unknown) => Promise<unknown> }).send(payload);
+          }
+        }
+      } catch (err) {
+        log.warn('[messageHandler] failed to post the promotional reminder (ignored)', err);
       }
     }
   } catch (err) {

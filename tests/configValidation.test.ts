@@ -14,9 +14,19 @@ describe('validateConfigEnv', () => {
     expect(findings[0].message).toMatch(/TOPGG_WEBHOOK_SECRET/);
   });
 
-  it('TOPGG_WEBHOOK_SECRET presente e preenchido -> sem finding', () => {
-    const findings = validateConfigEnv({ TOPGG_WEBHOOK_SECRET: 'x' });
+  it('TOPGG_WEBHOOK_SECRET + segredo estavel preenchidos -> sem finding', () => {
+    const findings = validateConfigEnv({
+      TOPGG_WEBHOOK_SECRET: 'x',
+      VOTE_REDEMPTION_SECRET: '0123456789abcdef0123456789abcdef',
+    });
     expect(findings).toHaveLength(0);
+  });
+
+  it('endpoint de voto sem VOTE_REDEMPTION_SECRET forte -> erro', () => {
+    const findings = validateConfigEnv({ TOPGG_WEBHOOK_SECRET: 'x' });
+    expect(findings).toHaveLength(1);
+    expect(findings[0].level).toBe('error');
+    expect(findings[0].message).toMatch(/VOTE_REDEMPTION_SECRET/);
   });
 
   it('TOPGG_WEBHOOK_SECRET ausente -> sem finding (feature desligada e um estado legitimo)', () => {
@@ -58,7 +68,11 @@ describe('validateConfigEnv', () => {
   });
 
   it('TOPGG_WEBHOOK_PORT definido + TOPGG_WEBHOOK_SECRET nao-vazio -> aviso de listener redundante', () => {
-    const findings = validateConfigEnv({ TOPGG_WEBHOOK_PORT: '3002', TOPGG_WEBHOOK_SECRET: 'x' });
+    const findings = validateConfigEnv({
+      TOPGG_WEBHOOK_PORT: '3002',
+      TOPGG_WEBHOOK_SECRET: 'x',
+      VOTE_REDEMPTION_SECRET: '0123456789abcdef0123456789abcdef',
+    });
     expect(findings).toHaveLength(1);
     expect(findings[0].level).toBe('warn');
     expect(findings[0].message).toMatch(/TOPGG_WEBHOOK_PORT/);
@@ -80,6 +94,7 @@ describe('validateConfigEnv', () => {
     const findings = validateConfigEnv({
       TOPGG_WEBHOOK_SECRET: secretValue,
       TOPGG_WEBHOOK_PORT: '3002',
+      VOTE_REDEMPTION_SECRET: '0123456789abcdef0123456789abcdef',
       KOFI_WEBHOOK_TOKEN: secretValue,
     });
     for (const finding of findings) {

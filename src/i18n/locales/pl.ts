@@ -105,6 +105,8 @@ export default {
     '🔒 **{effect}** to efekt Premium. Darmowe efekty: 🤖 Robot i 🔊 Echo. Odblokuj wszystkie z Vozen Premium — zobacz `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** to głosowy silnik Premium. Odblokuj go z Vozen Plus (osobiste) lub Vozen Premium (serwer) — zobacz `/premium`. W międzyczasie twój głos pozostaje na darmowym lokalnym silniku.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** to głosowy silnik Premium. Odblokuj go z Vozen Plus (osobiste) lub Vozen Premium (serwer) — zobacz `/premium`. W międzyczasie twój głos pozostaje na darmowym lokalnym silniku.',
   'voice.notInVoice': 'Nie jestem jeszcze na kanale głosowym — najpierw użyj /join.',
   'voice.previewPlaying': 'Odtwarzam próbkę…',
   'preview.sample': 'Cześć, jestem Vozen. napisz to, usłysz to.',
@@ -157,6 +159,8 @@ export default {
   'premium.lineUserFree': '👤 **Ty (Plus):** nieaktywne',
   'premium.getHint':
     'Wszystko, czego używasz dzisiaj, pozostaje darmowe. Premium dodaje wszystkie 8 efektów głosu, obecność 24/7 na kanale, 50 osobistych wymów, /rizz oraz gry premium. Wsparcie: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass': '🎟️ **Twój pass Premium:** {used}/{total} licencji w użyciu · wygasa {date}',
   'premium.passServers': '↳ W użyciu na: {servers}',
   'premium.pitch':
@@ -260,6 +264,7 @@ export default {
     'Tablica dźwięków **włączona** — każdy może odtwarzać klipy poleceniem `/sound`.',
   'config.soundboardOff':
     'Tablica dźwięków **wyłączona** — `/sound` jest wyłączone na tym serwerze.',
+  'config.votePromosLabel': 'Powiadomienia o nagrodzie top.gg + Vozen Support',
   'config.greetOn': '✅ Będę witał ludzi po imieniu, gdy dołączą do kanału głosowego.',
   'config.greetOff': '🔇 **Nie** będę witał ludzi, gdy dołączą do kanału głosowego.',
   'config.greetLangSet': '✅ Język powitania przy wejściu ustawiony na **{language}**.',
@@ -342,13 +347,13 @@ export default {
   'vote.noClientId':
     'Link do głosowania na Vozen nie jest jeszcze skonfigurowany (brakuje CLIENT_ID). Daj znać administratorowi bota.',
   'vote.link':
-    'Zagłosuj na Vozen (za darmo, co 12 h) i pomóż większej liczbie osób go znaleźć:\n{url}',
+    'Zagłosuj na Vozen (za darmo, co 12 h) i pomóż większej liczbie osób go znaleźć:\n{url}\nJeśli to konto nigdy nie odebrało nagrody, otrzyma **48 godzin Vozen Plus**, tylko raz na konto.',
   'invite.button': 'Dodaj Vozen',
   'vote.button': 'Zagłosuj na top.gg',
   'vote.upsell':
-    '🗳️ Bez Plusa? Zagłosuj na Vozen na top.gg → **24 h Plus za darmo** (raz w miesiącu): {url}',
+    '🗳️ Jeśli to konto nigdy nie odebrało nagrody, otrzyma **48 godzin Vozen Plus**, tylko raz na konto. {url}',
   'vote.cooldownStatus':
-    '🗳️ Już odebrałeś nagrodę za głos — zagłosuj ponownie po kolejne **24 h Plus** {date}.',
+    '🗳️ To konto wykorzystało już jednorazową nagrodę za głos. Nadal możesz głosować, aby wspierać Vozen, ale nie otrzymasz więcej Plus.',
   'help.title': 'Vozen — napisz to, usłysz to.',
   'help.embedTitle': 'Vozen — Polecenia',
   'help.intro':
@@ -377,6 +382,8 @@ export default {
   'welcome.title': 'Dzięki za dodanie Vozen! 👋',
   'welcome.description':
     'Vozen czyta twój czat na głos na kanałach głosowych — napisz to, usłysz to.\n\n**Zacznij w jednym kroku:** uruchom {setup}, a skonfiguruję automatyczne czytanie i dołączę do twojego kanału głosowego.\n\nPotrzebujesz pełnej listy poleceń? Uruchom {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Jak członkowie tego używają (3 kroki)',
   'welcome.stepsBody':
     '1) Dołącz do kanału głosowego\n2) Uruchom /join, żebym do ciebie dołączył\n3) Pisz na kanale tekstowym (lub użyj /tts), a przeczytam to na głos\nPełna lista poleceń: /help',

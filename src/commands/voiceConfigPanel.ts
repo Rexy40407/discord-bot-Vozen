@@ -5,11 +5,12 @@
 // everything that is testable WITHOUT discord.js: seeding the pending state from the
 // user's current voice, paginating the ~40 languages into the 25-option select limit,
 // grouping voices per locale, the speed/engine presets, and the Save validation
-// (gcloud → Premium gate). The thin discord.js handler in voice.ts builds components
+// (Kokoro/Google HD → Premium gate). The thin discord.js handler in voice.ts builds components
 // from these functions and is verified live in Discord.
 
 import type { UserEngine } from '../store/userVoice';
 import { modelDisplayName } from '../language/voiceMap';
+import { isPremiumVoiceEngine } from '../tts/engineLabels';
 
 /** Pending selection while the panel is open (nothing is persisted until Save). */
 export interface PanelState {
@@ -112,15 +113,17 @@ export function paginateLocales(locales: string[], page: number): LocalePage {
   };
 }
 
-export type SaveResult = { ok: true } | { ok: false; reason: 'gcloudLocked' };
+export type SaveResult = { ok: true } | { ok: false; reason: 'premiumEngineLocked' };
 
 /**
- * Validates a Save. The only gate is the Google HD (gcloud) engine, which requires the
- * user's Plus OR the server's Premium — same rule as /voice set. On failure the caller
+ * Validates a Save. Kokoro and Google HD require the user's Plus OR the server's
+ * Premium — same rule as /voice set. On failure the caller
  * keeps the panel open with the locked message instead of silently downgrading the
  * engine. Speed is preset-bounded by construction, so no range check is needed. PURE.
  */
 export function validateSave(state: PanelState, opts: { premium: boolean }): SaveResult {
-  if (state.engine === 'gcloud' && !opts.premium) return { ok: false, reason: 'gcloudLocked' };
+  if (isPremiumVoiceEngine(state.engine) && !opts.premium) {
+    return { ok: false, reason: 'premiumEngineLocked' };
+  }
   return { ok: true };
 }

@@ -117,7 +117,7 @@ describe('voiceConfigPanel — pure logic for the /voice config panel', () => {
     it('gcloud engine WITHOUT premium is rejected (panel stays open), not silently downgraded', () => {
       const r = validateSave({ ...base, engine: 'gcloud' }, { premium: false });
       expect(r.ok).toBe(false);
-      expect(r.ok === false && r.reason).toBe('gcloudLocked');
+      expect(r.ok === false && r.reason).toBe('premiumEngineLocked');
     });
 
     it('gcloud engine WITH premium saves', () => {
@@ -125,8 +125,13 @@ describe('voiceConfigPanel — pure logic for the /voice config panel', () => {
       expect(r.ok).toBe(true);
     });
 
-    it('non-premium engines always save (speed is preset-bounded by construction)', () => {
-      for (const engine of ['google', 'piper', 'kokoro'] as const) {
+    it('Kokoro WITHOUT premium is rejected and WITH premium saves', () => {
+      expect(validateSave({ ...base, engine: 'kokoro' }, { premium: false }).ok).toBe(false);
+      expect(validateSave({ ...base, engine: 'kokoro' }, { premium: true }).ok).toBe(true);
+    });
+
+    it('free engines always save (speed is preset-bounded by construction)', () => {
+      for (const engine of ['google', 'piper'] as const) {
         expect(validateSave({ ...base, engine }, { premium: false }).ok).toBe(true);
       }
     });

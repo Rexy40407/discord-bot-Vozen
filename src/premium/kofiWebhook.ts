@@ -1134,6 +1134,7 @@ function handleAdminRequest(
 
 interface TopggCtx {
   secret: string;
+  expectedBotId?: string;
   onUpvote?: (userId: string) => void;
   logError: (m: string, err: unknown) => void;
 }
@@ -1153,30 +1154,43 @@ function handleTopggRequest(
     res.writeHead(405).end('method not allowed');
     return;
   }
-  let body = '';
+  const chunks: Buffer[] = [];
+  let bodyBytes = 0;
   let aborted = false;
   req.on('data', (chunk) => {
     // HTTP-01: defensive guard (see claim above) — ignore post-abort chunks.
     if (aborted) return;
-    body += chunk;
-    if (body.length > 64_000) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    bodyBytes += buffer.length;
+    if (bodyBytes > 64_000) {
       aborted = true;
       res.writeHead(413).end('too large');
       req.destroy();
+      return;
     }
+    chunks.push(buffer);
   });
   req.on('end', () => {
     if (aborted) return;
+    // Decode exactly once after the full byte stream has been collected. Converting each chunk
+    // independently can split a multi-byte UTF-8 character and change the signed payload.
+    const body = Buffer.concat(chunks, bodyBytes).toString('utf8');
     const authHeader = req.headers['authorization'];
+    const signatureHeader = req.headers['x-topgg-signature'];
     const result = handleVoteWebhook({
       authHeader: typeof authHeader === 'string' ? authHeader : undefined,
+      signatureHeader: typeof signatureHeader === 'string' ? signatureHeader : undefined,
       body,
       secret: ctx.secret,
+      expectedBotId: ctx.expectedBotId,
       onUpvote: ctx.onUpvote,
     });
     res.writeHead(result.status, { 'Content-Type': 'application/json' }).end(result.body);
   });
-  req.on('error', (err) => ctx.logError('[vote] top.gg webhook request error', err));
+  req.on('error', (err) => {
+    ctx.logError('[vote] top.gg webhook request error', err);
+    if (!res.headersSent) res.writeHead(400).end('bad request');
+  });
 }
 
 /**
@@ -1302,7 +1316,12 @@ export function startKofiWebhook(deps: KofiWebhookDeps): Server | null {
     // BEFORE the Ko-fi catch-all (which catches ANY POST) — otherwise a POST /webhook/topgg
     // would be treated as a Ko-fi payload. Only active with a secret (otherwise anyone forges votes).
     if (topggWebhookSecret && path === '/webhook/topgg') {
-      handleTopggRequest(req, res, { secret: topggWebhookSecret, onUpvote, logError });
+      handleTopggRequest(req, res, {
+        secret: topggWebhookSecret,
+        expectedBotId: deps.clientId,
+        onUpvote,
+        logError,
+      });
       return;
     }
 

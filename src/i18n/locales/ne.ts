@@ -101,6 +101,8 @@ export default {
     '🔒 **{effect}** Premium इफेक्ट हो। नि:शुल्क इफेक्टहरू: 🤖 Robot र 🔊 Echo। Vozen Premium सँग सबै अनलक गर्नुहोस् — `/premium` हेर्नुहोस्।',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** Premium भ्वाइस इन्जिन हो। Vozen Plus (व्यक्तिगत) वा Vozen Premium (सर्भर) सँग यसलाई अनलक गर्नुहोस् — `/premium` हेर्नुहोस्। त्यसबीच तपाईंको स्वर नि:शुल्क स्थानीय इन्जिनमै रहन्छ।',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** Premium भ्वाइस इन्जिन हो। Vozen Plus (व्यक्तिगत) वा Vozen Premium (सर्भर) सँग यसलाई अनलक गर्नुहोस् — `/premium` हेर्नुहोस्। त्यसबीच तपाईंको स्वर नि:शुल्क स्थानीय इन्जिनमै रहन्छ।',
   'voice.notInVoice': 'म अझै कुनै भ्वाइस च्यानलमा छैन — पहिले /join चलाउनुहोस्।',
   'voice.previewPlaying': 'नमुना बजाउँदै…',
   'preview.sample': 'नमस्ते, म Vozen हुँ। टाइप गर्नुहोस्, सुन्नुहोस्।',
@@ -151,6 +153,8 @@ export default {
   'premium.lineUserFree': '👤 **तपाईं (Plus):** निष्क्रिय',
   'premium.getHint':
     'तपाईंले आज प्रयोग गर्ने सबै कुरा नि:शुल्कै रहन्छ। Premium ले सबै ८ भ्वाइस इफेक्ट, 24/7 इन-कल, ५० व्यक्तिगत उच्चारण, /rizz र premium खेलहरू थप्छ। सहयोग: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **तपाईंको Premium पास:** {used}/{total} लाइसेन्स प्रयोगमा · {date} मा समाप्त',
   'premium.passServers': '↳ यहाँ प्रयोगमा: {servers}',
@@ -252,6 +256,7 @@ export default {
     'स्ट्रिक सूचना **निष्क्रिय** — Vozen ले स्ट्रिक अझै ट्र्याक गर्छ (`/topspeakers` हेर्नुहोस्) तर तिनका बारेमा चुपचाप रहन्छ।',
   'config.soundboardOn': 'साउन्डबोर्ड **सक्रिय** — जो कोहीले `/sound` ले क्लिप बजाउन सक्छन्।',
   'config.soundboardOff': 'साउन्डबोर्ड **निष्क्रिय** — यस सर्भरमा `/sound` असक्षम छ।',
+  'config.votePromosLabel': 'top.gg पुरस्कार सूचनाहरू + Vozen Support',
   'config.greetOn': '✅ मानिसहरू भ्वाइस च्यानलमा जोडिँदा म तिनलाई नामले अभिवादन गर्नेछु।',
   'config.greetOff': '🔇 मानिसहरू भ्वाइस च्यानलमा जोडिँदा म तिनलाई अभिवादन **गर्दिनँ**।',
   'config.greetLangSet': '✅ जोडिँदाको अभिवादन भाषा **{language}** मा सेट भयो।',
@@ -333,13 +338,13 @@ export default {
   'vote.noClientId':
     'Vozen को मत लिङ्क अझै सेट भएको छैन (CLIENT_ID छैन)। बोट एडमिनलाई जानकारी दिनुहोस्।',
   'vote.link':
-    'Vozen लाई मत दिनुहोस् (नि:शुल्क, हरेक १२ घण्टामा) र थप मानिसहरूलाई यो भेट्टाउन मद्दत गर्नुहोस्:\n{url}',
+    'Vozen लाई मत दिनुहोस् (नि:शुल्क, हरेक १२ घण्टामा) र थप मानिसहरूलाई यो भेट्टाउन मद्दत गर्नुहोस्:\n{url}\nयदि यो खाताले पहिले पुरस्कार लिएको छैन भने, **४८ घण्टा Vozen Plus** पाउँछ, प्रत्येक खातामा एक पटक मात्र।',
   'invite.button': 'Vozen थप्नुहोस्',
   'vote.button': 'top.gg मा मत दिनुहोस्',
   'vote.upsell':
-    '🗳️ Plus छैन? top.gg मा Vozen लाई मत दिनुहोस् → **24h Plus नि:शुल्क** (महिनामा एक पटक): {url}',
+    '🗳️ यदि यो खाताले पहिले पुरस्कार लिएको छैन भने, **४८ घण्टा Vozen Plus** पाउँछ, प्रत्येक खातामा एक पटक मात्र। {url}',
   'vote.cooldownStatus':
-    '🗳️ तपाईंले पहिले नै आफ्नो मत पुरस्कार लिइसक्नुभयो — अर्को **24h Plus** का लागि {date} फेरि मत दिनुहोस्।',
+    '🗳️ यो खाताले एक पटकको मत पुरस्कार पहिले नै प्रयोग गरिसकेको छ। Vozen लाई समर्थन गर्न अझै मत दिन सक्नुहुन्छ, तर थप Plus पाइने छैन।',
   'help.title': 'Vozen — टाइप गर्नुहोस्, सुन्नुहोस्।',
   'help.embedTitle': 'Vozen — कमाण्डहरू',
   'help.intro':
@@ -368,6 +373,8 @@ export default {
   'welcome.title': 'Vozen थपेकोमा धन्यवाद! 👋',
   'welcome.description':
     'Vozen ले तपाईंको च्याट भ्वाइस च्यानलमा ठूलो स्वरमा पढ्छ — टाइप गर्नुहोस्, सुन्नुहोस्।\n\n**एक चरणमा सुरु गर्नुहोस्:** {setup} चलाउनुहोस् र म स्वतः-पढ्ने सेट गरेर तपाईंको भ्वाइस च्यानलमा जोडिनेछु।\n\nपूर्ण कमाण्ड सूची चाहिन्छ? {help} चलाउनुहोस्।',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'सदस्यहरूले यसलाई कसरी प्रयोग गर्छन् (३ चरण)',
   'welcome.stepsBody':
     '१) कुनै भ्वाइस च्यानलमा जोडिनुहोस्\n२) /join चलाउनुहोस् ताकि म तपाईंसँग जोडिऊँ\n३) टेक्स्ट च्यानलमा टाइप गर्नुहोस् (वा /tts प्रयोग गर्नुहोस्) र म त्यो ठूलो स्वरमा पढिदिनेछु\nपूर्ण कमाण्ड सूची: /help',

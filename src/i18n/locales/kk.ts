@@ -151,7 +151,7 @@ export default {
   'vote.noClientId':
     'Vozen дауыс беру сілтемесі әлі орнатылмаған (CLIENT_ID жоқ). Бот әкімшісіне хабарлаңыз.',
   'vote.link':
-    'Vozen үшін дауыс беріңіз (тегін, әр 12h сайын) және оны көбірек адам тапсын:\n{url}',
+    'Vozen үшін дауыс беріңіз (тегін, әр 12h сайын) және оны көбірек адам тапсын:\n{url}\nЕгер бұл аккаунт сыйлықты бұрын алмаған болса, **48 сағат Vozen Plus** алады, әр аккаунтқа тек бір рет.',
   'help.title': 'Vozen — жазыңыз, тыңдаңыз.',
   'help.embedTitle': 'Vozen — Командалар',
   'help.intro':
@@ -178,6 +178,8 @@ export default {
   'welcome.title': 'Vozen-ды қосқаныңызға рахмет! 👋',
   'welcome.description':
     'Vozen чатыңызды дауыстық арналарда дауыстап оқиды — жазыңыз, тыңдаңыз.\n\n**Бір қадаммен бастаңыз:** {setup} орындаңыз, мен автоматты оқуды баптап, дауыстық арнаңызға кіремін.\n\nТолық команда тізімі керек пе? {help} орындаңыз.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Мүшелер оны қалай қолданады (3 қадам)',
   'welcome.stepsBody':
     '1) Дауыстық арнаға кіріңіз\n2) /join орындаңыз, мен сізге қосыламын\n3) Мәтіндік арнаға жазыңыз (немесе /tts қолданыңыз), мен оны дауыстап оқимын\nТолық команда тізімі: /help',
@@ -241,6 +243,8 @@ export default {
     '🔒 **{effect}** — Premium эффектісі. Тегін эффектілер: 🤖 Robot және 🔊 Echo. Барлығын Vozen Premium арқылы ашыңыз — `/premium` қараңыз.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** — Premium дауыс қозғалтқышы. Оны Vozen Plus (жеке) немесе Vozen Premium (сервер) арқылы ашыңыз — `/premium` қараңыз. Әзірге дауысыңыз тегін жергілікті қозғалтқышта қалады.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** — Premium дауыс қозғалтқышы. Оны Vozen Plus (жеке) немесе Vozen Premium (сервер) арқылы ашыңыз — `/premium` қараңыз. Әзірге дауысыңыз тегін жергілікті қозғалтқышта қалады.',
   'rizz.playing': '😏 Аздап сүйкімділік шашып жатырмын…\n> {line}',
   'rizz.unknownLang': 'Мұндай тілді білмеймін. Тізімнен біреуін таңдаңыз.',
   'rizz.locked':
@@ -286,6 +290,8 @@ export default {
   'premium.lineUserFree': '👤 **Сіз (Plus):** белсенді емес',
   'premium.getHint':
     'Бүгін қолданатын барлық нәрсе тегін болып қала береді. Premium 8 дауыс эффектісінің барлығын, қоңырауда 24/7 болуды, 50 жеке айтылымды, /rizz-ті және премиум ойындарды қосады. Қолдау: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Сіздің Premium рұқсатнамаңыз:** {used}/{total} лицензия қолданыста · {date} мерзімі бітеді',
   'premium.passServers': '↳ Қолданыста: {servers}',
@@ -355,6 +361,7 @@ export default {
   'config.soundboardOn':
     'Дыбыс тақтасы **қосулы** — кез келген адам `/sound` арқылы клиптерді ойната алады.',
   'config.soundboardOff': 'Дыбыс тақтасы **өшірулі** — осы серверде `/sound` ажыратылған.',
+  'config.votePromosLabel': 'top.gg сыйлығы туралы хабарламалар + Vozen Support',
   'config.greetOn': '✅ Адамдар дауыстық арнаға кіргенде оларды атымен сәлемдесемін.',
   'config.greetOff': '🔇 Адамдар дауыстық арнаға кіргенде оларды **сәлемдеспеймін**.',
   'config.greetLangSet': '✅ Кіру сәлемдесуінің тілі **{language}** болып орнатылды.',
@@ -376,9 +383,9 @@ export default {
   'invite.button': 'Vozen қосу',
   'vote.button': 'top.gg-де дауыс беру',
   'vote.upsell':
-    '🗳️ Plus жоқ па? Vozen үшін top.gg-де дауыс беріңіз → **24 сағат тегін Plus** (айына бір рет): {url}',
+    '🗳️ Егер бұл аккаунт сыйлықты бұрын алмаған болса, **48 сағат Vozen Plus** алады, әр аккаунтқа тек бір рет. {url}',
   'vote.cooldownStatus':
-    '🗳️ Сіз дауыс беру сыйлығыңызды әлдеқашан алдыңыз — тағы **24 сағат Plus** алу үшін {date} қайта дауыс беріңіз.',
+    '🗳️ Бұл аккаунт бір реттік дауыс сыйлығын пайдаланып қойған. Vozen-ді қолдау үшін әлі де дауыс бере аласыз, бірақ қосымша Plus берілмейді.',
   'help.support': '🛟 Көмек керек пе немесе мәселе туралы хабарлағыңыз келе ме? {url}',
   'help.source':
     '📄 Ашық бастапқы код (AGPL-3.0) — осында жұмыс істеп тұрған нақты бастапқы кодты алыңыз: {url}',

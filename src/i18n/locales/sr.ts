@@ -102,6 +102,8 @@ export default {
     '🔒 **{effect}** је Premium ефекат. Бесплатни ефекти: 🤖 Robot и 🔊 Echo. Откључај све уз Vozen Premium — погледај `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** је Premium гласовни мотор. Откључај га уз Vozen Plus (лично) или Vozen Premium (сервер) — погледај `/premium`. У међувремену твој глас остаје на бесплатном локалном мотору.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** је Premium гласовни мотор. Откључај га уз Vozen Plus (лично) или Vozen Premium (сервер) — погледај `/premium`. У међувремену твој глас остаје на бесплатном локалном мотору.',
   'voice.notInVoice': 'Још нисам у гласовном каналу — прво покрени /join.',
   'voice.previewPlaying': 'Пуштам узорак…',
   'preview.sample': 'Здраво, ја сам Vozen. напиши, чуј.',
@@ -152,6 +154,8 @@ export default {
   'premium.lineUserFree': '👤 **Ти (Plus):** није активан',
   'premium.getHint':
     'Све што данас користиш остаје бесплатно. Premium додаје свих 8 гласовних ефеката, 24/7 у позиву, 50 личних изговора, /rizz и premium игре. Подршка: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass': '🎟️ **Твој Premium пас:** {used}/{total} лиценци у употреби · истиче {date}',
   'premium.passServers': '↳ У употреби на: {servers}',
   'premium.pitch':
@@ -252,6 +256,7 @@ export default {
     'Обавештења о низовима **искључена** — Vozen и даље прати низове (види `/topspeakers`) али ћути о њима.',
   'config.soundboardOn': 'Звучна табла **укључена** — свако може да пушта клипове помоћу `/sound`.',
   'config.soundboardOff': 'Звучна табла **искључена** — `/sound` је онемогућен на овом серверу.',
+  'config.votePromosLabel': 'Обавештења о top.gg награди + Vozen Support',
   'config.greetOn': '✅ Поздрављаћу људе по имену када уђу у гласовни канал.',
   'config.greetOff': '🔇 **Нећу** поздрављати људе када уђу у гласовни канал.',
   'config.greetLangSet': '✅ Језик поздрава при уласку постављен на **{language}**.',
@@ -332,13 +337,14 @@ export default {
   'invite.link': 'Додај Vozen на свој сервер:\n{url}',
   'vote.noClientId':
     'Vozen-јев линк за гласање још није подешен (CLIENT_ID недостаје). Обавести администратора бота.',
-  'vote.link': 'Гласај за Vozen (бесплатно, сваких 12ч) и помози да га више људи открије:\n{url}',
+  'vote.link':
+    'Гласај за Vozen (бесплатно, сваких 12ч) и помози да га више људи открије:\n{url}\nАко овај налог никада није преузео награду, добија **48 сати Vozen Plus-а**, само једном по налогу.',
   'invite.button': 'Додај Vozen',
   'vote.button': 'Гласај на top.gg',
   'vote.upsell':
-    '🗳️ Немаш Plus? Гласај за Vozen на top.gg → **24ч Plus-а бесплатно** (једном месечно): {url}',
+    '🗳️ Ако овај налог никада није преузео награду, добија **48 сати Vozen Plus-а**, само једном по налогу. {url}',
   'vote.cooldownStatus':
-    '🗳️ Већ си преузео награду за гласање — гласај поново за још **24ч Plus-а** {date}.',
+    '🗳️ Овај налог је већ искористио једнократну награду за глас. И даље можеш да гласаш и подржиш Vozen, али нећеш добити још Plus-а.',
   'help.title': 'Vozen — напиши, чуј.',
   'help.embedTitle': 'Vozen — Команде',
   'help.intro':
@@ -367,6 +373,8 @@ export default {
   'welcome.title': 'Хвала што си додао Vozen! 👋',
   'welcome.description':
     'Vozen чита твој чет наглас у гласовним каналима — напиши, чуј.\n\n**Почни у једном кораку:** покрени {setup} и подесићу аутоматско читање и придружити се твом гласовном каналу.\n\nТреба ти потпуна листа команди? Покрени {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Како чланови то користе (3 корака)',
   'welcome.stepsBody':
     '1) Уђи у гласовни канал\n2) Покрени /join да ти се придружим\n3) Пиши у текстуалном каналу (или користи /tts) и прочитаћу то наглас\nПотпуна листа команди: /help',

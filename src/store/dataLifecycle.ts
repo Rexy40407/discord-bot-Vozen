@@ -27,6 +27,7 @@ export const GUILD_PURGE_TABLES = [
   'talk_stats',
   'talk_usage', // aggregate language/engine counters; still scoped to guild + user
   'guild_talk_streak', // per-server talk streak (aggregate, no per-user data) — dies with the server
+  'vote_promo_state', // per-server timestamp + kind enforcing the alternating reminder rotation
   'user_effect',
   'voice_presence',
   'stt_consent',
@@ -92,6 +93,11 @@ export const LIFECYCLE_REVIEWED_EXEMPT = [
   'kofi_transaction', // idempotency ledger: Ko-fi transaction_id, not a user ID
   'kofi_pending', // pending purchases, purged by TTL (startPendingPurgeJob); tx id + email_hash
   'kofi_activation_consent', // versioned immediate-delivery evidence retained with payment records
+  // Pseudonymous lifetime anti-abuse marker for the one-time Top.gg reward. It stores
+  // only HMAC(user id), never the Discord id, and must survive /privacy erase so the
+  // same account cannot erase-and-reclaim. Retained only while the promotion exists.
+  'vote_redemption',
+  'vote_redemption_meta', // non-personal fingerprint that prevents silent secret rotation
 ] as const;
 
 /**

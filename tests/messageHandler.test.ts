@@ -28,6 +28,7 @@ import { setGuildConfig } from '../src/store/guildConfig';
 import { addBlockword } from '../src/store/blocklist';
 import { setNickname } from '../src/store/nickname';
 import { setUserVoice } from '../src/store/userVoice';
+import { grantUserPremium } from '../src/store/premium';
 
 const GUILD = 'g-main';
 const CHAN = 'chan-autoread';
@@ -534,6 +535,23 @@ describe('handleMessage — branches not covered by the existing tests', () => {
     await handleMessage(makeMessage({ content: 'olá' }), deps);
     expect(say).toHaveBeenCalledTimes(1);
     expect(say.mock.calls[0][0].engine).toBe('piper');
+  });
+
+  it('stored Kokoro on Free → runtime sends the configured free engine', async () => {
+    setUserVoice(db, GUILD, USER, 'en_US-amy-medium', 1, 'kokoro');
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá' }), deps);
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].engine).toBe('google');
+  });
+
+  it('stored Kokoro with Plus → runtime keeps Kokoro', async () => {
+    setUserVoice(db, GUILD, USER, 'en_US-amy-medium', 1, 'kokoro');
+    grantUserPremium(db, USER, 30, 'test', Date.now());
+    const deps = makeDeps(db, say);
+    await handleMessage(makeMessage({ content: 'olá' }), deps);
+    expect(say).toHaveBeenCalledTimes(1);
+    expect(say.mock.calls[0][0].engine).toBe('kokoro');
   });
 
   it('user without a defined voice → req.engine undefined (default Google in the router)', async () => {

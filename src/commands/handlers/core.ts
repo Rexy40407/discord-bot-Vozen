@@ -173,8 +173,8 @@ export async function speakRawText(
     defaultSpeed: deps.config.defaultSpeed,
     media: media.map((kind) => ({ kind })),
   });
-  // Engine chosen by the user — resolved by the shared gate (gcloud->google without
-  // Premium; Phase 3 attaches the budget). The two fields the resolver returns are
+  // Engine chosen by the user — resolved by the shared paid-engine gate
+  // (Kokoro/Google HD -> configured default without Plus/Premium). The two fields returned are
   // exactly engine + gcloudBudget of the SynthRequest.
   const resolvedEngine = resolveUserEngine(deps.db, guildId, userId, userVoice?.engine, Date.now());
   req.engine = resolvedEngine.engine;

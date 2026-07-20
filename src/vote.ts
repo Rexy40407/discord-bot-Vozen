@@ -3,8 +3,8 @@
 // OPTIONAL top.gg webhook to record bot votes (P11.5).
 //
 // Design (mirrors src/health.ts):
-//  - `handleVoteWebhook({ authHeader, body, secret })` is a PURE function (no
-//    network, no port opened): validates the secret, parses the top.gg payload and
+//  - `handleVoteWebhook(...)` is a PURE function (no network, no port opened):
+//    validates the v1 HMAC signature or legacy Authorization secret, parses the payload and
 //    returns { status, body }. Increments the `votes` metric on a valid upvote,
 //    a la AudioCache.get (which also touches the metrics singleton inside the
 //    unit). Testable without network.
@@ -14,29 +14,18 @@
 //    server), exactly like the health endpoint.
 //
 // Security:
-//  - If `secret` is defined, the Authorization header MUST match (401 otherwise).
-//    The comparison is constant-time (crypto.timingSafeEqual over the SHA-256 of
-//    both sides) so as not to leak the secret via timing — see authMatches().
-//    top.gg allows webhooks without auth, but it's insecure — so we always
-//    recommend setting TOPGG_WEBHOOK_SECRET (see .env.example and the startup
-//    warning in startVoteWebhookServer).
+//  - v1 verifies x-topgg-signature over the raw body with HMAC-SHA256 and rejects
+//    timestamps older than five minutes. Legacy v0 compares Authorization in constant time.
 //  - Without a `secret` configured, the webhook by default does NOT start (SEC-01) —
 //    without auth, anyone who discovers the port forges votes. To start anyway
 //    (without auth), the explicit opt-in TOPGG_WEBHOOK_ALLOW_INSECURE=true is required.
 //
-// The top.gg payload (POST JSON) has, among others, these fields:
-//   { bot: "<id>", user: "<id of the voter>", type: "upvote" | "test", ... }
-// "test" is a ping from the top.gg dashboard ("Test webhook" button): we respond
-// 200 so the test passes, but we do NOT count it as a vote (only type === "upvote").
-//
-// NOTE — "live pending": the bot's top.gg listing and the TOPGG_WEBHOOK_SECRET
-// belong to the bot owner. This part builds the code + tests; wiring the webhook
-// live (creating the listing, pasting the secret, exposing the port) is left to the
-// user's deploy.
+// New listings send nested `vote.create` / `webhook.test` events. Legacy
+// `upvote` / `test` payloads remain supported during migration.
 
 import http from 'node:http';
 import type { Server } from 'node:http';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { log } from './logging/logger';
 import { metrics } from './metrics';
 import type { AppConfig } from './config/index';
@@ -45,27 +34,36 @@ import { hardenServerTimeouts } from './http/serverHardening';
 export interface VoteWebhookInput {
   /** Value of the request's Authorization header (or undefined if absent). */
   authHeader: string | undefined;
+  /** Top.gg v1 signature header (`t=...,v1=...`), if present. */
+  signatureHeader?: string;
   /** Raw request body (top.gg JSON string). */
   body: string;
   /** Expected secret. If undefined/empty, auth is NOT verified. */
   secret: string | undefined;
+  /** Injectable clock for v1 replay protection. */
+  now?: () => number;
+  /** Discord application id this endpoint is allowed to reward. */
+  expectedBotId?: string;
   /**
    * Reward: called with the voter's id on EVERY valid upvote (same condition as the
    * `votes` metric). The caller wires the perk grant here (see index.ts). A throw
-   * here does NOT break the response — top.gg doesn't re-deliver failed webhooks, so
-   * we respond 200 anyway and leave the error to the callback itself to log.
+   * returns 500 so Top.gg retries the delivery.
    */
   onUpvote?: (userId: string) => void;
 }
 
 export interface VoteData {
-  /** Id of the voter (top.gg's `user` field). */
+  /** Discord id of the voter. */
   user: string;
-  /** Event type: "upvote" (real vote) or "test" (dashboard ping). */
+  /** v1 (`vote.create`/`webhook.test`) or legacy (`upvote`/`test`) event type. */
   type: string;
-  /** Id of the voted bot (top.gg's `bot` field), if present. */
+  /** Discord id of the voted bot, if present. */
   bot?: string;
+  /** Stable Top.gg vote id on v1 deliveries. */
+  eventId?: string;
 }
+
+export const TOPGG_SIGNATURE_TOLERANCE_MS = 5 * 60 * 1000;
 
 /**
  * Compares the auth header with the secret in constant time.
@@ -84,6 +82,44 @@ function authMatches(authHeader: string | undefined, secret: string): boolean {
     .digest();
   const b = createHash('sha256').update(secret).digest();
   return timingSafeEqual(a, b);
+}
+
+/** Verifies a Top.gg v1 HMAC over the untouched request body and rejects stale replays. */
+function signatureMatches(
+  signatureHeader: string | undefined,
+  body: string,
+  secret: string,
+  now: number,
+): boolean {
+  if (!signatureHeader) return false;
+  const parts = new Map(
+    signatureHeader.split(',').map((part) => {
+      const idx = part.indexOf('=');
+      return idx === -1
+        ? [part.trim(), '']
+        : [part.slice(0, idx).trim(), part.slice(idx + 1).trim()];
+    }),
+  );
+  const timestampRaw = parts.get('t');
+  const receivedHex = parts.get('v1');
+  if (
+    !timestampRaw ||
+    !receivedHex ||
+    !/^\d+$/.test(timestampRaw) ||
+    !/^[a-f0-9]{64}$/i.test(receivedHex)
+  ) {
+    return false;
+  }
+  const timestampMs = Number(timestampRaw) * 1000;
+  if (
+    !Number.isSafeInteger(timestampMs) ||
+    Math.abs(now - timestampMs) > TOPGG_SIGNATURE_TOLERANCE_MS
+  ) {
+    return false;
+  }
+  const expected = createHmac('sha256', secret).update(`${timestampRaw}.${body}`).digest();
+  const received = Buffer.from(receivedHex, 'hex');
+  return received.length === expected.length && timingSafeEqual(received, expected);
 }
 
 export interface VoteWebhookResult {
@@ -105,13 +141,18 @@ export interface VoteWebhookResult {
  *     type === "test" => 200 but does NOT count (it's a test ping from the dashboard).
  */
 export function handleVoteWebhook(input: VoteWebhookInput): VoteWebhookResult {
-  const { authHeader, body, secret, onUpvote } = input;
+  const { authHeader, signatureHeader, body, secret, onUpvote, expectedBotId } = input;
 
   // 1. Auth — only when a secret is configured (literal reading of the contract).
   //    Constant-time comparison (timingSafeEqual) so as not to leak the secret via
   //    timing — see authMatches().
-  if (secret !== undefined && secret !== '' && !authMatches(authHeader, secret)) {
-    return { status: 401, body: JSON.stringify({ status: 'unauthorized' }) };
+  if (secret !== undefined && secret !== '') {
+    const authenticated = signatureHeader
+      ? signatureMatches(signatureHeader, body, secret, input.now?.() ?? Date.now())
+      : authMatches(authHeader, secret);
+    if (!authenticated) {
+      return { status: 401, body: JSON.stringify({ status: 'unauthorized' }) };
+    }
   }
 
   // 2. Defensive parse — malformed input can NEVER crash.
@@ -130,23 +171,53 @@ export function handleVoteWebhook(input: VoteWebhookInput): VoteWebhookResult {
 
   const obj = parsed as Record<string, unknown>;
   const type = typeof obj.type === 'string' ? obj.type : '';
-  const user = typeof obj.user === 'string' ? obj.user : '';
-  const bot = typeof obj.bot === 'string' ? obj.bot : undefined;
+  let user = typeof obj.user === 'string' ? obj.user : '';
+  let bot = typeof obj.bot === 'string' ? obj.bot : undefined;
+  let eventId: string | undefined;
+
+  // New projects receive v1 nested events; legacy v0 stays supported.
+  if (type === 'vote.create' || type === 'webhook.test') {
+    const data =
+      obj.data !== null && typeof obj.data === 'object' && !Array.isArray(obj.data)
+        ? (obj.data as Record<string, unknown>)
+        : {};
+    const v1User =
+      data.user !== null && typeof data.user === 'object' && !Array.isArray(data.user)
+        ? (data.user as Record<string, unknown>)
+        : {};
+    const project =
+      data.project !== null && typeof data.project === 'object' && !Array.isArray(data.project)
+        ? (data.project as Record<string, unknown>)
+        : {};
+    user = typeof v1User.platform_id === 'string' ? v1User.platform_id : '';
+    bot = typeof project.platform_id === 'string' ? project.platform_id : undefined;
+    eventId = typeof data.id === 'string' ? data.id : undefined;
+  }
 
   // A valid upvote needs a `user` (the voter). Without it, the payload isn't
   // actionable: we accept (200) but don't count — avoids inflating the metric with
   // empty pings. type "test" also falls here (doesn't count), and that's the desired.
-  const vote: VoteData = { user, type, ...(bot !== undefined ? { bot } : {}) };
+  const vote: VoteData = {
+    user,
+    type,
+    ...(bot !== undefined ? { bot } : {}),
+    ...(eventId !== undefined ? { eventId } : {}),
+  };
 
-  if (type === 'upvote' && user !== '') {
-    metrics.inc('votes');
-    // Reward (temporary Plus perks): same condition as the metric. A throw from the
-    // callback can't break the 200 — the vote counted and top.gg doesn't re-deliver.
+  // Defense in depth: even a correctly signed delivery must target this exact
+  // Discord application. This prevents cross-project secret/config mistakes from
+  // rewarding a vote for another listing.
+  if ((type === 'upvote' || type === 'vote.create') && expectedBotId && bot !== expectedBotId) {
+    return { status: 400, body: JSON.stringify({ status: 'wrong_project' }), vote };
+  }
+
+  if ((type === 'upvote' || type === 'vote.create') && user !== '') {
     try {
       onUpvote?.(user);
     } catch {
-      /* the callback is responsible for its own logging (see index.ts) */
+      return { status: 500, body: JSON.stringify({ status: 'reward_failed' }), vote };
     }
+    metrics.inc('votes');
   }
 
   return { status: 200, body: JSON.stringify({ status: 'ok' }), vote };
@@ -165,7 +236,10 @@ export function handleVoteWebhook(input: VoteWebhookInput): VoteWebhookResult {
  * endpoint.
  */
 export function startVoteWebhookServer(
-  config: Pick<AppConfig, 'topggWebhookPort' | 'topggWebhookSecret' | 'topggWebhookAllowInsecure'>,
+  config: Pick<
+    AppConfig,
+    'clientId' | 'topggWebhookPort' | 'topggWebhookSecret' | 'topggWebhookAllowInsecure'
+  >,
   onUpvote?: (userId: string) => void,
 ): Server | undefined {
   const port = config.topggWebhookPort;
@@ -219,10 +293,13 @@ export function startVoteWebhookServer(
       if (aborted) return;
       const body = Buffer.concat(chunks).toString('utf8');
       const authHeader = req.headers['authorization'];
+      const signatureHeader = req.headers['x-topgg-signature'];
       const result = handleVoteWebhook({
         authHeader: typeof authHeader === 'string' ? authHeader : undefined,
+        signatureHeader: typeof signatureHeader === 'string' ? signatureHeader : undefined,
         body,
         secret,
+        expectedBotId: config.clientId,
         onUpvote,
       });
       res.writeHead(result.status, { 'Content-Type': 'application/json' });

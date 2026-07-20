@@ -26,7 +26,7 @@
     "hero.mini": "35 種語言 · 38 種語音 · 16 款小遊戲 · 免費核心功能",
     "hear.eyebrow": "聽聽看",
     "hear.title": "按下播放。這就是真正的 Vozen 語音。",
-    "hear.sub": "每一段音訊都由 Vozen 親自生成。切換引擎，比較 Google、Piper 與 Kokoro 的效果。",
+    "hear.sub": "试听所有引擎。Piper 免费；Kokoro 需通过 Vozen Plus 或 Premium 解锁。",
     "stat.langs": "種語言",
     "stat.voices": "種神經網路語音",
     "stat.games": "款小遊戲",
@@ -50,7 +50,7 @@
     "feat.7.t": "語音特效",
     "feat.7.d": "機器人、回音、低沉、花栗鼠、廣播、惡魔……你的訊息，隨心變換。免費提供兩種特效，升級 Premium 即可享用全部八種。",
     "feat.8.t": "公道的 Premium",
-    "feat.8.d": "每月 €3.99 即可解鎖額外功能。今天免費的一切，永遠免費——這是承諾，不是花招。",
+    "feat.8.d": "每月 €3.99 可解锁 Kokoro 和服务器附加功能；基础 Piper 核心仍然免费。",
     "feat.9.t": "開放原始碼",
     "feat.9.d": "Vozen 的所有程式碼都公開在 GitHub 上。你可以稽核、學習，或發起 PR——沒有秘密，沒有間諜軟體。",
     "lang.eyebrow": "語言",
@@ -81,7 +81,7 @@
     "cmd.admin": "管理",
     "price.eyebrow": "定價",
     "price.title": "核心功能免費，Premium 公道實惠。",
-    "price.sub": "Vozen 今天所做的一切，永遠免費。Premium 新增的是那些會消耗我們實際運算資源的額外功能。",
+    "price.sub": "基于 Piper 的核心功能永久免费。Premium 可解锁 Kokoro、Google HD 以及需要更多算力的附加功能。",
     "price.choose.title": "选择谁获得升级。",
     "price.choose.sub": "保留免费核心功能，升级你自己，或为服务器中的所有人解锁 Premium。",
     "price.free.pitch": "所有核心功能。无需银行卡，也没有试用期。",
@@ -146,7 +146,7 @@
     "price.max.note": "€75.99/年（省约 20%）· 在 Ko-fi 购买",
     "price.pro.seats3": "3 個伺服器",
     "price.pro.seats10": "8 個伺服器",
-    "price.m.1": "38 种声音",
+    "price.m.1": "38 种 Piper 语音",
     "price.m.2": "35 种语言",
     "price.m.3": "朗读你的频道",
     "price.m.4": "笑话和问候",
@@ -300,7 +300,8 @@
     "account.defaultUser": "Discord 使用者",
     "account.discordAvatar": "{name} 的頭像",
     "dashboard.retry": "再試一次",
-    "dashboard.secureTokenError": "你的瀏覽器無法產生安全的登入權杖，請更新瀏覽器。"
+    "dashboard.secureTokenError": "你的瀏覽器無法產生安全的登入權杖，請更新瀏覽器。",
+    "price.m.21": "Kokoro 神经语音引擎"
   },
   "commands": {
     "general": [
@@ -350,11 +351,11 @@
   "faq": [
     [
       "Vozen 真的免費嗎？",
-      "是的——Vozen 今天所做的一切都免費，而且永遠免費：所有語音、全部 15 款遊戲、問候功能、管理工具。Vozen Premium（每個伺服器每月 €3.99）只新增選用的額外功能，例如完整的語音特效包。你正在使用的功能，絕不會被移到付費牆之後。"
+      "是的——核心功能仍然免费：35 种语言的 38 种 Piper 语音、自动朗读、问候、大多数游戏和全部管理控制。Kokoro 与 Google HD 属于 Premium 引擎；Plus 为个人解锁，服务器 Premium 为全服解锁。"
     ],
     [
       "Premium 包含哪些內容？",
-      "全部 8 種語音特效（低沉、惡魔、廣播、水中……），並提供 premium 神經網路語音，且所有人離開後仍持續留守語音頻道。每個伺服器每月 €3.99 或每年 €37.99，或選擇 Vozen Plus（每月 €1.99），享有跨伺服器隨你而行的個人專屬權益。使用 /premium activate 兌換代碼。 在 Ko-fi 购买后，前往 vozen.org/account 激活——用 Discord 登录并粘贴 Ko-fi 收据中的交易代码。"
+      "Kokoro 神经语音与 Google HD 引擎、全部 8 种语音特效、全天候驻留、50 条个人发音、/rizz 和 Premium 游戏。每月 €3.99 覆盖 3 个服务器，€7.99 覆盖 8 个；Vozen Plus（每月 €1.99）可在任何服务器提供个人权益。"
     ],
     [
       "我要怎麼把 Vozen 加入我的伺服器？",
@@ -373,8 +374,8 @@
       "可以。每位成員都能用 /voice set 設定自己的語音與語言，Vozen 甚至能自動偵測每則訊息的語言。"
     ],
     [
-      "Google 還是 Piper——該選哪個語音引擎？",
-      "兩者都免費。Google（預設）即時涵蓋全部 35 種語言；Piper 在我們自己的伺服器上運行，在某些語言（例如葡萄牙文）中往往聽起來更好。隨時可用 /voice set 切換——而且是每個人各自設定。"
+      "Piper、Kokoro 还是 Google HD——该选哪个语音引擎？",
+      "Piper 是免费的本地引擎。Kokoro 神经语音和 Google HD 需要个人 Vozen Plus 或服务器 Vozen Premium。可用 /voice set 切换；权益到期后会自动回到免费引擎。"
     ],
     [
       "我要怎麼關閉功能？",

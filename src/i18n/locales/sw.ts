@@ -104,6 +104,8 @@ export default {
     '🔒 **{effect}** ni athari ya Premium. Athari za bure: 🤖 Robot na 🔊 Echo. Fungua zote kwa Vozen Premium — angalia `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** ni injini ya sauti ya Premium. Ifungue kwa Vozen Plus (binafsi) au Vozen Premium (seva) — angalia `/premium`. Wakati huo huo sauti yako inabaki kwenye injini ya bure ya ndani.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** ni injini ya sauti ya Premium. Ifungue kwa Vozen Plus (binafsi) au Vozen Premium (seva) — angalia `/premium`. Wakati huo huo sauti yako inabaki kwenye injini ya bure ya ndani.',
   'voice.notInVoice': 'Bado sipo kwenye kituo cha sauti — endesha /join kwanza.',
   'voice.previewPlaying': 'Ninacheza sampuli…',
   'preview.sample': 'Habari, mimi ni Vozen. iandike, isikie.',
@@ -156,6 +158,8 @@ export default {
   'premium.lineUserFree': '👤 **Wewe (Plus):** haihai',
   'premium.getHint':
     'Kila kitu unachotumia leo kinabaki bure. Premium huongeza athari zote 8 za sauti, kuwepo kwenye simu 24/7, matamshi 50 binafsi, /rizz na michezo ya premium. Usaidizi: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Pasi yako ya Premium:** leseni {used}/{total} zinatumika · inaisha {date}',
   'premium.passServers': '↳ Inatumika kwenye: {servers}',
@@ -257,6 +261,7 @@ export default {
   'config.soundboardOn':
     'Ubao wa sauti **umewashwa** — yeyote anaweza kucheza vipande kwa `/sound`.',
   'config.soundboardOff': 'Ubao wa sauti **umezimwa** — `/sound` imelemazwa kwenye seva hii.',
+  'config.votePromosLabel': 'Arifa za zawadi ya top.gg + Vozen Support',
   'config.greetOn': '✅ Nitawasalimia watu kwa majina yao wanapojiunga na kituo cha sauti.',
   'config.greetOff': '🔇 **Sitawasalimia** watu wanapojiunga na kituo cha sauti.',
   'config.greetLangSet': '✅ Lugha ya salamu ya kujiunga imewekwa kuwa **{language}**.',
@@ -339,13 +344,13 @@ export default {
   'vote.noClientId':
     'Kiungo cha kura cha Vozen bado hakijawekwa (CLIENT_ID haipo). Mjulishe msimamizi wa boti.',
   'vote.link':
-    'Piga kura kwa Vozen (bila malipo, kila saa 12) na usaidie watu zaidi kuipata:\n{url}',
+    'Piga kura kwa Vozen (bila malipo, kila saa 12) na usaidie watu zaidi kuipata:\n{url}\nIkiwa akaunti hii haijawahi kudai zawadi, itapata **saa 48 za Vozen Plus**, mara moja tu kwa kila akaunti.',
   'invite.button': 'Ongeza Vozen',
   'vote.button': 'Piga kura kwenye top.gg',
   'vote.upsell':
-    '🗳️ Huna Plus? Piga kura kwa Vozen kwenye top.gg → **saa 24 za Plus bila malipo** (mara moja kwa mwezi): {url}',
+    '🗳️ Ikiwa akaunti hii haijawahi kudai zawadi, itapata **saa 48 za Vozen Plus**, mara moja tu kwa kila akaunti. {url}',
   'vote.cooldownStatus':
-    '🗳️ Tayari umedai zawadi yako ya kura — piga kura tena kwa **saa 24 nyingine za Plus** {date}.',
+    '🗳️ Akaunti hii tayari imetumia zawadi yake ya kura ya mara moja. Bado unaweza kupiga kura kuunga mkono Vozen, lakini hutapata Plus zaidi.',
   'help.title': 'Vozen — iandike, isikie.',
   'help.embedTitle': 'Vozen — Amri',
   'help.intro':
@@ -374,6 +379,8 @@ export default {
   'welcome.title': 'Asante kwa kuongeza Vozen! 👋',
   'welcome.description':
     'Vozen husoma gumzo lako kwa sauti katika vituo vya sauti — iandike, isikie.\n\n**Anza kwa hatua moja:** endesha {setup} nami nitaweka kusoma kiotomatiki na kujiunga na kituo chako cha sauti.\n\nUnahitaji orodha kamili ya amri? Endesha {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Jinsi wanachama wanavyoitumia (hatua 3)',
   'welcome.stepsBody':
     '1) Ingia kwenye kituo cha sauti\n2) Endesha /join ili nijiunge nawe\n3) Andika katika kituo cha maandishi (au tumia /tts) nami nitaisoma kwa sauti\nOrodha kamili ya amri: /help',

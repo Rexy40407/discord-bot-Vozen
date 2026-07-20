@@ -101,6 +101,8 @@ export default {
     '🔒 **{effect}** er Premium áhrif. Ókeypis áhrif: 🤖 Robot og 🔊 Echo. Opnaðu öll með Vozen Premium — sjáðu `/premium`.',
   'voice.engine.gcloudLocked':
     '🔒 **💎 Google HD** er Premium raddvél. Opnaðu hana með Vozen Plus (persónulegt) eða Vozen Premium (netþjónn) — sjáðu `/premium`. Á meðan helst rödd þín á ókeypis staðbundnu vélinni.',
+  'voice.engine.kokoroLocked':
+    '🔒 **💎 Kokoro** er Premium raddvél. Opnaðu hana með Vozen Plus (persónulegt) eða Vozen Premium (netþjónn) — sjáðu `/premium`. Á meðan helst rödd þín á ókeypis staðbundnu vélinni.',
   'voice.notInVoice': 'Ég er ekki enn í talrás — keyrðu /join fyrst.',
   'voice.previewPlaying': 'Spila sýnishorn…',
   'preview.sample': 'Hæ, ég er Vozen. skrifaðu það, heyrðu það.',
@@ -152,6 +154,8 @@ export default {
   'premium.lineUserFree': '👤 **Þú (Plus):** ekki virkt',
   'premium.getHint':
     'Allt sem þú notar í dag helst ókeypis. Premium bætir við öllum 8 raddáhrifunum, 24/7 í símtali, 50 persónulegum framburðum, /rizz og premium leikjunum. Stuðningur: https://ko-fi.com/',
+  'premium.enginePerks':
+    '💎 **Premium voice engines:** Kokoro neural and Google HD — unlocked personally with Plus or for everyone with server Premium.',
   'premium.linePass':
     '🎟️ **Premium-passinn þinn:** {used}/{total} leyfi í notkun · rennur út {date}',
   'premium.passServers': '↳ Í notkun á: {servers}',
@@ -250,6 +254,7 @@ export default {
     'Runu-tilkynningar **slökkt** — Vozen fylgist enn með runum (sjá `/topspeakers`) en þegir um þær.',
   'config.soundboardOn': 'Hljóðborð **kveikt** — hver sem er getur spilað klippur með `/sound`.',
   'config.soundboardOff': 'Hljóðborð **slökkt** — `/sound` er óvirkt á þessum netþjóni.',
+  'config.votePromosLabel': 'Tilkynningar um top.gg-verðlaun + Vozen Support',
   'config.greetOn': '✅ Ég mun heilsa fólki með nafni þegar það fer inn í talrásina.',
   'config.greetOff': '🔇 Ég mun **ekki** heilsa fólki þegar það fer inn í talrásina.',
   'config.greetLangSet': '✅ Tungumál innkomukveðju stillt á **{language}**.',
@@ -331,13 +336,13 @@ export default {
   'vote.noClientId':
     'Atkvæðahlekkur Vozen er ekki uppsettur enn (CLIENT_ID vantar). Láttu stjórnanda botsins vita.',
   'vote.link':
-    'Kjóstu Vozen (ókeypis, á 12 klst. fresti) og hjálpaðu fleirum að finna hann:\n{url}',
+    'Kjóstu Vozen (ókeypis, á 12 klst. fresti) og hjálpaðu fleirum að finna hann:\n{url}\nEf þessi reikningur hefur aldrei sótt verðlaunin fær hann **48 klst. af Vozen Plus**, aðeins einu sinni á hvern reikning.',
   'invite.button': 'Bæta Vozen við',
   'vote.button': 'Kjósa á top.gg',
   'vote.upsell':
-    '🗳️ Ekkert Plus? Kjóstu Vozen á top.gg → **24 klst. af Plus ókeypis** (einu sinni í mánuði): {url}',
+    '🗳️ Ef þessi reikningur hefur aldrei sótt verðlaunin fær hann **48 klst. af Vozen Plus**, aðeins einu sinni á hvern reikning. {url}',
   'vote.cooldownStatus':
-    '🗳️ Þú hefur þegar sótt atkvæðaverðlaunin þín — kjóstu aftur fyrir önnur **24 klst. af Plus** {date}.',
+    '🗳️ Þessi reikningur hefur þegar notað einu atkvæðaverðlaunin sín. Þú getur áfram kosið til að styðja Vozen, en færð ekki meira Plus.',
   'help.title': 'Vozen — skrifaðu það, heyrðu það.',
   'help.embedTitle': 'Vozen — Skipanir',
   'help.intro':
@@ -367,6 +372,8 @@ export default {
   'welcome.title': 'Takk fyrir að bæta Vozen við! 👋',
   'welcome.description':
     'Vozen les spjallið þitt upphátt í talrásum — skrifaðu það, heyrðu það.\n\n**Byrjaðu í einu skrefi:** keyrðu {setup} og ég set upp sjálflestur og fer inn í talrásina þína.\n\nÞarftu fullan skipanalista? Keyrðu {help}.',
+  'welcome.enginePlans':
+    'Piper neural voices stay free. 💎 Kokoro and Google HD unlock with Vozen Plus or server Premium.',
   'welcome.stepsTitle': 'Hvernig meðlimir nota það (3 skref)',
   'welcome.stepsBody':
     '1) Farðu inn í talrás\n2) Keyrðu /join svo ég fari inn með þér\n3) Skrifaðu í textarásina (eða notaðu /tts) og ég les það upphátt\nFullur skipanalisti: /help',

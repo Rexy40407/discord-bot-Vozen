@@ -85,6 +85,7 @@ describe('/premium — info / activate / deactivate (licence pass)', () => {
     const i = makePremiumInteraction('info');
     await handleInteraction(i as any, makeDeps(db));
     expect(i.embedTexts.join('\n')).toMatch(/ko-fi\.com\/vozentest/);
+    expect(i.embedTexts.join('\n')).toMatch(/Kokoro.*Google HD/s);
   });
 
   it('shows native Discord purchase buttons when Premium App SKUs are configured', async () => {

@@ -13,7 +13,7 @@ const G = 'guild-1';
 const U = 'user-1';
 const NOW = 1_000_000;
 
-describe('resolveUserEngine — runtime gate for the Google HD engine (gcloud)', () => {
+describe('resolveUserEngine — runtime gate for paid voice engines', () => {
   let db: Database.Database;
   beforeEach(() => {
     db = initDb(':memory:');
@@ -22,10 +22,29 @@ describe('resolveUserEngine — runtime gate for the Google HD engine (gcloud)',
     db.close();
   });
 
-  it('non-gcloud engines pass through untouched (without touching premium)', () => {
-    for (const eng of ['google', 'piper', 'kokoro', undefined] as const) {
+  it('free engines pass through untouched (without touching premium)', () => {
+    for (const eng of ['google', 'piper', undefined] as const) {
       expect(resolveUserEngine(db, G, U, eng, NOW).engine).toBe(eng);
     }
+  });
+
+  it('Kokoro WITHOUT Premium -> demoted to the free default', () => {
+    expect(resolveUserEngine(db, G, U, 'kokoro', NOW).engine).toBe('google');
+  });
+
+  it('Kokoro WITH Vozen Plus (user) -> keeps Kokoro', () => {
+    grantUserPremium(db, U, 30, 'test', NOW);
+    expect(resolveUserEngine(db, G, U, 'kokoro', NOW).engine).toBe('kokoro');
+  });
+
+  it('Kokoro WITH server Premium -> keeps Kokoro', () => {
+    grantGuildPremium(db, G, 30, 'test', NOW);
+    expect(resolveUserEngine(db, G, U, 'kokoro', NOW).engine).toBe('kokoro');
+  });
+
+  it('Kokoro with EXPIRED Premium -> demoted to the free default', () => {
+    grantUserPremium(db, U, 30, 'test', NOW - 60 * 86_400_000);
+    expect(resolveUserEngine(db, G, U, 'kokoro', NOW).engine).toBe('google');
   });
 
   it('gcloud WITHOUT Premium -> demoted to google (gate)', () => {
