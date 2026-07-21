@@ -49,9 +49,21 @@ export function shutdown(deps: Pick<BotDeps, 'players' | 'db'>): void {
  * O closure captura `deps` por referencia, por isso o mapa de players e lido
  * no momento do sinal (e nao no registo, quando ainda esta vazio).
  */
-export function installSignalHandlers(deps: Pick<BotDeps, 'players' | 'db'>): void {
+export function installSignalHandlers(
+  deps: Pick<BotDeps, 'players' | 'db'>,
+  beforeShutdown?: () => void,
+): void {
+  let prepared = false;
   const handler = (signal: string): void => {
     log.info(`[shutdown] received ${signal}.`);
+    if (!prepared) {
+      prepared = true;
+      try {
+        beforeShutdown?.();
+      } catch (err) {
+        log.warn('[shutdown] pre-shutdown hook failed (ignored)', err);
+      }
+    }
     shutdown(deps);
     process.exit(0);
   };

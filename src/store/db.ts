@@ -294,7 +294,7 @@ export function initDb(path: string): Database.Database {
 
       -- Per-guild voice presence. Stored for every live session and deleted by normal
       -- teardown or guildDelete, but not by shutdown so it survives a deployment.
-      -- ClientReady restores Premium 24/7 rows, plus one-shot deploy recovery rows.
+      -- ClientReady restores Premium 24/7 rows, plus planned clean-restart recovery rows.
       CREATE TABLE IF NOT EXISTS voice_presence (
         guild_id   TEXT PRIMARY KEY,
         channel_id TEXT NOT NULL,

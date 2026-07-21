@@ -138,4 +138,17 @@ describe('installSignalHandlers — idempotencia', () => {
     expect(db.close).toHaveBeenCalledTimes(1);
     expect(exitSpy).toHaveBeenCalledWith(0);
   });
+
+  it('runs the planned-restart hook before the live calls are destroyed', () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+    const players = new Map<string, GuildVoicePlayer>([['g1', fakePlayer()]]);
+    const beforeShutdown = vi.fn(() => expect(players.size).toBe(1));
+
+    installSignalHandlers({ players, db: fakeDb() }, beforeShutdown);
+    const handler = process.listeners('SIGTERM').at(-1) as () => void;
+    handler();
+
+    expect(beforeShutdown).toHaveBeenCalledTimes(1);
+    expect(exitSpy).toHaveBeenCalledWith(0);
+  });
 });
