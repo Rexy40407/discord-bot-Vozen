@@ -42,7 +42,7 @@ import {
 import { createVoiceSession, becomeSpeakerIfStage } from './voice/session';
 import { listVoicePresence, forgetVoicePresence } from './store/voicePresence';
 import { planRejoin, type ChannelState } from './voice/rejoin';
-import { consumeDeployRejoinMarker } from './voice/deployRejoinMarker';
+import { consumePlannedRejoinMarker, writePlannedRejoinMarker } from './voice/deployRejoinMarker';
 import { loadBoardEmojis } from './games/boardEmojis';
 import { deleteChannelSafe } from './games/thread';
 import { getGuildConfig } from './store/guildConfig';
@@ -255,7 +255,11 @@ async function main(): Promise<void> {
   });
 
   bindEvents(deps);
-  installSignalHandlers(deps);
+  installSignalHandlers(deps, () => {
+    // systemctl restart and a normal VPS reboot deliver SIGTERM. Snapshot only the calls
+    // live right now, so a clean administrator restart restores them but stale rows do not.
+    writePlannedRejoinMarker(deps.players.keys());
+  });
 
   // P9.7 — OPTIONAL HTTP health endpoint (uptime monitors). Only starts if
   // HEALTH_PORT is set. In a defensive try/catch: a problem opening the
@@ -550,11 +554,13 @@ async function main(): Promise<void> {
     } catch (err) {
       log.error('[index] failed to start the gcloud_usage purge job (ignored)', err);
     }
-    // Startup voice restore has two policies: Premium 24/7 always restores, while an
-    // ordinary call restores only after the deployment workflow wrote its one-shot marker.
-    // A crash/manual restart has no marker, so Free calls do NOT unexpectedly rejoin.
+    // Premium 24/7 always restores. Ordinary calls restore after a planned deploy or clean
+    // administrator/VPS restart; a crash has no clean signal and therefore no marker.
     try {
-      const resumeAfterDeploy = consumeDeployRejoinMarker();
+      const plannedRejoin = consumePlannedRejoinMarker();
+      const resumeAfterDeploy = plannedRejoin !== null;
+      const restoresPlannedGuild = (guildId: string): boolean =>
+        plannedRejoin === 'all' || plannedRejoin?.has(guildId) === true;
       const channelStateOf = (guildId: string, channelId: string): ChannelState => {
         const guild = client.guilds.cache.get(guildId);
         if (!guild) return 'gone'; // we are no longer in the guild
@@ -571,7 +577,7 @@ async function main(): Promise<void> {
       if (rows.length > 0) {
         const plan = planRejoin(rows, {
           stayInCall: (gid) =>
-            resumeAfterDeploy ||
+            restoresPlannedGuild(gid) ||
             (isGuildPremium(db, gid, Date.now()) && getGuildConfig(db, gid).stayInCall),
           channelState: channelStateOf,
         });

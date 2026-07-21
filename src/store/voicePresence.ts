@@ -1,8 +1,8 @@
 import type Database from 'better-sqlite3';
 
-// Voice-session persistence per guild. It supports Premium 24/7 and a one-shot recovery
-// after a successful deployment. Every live session writes its current channel; normal
-// exits delete it, while shutdown preserves it. See db.ts and src/voice/rejoin.ts.
+// Voice-session persistence per guild. It supports Premium 24/7 and recovery after a planned
+// deploy, systemctl restart, or normal VPS reboot. Every live session writes its current
+// channel; normal exits delete it, while a clean shutdown preserves it.
 
 export interface VoicePresenceRow {
   guildId: string;
