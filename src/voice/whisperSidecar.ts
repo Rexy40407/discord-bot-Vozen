@@ -21,6 +21,16 @@ export interface ResolveWhisperDeps {
   exists?: (p: string) => boolean;
   /** Project root; defaults to process.cwd(). */
   cwd?: string;
+  /** Environment source; injectable so quality tuning stays testable. */
+  env?: NodeJS.ProcessEnv;
+}
+
+/** Live mode stays greedy by default; operators can A/B beam 2-5 on stronger hardware. */
+export function resolveWhisperBeamSize(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env.WHISPER_BEAM_SIZE?.trim();
+  if (!raw) return 1;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 1 && value <= 5 ? value : 1;
 }
 
 /**
@@ -34,6 +44,7 @@ export function resolveWhisperCmd(
 ): { exe: string; args: string[] } | null {
   const exists = deps.exists ?? existsSync;
   const cwd = deps.cwd ?? process.cwd();
+  const beamSize = resolveWhisperBeamSize(deps.env);
   // The venv python: Scripts/python.exe (Windows) or bin/python (Linux/VPS) — tries both.
   const venvPy = [
     join(cwd, 'tools', 'whisper-venv', 'Scripts', 'python.exe'),
@@ -41,5 +52,8 @@ export function resolveWhisperCmd(
   ].find((p) => exists(p));
   const script = join(cwd, 'tools', 'whisper_sidecar.py');
   if (!venvPy || !exists(script)) return null;
-  return { exe: venvPy, args: [script, '--model', String(model)] };
+  return {
+    exe: venvPy,
+    args: [script, '--model', String(model), '--beam', String(beamSize)],
+  };
 }

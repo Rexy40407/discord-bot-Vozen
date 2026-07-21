@@ -47,3 +47,15 @@
 > Nota: o spike foi feito num venv scratch (`~/whisper-spike`) já **removido**; a Fase 4 fará
 > um setup próprio (`tools/setup-whisper.*` → `tools/whisper-venv`). O `vozen.service` manteve-se
 > `active` durante todo o spike.
+
+## Afinação de captura (2026-07-21)
+
+Antes de testar um modelo maior, o pipeline passou a proteger os pontos onde áudio real de
+Discord se perdia: pausa final de 1,3 s, receiver a 1,5 s, pre-roll de 240 ms, fala mínima de
+180 ms, RMS 220 e utterances até 30 s. Estes valores são ajustáveis pelas variáveis `STT_*`
+documentadas em `.env.example`; valores inválidos voltam aos defaults seguros.
+
+O modelo continua `base` INT8 e `beam_size=1` por defeito. `WHISPER_BEAM_SIZE=3` existe apenas
+para um teste A/B na VPS: só deve ficar ativo se melhorar transcrições reais sem ultrapassar o
+limite p95 nem degradar o Piper. O passo seguinte é comparar gravações consentidas reais, com
+microfones baixos, pausas, PT/EN/ES e ruído — o áudio sintético do spike não cobre esses casos.

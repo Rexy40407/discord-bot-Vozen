@@ -19,6 +19,7 @@ function make() {
     silenceGapMs: 100,
     minUtteranceMs: 50,
     maxUtteranceMs: 1000,
+    preRollMs: 0,
   });
 }
 
@@ -76,5 +77,22 @@ describe('UtteranceCollector — segmentation by silence', () => {
     expect(c.push(frame(120, true))).toBeNull();
     const u = c.push(frame(100, false)); // now closes
     expect(u!.voicedMs).toBe(240); // 120 + 120
+  });
+
+  it('keeps bounded pre-roll so a quiet word onset is not cut', () => {
+    const c = new UtteranceCollector({
+      bytesPerMs: BPM,
+      rmsThreshold: 350,
+      silenceGapMs: 100,
+      minUtteranceMs: 50,
+      maxUtteranceMs: 1000,
+      preRollMs: 40,
+    });
+    c.push(frame(70, false)); // only the final 40ms survives the rolling buffer
+    c.push(frame(100, true));
+    const u = c.push(frame(100, false));
+    expect(u!.ms).toBe(240); // 40 pre-roll + 100 speech + 100 closing silence
+    expect(u!.voicedMs).toBe(100);
+    expect(u!.pcm.length).toBe(240 * BPM);
   });
 });

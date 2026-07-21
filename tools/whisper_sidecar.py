@@ -10,7 +10,8 @@ kokoro (evita pagar o cold-load por utterance). Protocolo simples de linhas:
 
 faster-whisper reamostra o audio internamente (via av/ffmpeg), por isso aceita WAV a
 qualquer taxa (o recorder do bot da 48kHz). vad_filter corta silencio (melhor precisao +
-menos tokens). beam_size=1 (greedy) para latencia baixa (STT ao vivo). Ver docs/SPIKE-STT.md.
+menos tokens). Beam 1 continua a ser o default ao vivo; 2-5 permitem testes de qualidade.
+Ver docs/SPIKE-STT.md.
 
 --lang FORCA a lingua (ex. 'pt'): a auto-detecao do Whisper em fala real e curta de
 Discord falha muito (transcreve PT como checo/sueco). O bot passa o locale do servidor.
@@ -34,6 +35,7 @@ def main() -> None:
     ap.add_argument("--compute", default="int8")
     ap.add_argument("--threads", type=int, default=2)
     ap.add_argument("--lang", default="")  # lingua FORCADA; "" => auto-detecao
+    ap.add_argument("--beam", type=int, choices=range(1, 6), default=1)
     args = ap.parse_args()
 
     from faster_whisper import WhisperModel
@@ -42,7 +44,17 @@ def main() -> None:
         args.model, device="cpu", compute_type=args.compute, cpu_threads=args.threads
     )
     forced = args.lang.strip().lower() or None
-    print(json.dumps({"ready": True, "model": args.model, "lang": forced or "auto"}), flush=True)
+    print(
+        json.dumps(
+            {
+                "ready": True,
+                "model": args.model,
+                "lang": forced or "auto",
+                "beam": args.beam,
+            }
+        ),
+        flush=True,
+    )
 
     for line in sys.stdin:
         path = line.strip()
@@ -50,7 +62,7 @@ def main() -> None:
             continue
         try:
             kwargs = dict(
-                beam_size=1,
+                beam_size=args.beam,
                 vad_filter=True,
                 # Sem isto, o Whisper repete/arrasta texto de segmentos anteriores (loops).
                 condition_on_previous_text=False,
