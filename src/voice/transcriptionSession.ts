@@ -2,7 +2,7 @@
 //
 // Orchestrates the live TRANSCRIPTION of a voice channel (Phase 4). For each speaker who
 // starts talking: (1) consent-first GATE — only those who consented on this server are
-// captured; (2) captures the utterance (800ms of silence closes it); (3) WAV -> Whisper
+// captured; (2) captures the utterance (a calibrated natural pause closes it); (3) WAV -> Whisper
 // sidecar -> text; (4) posts "**Name:** text" in the channel (if it isn't empty noise). The
 // CAPTURE itself (the receiver's Opus plumbing) lives in a separate helper
 // (`makeReceiverCapture`) — integration glue mirrored from the recorder — so the
@@ -19,6 +19,7 @@ import type { Readable, Duplex } from 'node:stream';
 import { EndBehaviorType, type VoiceConnection } from '@discordjs/voice';
 import prism from 'prism-media';
 import { UtteranceCollector, type UtteranceOpts } from './utteranceCollector';
+import { resolveSttCaptureTuning } from './sttTuning';
 import { isTranscribable, formatTranscript } from './transcriptRouting';
 import type { Transcript } from './whisperTranscriber';
 import { log } from '../logging/logger';
@@ -153,14 +154,19 @@ export function sweepOrphanSttTemps(dir: string = tmpdir(), now: number = Date.n
 
 // ── Real capture (integration — the receiver's Opus plumbing, mirrored from the recorder) ──────────
 export interface ReceiverCaptureDeps {
-  subscribe?: (connection: VoiceConnection, userId: string) => Readable;
+  subscribe?: (connection: VoiceConnection, userId: string, endSilenceMs: number) => Readable;
   makeDecoder?: () => Duplex;
   collectorOpts?: UtteranceOpts;
+  receiverEndSilenceMs?: number;
 }
 
-function defaultSubscribe(connection: VoiceConnection, userId: string): Readable {
+function defaultSubscribe(
+  connection: VoiceConnection,
+  userId: string,
+  endSilenceMs: number,
+): Readable {
   return connection.receiver.subscribe(userId, {
-    end: { behavior: EndBehaviorType.AfterSilence, duration: 800 },
+    end: { behavior: EndBehaviorType.AfterSilence, duration: endSilenceMs },
   });
 }
 function defaultMakeDecoder(): Duplex {
@@ -169,7 +175,7 @@ function defaultMakeDecoder(): Duplex {
 
 /**
  * Builds the production CaptureFn over a VoiceConnection: subscribes to the speaker's SSRC
- * (AfterSilence 800ms), decodes opus->PCM 48k stereo, groups into utterances with the
+ * (AfterSilence defaults to 1500ms), decodes opus->PCM 48k stereo, groups into utterances with the
  * UtteranceCollector and emits each one. Resolves when Discord closes the stream (the speaker
  * stopped). The next speaking-start re-subscribes.
  */
@@ -179,11 +185,17 @@ export function makeReceiverCapture(
 ): CaptureFn {
   const subscribe = deps.subscribe ?? defaultSubscribe;
   const makeDecoder = deps.makeDecoder ?? defaultMakeDecoder;
+  const tuning = resolveSttCaptureTuning();
+  const collectorOpts = { ...tuning.collectorOpts, ...deps.collectorOpts };
+  const receiverEndSilenceMs = Math.max(
+    deps.receiverEndSilenceMs ?? tuning.receiverEndSilenceMs,
+    (collectorOpts.silenceGapMs ?? tuning.collectorOpts.silenceGapMs) + 200,
+  );
   return (_userId, onUtterance, isStopped) =>
     new Promise<void>((resolve) => {
-      const opus = subscribe(connection, _userId);
+      const opus = subscribe(connection, _userId, receiverEndSilenceMs);
       const decoder = makeDecoder();
-      const collector = new UtteranceCollector(deps.collectorOpts);
+      const collector = new UtteranceCollector(collectorOpts);
       const stopBoth = (): void => {
         opus.destroy();
         decoder.destroy();
