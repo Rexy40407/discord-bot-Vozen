@@ -32,6 +32,11 @@ export const GUILD_PURGE_TABLES = [
   'voice_presence',
   'stt_consent',
   'guild_departed', // the departure marker itself (self-cleanup when purging the server)
+  'translation_mapping', // opt-in source/destination channel routing, no message content
+  'translation_preference', // per-member translation opt-out in the guild
+  'translation_daily_usage', // guild-scoped aggregate character quota
+  'translation_user_daily_usage', // per-member bounded quota
+  'channel_profile', // channel behaviour configuration only, no content
 ] as const;
 
 /**
@@ -57,6 +62,8 @@ export const USER_ERASE_TABLES = [
   'pronunciation_user',
   'stt_consent',
   'vote_reward',
+  'translation_preference',
+  'translation_user_daily_usage',
 ] as const;
 
 /**
@@ -101,6 +108,18 @@ export const LIFECYCLE_REVIEWED_EXEMPT = [
   // same account cannot erase-and-reclaim. Retained only while the promotion exists.
   'vote_redemption',
   'vote_redemption_meta', // non-personal fingerprint that prevents silent secret rotation
+  'topgg_webhook_event', // short-retention external delivery-id idempotency ledger
+] as const;
+
+/**
+ * Identity-free service aggregates. These rows contain neither Discord identifiers nor
+ * content, so `/privacy erase` and guild departure cannot target a person or server.
+ * Retention is operational: rotate/purge them with instance logs when no longer useful.
+ */
+export const IDENTITY_FREE_OPERATIONAL_TABLES = [
+  'operational_daily_metric',
+  'provider_health_state',
+  'gcloud_daily_usage',
 ] as const;
 
 /**

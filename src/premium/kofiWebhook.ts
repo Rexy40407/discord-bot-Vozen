@@ -70,7 +70,7 @@ export interface KofiWebhookDeps {
   // (without a secret anyone would forge votes). See ./vote (handleVoteWebhook, constant-time auth).
   topggWebhookSecret?: string;
   /** Called with the id of whoever voted on each valid upvote (wires the reward grant). */
-  onUpvote?: (userId: string) => void;
+  onUpvote?: (userId: string, eventId?: string) => unknown;
 }
 
 // Simple per-IP rate limit for the panel API (sliding window). No dependencies:
@@ -1135,7 +1135,7 @@ function handleAdminRequest(
 interface TopggCtx {
   secret: string;
   expectedBotId?: string;
-  onUpvote?: (userId: string) => void;
+  onUpvote?: (userId: string, eventId?: string) => unknown;
   logError: (m: string, err: unknown) => void;
 }
 

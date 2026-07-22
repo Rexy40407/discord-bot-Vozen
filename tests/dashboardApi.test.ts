@@ -250,7 +250,11 @@ describe('createDashboardApi - authorization and authoritative options', () => {
     const payload = await api.getGuild(TOKEN, GUILD);
     expect(payload?.config.ttsChannelId).toBeNull();
     expect(payload?.config.defaultVoice).toBe('');
-    expect(payload?.capabilities).toEqual({ ttsChannelId: true, defaultVoice: true });
+    expect(payload?.capabilities).toEqual({
+      ttsChannelId: true,
+      defaultVoice: true,
+      channelProfiles: false,
+    });
     expect(payload?.options.channels).toEqual([{ id: CHANNEL, label: 'general' }]);
     expect(payload?.options.voices[0]).toMatchObject({ id: VOICE });
     expect(payload?.options.locales).toContainEqual({ id: 'pt', label: expect.any(String) });

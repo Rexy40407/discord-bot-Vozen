@@ -25,6 +25,11 @@ import { log } from '../../logging/logger';
 import { t } from '../../i18n/index';
 import { localeForUser, reply } from '../helpers';
 import { editCard, replyCard } from '../../ui/messages';
+import { makeTemporaryMediaCopy } from '../../media/temporaryMedia';
+import { admitUserSpeech } from '../../voice/admission';
+
+/** File exports are intentionally shorter than normal in-call TTS. */
+const MAX_TTS_FILE_CHARS = 500;
 
 /**
  * Result (discriminated) of trying to join Vozen to the caller's voice channel.
@@ -140,14 +145,9 @@ export async function speakRawText(
 ): Promise<SpeakOutcome> {
   const player = getPlayer(deps, guildId);
   if (!player) return { status: 'no-player' };
-  const botVoiceChannelId = guild.members.me?.voice.channelId ?? null;
-  if (
-    callerVoiceChannelId === null ||
-    botVoiceChannelId === null ||
-    callerVoiceChannelId !== botVoiceChannelId
-  ) {
-    return { status: 'not-in-same-voice' };
-  }
+  const admission = admitUserSpeech(deps, guildId, userId, guild, callerVoiceChannelId);
+  if (!admission.allowed)
+    return { status: admission.reason === 'blocked' ? 'blocked' : 'not-in-same-voice' };
   const cfg = getGuildConfig(deps.db, guildId);
   const rl = getLimiter(deps, guildId, cfg.ratePerMin);
   if (!rl.allow(userId, Date.now())) return { status: 'rate-limited' };
@@ -201,7 +201,11 @@ export async function speakRawText(
   const outReq = redacted;
   outReq.effect = getVoiceEffect(deps.db, guildId, userId); // voice effect (premium)
   if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
-  const queued = await player.say(outReq);
+  const queued = await player.say(outReq, {
+    authorId: userId,
+    source: 'command',
+    lane: admission.lane,
+  });
   return { status: queued ? 'queued' : 'busy' };
 }
 
@@ -247,6 +251,97 @@ export async function handleTts(i: ChatInputCommandInteraction, deps: BotDeps): 
         outcome.status === 'queued' ? 'success' : outcome.status === 'busy' ? 'warning' : 'danger',
     }),
   );
+}
+
+/**
+ * `/tts-file` is an explicit, ephemeral export.  It deliberately does not inspect or
+ * join voice state and never calls a GuildVoicePlayer: creating a file is not speaking
+ * in a call.  All cost/limit checks happen before the engine is asked to synthesize.
+ */
+export async function handleTtsFile(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
+  await i.deferReply({ flags: MessageFlags.Ephemeral });
+  const locale = localeForUser(deps, i);
+  const raw = i.options.getString('text', true).trim();
+  if (!raw || !/[\p{L}\p{N}]/u.test(raw)) {
+    await i.editReply(editCard(t('tts.nothingToRead', locale), { tone: 'warning' }));
+    return;
+  }
+  if (raw.length > MAX_TTS_FILE_CHARS) {
+    await i.editReply(
+      editCard(t('ttsFile.tooLong', locale, { max: MAX_TTS_FILE_CHARS }), { tone: 'warning' }),
+    );
+    return;
+  }
+
+  const cfg = getGuildConfig(deps.db, i.guildId!);
+  const limiter = getLimiter(deps, i.guildId!, cfg.ratePerMin);
+  if (!limiter.allow(i.user.id, Date.now())) {
+    await i.editReply(editCard(t('tts.tooFast', locale), { tone: 'warning' }));
+    return;
+  }
+  const cleaned = cleanText(raw, {
+    maxChars: MAX_TTS_FILE_CHARS,
+    resolveUser: () => 'someone',
+    resolveChannel: () => 'channel',
+  });
+  if (!/[\p{L}\p{N}]/u.test(cleaned)) {
+    await i.editReply(editCard(t('tts.nothingAfterClean', locale), { tone: 'warning' }));
+    return;
+  }
+
+  const userVoice = getUserVoice(deps.db, i.guildId!, i.user.id);
+  const { req } = prepareSpeech({
+    personal: cleaned,
+    pronunciations: [
+      ...getUserPronunciations(deps.db, i.user.id),
+      ...getServerPronunciations(deps.db, i.guildId!),
+    ],
+    userVoice,
+    available: deps.availableModels,
+    autoDetect: isDetectionOn(deps.db, i.guildId!, i.user.id),
+    guildDefaultVoice: cfg.defaultVoice,
+    defaultVoice: deps.config.defaultVoice,
+    defaultSpeed: deps.config.defaultSpeed,
+    media: [], // File export never fetches or describes arbitrary URL media.
+  });
+  if (
+    !deps.availableModels.includes(req.model) ||
+    (req.segments?.some((segment) => !deps.availableModels.includes(segment.model)) ?? false)
+  ) {
+    await i.editReply(editCard(t('ttsFile.unavailable', locale), { tone: 'warning' }));
+    return;
+  }
+  const redacted = redactRequest(req, getBlocklist(deps.db, i.guildId!));
+  if (!hasReadableText(redacted.text) && !redacted.segments?.some((s) => hasReadableText(s.text))) {
+    await i.editReply(editCard(t('tts.blocked', locale), { tone: 'warning' }));
+    return;
+  }
+  const resolvedEngine = resolveUserEngine(
+    deps.db,
+    i.guildId!,
+    i.user.id,
+    userVoice?.engine,
+    Date.now(),
+  );
+  redacted.engine = resolvedEngine.engine;
+  redacted.gcloudBudget = resolvedEngine.gcloudBudget;
+  redacted.effect = getVoiceEffect(deps.db, i.guildId!, i.user.id);
+
+  let temporary: Awaited<ReturnType<typeof makeTemporaryMediaCopy>> | undefined;
+  try {
+    const cachedAudioPath = await deps.engine.synth(redacted);
+    temporary = await makeTemporaryMediaCopy(cachedAudioPath);
+    await i.editReply({
+      content: t('ttsFile.ready', locale),
+      files: [{ attachment: temporary.path, name: 'vozen-audio.wav' }],
+    });
+  } catch {
+    // Do not log file paths or user text. The generic error handler only runs when this
+    // function throws, so handle the export failure locally.
+    await i.editReply(editCard(t('ttsFile.failed', locale), { tone: 'danger' })).catch(() => {});
+  } finally {
+    await temporary?.cleanup().catch(() => {});
+  }
 }
 
 /**

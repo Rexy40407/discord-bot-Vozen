@@ -49,7 +49,12 @@ function makeInteraction(
       members: {
         cache: {
           get: (id: string) =>
-            id === 'u-1' ? { voice: { channelId: callerVoiceChannelId } } : undefined,
+            id === 'u-1'
+              ? {
+                  voice: { channelId: callerVoiceChannelId },
+                  roles: { cache: new Map<string, unknown>() },
+                }
+              : undefined,
         },
         me: { voice: { channelId: botVoiceChannelId } },
       },
@@ -135,7 +140,10 @@ describe('context-menu "Speak"', () => {
       guild: {
         members: {
           cache: {
-            get: (id: string) => (id === 'u-1' ? { voice: { channelId: 'vc-1' } } : undefined),
+            get: (id: string) =>
+              id === 'u-1'
+                ? { voice: { channelId: 'vc-1' }, roles: { cache: new Map<string, unknown>() } }
+                : undefined,
           },
           me: { voice: { channelId: 'vc-1' } },
         },

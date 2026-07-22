@@ -11,7 +11,7 @@ import {
 import { existsSync } from 'node:fs';
 import type { TTSEngine, SynthRequest } from '../tts/engine';
 import { emphasisGain } from '../tts/emphasis';
-import { PlayQueue } from './queue';
+import { PlayQueue, type PublicQueueItem, type QueueEnqueueOptions } from './queue';
 import { raceStates } from './raceStates';
 import { log } from '../logging/logger';
 import { metrics } from '../metrics';
@@ -31,6 +31,10 @@ export class GuildVoicePlayer {
   // in-flight item must be DISCARDED before playing. See skip()/playNext().
   private pendingSkip = false;
   private reconnecting = false;
+  private paused = false;
+  // An item that was already dequeued when an admin paused during synthesis/readiness.
+  // It stays private and is resumed before later queue items, preserving FIFO.
+  private held: { req: SynthRequest } | null = null;
 
   constructor(
     private readonly connection: VoiceConnection,
@@ -65,7 +69,7 @@ export class GuildVoicePlayer {
     });
   }
 
-  async say(req: SynthRequest): Promise<boolean> {
+  async say(req: SynthRequest, options: QueueEnqueueOptions = {}): Promise<boolean> {
     // Returns the SYNCHRONOUS RESULT of enqueuing: true if the request entered the queue,
     // false if it was discarded (player destroyed OR queue at cap). The explicit
     // commands (/tts, /voice preview) use this boolean to not lie "queued"
@@ -76,7 +80,7 @@ export class GuildVoicePlayer {
     // Enqueues SYNCHRONOUSLY in arrival order (preserves the FIFO of spec §7).
     // The synthesis happens in the worker (playNext), not here, so as not to reorder
     // concurrent requests by the synthesis duration/cache-hit.
-    const ok = this.queue.enqueue({ req });
+    const ok = this.queue.enqueue({ req }, options);
     if (!ok) {
       log.warn('[player] queue is full; request dropped');
       return false;
@@ -91,7 +95,58 @@ export class GuildVoicePlayer {
   // queue. /skip reads this BEFORE skip() to distinguish "nothing playing" from
   // "I skipped" — instead of always pretending it skipped. Does NOT change state.
   isActive(): boolean {
-    return this.playing || this.queue.size() > 0;
+    return this.playing || this.held !== null || this.queue.size() > 0;
+  }
+
+  isPaused(): boolean {
+    return this.paused;
+  }
+
+  /** Pauses current audio or holds the next item before it can start; never drops work. */
+  pause(): boolean {
+    if (this.destroyed || !this.isActive() || this.paused) return false;
+    this.paused = true;
+    try {
+      this.player.pause(true);
+    } catch {
+      // A synthesis/readiness window has no native resource to pause; playNext holds it safely.
+    }
+    return true;
+  }
+
+  /** Continues native paused audio or restarts the single worker for a held/pending item. */
+  resume(): boolean {
+    if (this.destroyed || !this.paused) return false;
+    this.paused = false;
+    try {
+      if (this.player.state.status === AudioPlayerStatus.Paused) {
+        this.player.unpause();
+        return true;
+      }
+    } catch {
+      // Worker restart below remains safe if the native player was replaced/destroyed.
+    }
+    if (!this.playing) void this.playNext();
+    return true;
+  }
+
+  /** Privacy-safe pending work only. The current private request is never exposed. */
+  queueSnapshot(now: number = Date.now()): PublicQueueItem[] {
+    return this.queue.snapshot(now);
+  }
+
+  /** Removes the invoking author's queued work only; never interrupts the current item. */
+  removeQueuedByAuthor(authorId: string): number {
+    return this.queue.removeByAuthor(authorId);
+  }
+
+  /** Moderator-only caller must enforce permission before using this opaque id action. */
+  removeQueuedById(id: string): boolean {
+    return this.queue.removeById(id);
+  }
+
+  removeQueuedByAuthorId(authorId: string, id: string): boolean {
+    return this.queue.removeByAuthorId(authorId, id);
   }
 
   skip(): void {
@@ -108,7 +163,8 @@ export class GuildVoicePlayer {
     // discards the in-flight item before playing it.
     const wasPlaying =
       this.player.state.status === AudioPlayerStatus.Playing ||
-      this.player.state.status === AudioPlayerStatus.Buffering;
+      this.player.state.status === AudioPlayerStatus.Buffering ||
+      this.player.state.status === AudioPlayerStatus.Paused;
     this.player.stop(true);
     if (!wasPlaying) {
       this.pendingSkip = true;
@@ -125,10 +181,13 @@ export class GuildVoicePlayer {
    */
   silence(): void {
     if (this.destroyed) return;
+    this.paused = false;
     this.queue.clear();
+    this.held = null;
     const wasPlaying =
       this.player.state.status === AudioPlayerStatus.Playing ||
-      this.player.state.status === AudioPlayerStatus.Buffering;
+      this.player.state.status === AudioPlayerStatus.Buffering ||
+      this.player.state.status === AudioPlayerStatus.Paused;
     this.player.stop(true);
     if (!wasPlaying) this.pendingSkip = true;
   }
@@ -137,6 +196,7 @@ export class GuildVoicePlayer {
     if (this.destroyed) return;
     this.destroyed = true;
     this.queue.clear();
+    this.held = null;
     this.playing = false;
     try {
       this.player.stop(true);
@@ -152,7 +212,12 @@ export class GuildVoicePlayer {
 
   private async playNext(): Promise<void> {
     if (this.destroyed) return;
-    const next = this.queue.dequeue();
+    if (this.paused) {
+      this.playing = false;
+      return;
+    }
+    const next = this.held ?? this.queue.dequeue();
+    this.held = null;
     if (!next) {
       this.playing = false;
       return;
@@ -199,6 +264,14 @@ export class GuildVoicePlayer {
     // The synthesis may have taken a while; the player may have been destroyed in the meantime.
     if (this.destroyed) return;
 
+    // Pause may happen during synthesis. Hold the private item rather than speaking it or
+    // losing FIFO; resume will process this exact item before the rest of the queue.
+    if (this.paused) {
+      this.held = next;
+      this.playing = false;
+      return;
+    }
+
     // Ensure the connection is Ready BEFORE playing. If it is in
     // signalling/connecting (slow connection / 1st speech), playing now would send the
     // audio into the void. entersState resolves immediately if it is already Ready. Done
@@ -221,6 +294,12 @@ export class GuildVoicePlayer {
 
     // entersState is one more await; re-check destroyed before playing.
     if (this.destroyed) return;
+
+    if (this.paused) {
+      this.held = next;
+      this.playing = false;
+      return;
+    }
 
     // /skip fired DURING this item's synthesis/entersState (window in which the
     // AudioPlayer was Idle and stop() was a no-op): discard the in-flight item WITHOUT

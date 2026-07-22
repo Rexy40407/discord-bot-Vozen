@@ -56,7 +56,9 @@ voice channel, type in the text channel, and you're done.
 | `/setup`         | One-step setup for the server                        |
 | `/join` `/leave` | Bring Vozen into your voice channel, or send it away |
 | `/tts`           | Read one message out loud                            |
+| `/tts-file`      | Create a short private audio attachment (no call)    |
 | `/voice config`  | Panel to pick your voice, speed and engine           |
+| `/voice browse`  | Search the voices currently available on this bot    |
 | `/skip`          | Skip what's playing                                  |
 | `/config`        | Server settings (needs Manage Server)                |
 | `/help`          | The full command list                                |
@@ -94,6 +96,8 @@ there is nothing easier than inviting the hosted bot:
 - [**Privacy Policy**](PRIVACY.md) — what is stored, for how long, and how to delete it.
   Message text is processed and thrown away; it is never used to train anything.
 - [**Terms of Service**](TERMS.md) — acceptable use, warranties, liability.
+- [**User App and public status rollout**](docs/USER-APP-STATUS-ROLLOUT.md) — manual,
+  post-approval Developer Portal and proxy checklist; neither surface is enabled by source alone.
 
 ## License
 

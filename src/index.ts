@@ -1,7 +1,7 @@
 import { readdirSync, existsSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { getVoiceConnection } from '@discordjs/voice';
-import { Events, Routes, PermissionFlagsBits } from 'discord.js';
+import { Events, Routes, PermissionFlagsBits, Status } from 'discord.js';
 import { loadConfig } from './config/index';
 import { startBotListUpdater } from './botLists';
 import { log } from './logging/logger';
@@ -46,12 +46,14 @@ import { consumePlannedRejoinMarker, writePlannedRejoinMarker } from './voice/de
 import { loadBoardEmojis } from './games/boardEmojis';
 import { deleteChannelSafe } from './games/thread';
 import { getGuildConfig } from './store/guildConfig';
+import { createTranslationProvider } from './translation/provider';
 import { persistGameScores } from './store/gameScore';
 import { t, DEFAULT_LOCALE } from './i18n/index';
 import { createClient, bindEvents } from './bot/client';
 import { registerCommands, registerOwnerCommands } from './bot/registerCommands';
 import { installSignalHandlers } from './bot/shutdown';
 import { startHealthServer } from './health';
+import { mapPublicStatus } from './health/publicStatus';
 import { checkFfmpeg } from './health/ffmpeg';
 import { startLoopLagMonitor } from './health/loopLag';
 import { startEntitlementSync } from './premium/entitlementSync';
@@ -61,6 +63,8 @@ import { createStatusApi } from './premium/statusApi';
 import { createDashboardApi, listAuthorizedTextChannels } from './premium/dashboardApi';
 import { createAdminApi, type AdminUserBrief } from './premium/adminApi';
 import { startVoteWebhookServer } from './vote';
+import { listProviderHealth } from './store/operationalMetrics';
+import { claimTopggEvent, purgeExpiredTopggEvents, releaseTopggEvent } from './store/topggEvents';
 
 function discoverModels(modelsDir: string): string[] {
   if (!existsSync(modelsDir)) return [];
@@ -180,6 +184,9 @@ async function main(): Promise<void> {
     // Duplicate tracker for the reading anti-spam (opt-in per guild).
     dupTracker: new DuplicateTracker(),
     countGate: new CountGate(),
+    translationProvider: createTranslationProvider(
+      config.translationProvider ?? { kind: 'disabled' },
+    ),
   };
 
   // Leave rule: Vozen only leaves the call when it becomes ALONE (zero humans in its
@@ -265,7 +272,28 @@ async function main(): Promise<void> {
   // HEALTH_PORT is set. In a defensive try/catch: a problem opening the
   // port (e.g. already in use) must NEVER prevent the bot from starting.
   try {
-    startHealthServer(config);
+    startHealthServer(
+      config,
+      config.publicStatusEnabled
+        ? () => {
+            let databaseReady = false;
+            let providerStates: ('healthy' | 'degraded')[] = [];
+            try {
+              db.prepare('SELECT 1').get();
+              databaseReady = true;
+              providerStates = listProviderHealth(db).map((row) => row.health);
+            } catch {
+              // The public mapper intentionally sees only a coarse failed check.
+            }
+            return mapPublicStatus({
+              botReady: client.ws.status === Status.Ready,
+              databaseReady,
+              providerStates,
+              incidentMessage: config.publicStatusIncident,
+            });
+          }
+        : undefined,
+    );
   } catch (err) {
     log.error('[index] failed to start the health server (ignored)', err);
   }
@@ -273,7 +301,8 @@ async function main(): Promise<void> {
   // The first verified vote on a Discord account grants 48h of Plus. A permanent
   // HMAC ledger makes retries/restarts idempotent, while the temporary entitlement
   // stays separate from paid Premium provenance. No DMs.
-  const rewardVote = (userId: string): void => {
+  const rewardVote = (userId: string, eventId?: string): boolean => {
+    if (eventId && !claimTopggEvent(db, eventId)) return false;
     try {
       if (!config.voteRedemptionSecret) {
         throw new Error('VOTE_REDEMPTION_SECRET is required for the one-time vote reward');
@@ -286,7 +315,9 @@ async function main(): Promise<void> {
       } else {
         log.info('[vote] vote counted; this account already used its one-time reward.');
       }
+      return true;
     } catch (err) {
+      if (eventId) releaseTopggEvent(db, eventId);
       log.error('[vote] failed to grant a vote reward; requesting retry', err);
       throw err;
     }
@@ -555,6 +586,23 @@ async function main(): Promise<void> {
       gcloudTimer.unref?.();
     } catch (err) {
       log.error('[index] failed to start the gcloud_usage purge job (ignored)', err);
+    }
+    // Top.gg v1 event ids are protocol idempotency metadata, retained only long enough to
+    // absorb retries/replays. The one-time reward HMAC ledger remains intentionally separate.
+    try {
+      const purgeTopgg = (): void => {
+        try {
+          const removed = purgeExpiredTopggEvents(db);
+          if (removed > 0) log.info(`[retention] purged ${removed} expired top.gg event row(s).`);
+        } catch (err) {
+          log.error('[retention] top.gg event purge failed (ignored)', err);
+        }
+      };
+      purgeTopgg();
+      const topggTimer = setInterval(purgeTopgg, 24 * 60 * 60 * 1000);
+      topggTimer.unref?.();
+    } catch (err) {
+      log.error('[index] failed to start the top.gg event purge job (ignored)', err);
     }
     // Premium 24/7 always restores. Ordinary calls restore after a planned deploy or clean
     // administrator/VPS restart; a crash has no clean signal and therefore no marker.

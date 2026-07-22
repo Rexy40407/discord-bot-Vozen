@@ -74,6 +74,25 @@ function seedGuild(db: Database.Database, g: string, u: string): void {
     1,
   );
   db.prepare('INSERT INTO stt_consent (user_id, guild_id, consent_at) VALUES (?,?,?)').run(u, g, 1);
+  db.prepare(
+    'INSERT INTO translation_mapping (guild_id, source_channel_id, destination_channel_id, target_locale) VALUES (?,?,?,?)',
+  ).run(g, `source-${g}`, `destination-${g}`, 'pt');
+  db.prepare(
+    'INSERT INTO translation_preference (guild_id, user_id, locale, opted_out) VALUES (?,?,?,?)',
+  ).run(g, u, 'pt', 0);
+  db.prepare('INSERT INTO translation_daily_usage (day, guild_id, chars) VALUES (?,?,?)').run(
+    '2026-07-22',
+    g,
+    1,
+  );
+  db.prepare(
+    'INSERT INTO translation_user_daily_usage (day, guild_id, user_id, chars) VALUES (?,?,?,?)',
+  ).run('2026-07-22', g, u, 1);
+  db.prepare('INSERT INTO channel_profile (guild_id, channel_id, auto_read) VALUES (?,?,?)').run(
+    g,
+    `profile-${g}`,
+    1,
+  );
   // Retained (financial/entitlement) — must NOT be touched by the purge.
   db.prepare('INSERT INTO premium_guild (guild_id, expires_at, source) VALUES (?,?,?)').run(
     g,

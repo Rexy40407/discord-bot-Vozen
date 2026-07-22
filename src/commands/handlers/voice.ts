@@ -23,6 +23,7 @@ import {
   SPEED_PRESETS,
 } from '../voiceConfigPanel';
 import { getGuildConfig } from '../../store/guildConfig';
+import { admitUserSpeech } from '../../voice/admission';
 import { setOptOut, setOptIn } from '../../store/optout';
 import { setDetection } from '../../store/langDetect';
 import { setNickname, clearNickname } from '../../store/nickname';
@@ -36,6 +37,7 @@ import type { SynthRequest } from '../../tts/engine';
 import { resolveUserEngine } from '../../tts/resolveEngine';
 import { t } from '../../i18n/index';
 import { localeForUser, reply } from '../helpers';
+import { filterVoiceCatalog, paginateVoiceCatalog, type VoiceCatalogEngine } from '../voiceBrowse';
 
 /**
  * /voice config — interactive panel (dropdowns + Save) so the whole voice setup is done
@@ -262,11 +264,91 @@ async function handleVoiceConfig(
   });
 }
 
+/**
+ * Read-only catalog browser.  Pagination state lives only in this ephemeral collector;
+ * custom ids carry an interaction id and action, never a model id supplied by the client.
+ */
+async function handleVoiceBrowse(
+  i: ChatInputCommandInteraction,
+  deps: BotDeps,
+  locale: string,
+): Promise<void> {
+  const requestedLocale = i.options.getString('locale')?.trim().toLowerCase() ?? '';
+  if (requestedLocale && !/^[a-z]{2}$/.test(requestedLocale)) {
+    await reply(i, t('voice.browse.invalidLocale', locale));
+    return;
+  }
+  const engine = (i.options.getString('engine') ?? 'all') as VoiceCatalogEngine;
+  if (!['all', 'local', 'google'].includes(engine)) {
+    await reply(i, t('voice.browse.empty', locale));
+    return;
+  }
+  const voices = filterVoiceCatalog(
+    deps.availableModels,
+    { query: i.options.getString('query'), locale: requestedLocale, engine },
+    i.locale,
+  );
+  if (!voices.length) {
+    await reply(i, t('voice.browse.empty', locale));
+    return;
+  }
+  let page = 0;
+  let expired = false;
+  const render = () => {
+    const current = paginateVoiceCatalog(voices, page);
+    page = current.page;
+    const lines = current.slice.map((voice) => `â€¢ **${voice.label}** â€” ${voice.engine}`);
+    return {
+      content: `${t('voice.browse.title', locale, {
+        page: current.page + 1,
+        pages: current.pageCount,
+      })}\n${lines.join('\n')}`,
+      rows: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`vbr:prev:${i.id}`)
+            .setLabel(t('voice.browse.previous', locale))
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(current.page === 0),
+          new ButtonBuilder()
+            .setCustomId(`vbr:next:${i.id}`)
+            .setLabel(t('voice.browse.next', locale))
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(current.page >= current.pageCount - 1),
+        ),
+      ],
+    };
+  };
+  const initial = render();
+  await i.reply(replyCard(initial.content, { ephemeral: true, rows: initial.rows }));
+  const message = await i.fetchReply();
+  const collector = message.createMessageComponentCollector({ time: 120_000 });
+  collector.on('collect', (component) => {
+    if (component.user.id !== i.user.id || !component.isButton()) return;
+    if (component.customId === `vbr:prev:${i.id}`) page -= 1;
+    else if (component.customId === `vbr:next:${i.id}`) page += 1;
+    else return;
+    const next = render();
+    void component.update(updateCard(next.content, { rows: next.rows })).catch(() => {});
+  });
+  collector.on('end', () => {
+    if (expired) return;
+    expired = true;
+    void i
+      .editReply(editCard(t('voice.browse.expired', locale), { tone: 'warning' }))
+      .catch(() => {});
+  });
+}
+
 export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps): Promise<void> {
   const locale = localeForUser(deps, i);
   const sub = i.options.getSubcommand();
   if (sub === 'config') {
     await handleVoiceConfig(i, deps, locale);
+    return;
+  }
+  if (sub === 'browse') {
+    await handleVoiceBrowse(i, deps, locale);
     return;
   }
   if (sub === 'set') {
@@ -405,6 +487,17 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
       await reply(i, t('voice.notInVoice', locale));
       return;
     }
+    const admission = admitUserSpeech(
+      deps,
+      i.guildId!,
+      i.user.id,
+      i.guild!,
+      i.guild!.members.cache.get(i.user.id)?.voice.channelId ?? null,
+    );
+    if (!admission.allowed) {
+      await reply(i, t('tts.notInVoice', locale));
+      return;
+    }
 
     const cfg = getGuildConfig(deps.db, i.guildId!);
 
@@ -445,7 +538,11 @@ export async function handleVoice(i: ChatInputCommandInteraction, deps: BotDeps)
     };
     // say() returns false when the queue is at the cap: in that case do NOT lie "now
     // playing" — we reuse the same tts.busy key as /tts (consistency).
-    const queued = await player.say(req);
+    const queued = await player.say(req, {
+      authorId: i.user.id,
+      source: 'command',
+      lane: admission.lane,
+    });
     await reply(i, queued ? t('voice.previewPlaying', locale) : t('tts.busy', locale));
   }
 }

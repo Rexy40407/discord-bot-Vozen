@@ -17,6 +17,7 @@ import type { Server } from 'node:http';
 import { log } from './logging/logger';
 import type { AppConfig } from './config/index';
 import { hardenServerTimeouts } from './http/serverHardening';
+import type { PublicStatusResponse } from './health/publicStatus';
 
 export interface HealthResult {
   status: number;
@@ -30,10 +31,21 @@ export interface HealthResult {
  * query string (e.g. some monitors append `?probe=...`), comparing only the part
  * before the first '?'.
  */
-export function healthResponse(reqPath: string | undefined): HealthResult {
+export function healthResponse(
+  reqPath: string | undefined,
+  publicStatus?: () => PublicStatusResponse,
+): HealthResult {
   const path = (reqPath ?? '').split('?')[0];
   if (path === '/health') {
     return { status: 200, body: JSON.stringify({ status: 'ok' }) };
+  }
+  if (path === '/status' && publicStatus) {
+    try {
+      return { status: 200, body: JSON.stringify(publicStatus()) };
+    } catch {
+      // A public status endpoint must never leak an exception or optimistically report healthy.
+      return { status: 200, body: JSON.stringify({ status: 'unavailable' }) };
+    }
   }
   return { status: 404, body: JSON.stringify({ status: 'not_found' }) };
 }
@@ -46,7 +58,10 @@ export function healthResponse(reqPath: string | undefined): HealthResult {
  *    listens on the port. Returns the Server handle (so the caller/tests can close
  *    it or read the ephemeral address when listen(0)).
  */
-export function startHealthServer(config: Pick<AppConfig, 'healthPort'>): Server | undefined {
+export function startHealthServer(
+  config: Pick<AppConfig, 'healthPort' | 'publicStatusEnabled'>,
+  publicStatus?: () => PublicStatusResponse,
+): Server | undefined {
   const port = config.healthPort;
   if (port === undefined) return undefined;
 
@@ -57,7 +72,10 @@ export function startHealthServer(config: Pick<AppConfig, 'healthPort'>): Server
     req.on('error', (err) => {
       log.warn('[health] request stream error (ignored)', err);
     });
-    const { status, body } = healthResponse(req.url);
+    const { status, body } = healthResponse(
+      req.url,
+      config.publicStatusEnabled ? publicStatus : undefined,
+    );
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(body);
   });

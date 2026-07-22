@@ -28,6 +28,10 @@ import { prepareSpeech, redactRequest, hasReadableText } from './prepareSpeech';
 import { t } from '../i18n/index';
 import { log } from '../logging/logger';
 import { channelCard } from '../ui/messages';
+import { resolveQueueLane } from '../voice/queuePolicy';
+import { handleTranslationMessage } from '../translation/messageListener';
+import { getChannelProfile } from '../store/channelProfiles';
+import { resolveChannelPolicy } from '../policy/channelPolicy';
 
 /**
  * Collects the MEDIA to announce from a message: URLs in the text (link/gif, via
@@ -152,6 +156,9 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // down, which contradicted this guard and threw if a pre-READY message arrived).
     const me = deps.client.user;
     if (!me) return;
+    // Text translation is an independent, never-spoken path. It runs before normal auto-read
+    // admission and retains its own default-deny mappings and quotas.
+    await handleTranslationMessage(message, deps);
     // Vozen NEVER reads itself — anti-loop, regardless of read_bots.
     if (message.author.id === me.id) return;
 
@@ -160,6 +167,8 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // (otherwise it would keep consuming messages and speaking). And messages from OTHER
     // bots/webhooks should only reach the game (as guesses) if read_bots is ON.
     const cfg = getGuildConfig(deps.db, message.guildId);
+    const channelProfile = getChannelProfile(deps.db, message.guildId, message.channelId);
+    const channelPolicy = resolveChannelPolicy(cfg, channelProfile);
     if (!cfg.enabled) return;
     if (message.author.bot && !cfg.readBots) return;
 
@@ -202,7 +211,11 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     const media = collectMessageMedia(message);
     if (!message.content && media.length === 0) return;
 
-    const isAutoreadChannel = cfg.autoread && cfg.ttsChannelId === message.channelId;
+    // A profile must opt in explicitly for a different channel. An inert profile (all inherited)
+    // never expands auto-read beyond the existing configured TTS channel.
+    const isAutoreadChannel =
+      channelProfile?.autoRead === true ||
+      (!channelProfile && cfg.autoread && cfg.ttsChannelId === message.channelId);
     const isMention = message.mentions.has(me.id, {
       ignoreEveryone: true,
       ignoreRoles: true,
@@ -273,6 +286,12 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // (the emoji strip's safety net): none of that is "readable". Without a readable body
     // AND without media -> not worth synthesizing.
     if (!/[\p{L}\p{N}]/u.test(cleaned) && media.length === 0) return;
+
+    // Role policy is authorization for queue admission only. A blocked role always wins;
+    // no subscription, command option or user-controlled value can bypass it.
+    const roleIds = message.member?.roles?.cache?.keys?.() ?? [];
+    const queuePolicy = resolveQueueLane(cfg, roleIds);
+    if (!queuePolicy.allowed) return;
 
     // per-user rate-limit (persistent per-guild limiter). Runs NOW — AFTER the readable-text
     // guard — so that a message that was never going to be spoken (emoji/link/empty) does NOT
@@ -359,7 +378,7 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
       userVoice,
       available: deps.availableModels,
       autoDetect: isDetectionOn(deps.db, message.guildId, message.author.id),
-      guildDefaultVoice: cfg.defaultVoice,
+      guildDefaultVoice: channelPolicy.defaultVoice,
       defaultVoice: deps.config.defaultVoice,
       defaultSpeed: deps.config.defaultSpeed,
       media,
@@ -400,7 +419,11 @@ export async function handleMessage(message: Message, deps: BotDeps): Promise<vo
     // (silence PREPENDED to the WAV). Configurable (MESSAGE_LEAD_MS); 0 = no wait.
     if (deps.config.messageLeadMs > 0) outReq.leadSilenceMs = deps.config.messageLeadMs;
 
-    const queued = await player.say(outReq);
+    const queued = await player.say(outReq, {
+      authorId: message.author.id,
+      source: 'message',
+      lane: queuePolicy.lane,
+    });
 
     // Everything below is usage/accounting for a request that ACTUALLY entered the queue. A full
     // queue must not change the leaderboard, last-speaker suppression, streaks, or voice stats.

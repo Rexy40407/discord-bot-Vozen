@@ -143,6 +143,7 @@ describe('metrics — basic API', () => {
       gcloudSynths: 0,
       gcloudChars: 0,
       gcloudFallbacks: 0,
+      sttOverloads: 0,
     });
   });
 
@@ -227,6 +228,7 @@ describe('metrics — basic API', () => {
       gcloudSynths: 0,
       gcloudChars: 0,
       gcloudFallbacks: 0,
+      sttOverloads: 0,
     });
   });
 

@@ -40,7 +40,12 @@ export function initDb(path: string): Database.Database {
         stay_in_call   INTEGER NOT NULL DEFAULT 0,
         streak_announce INTEGER NOT NULL DEFAULT 1,
         soundboard     INTEGER NOT NULL DEFAULT 1,
-        vote_promos    INTEGER NOT NULL DEFAULT 0
+        vote_promos    INTEGER NOT NULL DEFAULT 0,
+        priority_role_id TEXT,
+        blocked_role_id  TEXT,
+        translation_enabled INTEGER NOT NULL DEFAULT 0,
+        translation_daily_char_limit INTEGER NOT NULL DEFAULT 10000,
+        translation_per_user_daily_char_limit INTEGER NOT NULL DEFAULT 2000
       );
 
       CREATE TABLE IF NOT EXISTS blocklist (
@@ -196,6 +201,13 @@ export function initDb(path: string): Database.Database {
         secret_fingerprint TEXT NOT NULL
       );
 
+      -- Top.gg v1 delivery IDs are a short-retention idempotency ledger. The event id
+      -- is external protocol metadata, not Discord identity/content, and is purged daily.
+      CREATE TABLE IF NOT EXISTS topgg_webhook_event (
+        event_id     TEXT PRIMARY KEY,
+        processed_at INTEGER NOT NULL
+      );
+
       -- Persistent per-server rotation for occasional Top.gg/support reminders.
       CREATE TABLE IF NOT EXISTS vote_promo_state (
         guild_id     TEXT PRIMARY KEY,
@@ -252,6 +264,76 @@ export function initDb(path: string): Database.Database {
         month TEXT NOT NULL,
         chars INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (scope, key, month)
+      );
+
+      -- Persistent UTC-day global Google HD backstop. This intentionally has no guild,
+      -- user, content or request columns: it is one daily service-wide cost counter.
+      CREATE TABLE IF NOT EXISTS gcloud_daily_usage (
+        day   TEXT PRIMARY KEY,
+        chars INTEGER NOT NULL DEFAULT 0
+      );
+
+      -- Identity-free operational telemetry. Each row is only a UTC day, a fixed metric
+      -- name, a provider label and a numeric aggregate; never text, audio, Discord IDs,
+      -- tokens, request metadata or raw provider errors.
+      CREATE TABLE IF NOT EXISTS operational_daily_metric (
+        day      TEXT NOT NULL,
+        metric   TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        value    INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (day, metric, provider)
+      );
+
+      -- Provider state carries only health/degradation timestamps. Error/request bodies
+      -- remain in ordinary transient logs and are deliberately not copied here.
+      CREATE TABLE IF NOT EXISTS provider_health_state (
+        provider          TEXT PRIMARY KEY,
+        health            TEXT NOT NULL CHECK (health IN ('healthy', 'degraded')),
+        changed_at        INTEGER NOT NULL,
+        last_healthy_at   INTEGER,
+        last_degraded_at  INTEGER
+      );
+
+      -- Opt-in text translation configuration. Source text and translated output are never
+      -- persisted: only channel routing, locale and bounded character counters live here.
+      CREATE TABLE IF NOT EXISTS translation_mapping (
+        guild_id TEXT NOT NULL,
+        source_channel_id TEXT NOT NULL,
+        destination_channel_id TEXT NOT NULL,
+        target_locale TEXT NOT NULL,
+        PRIMARY KEY (guild_id, source_channel_id),
+        CHECK (source_channel_id <> destination_channel_id)
+      );
+      CREATE TABLE IF NOT EXISTS translation_preference (
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        locale TEXT,
+        opted_out INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (guild_id, user_id)
+      );
+      CREATE TABLE IF NOT EXISTS translation_daily_usage (
+        day TEXT NOT NULL,
+        guild_id TEXT NOT NULL,
+        chars INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (day, guild_id)
+      );
+      CREATE TABLE IF NOT EXISTS translation_user_daily_usage (
+        day TEXT NOT NULL,
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        chars INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (day, guild_id, user_id)
+      );
+
+      -- Per-channel overrides. Nullable fields inherit the guild configuration so a newly
+      -- created profile is inert. This table intentionally contains configuration only.
+      CREATE TABLE IF NOT EXISTS channel_profile (
+        guild_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        auto_read INTEGER CHECK (auto_read IN (0, 1)),
+        translation_enabled INTEGER CHECK (translation_enabled IN (0, 1)),
+        default_voice TEXT,
+        PRIMARY KEY (guild_id, channel_id)
       );
 
       -- Hashed-email to Discord-ID map for Ko-fi renewals. The first purchase supplies the

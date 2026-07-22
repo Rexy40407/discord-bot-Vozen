@@ -44,6 +44,8 @@ export interface DashboardGuildPayload {
   capabilities: {
     ttsChannelId: true;
     defaultVoice: true;
+    /** Reserved until the dashboard has an authorised profile editor. Old clients ignore it. */
+    channelProfiles: false;
   };
   options: {
     channels: DashboardOption[];
@@ -346,7 +348,10 @@ export function createDashboardApi(deps: DashboardApiDeps): DashboardApi {
     }
     return {
       config,
-      capabilities: { ttsChannelId: true, defaultVoice: true },
+      // Profiles deliberately stay hidden while this API only accepts the existing, fully
+      // validated guild-config patch. Exposing an editor before it can validate every profile
+      // channel against live bot permissions would create an unsafe arbitrary-channel surface.
+      capabilities: { ttsChannelId: true, defaultVoice: true, channelProfiles: false },
       options,
     };
   }
